@@ -19,18 +19,17 @@ body {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 0;
     pointer-events: none;
-    background-color: #111; /* Gegen weißes Blitzen */
+    background-color: #222; /* Hellerer Hintergrund beim Laden */
 }
 
-/* WICHTIG: Filter NUR auf die Kacheln anwenden, nicht auf den Punkt! */
+/* WICHTIG: Filter NUR auf die Kacheln */
 .leaflet-tile-pane {
-    /* Contrast 1.3: Macht Straßen schärfer
-       Brightness 1.4: Macht alles deutlich heller (Tageslicht-tauglich)
-       Grayscale 1: Macht die Karte schwarz-weiß (damit sie clean wirkt)
+    /* Brightness 2.5: Macht die dunkle Karte VIEL heller.
+       Contrast 0.8: Nimmt die Härte raus, damit Straßen nicht schwarz verschluckt werden.
+       Grayscale 0.8: Lässt ein ganz bisschen Farbe (Blau) durch, sieht moderner aus.
     */
-    filter: contrast(1.3) brightness(1.4) grayscale(1);
+    filter: brightness(2.5) contrast(0.8) grayscale(0.8);
 }
-
 /* --- 2. ZONES --- */
 #home-screen {
     position: relative; z-index: 2;
