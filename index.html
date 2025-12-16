@@ -9,34 +9,35 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
     <link rel="apple-touch-icon" href="logo.png">
-    
-<link rel="stylesheet" href="style.css?v=2">
-    
-    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css?v=3">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
     <div id="background-map"></div>
     
-    <div class="glass-overlay"></div>
-
     <div id="home-screen">
         
-        <div class="weather-pill" id="weather-widget">
-            <i class="fa-solid fa-location-arrow loc-icon"></i>
-            <span id="loc-text">Ortung...</span>
-            <span class="divider">|</span>
-            <i id="weather-icon" class="fa-solid fa-cloud"></i>
-            <span id="weather-temp">--°</span>
+        <div class="blur-zone-top">
+            <div class="weather-pill" id="weather-widget">
+                <i class="fa-solid fa-location-arrow loc-icon"></i>
+                <span id="loc-text">Locating...</span>
+                <span class="divider">|</span>
+                <i id="weather-icon" class="fa-solid fa-cloud"></i>
+                <span id="weather-temp">--°</span>
+            </div>
+
+            <div class="logo-container">
+                <img src="logo.png" alt="DriverHub" class="dh-logo">
+            </div>
         </div>
 
-        <div class="logo-container">
-            <img src="logo.png" alt="DriverHub" class="dh-logo">
-        </div>
+        <div class="spacer-flex"></div>
 
-        <div class="bottom-area">
-            <button id="btn-start" class="btn-neon-glass">
+        <div class="blur-zone-bottom">
+            <button id="btn-start" class="btn-super-glass">
                 <i class="fa-solid fa-road"></i> START DRIVE
             </button>
         </div>
