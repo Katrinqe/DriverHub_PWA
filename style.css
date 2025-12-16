@@ -14,17 +14,19 @@ body {
     overflow: hidden; width: 100vw; height: 100vh;
 }
 
-/* --- 1. MAP (Heller & Kontrastreicher) --- */
+/* --- 1. MAP (Helligkeit BOOST + Kontrast) --- */
 #background-map {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 0;
     pointer-events: none;
     background-color: #111; 
     
-    /* CHANGE: Brightness von 0.7 auf 0.95 erhöht (fast Original-Helligkeit).
-       Contrast auf 1.1 erhöht, damit Straßen "schärfer" wirken.
+    /* WICHTIG: 
+       Contrast 1.4 -> Macht Straßen viel schärfer zur Umgebung
+       Brightness 1.3 -> Macht alles deutlich heller
+       Saturate 0 -> Entfernt Farbstich, reines Grau/Weiß
     */
-    filter: brightness(0.95) contrast(1.1) grayscale(0.2);
+    filter: contrast(1.4) brightness(1.3) saturate(0);
 }
 
 /* --- 2. ZONES --- */
@@ -40,7 +42,8 @@ body {
     padding: 20px;
     padding-top: calc(env(safe-area-inset-top) + 20px);
     display: flex; flex-direction: column; align-items: center;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.0) 100%);
+    /* Etwas dunklerer Verlauf für Lesbarkeit */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.0) 100%);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
     -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
@@ -50,94 +53,62 @@ body {
     width: 100%;
     padding: 20px 20px 90px 20px; 
     display: flex; justify-content: center;
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.0) 100%);
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.0) 100%);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    mask-image: linear-gradient(to top, black 60%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to top, black 60%, transparent 100%);
+    mask-image: linear-gradient(to top, black 50%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, black 50%, transparent 100%);
 }
 
 .spacer-flex { flex: 1; }
 
 /* --- 3. UI ELEMENTS --- */
-
-/* Wetter */
 .weather-pill {
-    background: rgba(255, 255, 255, 0.12); /* Minimal heller */
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    padding: 6px 16px;
-    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 6px 16px; border-radius: 30px;
     display: flex; align-items: center; gap: 8px;
     font-size: 0.8rem; font-weight: 600;
     margin-bottom: 25px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 .loc-icon { color: var(--primary); }
 .divider { color: #ccc; margin: 0 4px; }
 
-/* Logo */
-.logo-container {
-    display: flex; justify-content: center;
-    margin-bottom: 30px;
-}
-.dh-logo {
-    width: 130px;
-    filter: drop-shadow(0 0 15px rgba(0,0,0,0.8));
-}
+.logo-container { display: flex; justify-content: center; margin-bottom: 30px; }
+.dh-logo { width: 130px; filter: drop-shadow(0 0 15px rgba(0,0,0,0.8)); }
 
-/* --- 4. BUTTON (Helleres Blau) --- */
+/* --- 4. BUTTON (Leuchtend) --- */
 .btn-super-glass {
-    width: 100%; 
-    max-width: 260px;
-    height: 55px;
+    width: 100%; max-width: 260px; height: 55px;
     border-radius: 20px;
     font-size: 1.1rem; font-weight: 800; letter-spacing: 1px;
-    color: white;
-    cursor: pointer;
+    color: white; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 10px;
     
-    /* CHANGE: Helleres Blau im Verlauf (Startet bei #007aff, endet bei hellem Cyan #30adff) */
-    background: linear-gradient(135deg, #007aff 0%, #30adff 100%);
+    /* Helleres Cyan-Blau für bessere Sichtbarkeit */
+    background: linear-gradient(135deg, #007aff 0%, #00d4ff 100%);
     
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.4); /* Hellerer Rand */
-    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.7);
     border-bottom: 1px solid rgba(0, 100, 255, 0.3);
     
-    /* Stärkerer Glow */
-    box-shadow: 
-        0 10px 40px rgba(0, 122, 255, 0.45),
-        inset 0 0 15px rgba(255, 255, 255, 0.25);
-        
+    box-shadow: 0 10px 40px rgba(0, 122, 255, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.3);
     transition: all 0.2s ease;
 }
-
-.btn-super-glass:active { transform: scale(0.96); filter: brightness(0.9); }
+.btn-super-glass:active { transform: scale(0.96); }
 
 /* --- 5. MARKER --- */
-.user-marker-wrap {
-    position: relative;
-    display: flex; justify-content: center; align-items: center;
-}
+.user-marker-wrap { position: relative; display: flex; justify-content: center; align-items: center; }
 .user-dot {
     width: 18px; height: 18px;
-    background-color: #007aff;
-    border: 3px solid white;
-    border-radius: 50%;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-    z-index: 2;
+    background-color: #007aff; border: 3px solid white;
+    border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 2;
 }
 .user-pulse {
-    position: absolute;
-    width: 40px; height: 40px;
-    background-color: rgba(0, 122, 255, 0.5); /* Etwas kräftigerer Pulse */
-    border-radius: 50%;
-    z-index: 1;
-    animation: pulse-animation 2s infinite;
+    position: absolute; width: 40px; height: 40px;
+    background-color: rgba(0, 122, 255, 0.5); border-radius: 50%;
+    z-index: 1; animation: pulse-animation 2s infinite;
 }
-
-@keyframes pulse-animation {
-    0% { transform: scale(0.5); opacity: 1; }
-    100% { transform: scale(1.3); opacity: 0; }
-}
-
+@keyframes pulse-animation { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
 .leaflet-control-attribution { display: none !important; }
