@@ -28,7 +28,7 @@ body {
        Contrast 0.8: Nimmt die Härte raus, damit Straßen nicht schwarz verschluckt werden.
        Grayscale 0.8: Lässt ein ganz bisschen Farbe (Blau) durch, sieht moderner aus.
     */
-    filter: brightness(2.5) contrast(0.8) grayscale(0.8);
+    filter: brightness(1.25) contrast(0.8) grayscale(0.8);
 }
 /* --- 2. ZONES --- */
 #home-screen {
