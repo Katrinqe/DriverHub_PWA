@@ -2,7 +2,7 @@
 
 :root {
     --primary: #007aff;
-    --neon-glow: rgba(0, 122, 255, 0.6);
+    --primary-dark: #005ecb;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
@@ -15,91 +15,97 @@ body {
     overflow: hidden; width: 100vw; height: 100vh;
 }
 
-/* --- 1. BACKGROUND MAP --- */
+/* --- 1. BACKGROUND MAP (Blau & Sichtbar) --- */
 #background-map {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 0;
-    pointer-events: none; /* Map ist nur Deko, nicht klickbar */
-    filter: grayscale(100%) contrast(1.2) brightness(0.6); /* Dark Mode Look */
+    pointer-events: none;
+    /* Der Trick: Sepia macht es braun, Hue-Rotate dreht es zu Blau (190deg),
+       Saturate knallt die Farben hoch, Contrast macht Straßen sichtbar.
+    */
+    filter: sepia(100%) hue-rotate(190deg) saturate(300%) contrast(1.5) brightness(0.7);
 }
 
-/* --- 2. MILCHGLAS EFFEKT --- */
+/* --- 2. MILCHGLAS OVERLAY --- */
 .glass-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 1;
-    /* Der entscheidende Blur-Effekt */
-    backdrop-filter: blur(8px); 
-    -webkit-backdrop-filter: blur(8px);
-    background: rgba(0, 0, 0, 0.4); /* Abdunkeln */
+    backdrop-filter: blur(5px); /* Weniger Blur, damit man Straßen sieht */
+    -webkit-backdrop-filter: blur(5px);
+    background: rgba(0, 0, 0, 0.3); /* Weniger dunkel */
 }
 
 /* --- 3. HOME LAYOUT --- */
 #home-screen {
-    position: relative; z-index: 2; /* Über der Map & Glas */
+    position: relative; z-index: 2;
     height: 100%; width: 100%;
     display: flex; flex-direction: column;
     align-items: center;
     padding: 20px;
-    padding-top: env(safe-area-inset-top); /* iPhone Notch */
+    padding-top: env(safe-area-inset-top);
 }
 
-/* Wetter Widget */
+/* Wetter Widget (Oben) */
 .weather-pill {
-    margin-top: 20px;
-    background: rgba(20, 20, 20, 0.6); /* Glasig */
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 8px 20px;
-    border-radius: 30px;
-    display: flex; align-items: center; gap: 10px;
-    font-size: 0.9rem; font-weight: 600;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    margin-top: 20px; /* Abstand von oben */
+    background: rgba(10, 10, 15, 0.7);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 10px 25px;
+    border-radius: 40px;
+    display: flex; align-items: center; gap: 12px;
+    font-size: 0.95rem; font-weight: 700;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    letter-spacing: 0.5px;
 }
 .loc-icon { color: var(--primary); }
-.divider { color: #555; }
+.divider { color: #444; margin: 0 5px; }
 
-/* Logo */
+/* Logo (Direkt drunter) */
 .logo-container {
-    flex: 1; /* Nimmt den Platz in der Mitte ein */
+    margin-top: 30px; /* Fester Abstand zum Wetter */
     display: flex; align-items: center; justify-content: center;
 }
 .dh-logo {
-    width: 80px; /* Dezent klein */
-    opacity: 0.9;
-    filter: drop-shadow(0 0 20px rgba(0, 122, 255, 0.4));
+    width: 90px; /* Dezent */
+    opacity: 1;
+    filter: drop-shadow(0 0 20px rgba(0, 122, 255, 0.5));
 }
 
-/* Bottom Area */
+/* Bottom Area (Schiebt Button nach unten) */
 .bottom-area {
     width: 100%;
-    margin-bottom: 50px; /* Platz unten */
+    margin-top: auto; /* Das hier drückt den Button nach ganz unten */
+    margin-bottom: 50px;
     display: flex; justify-content: center;
 }
 
-/* --- NEON GLAS BUTTON --- */
+/* --- AMBIENT BUTTON (Solid & Leuchtend) --- */
 .btn-neon-glass {
-    width: 100%; max-width: 320px;
-    height: 60px;
-    border-radius: 18px;
-    font-size: 1.1rem; font-weight: 800; letter-spacing: 1px;
+    width: 100%; max-width: 340px;
+    height: 65px;
+    border-radius: 20px;
+    font-size: 1.2rem; font-weight: 800; letter-spacing: 1px;
     color: #fff;
-    display: flex; align-items: center; justify-content: center; gap: 12px;
+    display: flex; align-items: center; justify-content: center; gap: 15px;
     cursor: pointer;
+    border: none;
     
-    /* Der Glas & Neon Look */
-    background: rgba(0, 122, 255, 0.15); /* Sehr transparentes Blau */
-    border: 1px solid rgba(0, 122, 255, 0.5); /* Leuchtender Rand */
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 0 25px var(--neon-glow), inset 0 0 10px rgba(0, 122, 255, 0.2);
+    /* Ambient Look: Verlauf + Inneres Leuchten */
+    background: linear-gradient(135deg, #007aff 0%, #005ecb 100%);
     
-    transition: all 0.3s ease;
+    /* Der "Ambient" Effekt: */
+    box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.5), /* Schatten unten */
+        inset 0 0 20px rgba(255, 255, 255, 0.3), /* Inneres Leuchten */
+        0 0 0 1px rgba(255,255,255,0.1); /* Subtiler Rand */
+        
+    transition: all 0.2s ease;
 }
 
 .btn-neon-glass:active {
-    transform: scale(0.96);
-    box-shadow: 0 0 10px var(--neon-glow); /* Glow wird kleiner beim Drücken */
-    background: rgba(0, 122, 255, 0.25);
+    transform: scale(0.97);
+    background: linear-gradient(135deg, #005ecb 0%, #004499 100%);
 }
 
-/* Leaflet Clean Up */
 .leaflet-control-attribution { display: none !important; }
