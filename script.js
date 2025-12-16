@@ -1,83 +1,88 @@
 // --- DRIVERHUB 4.0 - CORE LOGIC ---
 
 let map;
-let watchId;
+let userMarker = null; // Speichert unseren blauen Punkt
 
-// 1. INIT beim Laden
 window.addEventListener('load', () => {
     initBackgroundMap();
     initWeather();
 });
 
-// 2. BACKGROUND MAP SETUP
 function initBackgroundMap() {
-    // Map erstellen, aber ohne Controls (Zoom-Buttons weg)
     map = L.map('background-map', {
         zoomControl: false,
         attributionControl: false,
-        dragging: false, // Map bewegt sich nicht per Hand
+        dragging: false,
         scrollWheelZoom: false,
         doubleClickZoom: false,
         touchZoom: false
-    }).setView([51.1657, 10.4515], 13); // Default Start: Deutschland Mitte
+    }).setView([51.1657, 10.4515], 13);
 
-    // Dark Mode Tiles laden
+    // Dark Mode Tiles
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
         maxZoom: 20
     }).addTo(map);
 
-    // Echte Position holen & Map zentrieren
     if (navigator.geolocation) {
-        // watchPosition sorgt dafür, dass die Map mitwandert, wenn du dich bewegst
-        watchId = navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            // Sanfte Animation zum Standort
-            map.flyTo([lat, lng], 15, { animate: true, duration: 2 });
-        }, err => {
+        navigator.geolocation.watchPosition(updateUserLocation, err => {
             console.warn("GPS Fehler:", err);
             document.getElementById('loc-text').innerText = "GPS Aus";
         }, { enableHighAccuracy: true });
     }
 }
 
-// 3. WETTER & STANDORT NAME
+function updateUserLocation(pos) {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const newLatLng = [lat, lng];
+
+    // 1. Wenn Marker noch nicht existiert -> Erstellen
+    if (!userMarker) {
+        // Wir bauen ein Custom Icon aus HTML/CSS
+        const customIcon = L.divIcon({
+            className: 'user-marker-wrap', // Klasse für CSS
+            html: '<div class="user-pulse"></div><div class="user-dot"></div>',
+            iconSize: [40, 40], // Größe des gesamten Containers (für Pulse)
+            iconAnchor: [20, 20] // Mitte des Icons
+        });
+
+        userMarker = L.marker(newLatLng, { icon: customIcon }).addTo(map);
+    } else {
+        // 2. Wenn Marker schon da -> Nur verschieben
+        userMarker.setLatLng(newLatLng);
+    }
+
+    // Map sanft hinterherziehen
+    map.flyTo(newLatLng, 15, { animate: true, duration: 2 });
+}
+
 function initWeather() {
     if (!navigator.geolocation) return;
-
     navigator.geolocation.getCurrentPosition(pos => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
 
-        // A) Ort Name holen (Nominatim API)
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
             .then(r => r.json())
             .then(data => {
-                // Stadt oder Dorf anzeigen
-                const city = data.address.city || data.address.town || data.address.village || "Standort";
+                const city = data.address.city || data.address.town || "Standort";
                 document.getElementById('loc-text').innerText = city;
             });
 
-        // B) Wetter holen (Open-Meteo API)
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
             .then(r => r.json())
             .then(data => {
-                const temp = Math.round(data.current_weather.temperature);
-                const code = data.current_weather.weathercode;
-                
-                document.getElementById('weather-temp').innerText = temp + "°";
-                
-                // Icon Logik
+                const t = Math.round(data.current_weather.temperature);
+                const c = data.current_weather.weathercode;
+                document.getElementById('weather-temp').innerText = t + "°";
                 const icon = document.getElementById('weather-icon');
-                if (code <= 1) icon.className = "fa-solid fa-sun"; // Klar
-                else if (code <= 3) icon.className = "fa-solid fa-cloud-sun"; // Bewölkt
-                else if (code <= 60) icon.className = "fa-solid fa-cloud-rain"; // Regen
-                else icon.className = "fa-solid fa-snowflake"; // Schnee/Rest
+                if (c <= 1) icon.className = "fa-solid fa-sun";
+                else if (c <= 3) icon.className = "fa-solid fa-cloud-sun";
+                else icon.className = "fa-solid fa-cloud";
             });
     });
 }
 
-// 4. BUTTON CLICK (Nur Test für jetzt)
 document.getElementById('btn-start').addEventListener('click', () => {
-    alert("Start Drive geklickt! (Nächster Schritt)");
+    alert("Klick! Hier würde es losgehen.");
 });
