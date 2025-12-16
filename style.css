@@ -2,7 +2,7 @@
 
 :root {
     --primary: #007aff;
-    --primary-dark: #005ecb;
+    --neon-blue: #00f2ff;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
@@ -15,97 +15,122 @@ body {
     overflow: hidden; width: 100vw; height: 100vh;
 }
 
-/* --- 1. BACKGROUND MAP (Blau & Sichtbar) --- */
+/* --- 1. MAP (Normal & Clean) --- */
 #background-map {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 0;
     pointer-events: none;
-    /* Der Trick: Sepia macht es braun, Hue-Rotate dreht es zu Blau (190deg),
-       Saturate knallt die Farben hoch, Contrast macht Straßen sichtbar.
-    */
-    filter: sepia(100%) hue-rotate(190deg) saturate(300%) contrast(1.5) brightness(0.7);
+    /* Map etwas abdunkeln damit UI besser lesbar ist, aber Farben behalten */
+    filter: brightness(0.7); 
 }
 
-/* --- 2. MILCHGLAS OVERLAY --- */
-.glass-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 1;
-    backdrop-filter: blur(5px); /* Weniger Blur, damit man Straßen sieht */
-    -webkit-backdrop-filter: blur(5px);
-    background: rgba(0, 0, 0, 0.3); /* Weniger dunkel */
-}
-
-/* --- 3. HOME LAYOUT --- */
+/* --- 2. LAYOUT ZONES --- */
 #home-screen {
     position: relative; z-index: 2;
     height: 100%; width: 100%;
     display: flex; flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    padding-top: env(safe-area-inset-top);
+    justify-content: space-between; /* Verteilt Oben/Unten */
 }
 
-/* Wetter Widget (Oben) */
+/* Der Trick für den Blur nur Oben/Unten */
+.blur-zone-top {
+    width: 100%;
+    padding: 20px;
+    padding-top: calc(env(safe-area-inset-top) + 20px);
+    display: flex; flex-direction: column; align-items: center;
+    
+    /* Verlauf von Schwarz/Blur zu Transparent */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.0) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    /* Weicher Übergang ins Klare */
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+.blur-zone-bottom {
+    width: 100%;
+    padding: 40px 20px 60px 20px; /* Viel Platz unten */
+    display: flex; justify-content: center;
+    
+    /* Verlauf von Transparent zu Schwarz/Blur */
+    background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.0) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    /* Weicher Übergang ins Klare */
+    mask-image: linear-gradient(to top, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, black 60%, transparent 100%);
+}
+
+.spacer-flex { flex: 1; }
+
+/* --- 3. UI ELEMENTS --- */
+
+/* Wetter */
 .weather-pill {
-    margin-top: 20px; /* Abstand von oben */
-    background: rgba(10, 10, 15, 0.7);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 10px 25px;
-    border-radius: 40px;
-    display: flex; align-items: center; gap: 12px;
-    font-size: 0.95rem; font-weight: 700;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    letter-spacing: 0.5px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 8px 20px;
+    border-radius: 30px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.9rem; font-weight: 600;
+    margin-bottom: 20px;
 }
 .loc-icon { color: var(--primary); }
-.divider { color: #444; margin: 0 5px; }
+.divider { color: #aaa; margin: 0 5px; }
 
-/* Logo (Direkt drunter) */
+/* Logo */
 .logo-container {
-    margin-top: 30px; /* Fester Abstand zum Wetter */
-    display: flex; align-items: center; justify-content: center;
+    display: flex; justify-content: center;
+    margin-bottom: 20px;
 }
 .dh-logo {
-    width: 90px; /* Dezent */
-    opacity: 1;
-    filter: drop-shadow(0 0 20px rgba(0, 122, 255, 0.5));
+    width: 90px;
+    filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
 }
 
-/* Bottom Area (Schiebt Button nach unten) */
-.bottom-area {
-    width: 100%;
-    margin-top: auto; /* Das hier drückt den Button nach ganz unten */
-    margin-bottom: 50px;
-    display: flex; justify-content: center;
-}
-
-/* --- AMBIENT BUTTON (Solid & Leuchtend) --- */
-.btn-neon-glass {
+/* --- 4. THE SUPER BUTTON --- */
+/* Mix aus Neumorphismus (Soft), Glass (Transparenz) & Neon (Glow) */
+.btn-super-glass {
     width: 100%; max-width: 340px;
-    height: 65px;
-    border-radius: 20px;
-    font-size: 1.2rem; font-weight: 800; letter-spacing: 1px;
-    color: #fff;
-    display: flex; align-items: center; justify-content: center; gap: 15px;
+    height: 70px;
+    border-radius: 24px;
+    font-size: 1.3rem; font-weight: 800; letter-spacing: 1px;
+    color: white;
     cursor: pointer;
-    border: none;
+    display: flex; align-items: center; justify-content: center; gap: 15px;
     
-    /* Ambient Look: Verlauf + Inneres Leuchten */
-    background: linear-gradient(135deg, #007aff 0%, #005ecb 100%);
+    /* Glas-Basis */
+    background: linear-gradient(135deg, rgba(0, 122, 255, 0.8), rgba(0, 190, 255, 0.6));
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     
-    /* Der "Ambient" Effekt: */
+    /* Der komplexe Rand & Schatten (Neon + Neumorph) */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.5); /* Heller oben für 3D */
+    border-bottom: 1px solid rgba(0, 100, 255, 0.5); /* Dunkler unten */
+    
     box-shadow: 
-        0 10px 30px rgba(0, 0, 0, 0.5), /* Schatten unten */
-        inset 0 0 20px rgba(255, 255, 255, 0.3), /* Inneres Leuchten */
-        0 0 0 1px rgba(255,255,255,0.1); /* Subtiler Rand */
+        0 15px 35px rgba(0, 100, 255, 0.4), /* Großer blauer Schatten */
+        inset 0 0 20px rgba(255, 255, 255, 0.2); /* Inneres Leuchten */
         
     transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.btn-neon-glass:active {
-    transform: scale(0.97);
-    background: linear-gradient(135deg, #005ecb 0%, #004499 100%);
+/* Ein kleiner Glanz-Effekt über dem Button */
+.btn-super-glass::before {
+    content: '';
+    position: absolute; top: 0; left: -50%; width: 100%; height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.2), transparent);
+    transform: skewX(-20deg);
+    transition: 0.5s;
+    pointer-events: none;
+}
+
+.btn-super-glass:active {
+    transform: scale(0.96);
+    box-shadow: 0 5px 15px rgba(0, 100, 255, 0.3);
 }
 
 .leaflet-control-attribution { display: none !important; }
