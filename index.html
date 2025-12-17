@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -44,16 +44,18 @@
         <div class="bottom-nav">
             <div class="nav-item active" id="nav-home">
                 <i class="fa-solid fa-house"></i>
+                <span>Home</span>
             </div>
             <div class="nav-item" id="nav-garage">
                 <i class="fa-solid fa-warehouse"></i>
+                <span>Garage</span>
             </div>
         </div>
     </div>
 
     <div id="drive-screen" class="screen hidden">
         
-        <div class="drive-hud-top">
+        <div class="drive-hud-top glass-panel">
             <div class="hud-row">
                 <div class="hud-item">
                     <span class="hud-label">TIME</span>
@@ -83,9 +85,9 @@
 
     <div id="summary-screen" class="screen hidden">
         <div class="solid-bg">
-            <h2 style="margin-top: 50px;">Drive Summary</h2>
+            <h2 style="margin-top: 60px;">Drive Summary</h2>
             
-            <div class="summary-card">
+            <div class="summary-card glass-panel">
                 <div class="sum-row">
                     <div class="sum-item">
                         <label>AVG SPEED</label>
@@ -114,13 +116,11 @@
     </div>
 
     <div id="garage-screen" class="screen hidden">
-        <div class="garage-bg-layer"></div>
-        
-        <div class="garage-header">
+        <div id="garage-bg"></div> <div class="garage-header">
             <h2>Garage</h2>
-            </div>
+        </div>
 
-        <div class="garage-total-card">
+        <div class="garage-total-card glass-panel">
             <div class="g-stat">
                 <span id="total-drives">0</span>
                 <label>DRIVES</label>
@@ -131,15 +131,16 @@
             </div>
         </div>
 
-        <div id="garage-list" class="garage-list">
-            </div>
+        <div id="garage-list" class="garage-list"></div>
         
         <div class="bottom-nav">
             <div class="nav-item" id="nav-home-from-garage">
                 <i class="fa-solid fa-house"></i>
+                <span>Home</span>
             </div>
             <div class="nav-item active">
                 <i class="fa-solid fa-warehouse"></i>
+                <span>Garage</span>
             </div>
         </div>
     </div>
