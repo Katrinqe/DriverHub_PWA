@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=36">
+    <link rel="stylesheet" href="style.css?v=37">
 </head>
 <body>
 
@@ -56,6 +56,40 @@
         <button id="btn-explore-recenter" class="icon-btn-floating interactive-element" style="top: auto; bottom: 120px;">
             <i class="fa-solid fa-location-crosshairs"></i>
         </button>
+
+        <div id="gas-totem-overlay" class="hidden interactive-element">
+            <div class="gas-totem-card">
+                <div class="totem-header" id="totem-brand-header">
+                    <h2 id="totem-brand">BRAND</h2>
+                    <button class="totem-close" onclick="ExploreLogic.closeTotem()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="totem-body">
+                    <div class="price-row">
+                        <span class="fuel-type">DIESEL</span>
+                        <div class="led-price-box">
+                            <span id="price-diesel">0.00</span><small>9</small>
+                        </div>
+                    </div>
+                    <div class="price-row">
+                        <span class="fuel-type">SUPER E10</span>
+                        <div class="led-price-box">
+                            <span id="price-e10">0.00</span><small>9</small>
+                        </div>
+                    </div>
+                    <div class="price-row">
+                        <span class="fuel-type">SUPER E5</span>
+                        <div class="led-price-box">
+                            <span id="price-e5">0.00</span><small>9</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="totem-footer">
+                    <span id="totem-status"><i class="fa-solid fa-circle-check"></i> OPEN 24/7</span>
+                    <button class="btn-navigate">GO</button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div id="drive-screen" class="screen hidden">
