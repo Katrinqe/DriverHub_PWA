@@ -1,4 +1,4 @@
-// --- DRIVERHUB 4.0 - STABILIZED MAP ---
+// --- DRIVERHUB 4.0 - FINAL CORE ---
 
 let map;
 let userMarker = null;
@@ -14,10 +14,10 @@ function initBackgroundMap() {
         dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false
     }).setView([51.1657, 10.4515], 13);
 
+    // Dark Tiles laden
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
 
     if (navigator.geolocation) {
-        // High Accuracy kann Ruckeln verursachen, wir nutzen es, aber filtern das Ergebnis
         navigator.geolocation.watchPosition(updateUserLocation, 
             err => console.warn(err), 
             { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
@@ -30,7 +30,6 @@ function updateUserLocation(pos) {
     const lng = pos.coords.longitude;
     const newLatLng = L.latLng(lat, lng);
 
-    // 1. Marker erstellen (falls noch nicht da)
     if (!userMarker) {
         const customIcon = L.divIcon({
             className: 'user-marker-wrap',
@@ -38,26 +37,15 @@ function updateUserLocation(pos) {
             iconSize: [40, 40], iconAnchor: [20, 20]
         });
         userMarker = L.marker(newLatLng, { icon: customIcon }).addTo(map);
-        // Sofort hinspringen beim ersten Mal
         map.setView(newLatLng, 15);
         return; 
     }
 
-    // 2. ANTI-RUCKEL CHECK
-    // Wir fragen die Karte: Wie weit ist der Marker von der neuen Position entfernt?
+    // Anti-Ruckel: Nur bewegen wenn > 10m Differenz
     const currentPos = userMarker.getLatLng();
-    const distance = currentPos.distanceTo(newLatLng); // Distanz in Metern
+    if (currentPos.distanceTo(newLatLng) < 10) return; 
 
-    // WENN WENIGER ALS 10 METER -> NICHTS TUN (Zittern ignorieren)
-    if (distance < 10) {
-        return; 
-    }
-
-    // Wenn wir hier sind, haben wir uns bewegt.
-    // Marker sanft schieben
     userMarker.setLatLng(newLatLng);
-    
-    // Karte sanft hinterherziehen (Pan statt FlyTo ist oft ruhiger)
     map.panTo(newLatLng, { animate: true, duration: 1.5 });
 }
 
