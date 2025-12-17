@@ -3,7 +3,7 @@ let isDriveMode = false;
 let watchId = null;
 
 window.addEventListener('load', () => {
-    // Splash entfernen
+    // Splash
     setTimeout(() => {
         document.getElementById('splash-screen').style.opacity = '0';
         setTimeout(() => document.getElementById('splash-screen').classList.add('hidden'), 800);
@@ -12,19 +12,18 @@ window.addEventListener('load', () => {
     initMap();
     initWeather();
 
-    // Event Listeners
     document.getElementById('nav-garage').onclick = showGarage;
     document.getElementById('nav-home').onclick = hideGarage;
     document.getElementById('nav-home-from-garage').onclick = hideGarage;
     document.getElementById('btn-start').onclick = startDriveMode;
     document.getElementById('btn-stop').onclick = () => DriverLogic.stop();
-    document.getElementById('btn-recenter').onclick = () => centerMapOnUser();
+    document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
 });
 
 function initMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
-        dragging: false, // Default aus
+        dragging: false, 
         touchZoom: false, doubleClickZoom: false
     }).setView([51.1657, 10.4515], 14);
 
@@ -32,7 +31,7 @@ function initMap() {
 
     if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(handlePositionUpdate, 
-        (err) => { console.warn("GPS Error", err); document.getElementById('loc-text').innerText = "No GPS"; }, 
+        (err) => { console.warn(err); }, 
         { enableHighAccuracy: true });
     }
 
@@ -44,6 +43,7 @@ function initMap() {
 function handlePositionUpdate(pos) {
     const newLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
 
+    // Marker Update (Immer sofort)
     if (!userMarker) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
@@ -52,15 +52,26 @@ function handlePositionUpdate(pos) {
         userMarker.setLatLng(newLatLng);
     }
 
+    // Logic for Map Movement
     if (isDriveMode) {
         DriverLogic.update(pos);
-        // PanTo ist viel flüssiger als FlyTo für kleine Updates
+
+        // ANTI-RUCKEL LOGIK: Nur bewegen, wenn User nicht manuell schiebt
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
-            map.panTo(newLatLng, { animate: true, duration: 0.5 });
+            const center = map.getCenter();
+            const dist = center.distanceTo(newLatLng);
+            
+            // Toleranz: Nur nachziehen wenn > 15m Abweichung von der Mitte
+            if (dist > 15) {
+                map.panTo(newLatLng, { animate: true, duration: 1.0 });
+            }
         }
     } else {
-        // Home: Sehr langsame Bewegung
-        map.panTo(newLatLng, { animate: true, duration: 2.0 });
+        // Home Mode: Nur grob folgen
+        const center = map.getCenter();
+        if (center.distanceTo(newLatLng) > 50) {
+            map.panTo(newLatLng, { animate: true, duration: 2.0 });
+        }
     }
 }
 
@@ -68,26 +79,24 @@ function startDriveMode() {
     isDriveMode = true;
     switchScreen('drive-screen');
 
-    // Map Interaktivität einschalten
+    // Map Interaktivität AN
     map.dragging.enable();
     map.touchZoom.enable();
-    map.doubleClickZoom.enable();
-
-    // Zoom Animation (Einmalig FlyTo ist okay)
+    
+    // Zoom Animation
     if(userMarker) map.flyTo(userMarker.getLatLng(), 18, { duration: 1.5 });
     
     DriverLogic.start();
 }
 
-function centerMapOnUser() {
+function centerMapOnUser(force) {
     if(userMarker) {
-        map.flyTo(userMarker.getLatLng(), 18, { duration: 0.8 });
+        map.flyTo(userMarker.getLatLng(), 18, { duration: 1.0 });
         document.getElementById('btn-recenter').classList.add('hidden');
     }
 }
 
 function showGarage() { switchScreen('garage-screen'); GarageLogic.render(); }
-
 function hideGarage() { 
     switchScreen('home-screen'); 
     isDriveMode = false;
@@ -107,7 +116,7 @@ function initWeather() {
     navigator.geolocation.getCurrentPosition(pos => {
         const lat = pos.coords.latitude; const lng = pos.coords.longitude;
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-        .then(r=>r.json()).then(d=>{document.getElementById('loc-text').innerText = d.address.city || d.address.town || "Area";})
+        .then(r=>r.json()).then(d=>{document.getElementById('loc-text').innerText = d.address.city || d.address.town || "Standort";})
         .catch(e => console.log(e));
         
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
