@@ -1,11 +1,9 @@
-// --- DRIVE.JS: Tracking & Logic ---
-
 const DriverLogic = {
     startTime: null,
     timerInterval: null,
-    totalDist: 0, // km
+    totalDist: 0, 
     lastPos: null,
-    historyPoints: [], // Für Map Path später
+    historyPoints: [],
     
     start: function() {
         this.startTime = Date.now();
@@ -13,13 +11,10 @@ const DriverLogic = {
         this.lastPos = null;
         this.historyPoints = [];
         
-        // UI Reset
         document.getElementById('hud-time').innerText = "00:00";
         document.getElementById('hud-dist').innerText = "0.00";
         document.getElementById('hud-speed').innerText = "0";
-        document.getElementById('speed-limit-ui').classList.add('hidden'); // Limit erst bei Bewegung
 
-        // Timer starten
         this.timerInterval = setInterval(() => {
             const diff = Date.now() - this.startTime;
             const min = Math.floor(diff / 60000);
@@ -27,26 +22,23 @@ const DriverLogic = {
             document.getElementById('hud-time').innerText = 
                 `${min.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
         }, 1000);
-
-        document.getElementById('btn-stop').onclick = () => this.stop();
     },
 
     update: function(pos) {
-        // 1. Speed (vom GPS in m/s -> km/h)
+        // 1. Speed
         let speedKm = 0;
         if(pos.coords.speed && pos.coords.speed > 0) {
             speedKm = Math.round(pos.coords.speed * 3.6);
         }
         document.getElementById('hud-speed').innerText = speedKm;
 
-        // 2. Distanz Berechnung (Haversine Formel für Genauigkeit)
+        // 2. Distanz
         if (this.lastPos) {
             const dist = this.calculateDistance(
                 this.lastPos.latitude, this.lastPos.longitude,
                 pos.coords.latitude, pos.coords.longitude
             );
-            
-            // Nur addieren wenn Bewegung > 5 Meter (Rauschunterdrückung)
+            // Schwelle gegen GPS-Rauschen (5m)
             if (dist > 0.005) { 
                 this.totalDist += dist;
                 document.getElementById('hud-dist').innerText = this.totalDist.toFixed(2);
@@ -56,45 +48,56 @@ const DriverLogic = {
         } else {
             this.lastPos = pos.coords;
         }
-
-        // 3. Speed Limit Check (Dummy für API)
-        this.checkSpeedLimit(pos.coords.latitude, pos.coords.longitude);
     },
 
     stop: function() {
         clearInterval(this.timerInterval);
         isDriveMode = false;
         
-        // Berechnung Durchschnitt
+        // Berechnung
         const durationHours = (Date.now() - this.startTime) / 3600000;
         const avgSpeed = durationHours > 0 ? Math.round(this.totalDist / durationHours) : 0;
 
-        // Daten ins Summary füllen
-        document.getElementById('sum-avg').innerText = avgSpeed + " km/h";
-        document.getElementById('sum-dist').innerText = this.totalDist.toFixed(2) + " km";
+        // Summary Füllen
+        document.getElementById('sum-avg').innerText = avgSpeed;
+        document.getElementById('sum-dist').innerText = this.totalDist.toFixed(2);
         document.getElementById('sum-time').innerText = document.getElementById('hud-time').innerText;
 
-        // Screen wechseln
-        switchScreen('summary-screen');
+        // UI Wechsel
+        document.getElementById('drive-screen').classList.remove('active', 'hidden');
+        document.getElementById('drive-screen').classList.add('hidden');
+        
+        document.getElementById('summary-screen').classList.remove('hidden');
+        setTimeout(() => document.getElementById('summary-screen').classList.add('active'), 10);
 
-        // Save/Discard Logik
-        document.getElementById('btn-save').onclick = () => {
+        // Save Logik
+        // Clone Node um alte Listener zu entfernen
+        let oldSave = document.getElementById('btn-save');
+        let newSave = oldSave.cloneNode(true);
+        oldSave.parentNode.replaceChild(newSave, oldSave);
+        
+        newSave.addEventListener('click', () => {
             GarageLogic.save({
                 date: Date.now(),
                 dist: this.totalDist,
                 time: document.getElementById('hud-time').innerText,
-                avg: avgSpeed,
-                path: this.historyPoints
+                avg: avgSpeed
             });
             showGarage();
-        };
-        document.getElementById('btn-discard').onclick = () => {
-            switchScreen('home-screen');
-        };
+        });
+
+        // Discard Logik
+        let oldDisc = document.getElementById('btn-discard');
+        let newDisc = oldDisc.cloneNode(true);
+        oldDisc.parentNode.replaceChild(newDisc, oldDisc);
+        
+        newDisc.addEventListener('click', () => {
+            hideGarage(); // Geht zurück zu Home
+        });
     },
 
     calculateDistance: function(lat1, lon1, lat2, lon2) {
-        const R = 6371; // Erdradius km
+        const R = 6371; 
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -102,16 +105,5 @@ const DriverLogic = {
                   Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         return R * c;
-    },
-
-    checkSpeedLimit: function(lat, lng) {
-        // HIER MÜSSTE EINE API HIN (z.B. Overpass Turbo)
-        // Kostenlose APIs sind sehr langsam oder ungenau.
-        // Mockup Funktion:
-        const limitUI = document.getElementById('speed-limit-ui');
-        // Zeige Limit zufällig an für Testzwecke (später echte API)
-        /* limitUI.classList.remove('hidden');
-        document.getElementById('limit-val').innerText = "50";
-        */
     }
 };
