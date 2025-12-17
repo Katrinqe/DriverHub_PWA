@@ -13,9 +13,13 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="style.css?v=13">
+    <link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
+
+    <div id="splash-screen">
+        <img src="logo.png" class="splash-logo">
+    </div>
 
     <div id="background-map"></div>
 
@@ -42,13 +46,11 @@
         </div>
         
         <div class="bottom-nav">
-            <div class="nav-item active" id="nav-home">
+            <div class="nav-item active-home" id="nav-home">
                 <i class="fa-solid fa-house"></i>
-                <span>Home</span>
             </div>
             <div class="nav-item" id="nav-garage">
                 <i class="fa-solid fa-warehouse"></i>
-                <span>Garage</span>
             </div>
         </div>
     </div>
@@ -86,7 +88,6 @@
     <div id="summary-screen" class="screen hidden">
         <div class="solid-bg">
             <h2 style="margin-top: 60px;">Drive Summary</h2>
-            
             <div class="summary-card glass-panel">
                 <div class="sum-row">
                     <div class="sum-item">
@@ -107,7 +108,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="summary-actions">
                 <button id="btn-save" class="btn-super-glass small">SAVE TO GARAGE</button>
                 <button id="btn-discard" class="btn-danger-glass small">DISCARD</button>
@@ -116,7 +116,9 @@
     </div>
 
     <div id="garage-screen" class="screen hidden">
-        <div id="garage-bg"></div> <div class="garage-header">
+        <div id="garage-bg"></div>
+        
+        <div class="garage-header">
             <h2>Garage</h2>
         </div>
 
@@ -136,11 +138,21 @@
         <div class="bottom-nav">
             <div class="nav-item" id="nav-home-from-garage">
                 <i class="fa-solid fa-house"></i>
-                <span>Home</span>
             </div>
-            <div class="nav-item active">
+            <div class="nav-item active-garage">
                 <i class="fa-solid fa-warehouse"></i>
-                <span>Garage</span>
+            </div>
+        </div>
+
+        <div id="detail-overlay" class="hidden">
+            <button class="close-detail-btn" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
+            <div id="detail-map"></div> <div class="detail-info">
+                <h3 id="det-date">Date</h3>
+                <div class="hud-row">
+                    <div class="hud-item"><span class="hud-label">DIST</span><span class="hud-value" id="det-dist">0</span></div>
+                    <div class="hud-item"><span class="hud-label">AVG</span><span class="hud-value" id="det-avg">0</span></div>
+                    <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="det-time">00:00</span></div>
+                </div>
             </div>
         </div>
     </div>
