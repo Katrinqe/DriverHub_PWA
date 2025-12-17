@@ -10,20 +10,33 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
 body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #fff; overflow: hidden; width: 100vw; height: 100vh; }
 
-/* MAP */
-#background-map { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; background-color: #000; }
+/* --- MAP ROTATION FIX --- */
+/* Wir müssen den Container vergrößern, damit beim Drehen keine Ecken fehlen */
+#background-map { 
+    position: fixed; 
+    top: -50vh; 
+    left: -50vw; 
+    width: 200vw; 
+    height: 200vh; 
+    z-index: 0; 
+    background-color: #000;
+    
+    /* Die Rotation wird hier animiert */
+    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform-origin: center center;
+}
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
-/* MARKER (HIER IST DER FIX: transition) */
+/* MARKER (Smooth Position) */
 .user-marker-wrap { 
     position: relative; 
     width: 40px; height: 40px; 
     display: flex; justify-content: center; align-items: center;
-    /* Der Magic Fix: Animiert die Bewegung über 1 Sekunde linear */
     transition: transform 1s linear; 
 }
 
+/* User Dot Design */
 .user-dot { width: 18px; height: 18px; background-color: #007aff; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 999; position: relative; }
 .user-pulse { position: absolute; top: 0; left: 0; width: 40px; height: 40px; background-color: rgba(0, 122, 255, 0.5); border-radius: 50%; z-index: 998; animation: pulse-animation 2s infinite; }
 @keyframes pulse-animation { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
