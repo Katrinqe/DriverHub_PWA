@@ -9,9 +9,10 @@
     <link rel="apple-touch-icon" href="logo.png">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=15">
+    <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
+
     <div id="splash-screen"><img src="logo.png" class="splash-logo"></div>
     
     <div id="background-map"></div>
@@ -20,7 +21,7 @@
         <div class="blur-zone-top">
             <div class="weather-pill interactive-element">
                 <i class="fa-solid fa-location-arrow loc-icon"></i>
-                <span id="loc-text">Search...</span>
+                <span id="loc-text">Suche...</span>
                 <span class="divider">|</span>
                 <i id="weather-icon" class="fa-solid fa-cloud"></i>
                 <span id="weather-temp">--°</span>
@@ -33,9 +34,16 @@
                 <i class="fa-solid fa-road"></i> START DRIVE
             </button>
         </div>
+        
         <div class="bottom-nav interactive-element">
-            <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i></div>
-            <div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i></div>
+            <div class="nav-item active-home" id="nav-home">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item" id="nav-garage">
+                <i class="fa-solid fa-warehouse"></i>
+                <span>Garage</span>
+            </div>
         </div>
     </div>
 
@@ -57,7 +65,7 @@
     <div id="summary-screen" class="screen hidden">
         <div class="solid-bg">
             <h2 style="margin-top: 60px;">Drive Summary</h2>
-            <div class="summary-card">
+            <div class="summary-card interactive-element">
                 <div class="sum-row">
                     <div class="sum-item"><label>AVG SPEED</label><h3 id="sum-avg">0</h3><small>km/h</small></div>
                     <div class="sum-item"><label>DISTANCE</label><h3 id="sum-dist">0.0</h3><small>km</small></div>
@@ -81,11 +89,19 @@
             <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
         </div>
         <div id="garage-list" class="garage-list interactive-element"></div>
+        
         <div class="bottom-nav interactive-element">
-            <div class="nav-item" id="nav-home-from-garage"><i class="fa-solid fa-house"></i></div>
-            <div class="nav-item active-garage"><i class="fa-solid fa-warehouse"></i></div>
+            <div class="nav-item" id="nav-home-from-garage">
+                <i class="fa-solid fa-house"></i>
+                <span>Home</span>
+            </div>
+            <div class="nav-item active-garage">
+                <i class="fa-solid fa-warehouse"></i>
+                <span>Garage</span>
+            </div>
         </div>
-        <div id="detail-overlay" class="hidden">
+
+        <div id="detail-overlay" class="hidden interactive-element">
             <button class="close-detail-btn interactive-element" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
             <div id="detail-map"></div>
             <div class="detail-info">
