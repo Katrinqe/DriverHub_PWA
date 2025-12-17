@@ -19,17 +19,12 @@ window.addEventListener('load', () => {
     
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
 
-    // BUTTON WIRING
+    // --- BUTTON WIRING (VEREINFACHT) ---
+    // Da es nur noch EINE Nav Bar gibt, brauchen wir keine IDs wie 'from-garage' mehr
+    
     document.getElementById('nav-home').onclick = showHome;
-    document.getElementById('nav-home-from-garage').onclick = showHome;
-    document.getElementById('nav-home-from-explore').onclick = showHome;
-    
     document.getElementById('nav-garage').onclick = showGarage;
-    document.getElementById('nav-garage-from-explore').onclick = showGarage;
-    
     document.getElementById('nav-explore').onclick = showExplore;
-    document.getElementById('nav-explore-from-garage').onclick = showExplore;
-    document.getElementById('nav-explore-active').onclick = showExplore;
 
     document.getElementById('btn-start').onclick = startDriveMode;
     document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
@@ -67,8 +62,6 @@ function initMap() {
         );
     }
 
-    // FIX FÜR SCHWIMMENDEN PUNKT
-    // Wenn User interagiert (Zoom/Pan), schalten wir die CSS-Animation aus
     map.on('zoomstart movestart', () => {
         isZooming = true;
         if(userMarker && userMarker.getElement()) {
@@ -77,7 +70,6 @@ function initMap() {
         if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden');
     });
 
-    // Wenn Interaktion fertig, Animation wieder an
     map.on('zoomend moveend', () => {
         isZooming = false;
         if(userMarker && userMarker.getElement()) {
@@ -141,6 +133,10 @@ function startDriveMode() {
     
     isDriveMode = true;
     switchScreen('drive-screen');
+    
+    // Global Nav ausblenden beim Fahren
+    document.getElementById('global-nav').classList.add('hidden');
+    
     map.dragging.enable();
     map.touchZoom.enable();
     
@@ -161,6 +157,8 @@ function showHome() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     
     switchScreen('home-screen');
+    updateNav('home'); // Nav Bar Highlights aktualisieren
+
     isDriveMode = false;
     
     const mapEl = document.getElementById('background-map');
@@ -169,7 +167,6 @@ function showHome() {
     
     map.dragging.disable();
     
-    // HOME PAGE RESET (Passiert auch wenn switchScreen abbricht, was gut ist)
     if(userMarker) {
         map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
     }
@@ -178,23 +175,40 @@ function showHome() {
 function showGarage() { 
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     switchScreen('garage-screen'); 
+    updateNav('garage');
     GarageLogic.render(); 
 }
 
 function showExplore() {
     switchScreen('explore-screen');
+    updateNav('explore');
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
 }
 
-// --- BUG FIX IN DIESER FUNKTION ---
+// --- HELPER FÜR NAV BAR HIGHLIGHTS ---
+function updateNav(activeId) {
+    // Nav Bar wieder sichtbar machen (falls wir aus dem Drive Mode kommen)
+    document.getElementById('global-nav').classList.remove('hidden');
+
+    const homeBtn = document.getElementById('nav-home');
+    const exploreBtn = document.getElementById('nav-explore');
+    const garageBtn = document.getElementById('nav-garage');
+
+    // Alle Klassen entfernen
+    homeBtn.classList.remove('active-home');
+    exploreBtn.classList.remove('active-map');
+    garageBtn.classList.remove('active-garage');
+
+    // Neue Klasse setzen
+    if(activeId === 'home') homeBtn.classList.add('active-home');
+    if(activeId === 'explore') exploreBtn.classList.add('active-map');
+    if(activeId === 'garage') garageBtn.classList.add('active-garage');
+}
+
 function switchScreen(id) {
     const nextScreen = document.getElementById(id);
-    
-    // GUARD: Wenn wir schon auf dem Ziel-Screen sind -> ABBRUCH der Animation
-    // Das verhindert, dass wir den aktuellen Screen ausblenden und nichts mehr sehen.
     if (nextScreen.classList.contains('active')) return;
 
-    // Alte Screens ausblenden
     const activeScreens = document.querySelectorAll('.screen.active');
     activeScreens.forEach(s => {
         s.classList.remove('active');
@@ -205,7 +219,6 @@ function switchScreen(id) {
         }, 350); 
     });
 
-    // Neuen Screen einblenden
     nextScreen.classList.remove('hidden');
     setTimeout(() => {
         nextScreen.classList.add('active');
