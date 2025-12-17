@@ -6,21 +6,27 @@ window.addEventListener('load', () => {
     initMap();
     initWeather();
     
-    // Nav Bar Logic
+    // NAVIGATION
     document.getElementById('nav-garage').addEventListener('click', showGarage);
     document.getElementById('nav-home').addEventListener('click', hideGarage);
     document.getElementById('nav-home-from-garage').addEventListener('click', hideGarage);
 
+    // DRIVE BUTTONS
     document.getElementById('btn-start').addEventListener('click', startDriveMode);
+    
+    // WICHTIG: Stop Button Listener
+    document.getElementById('btn-stop').addEventListener('click', () => {
+        DriverLogic.stop();
+    });
+
     document.getElementById('btn-recenter').addEventListener('click', () => centerMapOnUser(true));
 });
 
 function initMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
-        dragging: false, // Home Mode: Map fest
-        touchZoom: false,
-        doubleClickZoom: false
+        dragging: false, // Home: Fest
+        touchZoom: false, doubleClickZoom: false
     }).setView([51.1657, 10.4515], 15); // Start Zoom 15 (Weit)
     
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
@@ -30,6 +36,10 @@ function initMap() {
             enableHighAccuracy: true
         });
     }
+
+    map.on('dragstart', () => {
+        if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden');
+    });
 }
 
 function handlePositionUpdate(pos) {
@@ -45,12 +55,11 @@ function handlePositionUpdate(pos) {
 
     if (isDriveMode) {
         DriverLogic.update(pos);
-        // Im Drive Mode erlauben wir dem User zu schieben, folgen aber wenn er nicht schiebt
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
             map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
-        // Im Home Mode bewegen wir die Map sanft mit, aber behalten Zoom 15
+        // Home Mode: Sanft folgen ohne Zoom-Änderung
         map.panTo(newLatLng, { animate: true, duration: 2.0 });
     }
 }
@@ -58,25 +67,25 @@ function handlePositionUpdate(pos) {
 function startDriveMode() {
     isDriveMode = true;
     
-    // UI Switch
     document.getElementById('home-screen').classList.remove('active');
     document.getElementById('home-screen').classList.add('hidden');
     document.getElementById('drive-screen').classList.remove('hidden');
     setTimeout(() => document.getElementById('drive-screen').classList.add('active'), 10);
 
-    // Map Interaction erlauben & Zoom IN Animation
+    // Map freigeben & reinzoomen
     map.dragging.enable();
     map.touchZoom.enable();
+    map.doubleClickZoom.enable();
     
     if(userMarker) {
-        // ANIMATION: Von 15 auf 18 fliegen
+        // ZOOM IN EFFEKT
         map.flyTo(userMarker.getLatLng(), 18, { duration: 1.5 });
     }
 
     DriverLogic.start();
 }
 
-function centerMapOnUser(force) {
+function centerMapOnUser() {
     if(userMarker) {
         map.flyTo(userMarker.getLatLng(), 18, { duration: 0.8 });
         document.getElementById('btn-recenter').classList.add('hidden');
@@ -87,7 +96,6 @@ function showGarage() {
     document.querySelectorAll('.screen').forEach(s => {s.classList.remove('active'); s.classList.add('hidden')});
     document.getElementById('garage-screen').classList.remove('hidden');
     setTimeout(() => document.getElementById('garage-screen').classList.add('active'), 10);
-    
     GarageLogic.render();
 }
 
@@ -96,20 +104,11 @@ function hideGarage() {
     document.getElementById('home-screen').classList.remove('hidden');
     setTimeout(() => document.getElementById('home-screen').classList.add('active'), 10);
     
-    // Reset Map State for Home
     isDriveMode = false;
     map.dragging.disable();
+    // Zoom zurücksetzen auf Home-Level
     if(userMarker) map.flyTo(userMarker.getLatLng(), 15, { duration: 1.5 });
 }
-
-// Map Event für Recenter Button
-window.addEventListener('load', () => {
-    if(map) {
-        map.on('dragstart', () => {
-            if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden');
-        });
-    }
-});
 
 function initWeather() {
     if (!navigator.geolocation) return;
