@@ -11,17 +11,16 @@
     <link rel="apple-touch-icon" href="logo.png">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <link rel="stylesheet" href="style.css?v=8">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 
     <div id="background-map"></div>
-    
-    <div id="home-screen">
-        
+    <div id="garage-bg" class="hidden"></div> 
+
+    <div id="home-screen" class="screen active">
         <div class="blur-zone-top">
             <div class="weather-pill" id="weather-widget">
                 <i class="fa-solid fa-location-arrow loc-icon"></i>
@@ -34,18 +33,96 @@
                 <img src="logo.png" alt="DriverHub" class="dh-logo">
             </div>
         </div>
-
+        
         <div class="spacer-flex"></div>
-
+        
         <div class="blur-zone-bottom">
             <button id="btn-start" class="btn-super-glass">
                 <i class="fa-solid fa-road"></i> START DRIVE
             </button>
         </div>
+        
+        <button id="btn-garage-home" class="icon-btn-floating right-side"><i class="fa-solid fa-warehouse"></i></button>
+    </div>
 
+    <div id="drive-screen" class="screen hidden">
+        <div class="speed-limit-sign hidden" id="speed-limit-ui">
+            <span id="limit-val">50</span>
+        </div>
+
+        <button id="btn-recenter" class="icon-btn-floating hidden"><i class="fa-solid fa-crosshairs"></i></button>
+
+        <div class="drive-hud">
+            <div class="hud-row">
+                <div class="hud-item">
+                    <span class="hud-label">TIME</span>
+                    <span class="hud-value" id="hud-time">00:00</span>
+                </div>
+                <div class="hud-item main">
+                    <span class="hud-unit">km/h</span>
+                    <span class="hud-value big" id="hud-speed">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">DIST (km)</span>
+                    <span class="hud-value" id="hud-dist">0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="blur-zone-bottom">
+            <button id="btn-stop" class="btn-stop-glass">
+                <i class="fa-solid fa-stop"></i> END DRIVE
+            </button>
+        </div>
+    </div>
+
+    <div id="summary-screen" class="screen hidden">
+        <div class="content-center">
+            <h2>Drive Summary</h2>
+            <div class="summary-grid">
+                <div class="sum-box">
+                    <span class="hud-label">AVG SPEED</span>
+                    <h3 id="sum-avg">0 km/h</h3>
+                </div>
+                <div class="sum-box">
+                    <span class="hud-label">DISTANCE</span>
+                    <h3 id="sum-dist">0.0 km</h3>
+                </div>
+                <div class="sum-box">
+                    <span class="hud-label">TIME</span>
+                    <h3 id="sum-time">00:00</h3>
+                </div>
+            </div>
+            <div class="summary-actions">
+                <button id="btn-save" class="btn-super-glass small">SAVE TO GARAGE</button>
+                <button id="btn-discard" class="btn-text">Discard</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="garage-screen" class="screen hidden">
+        <div class="garage-header">
+            <h2>Garage</h2>
+            <button id="btn-close-garage" class="close-icon icon-btn-floating right-side" style="position:relative; top:0; left:0; right:0;"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="garage-stats">
+            <div class="g-stat">
+                <span id="total-drives">0</span>
+                <label>DRIVES</label>
+            </div>
+            <div class="g-stat">
+                <span id="total-km">0.0</span>
+                <label>KM TOTAL</label>
+            </div>
+        </div>
+        <div id="garage-list" class="garage-list">
+            </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="script.js"></script>
+    
+    <script src="garage.js"></script>
+    <script src="drive.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
