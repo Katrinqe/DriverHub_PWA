@@ -12,19 +12,27 @@
 body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #fff; overflow: hidden; width: 100vw; height: 100vh; }
 
 /* MAP */
-#background-map { position: fixed; top: -50vh; left: -50vw; width: 200vw; height: 200vh; z-index: 0; background-color: #000; transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); transform-origin: center center; }
+#background-map { 
+    position: fixed; 
+    top: -50vh; left: -50vw; 
+    width: 200vw; height: 200vh; 
+    z-index: 0; 
+    background-color: #000; 
+    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); 
+    transform-origin: center center; 
+}
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
-/* MARKER FIX: Standardmäßig KEINE Transition, damit er beim Zoomen nicht schwimmt */
+/* MARKER (User Position) */
 .user-marker-wrap { 
     position: relative; 
     width: 40px; height: 40px; 
     display: flex; justify-content: center; align-items: center; 
-    transition: none; /* WICHTIG: Standard ist aus */
+    transition: none; /* Standard: Aus (verhindert Schwimmen beim Zoom) */
 }
 
-/* Diese Klasse fügen wir per JS hinzu, wenn GPS sich ändert */
+/* Diese Klasse wird per JS gesetzt für smooth movement */
 .user-marker-wrap.smooth {
     transition: transform 1s linear; 
 }
@@ -33,7 +41,33 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .user-pulse { position: absolute; top: 0; left: 0; width: 40px; height: 40px; background-color: rgba(0, 122, 255, 0.5); border-radius: 50%; z-index: 998; animation: pulse-animation 2s infinite; }
 @keyframes pulse-animation { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
 
-/* SCREENS TRANSITION */
+/* MAP ICONS (Explore Page) */
+.custom-map-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    font-size: 1.2rem;
+    border: 2px solid white;
+    width: 30px; height: 30px; /* Explizite Größe für Flex-Center */
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.custom-map-icon:active { transform: scale(1.2); }
+
+/* Icon Varianten */
+.icon-gas { background: linear-gradient(135deg, #ff9500, #ffcc00); }
+.icon-cam { background: linear-gradient(135deg, #ff3b30, #ff453a); animation: slow-pulse 2s infinite; }
+.icon-parking { background: linear-gradient(135deg, #007aff, #5ac8fa); }
+
+@keyframes slow-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+}
+
+/* SCREENS TRANSITION (Cross-Fade Logic) */
 .hidden { display: none !important; }
 
 .screen { 
@@ -62,13 +96,13 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .solid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; z-index: 50; pointer-events: auto; overflow-y: auto; }
 .spacer-flex { flex: 1; }
 
-/* UI */
+/* UI ELEMENTS */
 .blur-zone-top { width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
 .blur-zone-bottom { width: 100%; padding-bottom: 120px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); display: flex; justify-content: center; pointer-events: none; }
 .weather-pill { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 18px; border-radius: 30px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; pointer-events: auto; min-width: 150px; justify-content: center; }
 .dh-logo { width: 120px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
 
-/* BOTTOM NAV */
+/* GLOBAL BOTTOM NAV */
 .bottom-nav { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 260px; height: 65px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; display: flex; justify-content: space-around; align-items: center; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.6); pointer-events: auto; }
 .nav-item { color: #666; width: 33%; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.2s; cursor: pointer; height: 100%; }
 .nav-item i { font-size: 1.2rem; margin-bottom: 3px; }
@@ -77,7 +111,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* EXPLORE UI */
+/* EXPLORE UI TOP */
 .explore-top-ui {
     width: 100%;
     padding: 20px;
@@ -152,7 +186,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 #speed-limit.hidden { transform: scale(0); opacity: 0; }
 #speed-limit span { color: #111; font-weight: 800; font-size: 1.4rem; letter-spacing: -1px; }
 
-/* HUD */
+/* HUD & FLOATING BUTTONS */
 .drive-hud-top { margin-top: calc(env(safe-area-inset-top) + 20px); margin-left: 20px; margin-right: 20px; padding: 15px; background: rgba(0,0,0,0.2); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); border-radius: 50px; pointer-events: auto; }
 .hud-row { display: flex; justify-content: space-between; align-items: flex-end; padding: 0 10px; }
 .hud-item { text-align: center; width: 30%; }
