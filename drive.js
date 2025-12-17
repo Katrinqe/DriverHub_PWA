@@ -8,6 +8,7 @@ const DriverLogic = {
         document.getElementById('hud-dist').innerText = "0.00";
         document.getElementById('hud-speed').innerText = "0";
 
+        if(this.timerInterval) clearInterval(this.timerInterval);
         this.timerInterval = setInterval(() => {
             const diff = Date.now() - this.startTime;
             const min = Math.floor(diff / 60000);
@@ -43,12 +44,23 @@ const DriverLogic = {
 
         switchScreen('summary-screen');
 
-        // Buttons sicher neu binden
-        document.getElementById('btn-save').onclick = () => {
-            GarageLogic.save({ date: Date.now(), dist: this.totalDist, time: document.getElementById('hud-time').innerText, avg: avgSpeed, path: this.historyPoints });
+        // DIREKTE ZUWEISUNG (Kein CloneNode, da das Events killen kann)
+        const btnSave = document.getElementById('btn-save');
+        const btnDiscard = document.getElementById('btn-discard');
+
+        // Alte Listener entfernen durch neue Funktion Zuweisung
+        btnSave.onclick = () => {
+            GarageLogic.save({ 
+                date: Date.now(), 
+                dist: this.totalDist, 
+                time: document.getElementById('hud-time').innerText, 
+                avg: avgSpeed, 
+                path: this.historyPoints 
+            });
             showGarage();
         };
-        document.getElementById('btn-discard').onclick = () => {
+
+        btnDiscard.onclick = () => {
             hideGarage();
         };
     },
