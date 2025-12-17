@@ -2,8 +2,9 @@ let map, userMarker;
 let isDriveMode = false;
 let watchId = null;
 let isZooming = false; 
+let currentRotation = 0; // Aktuelle Rotation speichern
 
-// Variablen für Long-Press (Stop Button)
+// Variablen für Long-Press
 let pressTimer = null;
 const LONG_PRESS_DURATION = 1500; 
 
@@ -22,23 +23,17 @@ window.addEventListener('load', () => {
     document.getElementById('btn-start').onclick = startDriveMode;
     document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
 
-    // --- STOP BUTTON LONG PRESS LOGIC ---
+    // Stop Button
     const btnStop = document.getElementById('btn-stop');
-
     function startPress(e) {
         if (e.type === 'touchstart') e.preventDefault(); 
-        btnStop.classList.add('holding'); // Startet CSS Animation
-        pressTimer = setTimeout(() => {
-            DriverLogic.stop();
-            resetPress(); 
-        }, LONG_PRESS_DURATION);
+        btnStop.classList.add('holding'); 
+        pressTimer = setTimeout(() => { DriverLogic.stop(); resetPress(); }, LONG_PRESS_DURATION);
     }
-
     function resetPress() {
         if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
         btnStop.classList.remove('holding'); 
     }
-
     btnStop.addEventListener('mousedown', startPress);
     btnStop.addEventListener('touchstart', startPress);
     btnStop.addEventListener('mouseup', resetPress);
@@ -69,15 +64,47 @@ function initMap() {
 
 function handlePositionUpdate(pos) {
     const newLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+    const heading = pos.coords.heading; 
+    const speedKm = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
 
     if (!userMarker) {
-        // Marker erstellen
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
         map.setView(newLatLng, 14);
     } else {
-        // HIER passiert die Magie: Dank CSS 'transition' gleitet der Marker jetzt zur neuen Position
         userMarker.setLatLng(newLatLng);
+    }
+
+    // --- MAP ROTATION LOGIC ---
+    const mapEl = document.getElementById('background-map');
+    
+    if (isDriveMode) {
+        // Nur rotieren, wenn wir fahren (> 5 km/h) und ein valides Heading haben
+        // Im Stand dreht sich GPS oft im Kreis, das wollen wir verhindern
+        if (heading !== null && !isNaN(heading) && speedKm > 5) {
+            
+            // "Shortest Path" Berechnung:
+            // Wenn wir von 350° auf 10° drehen, soll er nicht 340° rückwärts drehen,
+            // sondern 20° vorwärts.
+            let targetRot = -heading; // Negativ, weil Map gegen Uhrzeigersinn drehen muss
+            
+            // Differenz berechnen
+            let diff = targetRot - currentRotation;
+            
+            // Normalisieren auf -180 bis +180
+            while (diff < -180) diff += 360;
+            while (diff > 180) diff -= 360;
+            
+            currentRotation += diff; // Neue Rotation setzen
+            
+            mapEl.style.transform = `rotate(${currentRotation}deg)`;
+        }
+    } else {
+        // Im Home Mode immer genordet (0°)
+        if (currentRotation !== 0) {
+            currentRotation = 0;
+            mapEl.style.transform = `rotate(0deg)`;
+        }
     }
 
     if (isZooming) return;
@@ -86,7 +113,6 @@ function handlePositionUpdate(pos) {
         DriverLogic.update(pos);
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
             const dist = map.getCenter().distanceTo(newLatLng);
-            // Karte folgt synchron (1.0s Dauer passt zur CSS Transition)
             if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
@@ -114,10 +140,20 @@ function centerMapOnUser() {
     }
 }
 
-function showGarage() { switchScreen('garage-screen'); GarageLogic.render(); }
+function showGarage() { 
+    switchScreen('garage-screen'); 
+    GarageLogic.render(); 
+}
+
 function hideGarage() { 
     switchScreen('home-screen'); 
-    isDriveMode = false;
+    isDriveMode = false; // Beendet Rotation
+    
+    // Reset Rotation beim Verlassen
+    const mapEl = document.getElementById('background-map');
+    currentRotation = 0;
+    mapEl.style.transform = `rotate(0deg)`;
+    
     map.dragging.disable();
     if(userMarker) map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
 }
