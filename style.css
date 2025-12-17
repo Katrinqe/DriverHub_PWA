@@ -44,14 +44,14 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-home { color: var(--primary); text-shadow: 0 0 15px rgba(0, 122, 255, 0.6); }
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 
-/* --- BUTTONS (NEU DESIGNT: OVAL, GLASS, NEUMORPH) --- */
+/* --- BUTTONS UPDATE: TRANSPARENTER --- */
 
 /* BLAU: Start & Save */
 .btn-super-glass { 
     width: 100%; 
-    max-width: 240px; /* Minimal kleiner */
-    height: 52px;     /* Minimal flacher */
-    border-radius: 50px; /* Schön Oval */
+    max-width: 240px;
+    height: 52px;
+    border-radius: 50px;
     font-size: 1.05rem; 
     font-weight: 800; 
     letter-spacing: 0.5px;
@@ -59,35 +59,34 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     border: none; 
     cursor: pointer; 
     
-    /* Gradient + Glass */
-    background: linear-gradient(135deg, rgba(0, 122, 255, 0.85), rgba(0, 210, 255, 0.65)); 
-    backdrop-filter: blur(15px); 
-    -webkit-backdrop-filter: blur(15px);
+    /* MEHR TRANSPARENZ (0.5 statt 0.85) */
+    background: linear-gradient(135deg, rgba(0, 122, 255, 0.5), rgba(0, 210, 255, 0.3)); 
+    
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
 
-    /* Neumorph Lichtkanten */
-    border-top: 1px solid rgba(255, 255, 255, 0.5);
-    border-bottom: 1px solid rgba(0, 80, 255, 0.4);
-    border-left: 1px solid rgba(255, 255, 255, 0.2);
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    /* Lichtkanten bleiben für 3D Effekt */
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid rgba(0, 80, 255, 0.3);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
 
-    /* Tiefe & Schatten */
     box-shadow: 
-        0 10px 25px rgba(0, 122, 255, 0.35), /* Äußerer Glow */
-        inset 0 2px 3px rgba(255, 255, 255, 0.3), /* Oberer Glanz */
-        inset 0 -2px 5px rgba(0, 0, 0, 0.1); /* Untere Tiefe */
+        0 10px 30px rgba(0, 122, 255, 0.25), /* Sanfterer Glow */
+        inset 0 2px 5px rgba(255, 255, 255, 0.2);
     
     transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); 
     pointer-events: auto; 
 }
 .btn-super-glass:active { 
     transform: scale(0.97); 
-    box-shadow: 0 5px 15px rgba(0, 122, 255, 0.25); 
+    box-shadow: 0 5px 15px rgba(0, 122, 255, 0.2); 
 }
 
-/* Stop Button (bleibt wie er war, da er funktioniert und gut aussieht) */
+/* Stop Button */
 .btn-stop-glass { width: 100%; max-width: 200px; height: 50px; border-radius: 20px; background: rgba(0,0,0,0.5); border: 1px solid var(--danger); backdrop-filter: blur(10px); color: var(--danger); font-weight: 800; font-size: 1rem; pointer-events: auto; }
 
-/* ROT: Discard (Neues Design passend zu Start/Save) */
+/* ROT: Discard */
 .btn-danger-glass { 
     width: 100%; 
     max-width: 240px; 
@@ -101,29 +100,27 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     color: white; 
     border: none;
 
-    /* Rot Gradient + Glass */
-    background: linear-gradient(135deg, rgba(255, 59, 48, 0.85), rgba(255, 100, 80, 0.65)); 
-    backdrop-filter: blur(15px); 
-    -webkit-backdrop-filter: blur(15px);
+    /* MEHR TRANSPARENZ */
+    background: linear-gradient(135deg, rgba(255, 59, 48, 0.5), rgba(255, 100, 80, 0.3)); 
+    
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
 
-    /* Neumorph Lichtkanten */
-    border-top: 1px solid rgba(255, 255, 255, 0.5);
-    border-bottom: 1px solid rgba(180, 0, 0, 0.4);
-    border-left: 1px solid rgba(255, 255, 255, 0.2);
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid rgba(180, 0, 0, 0.3);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
 
-    /* Tiefe & Schatten */
     box-shadow: 
-        0 10px 25px rgba(255, 59, 48, 0.35),
-        inset 0 2px 3px rgba(255, 255, 255, 0.3),
-        inset 0 -2px 5px rgba(0, 0, 0, 0.1);
+        0 10px 30px rgba(255, 59, 48, 0.25),
+        inset 0 2px 5px rgba(255, 255, 255, 0.2);
     
     transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); 
     pointer-events: auto; 
 }
 .btn-danger-glass:active { 
     transform: scale(0.97); 
-    box-shadow: 0 5px 15px rgba(255, 59, 48, 0.25); 
+    box-shadow: 0 5px 15px rgba(255, 59, 48, 0.2); 
 }
 
 /* HUD */
