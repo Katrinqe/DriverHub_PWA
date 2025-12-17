@@ -42,7 +42,7 @@ const DriverLogic = {
                 this.totalDist += dist;
                 document.getElementById('hud-dist').innerText = this.totalDist.toFixed(2);
                 this.lastPos = pos.coords;
-                // WICHTIG: Jetzt speichern wir auch die ZEIT (timestamp)
+                // Speichert Zeit für den Graphen
                 this.historyPoints.push({lat: lat, lng: lng, speed: speedKm, time: now});
             }
         } else {
@@ -112,9 +112,13 @@ const DriverLogic = {
 
         btnSave.onclick = () => {
             GarageLogic.save({ date: Date.now(), dist: this.totalDist, time: finalTime, avg: avgSpeed, path: this.historyPoints, startTime: this.startTime });
-            showGarage();
+            showGarage(); // Das existiert in app.js
         };
-        btnDiscard.onclick = () => { hideGarage(); };
+        
+        // HIER WAR DER FEHLER: hideGarage() gab es nicht mehr.
+        btnDiscard.onclick = () => { 
+            if(typeof showHome === 'function') showHome(); // Jetzt rufen wir die existierende Funktion auf
+        };
     },
 
     calculateDistance: function(lat1, lon1, lat2, lon2) {
