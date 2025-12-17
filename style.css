@@ -3,7 +3,7 @@
 :root {
     --primary: #007aff;
     --garage-icon-color: #bf5af2;
-    --map-icon-color: #30d158; /* Grün für Map Tab */
+    --map-icon-color: #30d158; 
     --danger: #ff3b30;
     --bg-dark: #000;
 }
@@ -22,10 +22,34 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .user-pulse { position: absolute; top: 0; left: 0; width: 40px; height: 40px; background-color: rgba(0, 122, 255, 0.5); border-radius: 50%; z-index: 998; animation: pulse-animation 2s infinite; }
 @keyframes pulse-animation { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
 
-/* SCREENS */
+/* --- SCREENS TRANSITION FIX --- */
 .hidden { display: none !important; }
-.screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; z-index: 10; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
-.screen.active { z-index: 20; opacity: 1; }
+
+.screen { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+    display: flex; flex-direction: column; 
+    z-index: 10; 
+    opacity: 0; 
+    /* Startzustand: Leicht verkleinert für den "Pop-In" Effekt */
+    transform: scale(0.98); 
+    pointer-events: none; 
+    /* Butterweiche Animation (Ease-Out-Quart) */
+    transition: opacity 0.35s cubic-bezier(0.25, 1, 0.5, 1), transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.screen.active { 
+    z-index: 20; 
+    opacity: 1; 
+    transform: scale(1); /* Endzustand: Volle Größe */
+}
+
+/* Wenn ein Screen ausgeblendet wird, bleibt er kurz sichtbar für den Cross-Fade */
+.screen.fading-out {
+    opacity: 0;
+    transform: scale(1.02); /* Leichter Zoom beim Weggehen */
+    z-index: 15;
+}
+
 .interactive-element { pointer-events: auto !important; }
 .solid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; z-index: 50; pointer-events: auto; overflow-y: auto; }
 .spacer-flex { flex: 1; }
@@ -37,7 +61,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .dh-logo { width: 120px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
 
 /* BOTTOM NAV */
-.bottom-nav { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 260px; /* Breiter für 3 Icons */ height: 65px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; display: flex; justify-content: space-around; align-items: center; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.6); pointer-events: auto; }
+.bottom-nav { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 260px; height: 65px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; display: flex; justify-content: space-around; align-items: center; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.6); pointer-events: auto; }
 .nav-item { color: #666; width: 33%; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.2s; cursor: pointer; height: 100%; }
 .nav-item i { font-size: 1.2rem; margin-bottom: 3px; }
 .nav-item span { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -45,7 +69,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* --- EXPLORE UI (NEU) --- */
+/* EXPLORE UI */
 .explore-top-ui {
     width: 100%;
     padding: 20px;
@@ -54,10 +78,8 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     flex-direction: column;
     gap: 15px;
     background: linear-gradient(to bottom, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0) 100%);
-    pointer-events: none; /* Klicks gehen durch auf Map, außer auf Elemente */
+    pointer-events: none; 
 }
-
-/* Suchleiste */
 .search-bar-glass {
     width: 100%;
     height: 50px;
@@ -77,11 +99,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     font-size: 1rem; width: 100%; font-family: 'Inter', sans-serif;
 }
 .search-bar-glass input::placeholder { color: #888; }
-
-/* Filter Chips Row */
-.filter-row {
-    display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; pointer-events: auto;
-}
+.filter-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; pointer-events: auto; }
 .filter-chip {
     background: rgba(40, 40, 40, 0.6);
     backdrop-filter: blur(20px);
