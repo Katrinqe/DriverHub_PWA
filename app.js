@@ -4,10 +4,12 @@ let watchId = null;
 let isZooming = false; 
 let currentRotation = 0; 
 
+// Variablen für Long-Press (Stop Button)
 let pressTimer = null;
 const LONG_PRESS_DURATION = 1500; 
 
 window.addEventListener('load', () => {
+    // Splash Screen Logik
     setTimeout(() => {
         const s = document.getElementById('splash-screen');
         if(s) { s.style.opacity = '0'; setTimeout(() => s.classList.add('hidden'), 800); }
@@ -15,10 +17,13 @@ window.addEventListener('load', () => {
 
     initMap();
     initWeather();
-    if(typeof ExploreLogic !== 'undefined') ExploreLogic.init(); // EXPLORE LADEN
+    
+    // Explore Modul laden, falls vorhanden
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
 
-    // --- NAVIGATION WIRING (Buttons unten) ---
-    // Home Button
+    // --- BUTTON WIRING ---
+    
+    // Home Button (von überall)
     document.getElementById('nav-home').onclick = showHome;
     document.getElementById('nav-home-from-garage').onclick = showHome;
     document.getElementById('nav-home-from-explore').onclick = showHome;
@@ -27,15 +32,16 @@ window.addEventListener('load', () => {
     document.getElementById('nav-garage').onclick = showGarage;
     document.getElementById('nav-garage-from-explore').onclick = showGarage;
     
-    // Explore Button (NEU)
+    // Explore / Map Button
     document.getElementById('nav-explore').onclick = showExplore;
     document.getElementById('nav-explore-from-garage').onclick = showExplore;
-    document.getElementById('nav-explore-active').onclick = showExplore; // Bleibt auf Explore
+    document.getElementById('nav-explore-active').onclick = showExplore;
 
-    // Drive Start
+    // Drive Start & Recenter
     document.getElementById('btn-start').onclick = startDriveMode;
     document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
 
+    // Stop Button mit Long-Press Logik
     const btnStop = document.getElementById('btn-stop');
     function startPress(e) {
         if (e.type === 'touchstart') e.preventDefault(); 
@@ -79,6 +85,7 @@ function handlePositionUpdate(pos) {
     const heading = pos.coords.heading; 
     const speedKm = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
 
+    // Marker Update (Animation passiert via CSS Transition)
     if (!userMarker) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
@@ -87,54 +94,61 @@ function handlePositionUpdate(pos) {
         userMarker.setLatLng(newLatLng);
     }
 
+    // --- MAP ROTATION LOGIC ---
     const mapEl = document.getElementById('background-map');
     
     if (isDriveMode) {
+        // Nur rotieren wenn wir fahren (> 5 km/h) um Zittern zu vermeiden
         if (heading !== null && !isNaN(heading) && speedKm > 5) {
             let targetRot = -heading; 
+            // Shortest Path Berechnung für sanfte Drehung
             let diff = targetRot - currentRotation;
             while (diff < -180) diff += 360;
             while (diff > 180) diff -= 360;
             currentRotation += diff; 
-            mapEl.style.transform = `rotate(${currentRotation}deg)`;
+            if(mapEl) mapEl.style.transform = `rotate(${currentRotation}deg)`;
         }
     } else {
-        // Im Home Mode immer genordet (0°)
+        // Im Home/Explore Mode immer genordet (0°)
         if (currentRotation !== 0) {
             currentRotation = 0;
-            mapEl.style.transform = `rotate(0deg)`;
+            if(mapEl) mapEl.style.transform = `rotate(0deg)`;
         }
     }
 
     if (isZooming) return;
 
-    // Map Tracking Logik
+    // --- TRACKING LOGIC ---
     if (isDriveMode) {
         DriverLogic.update(pos);
+        // Wenn Recenter aktiv ist (Button hidden), folge dem User hart
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
             const dist = map.getCenter().distanceTo(newLatLng);
             if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
-        // Wenn NICHT Explore Mode, folge dem User locker
-        // Im Explore Mode darf die Map nicht automatisch springen!
+        // Wenn wir NICHT im Drive Mode sind...
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
+        
+        // ...und NICHT im Explore Mode sind (also Home Screen):
         if (!isExplore) {
+            // Nur sanft folgen, wenn der Abstand zu groß wird
             const dist = map.getCenter().distanceTo(newLatLng);
             if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
         }
+        // Im Explore Mode machen wir gar nichts automatisch (User hat Kontrolle)
     }
 }
 
 function startDriveMode() {
-    // Falls wir aus Explore kommen: Cleanup
-    ExploreLogic.leave();
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave(); // Aufräumen falls nötig
     
     isDriveMode = true;
     switchScreen('drive-screen');
     map.dragging.enable();
     map.touchZoom.enable();
     
+    // Beim Start einmal reinzoomen und zentrieren
     if(userMarker) {
         map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.5 });
     }
@@ -149,32 +163,36 @@ function centerMapOnUser() {
 }
 
 function showHome() {
-    ExploreLogic.leave(); // Sicherstellen, dass Map wieder gesperrt wird
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
+    
     switchScreen('home-screen');
     isDriveMode = false;
     
     // Reset Rotation
     const mapEl = document.getElementById('background-map');
     currentRotation = 0;
-    mapEl.style.transform = `rotate(0deg)`;
+    if(mapEl) mapEl.style.transform = `rotate(0deg)`;
     
     map.dragging.disable();
-    if(userMarker) map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
+    
+    // FIX: Kein harter Zoom (setView), nur sanftes Zurückgleiten (panTo)
+    // Wir behalten den Zoom-Level bei, den der User evtl. eingestellt hat
+    if(userMarker) {
+        map.panTo(userMarker.getLatLng(), { animate: true, duration: 1.5 });
+    }
 }
 
 function showGarage() { 
-    ExploreLogic.leave();
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     switchScreen('garage-screen'); 
     GarageLogic.render(); 
 }
 
 function showExplore() {
-    // Hier rufen wir das neue Modul auf
     switchScreen('explore-screen');
-    ExploreLogic.enter();
+    // Explore Logic aktivieren (Map freigeben etc.)
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
 }
-
-function hideGarage() { showHome(); } // Alias für alte Buttons
 
 function switchScreen(id) {
     document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.classList.add('hidden'); });
