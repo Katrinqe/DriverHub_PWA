@@ -16,63 +16,67 @@ body {
     overflow: hidden; width: 100vw; height: 100vh;
 }
 
-/* --- 1. MAP (KEIN FILTER!) --- */
+/* --- 1. MAP (ORIGINAL) --- */
 #background-map {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 0;
-    background-color: #000;
+    z-index: 0; background-color: #000;
 }
 .leaflet-tile-pane { filter: none !important; }
 
-/* Screens & Helpers */
+/* Screens */
 .hidden { display: none !important; }
 .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; z-index: 10; }
 .screen.active { z-index: 20; }
 .spacer-flex { flex: 1; }
-.solid-bg {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; display: flex; flex-direction: column; align-items: center; z-index: 50;
+.solid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; z-index: 50; }
+
+/* Helpers */
+.glass-panel {
+    background: rgba(30, 30, 30, 0.4);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
 }
 
 /* --- 2. HOME UI --- */
 .blur-zone-top {
-    width: 100%; padding: 20px;
-    padding-top: calc(env(safe-area-inset-top) + 20px);
+    width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px);
     background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
-    display: flex; flex-direction: column; align-items: center; /* ZENTRIERT ALLES */
+    display: flex; flex-direction: column; align-items: center;
 }
 .blur-zone-bottom {
-    width: 100%; padding-bottom: 100px; /* Platz für Nav Bar */
+    width: 100%; padding-bottom: 120px;
     background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
     display: flex; justify-content: center;
 }
 
 .weather-pill {
     background: rgba(255,255,255,0.15); backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.2);
-    padding: 8px 18px; border-radius: 30px;
-    display: flex; align-items: center; gap: 10px;
-    font-size: 0.85rem; font-weight: 600; margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.2); padding: 8px 18px; border-radius: 30px;
+    display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px;
 }
+.loc-icon { color: var(--primary); }
 .dh-logo { width: 120px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
 
-/* --- 3. NAV BAR (OVAL) --- */
+/* --- 3. NAV BAR (OVAL & TEXT) --- */
 .bottom-nav {
-    position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-    width: 200px; height: 60px;
-    background: rgba(30, 30, 30, 0.8);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    width: 240px; height: 70px; /* Etwas höher für Text */
+    background: rgba(20, 20, 20, 0.75);
+    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 40px;
+    border-radius: 35px;
     display: flex; justify-content: space-around; align-items: center;
-    z-index: 100; box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 .nav-item {
-    color: #666; font-size: 1.5rem; width: 50%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
+    color: #888; width: 50%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
     transition: 0.2s;
 }
-.nav-item.active { color: var(--primary); text-shadow: 0 0 10px rgba(0, 122, 255, 0.4); }
+.nav-item i { font-size: 1.4rem; margin-bottom: 4px; }
+.nav-item span { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.nav-item.active { color: var(--primary); text-shadow: 0 0 15px rgba(0, 122, 255, 0.5); }
 
 /* --- 4. START BUTTON --- */
 .btn-super-glass {
@@ -84,14 +88,11 @@ body {
 }
 .btn-super-glass:active { transform: scale(0.96); }
 
-/* --- 5. DRIVE HUD (OBEN) --- */
+/* --- 5. DRIVE HUD (OBEN & DURCHSICHTIG) --- */
 .drive-hud-top {
     margin-top: calc(env(safe-area-inset-top) + 20px);
     margin-left: 20px; margin-right: 20px;
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.4); /* Leichter */
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);
+    padding: 15px; /* style durch .glass-panel */
 }
 .hud-row { display: flex; justify-content: space-between; align-items: flex-end; }
 .hud-item { text-align: center; width: 30%; }
@@ -103,20 +104,20 @@ body {
 
 .btn-stop-glass {
     width: 100%; max-width: 200px; height: 50px; border-radius: 20px;
-    background: rgba(20,20,20,0.8); border: 1px solid var(--danger);
+    background: rgba(0,0,0,0.5); border: 1px solid var(--danger);
+    backdrop-filter: blur(10px);
     color: var(--danger); font-weight: 800; font-size: 1rem;
+    box-shadow: 0 5px 20px rgba(255, 59, 48, 0.2);
 }
 .icon-btn-floating {
-    position: absolute; top: 180px; right: 20px; /* Rechts positioniert */
+    position: absolute; top: 200px; right: 20px;
     width: 45px; height: 45px; border-radius: 50%;
     background: rgba(0,0,0,0.6); border: 1px solid #444; color: white;
+    z-index: 50; display: flex; align-items: center; justify-content: center;
 }
 
 /* --- 6. SUMMARY --- */
-.summary-card {
-    width: 90%; background: #1c1c1e; border-radius: 20px; padding: 25px;
-    border: 1px solid #333; margin: 30px 0;
-}
+.summary-card { width: 90%; margin: 30px 0; padding: 25px; }
 .sum-row { display: flex; justify-content: space-between; }
 .sum-item { text-align: center; flex: 1; }
 .sum-item label { font-size: 0.7rem; color: #888; display: block; margin-bottom: 5px; }
@@ -128,45 +129,30 @@ body {
 }
 .summary-actions { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
 
-/* --- 7. GARAGE (NEU) --- */
-.garage-bg-layer {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+/* --- 7. GARAGE (DEZENT) --- */
+#garage-bg {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
     background: #000;
-    background-image: radial-gradient(circle at 50% 0%, rgba(0, 122, 255, 0.2), transparent 70%);
-    z-index: -1;
+    /* Sehr dezenter blauer Schein nur oben */
+    background-image: radial-gradient(circle at 50% -10%, rgba(0, 122, 255, 0.1), transparent 50%);
 }
 .garage-header { padding: 50px 20px 20px; text-align: center; }
-.garage-header h2 { font-size: 1.8rem; margin: 0; }
-
-.garage-total-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    margin: 0 20px 20px; padding: 20px; border-radius: 20px;
-    display: flex; justify-content: space-around;
-    backdrop-filter: blur(10px);
-}
+.garage-total-card { margin: 0 20px 20px; padding: 20px; display: flex; justify-content: space-around; }
 .g-stat { text-align: center; }
 .g-stat span { font-size: 1.8rem; font-weight: 800; color: var(--primary); display: block; }
 .g-stat label { font-size: 0.7rem; color: #888; }
-
 .garage-list { padding: 0 20px 100px; overflow-y: auto; height: 100%; }
 
-/* Fahrt Karte */
+/* Drive Card */
 .drive-card {
-    background: rgba(28, 28, 30, 0.6);
-    border: 1px solid rgba(255,255,255,0.08);
-    backdrop-filter: blur(15px);
+    background: rgba(255, 255, 255, 0.05); /* Glasig */
+    border: 1px solid rgba(255,255,255,0.05);
     border-radius: 16px; padding: 15px; margin-bottom: 12px;
     display: flex; justify-content: space-between; align-items: center;
 }
-.dc-info h4 { margin: 0 0 4px; font-size: 1rem; }
-.dc-info p { margin: 0; font-size: 0.8rem; color: #888; }
-.dc-right { text-align: right; display: flex; align-items: center; gap: 15px; }
-.dc-km { display: block; font-weight: 700; color: var(--primary); font-size: 1.1rem; }
 .btn-delete-drive { background: none; border: none; color: #555; font-size: 1rem; padding: 5px; }
-.btn-delete-drive:active { color: var(--danger); }
 
-/* Marker */
+/* MARKER */
 .user-marker-wrap { position: relative; display: flex; justify-content: center; align-items: center; }
 .user-dot { width: 18px; height: 18px; background-color: #007aff; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 999; }
 .user-pulse { position: absolute; width: 40px; height: 40px; background-color: rgba(0, 122, 255, 0.5); border-radius: 50%; z-index: 998; animation: pulse-animation 2s infinite; }
