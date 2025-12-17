@@ -4,16 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DriverHub 4.0</title>
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="logo.png">
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <link rel="stylesheet" href="style.css?v=23">
+    <link rel="stylesheet" href="style.css?v=24">
 </head>
 <body>
 
@@ -39,14 +36,8 @@
             </button>
         </div>
         <div class="bottom-nav interactive-element">
-            <div class="nav-item active-home" id="nav-home">
-                <i class="fa-solid fa-house"></i>
-                <span>Home</span>
-            </div>
-            <div class="nav-item" id="nav-garage">
-                <i class="fa-solid fa-warehouse"></i>
-                <span>Garage</span>
-            </div>
+            <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
         </div>
     </div>
 
@@ -68,9 +59,7 @@
     <div id="summary-screen" class="screen hidden">
         <div class="solid-bg">
             <h2 style="margin-top: 50px; margin-bottom: 20px;">Drive Summary</h2>
-            
             <div id="summary-map" class="interactive-element"></div>
-
             <div class="summary-card interactive-element">
                 <div class="sum-row">
                     <div class="sum-item"><label>AVG SPEED</label><h3 id="sum-avg">0</h3><small>km/h</small></div>
@@ -81,7 +70,6 @@
                     <div class="sum-item"><label>DURATION</label><h3 id="sum-time">00:00</h3></div>
                 </div>
             </div>
-
             <div class="summary-actions">
                 <button id="btn-save" class="btn-super-glass small interactive-element">SAVE TO GARAGE</button>
                 <button id="btn-discard" class="btn-danger-glass interactive-element">DISCARD</button>
@@ -119,20 +107,24 @@
                         <span class="val" id="det-dist">0 km</span>
                     </div>
                     <div class="d-stat-box">
-                        <span class="label">TIME</span>
-                        <span class="val" id="det-time">00:00</span>
+                        <span class="label">AVG</span>
+                        <span class="val" id="det-avg">0</span>
                     </div>
                     <div class="d-stat-box">
-                        <span class="label">AVG</span>
-                        <span class="val" id="det-avg">0 km/h</span>
+                        <span class="label">MAX</span>
+                        <span class="val" id="det-max">0</span>
                     </div>
+                </div>
+                <div style="text-align: center; margin: 10px 0; font-size: 0.9rem; color: #888;">
+                    Duration: <span id="det-time" style="color:white; font-weight:700;">00:00</span>
                 </div>
 
                 <div class="chart-container">
                     <canvas id="speedChart"></canvas>
                 </div>
                 
-                <div style="height: 50px;"></div> </div>
+                <div style="height: 50px;"></div>
+            </div>
         </div>
     </div>
 
