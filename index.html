@@ -4,23 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DriverHub 4.0</title>
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
     <link rel="apple-touch-icon" href="logo.png">
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="style.css?v=18">
 </head>
 <body>
 
-    <div id="splash-screen">
-        <img src="logo.png" class="splash-logo">
-    </div>
-
+    <div id="splash-screen"><img src="logo.png" class="splash-logo"></div>
+    
     <div id="background-map"></div>
 
     <div id="home-screen" class="screen active">
@@ -32,19 +26,14 @@
                 <i id="weather-icon" class="fa-solid fa-cloud"></i>
                 <span id="weather-temp">--°</span>
             </div>
-            <div class="logo-container">
-                <img src="logo.png" alt="DriverHub" class="dh-logo">
-            </div>
+            <div class="logo-container"><img src="logo.png" alt="DriverHub" class="dh-logo"></div>
         </div>
-        
         <div class="spacer-flex"></div>
-        
         <div class="blur-zone-bottom">
             <button id="btn-start" class="btn-super-glass interactive-element">
                 <i class="fa-solid fa-road"></i> START DRIVE
             </button>
         </div>
-        
         <div class="bottom-nav interactive-element">
             <div class="nav-item active-home" id="nav-home">
                 <i class="fa-solid fa-house"></i>
@@ -58,60 +47,34 @@
     </div>
 
     <div id="drive-screen" class="screen hidden">
-        
         <div class="drive-hud-top interactive-element">
             <div class="hud-row">
-                <div class="hud-item">
-                    <span class="hud-label">TIME</span>
-                    <span class="hud-value" id="hud-time">00:00</span>
-                </div>
-                <div class="hud-item main">
-                    <span class="hud-unit">km/h</span>
-                    <span class="hud-value big" id="hud-speed">0</span>
-                </div>
-                <div class="hud-item">
-                    <span class="hud-label">DIST</span>
-                    <span class="hud-value" id="hud-dist">0.00</span>
-                </div>
+                <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="hud-time">00:00</span></div>
+                <div class="hud-item main"><span class="hud-unit">km/h</span><span class="hud-value big" id="hud-speed">0</span></div>
+                <div class="hud-item"><span class="hud-label">DIST</span><span class="hud-value" id="hud-dist">0.00</span></div>
             </div>
         </div>
-
         <button id="btn-recenter" class="icon-btn-floating hidden interactive-element"><i class="fa-solid fa-crosshairs"></i></button>
-
         <div class="spacer-flex"></div>
-
         <div class="blur-zone-bottom">
-            <button id="btn-stop" class="btn-stop-glass interactive-element">
-                <i class="fa-solid fa-stop"></i> END DRIVE
-            </button>
+            <button id="btn-stop" class="btn-stop-glass interactive-element"><i class="fa-solid fa-stop"></i> END DRIVE</button>
         </div>
     </div>
 
     <div id="summary-screen" class="screen hidden">
         <div class="solid-bg">
-            <h2 style="margin-top: 60px;">Drive Summary</h2>
+            <h2 style="margin-top: 50px; margin-bottom: 20px;">Drive Summary</h2>
             
+            <div id="summary-map" class="interactive-element"></div>
+
             <div class="summary-card interactive-element">
                 <div class="sum-row">
-                    <div class="sum-item">
-                        <label>AVG SPEED</label>
-                        <h3 id="sum-avg">0</h3>
-                        <small>km/h</small>
-                    </div>
-                    <div class="sum-item">
-                        <label>DISTANCE</label>
-                        <h3 id="sum-dist">0.0</h3>
-                        <small>km</small>
-                    </div>
+                    <div class="sum-item"><label>AVG SPEED</label><h3 id="sum-avg">0</h3><small>km/h</small></div>
+                    <div class="sum-item"><label>DISTANCE</label><h3 id="sum-dist">0.0</h3><small>km</small></div>
                 </div>
-                
                 <div class="sum-divider"></div>
-                
                 <div class="sum-row">
-                    <div class="sum-item">
-                        <label>DURATION</label>
-                        <h3 id="sum-time">00:00</h3>
-                    </div>
+                    <div class="sum-item"><label>DURATION</label><h3 id="sum-time">00:00</h3></div>
                 </div>
             </div>
 
@@ -124,56 +87,27 @@
 
     <div id="garage-screen" class="screen hidden">
         <div id="garage-bg"></div>
-        
-        <div class="garage-header">
-            <h2>Garage</h2>
-        </div>
-
+        <div class="garage-header"><h2>Garage</h2></div>
         <div class="garage-total-card">
-            <div class="g-stat">
-                <span id="total-drives">0</span>
-                <label>DRIVES</label>
-            </div>
-            <div class="g-stat">
-                <span id="total-km">0.0</span>
-                <label>KM TOTAL</label>
-            </div>
+            <div class="g-stat"><span id="total-drives">0</span><label>DRIVES</label></div>
+            <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
         </div>
-
-        <div id="garage-list" class="garage-list interactive-element">
-            </div>
+        <div id="garage-list" class="garage-list interactive-element"></div>
         
         <div class="bottom-nav interactive-element">
-            <div class="nav-item" id="nav-home-from-garage">
-                <i class="fa-solid fa-house"></i>
-                <span>Home</span>
-            </div>
-            <div class="nav-item active-garage">
-                <i class="fa-solid fa-warehouse"></i>
-                <span>Garage</span>
-            </div>
+            <div class="nav-item" id="nav-home-from-garage"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="nav-item active-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
         </div>
 
         <div id="detail-overlay" class="hidden interactive-element">
-            <button class="close-detail-btn interactive-element" onclick="GarageLogic.closeDetails()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <button class="close-detail-btn interactive-element" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
             <div id="detail-map"></div>
             <div class="detail-info">
                 <h3 id="det-date">Date</h3>
                 <div class="hud-row">
-                    <div class="hud-item">
-                        <span class="hud-label">DIST</span>
-                        <span class="hud-value" id="det-dist">0</span>
-                    </div>
-                    <div class="hud-item">
-                        <span class="hud-label">AVG</span>
-                        <span class="hud-value" id="det-avg">0</span>
-                    </div>
-                    <div class="hud-item">
-                        <span class="hud-label">TIME</span>
-                        <span class="hud-value" id="det-time">00:00</span>
-                    </div>
+                    <div class="hud-item"><span class="hud-label">DIST</span><span class="hud-value" id="det-dist">0</span></div>
+                    <div class="hud-item"><span class="hud-label">AVG</span><span class="hud-value" id="det-avg">0</span></div>
+                    <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="det-time">00:00</span></div>
                 </div>
             </div>
         </div>
