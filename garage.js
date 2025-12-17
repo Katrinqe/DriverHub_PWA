@@ -1,5 +1,6 @@
 let detailMapInstance = null;
 let speedChartInstance = null;
+let scrubMarker = null; // Der Marker, der sich bewegt
 
 const GarageLogic = {
     render: function() {
@@ -57,76 +58,67 @@ const GarageLogic = {
         const overlay = document.getElementById('detail-overlay');
         overlay.classList.remove('hidden');
 
-        // 1. MAX SPEED BERECHNEN
+        // Stats
         let maxSpeed = 0;
         if(ride.path && ride.path.length > 0) {
-            ride.path.forEach(p => {
-                let s = p.speed !== undefined ? p.speed : 0;
-                if(s > maxSpeed) maxSpeed = s;
-            });
+            ride.path.forEach(p => { if((p.speed||0) > maxSpeed) maxSpeed = p.speed; });
         }
 
-        // Stats füllen
         document.getElementById('det-date').innerText = new Date(ride.date).toLocaleString();
         document.getElementById('det-dist').innerText = ride.dist.toFixed(2) + " km";
         document.getElementById('det-avg').innerText = ride.avg + " km/h";
-        document.getElementById('det-max').innerText = maxSpeed + " km/h"; // NEU
+        document.getElementById('det-max').innerText = maxSpeed + " km/h";
         document.getElementById('det-time').innerText = ride.time;
 
-        // --- MAP RENDERN ---
+        // --- MAP SETUP ---
         if (!detailMapInstance) {
             detailMapInstance = L.map('detail-map', { zoomControl: false, attributionControl: false }).setView([0,0], 13);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(detailMapInstance);
         }
         
-        // Layer leeren
         detailMapInstance.eachLayer(l => { if(!(l instanceof L.TileLayer)) l.remove(); });
+        scrubMarker = null; // Reset
 
         if (ride.path && ride.path.length > 0) {
-            const isRichData = ride.path[0].lat !== undefined; // Check: Neue Datenstruktur?
-            
-            // Start & End Punkt
+            const isRichData = ride.path[0].lat !== undefined;
             const startPt = isRichData ? [ride.path[0].lat, ride.path[0].lng] : ride.path[0];
             const endPt = isRichData ? [ride.path[ride.path.length-1].lat, ride.path[ride.path.length-1].lng] : ride.path[ride.path.length-1];
 
             L.circleMarker(startPt, {radius: 6, color: '#32cd32', fillOpacity: 1, fillColor: '#32cd32'}).addTo(detailMapInstance);
             L.circleMarker(endPt, {radius: 6, color: '#ff3b30', fillOpacity: 1, fillColor: '#ff3b30'}).addTo(detailMapInstance);
 
-            // Linie zeichnen
+            const latLngs = [];
             if (isRichData) {
-                // Bunte Segmente
-                const latLngs = [];
+                // Bunte Segmente zeichnen
                 for(let i=0; i < ride.path.length - 1; i++) {
                     const p1 = ride.path[i];
                     const p2 = ride.path[i+1];
-                    const segmentSpeed = (p1.speed + p2.speed) / 2;
+                    const s = ((p1.speed||0) + (p2.speed||0)) / 2;
+                    let c = '#00ff00';
+                    if (s > 30) c = '#ffff00';
+                    if (s > 50) c = '#ff3b30'; // Rot
+                    if (s > 100) c = '#bf5af2'; // Lila
                     
-                    let color = '#00ff00';
-                    if (segmentSpeed > 30) color = '#ffff00';
-                    if (segmentSpeed > 50) color = '#ff0000';
-                    if (segmentSpeed > 100) color = '#bf5af2';
-
-                    L.polyline([[p1.lat, p1.lng], [p2.lat, p2.lng]], {color: color, weight: 4}).addTo(detailMapInstance);
+                    L.polyline([[p1.lat, p1.lng], [p2.lat, p2.lng]], {color: c, weight: 4}).addTo(detailMapInstance);
                     latLngs.push([p1.lat, p1.lng]);
                 }
-                // Fallback: Wenn nur 1 Punkt, array trotzdem füllen für fitBounds
-                if(latLngs.length === 0) latLngs.push([ride.path[0].lat, ride.path[0].lng]);
-                else latLngs.push([ride.path[ride.path.length-1].lat, ride.path[ride.path.length-1].lng]);
-
-                detailMapInstance.fitBounds(L.polyline(latLngs).getBounds(), {padding:[30,30]});
+                latLngs.push([ride.path[ride.path.length-1].lat, ride.path[ride.path.length-1].lng]);
             } else {
-                // Alte Daten (Blaue Linie)
                 const line = L.polyline(ride.path, {color: '#007aff', weight: 4}).addTo(detailMapInstance);
                 detailMapInstance.fitBounds(line.getBounds(), {padding:[30,30]});
+                return; // Alte Daten -> Kein Chart Scrubbing möglich
             }
-        } else {
-            // Wenn keine Route da ist (0 Punkte) -> Zeige Berlin oder 0,0
-            detailMapInstance.setView([51.16, 10.45], 6);
+            if(latLngs.length > 0) detailMapInstance.fitBounds(L.polyline(latLngs).getBounds(), {padding:[30,30]});
+            
+            // Marker für Scrubbing initialisieren (erstmal unsichtbar)
+            scrubMarker = L.circleMarker(startPt, {
+                radius: 8, color: '#fff', weight: 3, fillOpacity: 0.5, fillColor: '#fff'
+            });
         }
         
         setTimeout(() => detailMapInstance.invalidateSize(), 200);
 
-        // --- GRAPH ---
+        // --- CHART SETUP ---
         const ctx = document.getElementById('speedChart').getContext('2d');
         if (speedChartInstance) speedChartInstance.destroy();
 
@@ -134,18 +126,21 @@ const GarageLogic = {
         let dataPoints = [];
         
         if (ride.path && ride.path.length > 0) {
-            // Check ob Speed-Daten vorhanden sind
-            const hasSpeed = ride.path[0].speed !== undefined;
-            if(hasSpeed) {
-                ride.path.forEach((p, i) => {
-                    labels.push(i);
-                    dataPoints.push(p.speed);
-                });
-            } else {
-                // Keine Speed Daten (alte Fahrten)
-                dataPoints = Array(ride.path.length).fill(0);
-                labels = ride.path.map((_, i) => i);
-            }
+            const hasTime = ride.path[0].time !== undefined;
+            const startTime = hasTime ? ride.path[0].time : 0;
+
+            ride.path.forEach((p, i) => {
+                // X-Achse: Zeit formatieren (MM:SS)
+                if (hasTime) {
+                    const diff = p.time - startTime;
+                    const m = Math.floor(diff / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    labels.push(`${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`);
+                } else {
+                    labels.push(i); // Fallback alte Daten
+                }
+                dataPoints.push(p.speed || 0);
+            });
         }
 
         speedChartInstance = new Chart(ctx, {
@@ -153,26 +148,72 @@ const GarageLogic = {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Speed (km/h)',
+                    label: 'Speed',
                     data: dataPoints,
-                    borderColor: '#007aff',
-                    backgroundColor: 'rgba(0, 122, 255, 0.1)',
                     borderWidth: 2,
-                    tension: 0.4, 
-                    pointRadius: 0, 
-                    fill: true
+                    pointRadius: 0, // Keine Punkte im Normalzustand
+                    pointHoverRadius: 6, // Punkt beim Hovern
+                    fill: true,
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    // HIER: Gradient Line Logic (Farbe ändert sich nach Wert)
+                    segment: {
+                        borderColor: ctx => {
+                            const v = ctx.p0.parsed.y;
+                            if (v < 30) return '#32cd32'; // Grün
+                            if (v < 60) return '#ffff00'; // Gelb
+                            if (v < 100) return '#ff3b30'; // Rot
+                            return '#bf5af2'; // Lila
+                        }
+                    }
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        displayColors: false,
+                        callbacks: {
+                            label: (ctx) => `${ctx.parsed.y} km/h`
+                        }
+                    }
+                },
                 scales: {
-                    x: { display: false },
+                    x: { 
+                        display: true, // Achse anzeigen
+                        ticks: { 
+                            maxTicksLimit: 6, // Nicht zu viele Labels
+                            color: '#666',
+                            font: { size: 10 }
+                        },
+                        grid: { display: false }
+                    },
                     y: { 
-                        beginAtZero: true, 
-                        grid: { color: 'rgba(255,255,255,0.1)' },
-                        ticks: { color: '#666' }
+                        display: false, // Y Achse stört nur
+                        beginAtZero: true 
+                    }
+                },
+                // --- INTERAKTION MIT MAP ---
+                onHover: (e, elements) => {
+                    if (!elements || elements.length === 0 || !scrubMarker) return;
+                    
+                    const idx = elements[0].index; // Welcher Punkt wurde berührt?
+                    const point = ride.path[idx]; // Hole Koordinaten
+                    
+                    if (point && point.lat) {
+                        const latLng = [point.lat, point.lng];
+                        
+                        // Marker auf Map hinzufügen (falls noch nicht da)
+                        if (!detailMapInstance.hasLayer(scrubMarker)) {
+                            scrubMarker.addTo(detailMapInstance);
+                        }
+                        // Marker bewegen
+                        scrubMarker.setLatLng(latLng);
                     }
                 }
             }
