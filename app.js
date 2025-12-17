@@ -3,9 +3,9 @@ let isDriveMode = false;
 let watchId = null;
 let isZooming = false; 
 
-// Variablen für Long-Press
+// Variablen für Long-Press (Stop Button)
 let pressTimer = null;
-const LONG_PRESS_DURATION = 1500; // 1.5 Sekunden halten
+const LONG_PRESS_DURATION = 1500; 
 
 window.addEventListener('load', () => {
     setTimeout(() => {
@@ -26,30 +26,21 @@ window.addEventListener('load', () => {
     const btnStop = document.getElementById('btn-stop');
 
     function startPress(e) {
-        // Verhindert Rechtsklick Menü am Handy
         if (e.type === 'touchstart') e.preventDefault(); 
-        
         btnStop.classList.add('holding'); // Startet CSS Animation
-        
         pressTimer = setTimeout(() => {
-            // Wenn Zeit abgelaufen -> STOPPEN
             DriverLogic.stop();
-            resetPress(); // Reset UI
+            resetPress(); 
         }, LONG_PRESS_DURATION);
     }
 
     function resetPress() {
-        if (pressTimer) {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-        }
-        btnStop.classList.remove('holding'); // Stoppt Animation
+        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+        btnStop.classList.remove('holding'); 
     }
 
-    // Events für Maus & Touch
     btnStop.addEventListener('mousedown', startPress);
     btnStop.addEventListener('touchstart', startPress);
-    
     btnStop.addEventListener('mouseup', resetPress);
     btnStop.addEventListener('mouseleave', resetPress);
     btnStop.addEventListener('touchend', resetPress);
@@ -80,10 +71,12 @@ function handlePositionUpdate(pos) {
     const newLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
 
     if (!userMarker) {
+        // Marker erstellen
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
         map.setView(newLatLng, 14);
     } else {
+        // HIER passiert die Magie: Dank CSS 'transition' gleitet der Marker jetzt zur neuen Position
         userMarker.setLatLng(newLatLng);
     }
 
@@ -93,7 +86,8 @@ function handlePositionUpdate(pos) {
         DriverLogic.update(pos);
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
             const dist = map.getCenter().distanceTo(newLatLng);
-            if (dist > 10) map.panTo(newLatLng, { animate: true, duration: 1.0 });
+            // Karte folgt synchron (1.0s Dauer passt zur CSS Transition)
+            if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
         const dist = map.getCenter().distanceTo(newLatLng);
