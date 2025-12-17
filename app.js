@@ -3,6 +3,7 @@ let isDriveMode = false;
 let watchId = null;
 
 window.addEventListener('load', () => {
+    // Splash Screen
     setTimeout(() => {
         document.getElementById('splash-screen').style.opacity = '0';
         setTimeout(() => document.getElementById('splash-screen').classList.add('hidden'), 800);
@@ -20,12 +21,18 @@ window.addEventListener('load', () => {
 });
 
 function initMap() {
+    // ZoomSnap 0 für flüssigeren Zoom
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
-        dragging: false, touchZoom: false, doubleClickZoom: false
+        dragging: false, touchZoom: false, doubleClickZoom: false,
+        zoomSnap: 0, 
+        zoomDelta: 0.5
     }).setView([51.1657, 10.4515], 14);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
+        maxZoom: 20,
+        detectRetina: true // Schärfer auf Handys
+    }).addTo(map);
 
     if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(handlePositionUpdate, 
@@ -51,16 +58,18 @@ function handlePositionUpdate(pos) {
 
     if (isDriveMode) {
         DriverLogic.update(pos);
+        // SMART FOLLOW: Ruckeln verhindern
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
-            // NUR bewegen wenn Distanz groß genug um Zittern zu vermeiden
             const dist = map.getCenter().distanceTo(newLatLng);
-            if (dist > 5) { 
-                map.panTo(newLatLng, { animate: true, duration: 1.0 });
+            // Nur bewegen wenn > 10m Abweichung, aber dann sanft (panTo)
+            if (dist > 10) { 
+                map.panTo(newLatLng, { animate: true, duration: 1.0, easeLinearity: 0.25 });
             }
         }
     } else {
-        // Home: Langsam folgen
-        map.panTo(newLatLng, { animate: true, duration: 2.0 });
+        // Home Mode: Folgt sehr langsam
+        const dist = map.getCenter().distanceTo(newLatLng);
+        if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
     }
 }
 
@@ -69,9 +78,18 @@ function startDriveMode() {
     switchScreen('drive-screen');
     map.dragging.enable();
     map.touchZoom.enable();
+    map.doubleClickZoom.enable();
     
-    // Zoom Animation
-    if(userMarker) map.flyTo(userMarker.getLatLng(), 18, { duration: 1.5 });
+    // ZOOM FIX: Statt flyTo (Kurve) nutzen wir setView mit Duration oder flachere Kurve
+    if(userMarker) {
+        // easeLinearity 0.5 macht die Kurve flacher -> weniger Ruckeln
+        // Duration 1.2 ist schneller -> weniger Ruckeln
+        map.flyTo(userMarker.getLatLng(), 18, { 
+            animate: true, 
+            duration: 1.2, 
+            easeLinearity: 0.5 
+        });
+    }
     DriverLogic.start();
 }
 
@@ -97,4 +115,36 @@ function switchScreen(id) {
     setTimeout(() => t.classList.add('active'), 10);
 }
 
-function initWeather() { /* (Wetter Code bleibt gleich) */ }
+function initWeather() {
+    if (!navigator.geolocation) return;
+    
+    // Fallback Timer falls API hängt
+    const weatherTimeout = setTimeout(() => {
+        document.getElementById('loc-text').innerText = "Standort";
+        document.getElementById('weather-temp').innerText = "--°";
+    }, 5000);
+
+    navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude; const lng = pos.coords.longitude;
+        
+        // Wetter API (Open Meteo)
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
+        .then(r=>r.json()).then(d=>{
+            clearTimeout(weatherTimeout);
+            document.getElementById('weather-temp').innerText = Math.round(d.current_weather.temperature) + "°";
+        })
+        .catch(e => console.log("Weather Error", e));
+
+        // Location API (Nominatim)
+        // WICHTIG: Nominatim braucht oft User-Agent Header oder blockt
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(r=>r.json()).then(d=>{
+            const city = d.address.city || d.address.town || d.address.village || "Standort";
+            document.getElementById('loc-text').innerText = city;
+        })
+        .catch(e => {
+            console.log("Loc Error", e);
+            document.getElementById('loc-text').innerText = "Standort";
+        });
+    });
+}
