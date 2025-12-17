@@ -67,9 +67,23 @@ function initMap() {
         );
     }
 
-    map.on('dragstart', () => { if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden'); });
-    map.on('zoomstart', () => { isZooming = true; });
-    map.on('zoomend', () => { isZooming = false; });
+    // --- FIX FÜR SCHWIMMENDEN PUNKT ---
+    // Wenn User interagiert (Zoom/Pan), schalten wir die CSS-Animation aus
+    map.on('zoomstart movestart', () => {
+        isZooming = true;
+        if(userMarker && userMarker.getElement()) {
+            userMarker.getElement().classList.remove('smooth');
+        }
+        if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden');
+    });
+
+    // Wenn Interaktion fertig, Animation wieder an
+    map.on('zoomend moveend', () => {
+        isZooming = false;
+        if(userMarker && userMarker.getElement()) {
+            userMarker.getElement().classList.add('smooth');
+        }
+    });
 }
 
 function handlePositionUpdate(pos) {
@@ -80,9 +94,13 @@ function handlePositionUpdate(pos) {
     if (!userMarker) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
+        // Initial einmal 'smooth' hinzufügen
+        setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
         map.setView(newLatLng, 14);
     } else {
         userMarker.setLatLng(newLatLng);
+        // Sicherstellen dass Klasse da ist (falls sie mal verloren ging)
+        if(userMarker.getElement() && !isZooming) userMarker.getElement().classList.add('smooth');
     }
 
     const mapEl = document.getElementById('background-map');
@@ -115,6 +133,7 @@ function handlePositionUpdate(pos) {
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
         if (!isExplore) {
             const dist = map.getCenter().distanceTo(newLatLng);
+            // Home Screen folgt locker
             if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
         }
     }
@@ -143,6 +162,7 @@ function centerMapOnUser() {
 
 function showHome() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
+    
     switchScreen('home-screen');
     isDriveMode = false;
     
@@ -152,8 +172,11 @@ function showHome() {
     
     map.dragging.disable();
     
+    // --- HOME PAGE RESET ---
+    // Hier erzwingen wir den Zoom 14 und die User-Position
+    // Egal wo wir in Explore waren, Home ist immer gleich.
     if(userMarker) {
-        map.panTo(userMarker.getLatLng(), { animate: true, duration: 1.5 });
+        map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
     }
 }
 
@@ -168,30 +191,19 @@ function showExplore() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
 }
 
-// --- OPTIMIZED SCREEN SWITCHING (CROSS FADE) ---
 function switchScreen(id) {
-    // 1. Finde alle aktiven Screens
     const activeScreens = document.querySelectorAll('.screen.active');
-    
-    // 2. Entferne 'active' sofort (Startet CSS Fade-Out)
-    // Wir fügen 'fading-out' hinzu, um sie kurz oben zu halten
     activeScreens.forEach(s => {
         s.classList.remove('active');
         s.classList.add('fading-out');
-        
-        // Erst nach 350ms (wenn Transition fertig) auf 'hidden' setzen
         setTimeout(() => {
             s.classList.remove('fading-out');
             s.classList.add('hidden');
         }, 350); 
     });
 
-    // 3. Neuen Screen vorbereiten
     const nextScreen = document.getElementById(id);
-    // 'hidden' sofort entfernen, damit er sichtbar wird (aber opacity ist noch 0)
     nextScreen.classList.remove('hidden');
-    
-    // Kleiner Timeout, damit der Browser den Statuswechsel checkt, dann einfaden
     setTimeout(() => {
         nextScreen.classList.add('active');
     }, 20);
