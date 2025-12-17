@@ -1,19 +1,31 @@
-let detailMapInstance = null; // Globale Var für die Mini Map
+// --- GARAGE.JS ---
+let detailMapInstance = null;
 
 const GarageLogic = {
+    // 1. RENDERN DER LISTE
     render: function() {
         const list = document.getElementById('garage-list');
-        list.innerHTML = '';
+        list.innerHTML = ''; // Liste leeren
+        
+        // Daten holen
         const saved = JSON.parse(localStorage.getItem('driverhub_rides') || '[]');
         
+        // Stats oben updaten
         document.getElementById('total-drives').innerText = saved.length;
-        let km = 0; saved.forEach(r => km += r.dist);
+        let km = 0; 
+        saved.forEach(r => km += r.dist);
         document.getElementById('total-km').innerText = km.toFixed(1);
 
-        if (saved.length === 0) { list.innerHTML = '<p style="text-align:center; color:#555; margin-top:50px;">No drives yet.</p>'; return; }
+        // Wenn leer
+        if (saved.length === 0) {
+            list.innerHTML = '<p style="text-align:center; color:#555; margin-top:50px;">No drives yet.</p>';
+            return;
+        }
 
+        // Liste bauen (Neueste zuerst)
         saved.reverse().forEach((ride, index) => {
-            const realIndex = saved.length - 1 - index;
+            const realIndex = saved.length - 1 - index; // Wichtig für Löschen/Details
+
             const div = document.createElement('div');
             div.className = 'drive-card';
             div.innerHTML = `
@@ -23,47 +35,82 @@ const GarageLogic = {
                 </div>
                 <div class="dc-right">
                     <span class="dc-km">${ride.dist.toFixed(2)} km</span>
-                    <button class="btn-delete-drive" onclick="GarageLogic.deleteDrive(${realIndex})"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn-delete-drive" onclick="GarageLogic.deleteDrive(${realIndex}, event)">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
                 </div>
             `;
             list.appendChild(div);
         });
     },
 
-    deleteDrive: function(index) {
-        if(!confirm("Delete?")) return;
+    // 2. SPEICHERN (Hier lag oft das Problem)
+    save: function(data) {
+        console.log("Speichere Fahrt...", data); // Debugging
+        try {
+            const saved = JSON.parse(localStorage.getItem('driverhub_rides') || '[]');
+            saved.push(data);
+            localStorage.setItem('driverhub_rides', JSON.stringify(saved));
+            console.log("Gespeichert!");
+            return true;
+        } catch (e) {
+            console.error("Fehler beim Speichern:", e);
+            alert("Speicherfehler! Speicher voll?");
+            return false;
+        }
+    },
+
+    // 3. LÖSCHEN
+    deleteDrive: function(index, event) {
+        if(event) event.stopPropagation(); // Verhindert, dass sich Details öffnen
+        
+        if(!confirm("Fahrt wirklich löschen?")) return;
+        
         const saved = JSON.parse(localStorage.getItem('driverhub_rides') || '[]');
         saved.splice(index, 1);
         localStorage.setItem('driverhub_rides', JSON.stringify(saved));
-        this.render();
+        this.render(); // Neu laden
     },
 
+    // 4. DETAILS ANZEIGEN
     showDetails: function(index) {
         const saved = JSON.parse(localStorage.getItem('driverhub_rides') || '[]');
         const ride = saved[index];
         
-        document.getElementById('detail-overlay').classList.remove('hidden');
+        if(!ride) return;
+
+        const overlay = document.getElementById('detail-overlay');
+        overlay.classList.remove('hidden');
+
         document.getElementById('det-date').innerText = new Date(ride.date).toLocaleString();
         document.getElementById('det-dist').innerText = ride.dist.toFixed(2) + " km";
         document.getElementById('det-avg').innerText = ride.avg + " km/h";
         document.getElementById('det-time').innerText = ride.time;
 
-        // MAP RENDERN
+        // Map Initialisierung (Lazy Load)
         if (!detailMapInstance) {
-            detailMapInstance = L.map('detail-map', {zoomControl:false}).setView([0,0], 13);
+            detailMapInstance = L.map('detail-map', {
+                zoomControl: false,
+                attributionControl: false
+            }).setView([0,0], 13);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(detailMapInstance);
         }
         
-        // Linie zeichnen
-        // Vorherige Layer löschen
-        detailMapInstance.eachLayer((layer) => { if(layer instanceof L.Polyline && !(layer instanceof L.TileLayer)) { layer.remove(); } });
+        // Karte aufräumen
+        detailMapInstance.eachLayer((layer) => {
+            if(layer instanceof L.Polyline && !(layer instanceof L.TileLayer)) {
+                layer.remove();
+            }
+        });
 
+        // Linie zeichnen
         if (ride.path && ride.path.length > 0) {
             const line = L.polyline(ride.path, {color: '#007aff', weight: 4}).addTo(detailMapInstance);
             detailMapInstance.fitBounds(line.getBounds(), {padding:[50,50]});
         }
         
-        setTimeout(() => detailMapInstance.invalidateSize(), 200); // Fix für Render Bug
+        // Fix für Render-Bug bei Hidden Elements
+        setTimeout(() => detailMapInstance.invalidateSize(), 200);
     },
 
     closeDetails: function() {
