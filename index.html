@@ -13,15 +13,14 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link rel="stylesheet" href="style.css?v=11">
+    <link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 
     <div id="background-map"></div>
-    <div id="garage-bg" class="hidden"></div> 
 
     <div id="home-screen" class="screen active">
-        <div class="blur-zone-top">
+        <div class="blur-zone-top center-content">
             <div class="weather-pill" id="weather-widget">
                 <i class="fa-solid fa-location-arrow loc-icon"></i>
                 <span id="loc-text">Locating...</span>
@@ -42,17 +41,19 @@
             </button>
         </div>
         
-        <button id="btn-garage-home" class="icon-btn-floating right-side"><i class="fa-solid fa-warehouse"></i></button>
+        <div class="bottom-nav">
+            <div class="nav-item active" id="nav-home">
+                <i class="fa-solid fa-house"></i>
+            </div>
+            <div class="nav-item" id="nav-garage">
+                <i class="fa-solid fa-warehouse"></i>
+            </div>
+        </div>
     </div>
 
     <div id="drive-screen" class="screen hidden">
-        <div class="speed-limit-sign hidden" id="speed-limit-ui">
-            <span id="limit-val">50</span>
-        </div>
-
-        <button id="btn-recenter" class="icon-btn-floating hidden"><i class="fa-solid fa-crosshairs"></i></button>
-
-        <div class="drive-hud">
+        
+        <div class="drive-hud-top">
             <div class="hud-row">
                 <div class="hud-item">
                     <span class="hud-label">TIME</span>
@@ -63,11 +64,15 @@
                     <span class="hud-value big" id="hud-speed">0</span>
                 </div>
                 <div class="hud-item">
-                    <span class="hud-label">DIST (km)</span>
+                    <span class="hud-label">DIST</span>
                     <span class="hud-value" id="hud-dist">0.00</span>
                 </div>
             </div>
         </div>
+
+        <button id="btn-recenter" class="icon-btn-floating hidden"><i class="fa-solid fa-crosshairs"></i></button>
+
+        <div class="spacer-flex"></div>
 
         <div class="blur-zone-bottom">
             <button id="btn-stop" class="btn-stop-glass">
@@ -77,35 +82,45 @@
     </div>
 
     <div id="summary-screen" class="screen hidden">
-        <div class="content-center">
-            <h2>Drive Summary</h2>
-            <div class="summary-grid">
-                <div class="sum-box">
-                    <span class="hud-label">AVG SPEED</span>
-                    <h3 id="sum-avg">0 km/h</h3>
+        <div class="solid-bg">
+            <h2 style="margin-top: 50px;">Drive Summary</h2>
+            
+            <div class="summary-card">
+                <div class="sum-row">
+                    <div class="sum-item">
+                        <label>AVG SPEED</label>
+                        <h3 id="sum-avg">0</h3>
+                        <small>km/h</small>
+                    </div>
+                    <div class="sum-item">
+                        <label>DISTANCE</label>
+                        <h3 id="sum-dist">0.0</h3>
+                        <small>km</small>
+                    </div>
                 </div>
-                <div class="sum-box">
-                    <span class="hud-label">DISTANCE</span>
-                    <h3 id="sum-dist">0.0 km</h3>
-                </div>
-                <div class="sum-box">
-                    <span class="hud-label">TIME</span>
-                    <h3 id="sum-time">00:00</h3>
+                <div class="sum-row" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top:15px; padding-top:15px;">
+                    <div class="sum-item">
+                        <label>DURATION</label>
+                        <h3 id="sum-time">00:00</h3>
+                    </div>
                 </div>
             </div>
+
             <div class="summary-actions">
                 <button id="btn-save" class="btn-super-glass small">SAVE TO GARAGE</button>
-                <button id="btn-discard" class="btn-text">Discard</button>
+                <button id="btn-discard" class="btn-danger-glass small">DISCARD</button>
             </div>
         </div>
     </div>
 
     <div id="garage-screen" class="screen hidden">
+        <div class="garage-bg-layer"></div>
+        
         <div class="garage-header">
             <h2>Garage</h2>
-            <button id="btn-close-garage" class="close-icon icon-btn-floating right-side" style="position:relative; top:0; left:0; right:0;"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-        <div class="garage-stats">
+            </div>
+
+        <div class="garage-total-card">
             <div class="g-stat">
                 <span id="total-drives">0</span>
                 <label>DRIVES</label>
@@ -115,12 +130,21 @@
                 <label>KM TOTAL</label>
             </div>
         </div>
+
         <div id="garage-list" class="garage-list">
             </div>
+        
+        <div class="bottom-nav">
+            <div class="nav-item" id="nav-home-from-garage">
+                <i class="fa-solid fa-house"></i>
+            </div>
+            <div class="nav-item active">
+                <i class="fa-solid fa-warehouse"></i>
+            </div>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script src="garage.js"></script>
     <script src="drive.js"></script>
     <script src="app.js"></script>
