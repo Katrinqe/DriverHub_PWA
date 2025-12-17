@@ -4,149 +4,91 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DriverHub 4.0</title>
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
     <link rel="apple-touch-icon" href="logo.png">
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
-
-    <div id="splash-screen">
-        <img src="logo.png" class="splash-logo">
-    </div>
-
+    <div id="splash-screen"><img src="logo.png" class="splash-logo"></div>
+    
     <div id="background-map"></div>
 
     <div id="home-screen" class="screen active">
-        <div class="blur-zone-top center-content">
-            <div class="weather-pill" id="weather-widget">
+        <div class="blur-zone-top">
+            <div class="weather-pill interactive-element">
                 <i class="fa-solid fa-location-arrow loc-icon"></i>
-                <span id="loc-text">Locating...</span>
+                <span id="loc-text">Search...</span>
                 <span class="divider">|</span>
                 <i id="weather-icon" class="fa-solid fa-cloud"></i>
                 <span id="weather-temp">--°</span>
             </div>
-            <div class="logo-container">
-                <img src="logo.png" alt="DriverHub" class="dh-logo">
-            </div>
+            <div class="logo-container"><img src="logo.png" alt="DriverHub" class="dh-logo"></div>
         </div>
-        
         <div class="spacer-flex"></div>
-        
         <div class="blur-zone-bottom">
-            <button id="btn-start" class="btn-super-glass">
+            <button id="btn-start" class="btn-super-glass interactive-element">
                 <i class="fa-solid fa-road"></i> START DRIVE
             </button>
         </div>
-        
-        <div class="bottom-nav">
-            <div class="nav-item active-home" id="nav-home">
-                <i class="fa-solid fa-house"></i>
-            </div>
-            <div class="nav-item" id="nav-garage">
-                <i class="fa-solid fa-warehouse"></i>
-            </div>
+        <div class="bottom-nav interactive-element">
+            <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i></div>
+            <div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i></div>
         </div>
     </div>
 
     <div id="drive-screen" class="screen hidden">
-        
-        <div class="drive-hud-top glass-panel">
+        <div class="drive-hud-top interactive-element">
             <div class="hud-row">
-                <div class="hud-item">
-                    <span class="hud-label">TIME</span>
-                    <span class="hud-value" id="hud-time">00:00</span>
-                </div>
-                <div class="hud-item main">
-                    <span class="hud-unit">km/h</span>
-                    <span class="hud-value big" id="hud-speed">0</span>
-                </div>
-                <div class="hud-item">
-                    <span class="hud-label">DIST</span>
-                    <span class="hud-value" id="hud-dist">0.00</span>
-                </div>
+                <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="hud-time">00:00</span></div>
+                <div class="hud-item main"><span class="hud-unit">km/h</span><span class="hud-value big" id="hud-speed">0</span></div>
+                <div class="hud-item"><span class="hud-label">DIST</span><span class="hud-value" id="hud-dist">0.00</span></div>
             </div>
         </div>
-
-        <button id="btn-recenter" class="icon-btn-floating hidden"><i class="fa-solid fa-crosshairs"></i></button>
-
+        <button id="btn-recenter" class="icon-btn-floating hidden interactive-element"><i class="fa-solid fa-crosshairs"></i></button>
         <div class="spacer-flex"></div>
-
         <div class="blur-zone-bottom">
-            <button id="btn-stop" class="btn-stop-glass">
-                <i class="fa-solid fa-stop"></i> END DRIVE
-            </button>
+            <button id="btn-stop" class="btn-stop-glass interactive-element"><i class="fa-solid fa-stop"></i> END DRIVE</button>
         </div>
     </div>
 
     <div id="summary-screen" class="screen hidden">
         <div class="solid-bg">
             <h2 style="margin-top: 60px;">Drive Summary</h2>
-            <div class="summary-card glass-panel">
+            <div class="summary-card">
                 <div class="sum-row">
-                    <div class="sum-item">
-                        <label>AVG SPEED</label>
-                        <h3 id="sum-avg">0</h3>
-                        <small>km/h</small>
-                    </div>
-                    <div class="sum-item">
-                        <label>DISTANCE</label>
-                        <h3 id="sum-dist">0.0</h3>
-                        <small>km</small>
-                    </div>
+                    <div class="sum-item"><label>AVG SPEED</label><h3 id="sum-avg">0</h3><small>km/h</small></div>
+                    <div class="sum-item"><label>DISTANCE</label><h3 id="sum-dist">0.0</h3><small>km</small></div>
                 </div>
                 <div class="sum-row" style="border-top: 1px solid rgba(255,255,255,0.1); margin-top:15px; padding-top:15px;">
-                    <div class="sum-item">
-                        <label>DURATION</label>
-                        <h3 id="sum-time">00:00</h3>
-                    </div>
+                    <div class="sum-item"><label>DURATION</label><h3 id="sum-time">00:00</h3></div>
                 </div>
             </div>
             <div class="summary-actions">
-                <button id="btn-save" class="btn-super-glass small">SAVE TO GARAGE</button>
-                <button id="btn-discard" class="btn-danger-glass small">DISCARD</button>
+                <button id="btn-save" class="btn-super-glass small interactive-element">SAVE TO GARAGE</button>
+                <button id="btn-discard" class="btn-danger-glass interactive-element">DISCARD</button>
             </div>
         </div>
     </div>
 
     <div id="garage-screen" class="screen hidden">
         <div id="garage-bg"></div>
-        
-        <div class="garage-header">
-            <h2>Garage</h2>
+        <div class="garage-header"><h2>Garage</h2></div>
+        <div class="garage-total-card">
+            <div class="g-stat"><span id="total-drives">0</span><label>DRIVES</label></div>
+            <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
         </div>
-
-        <div class="garage-total-card glass-panel">
-            <div class="g-stat">
-                <span id="total-drives">0</span>
-                <label>DRIVES</label>
-            </div>
-            <div class="g-stat">
-                <span id="total-km">0.0</span>
-                <label>KM TOTAL</label>
-            </div>
+        <div id="garage-list" class="garage-list interactive-element"></div>
+        <div class="bottom-nav interactive-element">
+            <div class="nav-item" id="nav-home-from-garage"><i class="fa-solid fa-house"></i></div>
+            <div class="nav-item active-garage"><i class="fa-solid fa-warehouse"></i></div>
         </div>
-
-        <div id="garage-list" class="garage-list"></div>
-        
-        <div class="bottom-nav">
-            <div class="nav-item" id="nav-home-from-garage">
-                <i class="fa-solid fa-house"></i>
-            </div>
-            <div class="nav-item active-garage">
-                <i class="fa-solid fa-warehouse"></i>
-            </div>
-        </div>
-
         <div id="detail-overlay" class="hidden">
-            <button class="close-detail-btn" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
-            <div id="detail-map"></div> <div class="detail-info">
+            <button class="close-detail-btn interactive-element" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
+            <div id="detail-map"></div>
+            <div class="detail-info">
                 <h3 id="det-date">Date</h3>
                 <div class="hud-row">
                     <div class="hud-item"><span class="hud-label">DIST</span><span class="hud-value" id="det-dist">0</span></div>
