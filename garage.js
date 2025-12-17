@@ -1,5 +1,5 @@
 let detailMapInstance = null;
-let speedChartInstance = null; // Chart Instanz
+let speedChartInstance = null;
 
 const GarageLogic = {
     render: function() {
@@ -57,66 +57,95 @@ const GarageLogic = {
         const overlay = document.getElementById('detail-overlay');
         overlay.classList.remove('hidden');
 
+        // 1. MAX SPEED BERECHNEN
+        let maxSpeed = 0;
+        if(ride.path && ride.path.length > 0) {
+            ride.path.forEach(p => {
+                let s = p.speed !== undefined ? p.speed : 0;
+                if(s > maxSpeed) maxSpeed = s;
+            });
+        }
+
         // Stats füllen
         document.getElementById('det-date').innerText = new Date(ride.date).toLocaleString();
         document.getElementById('det-dist').innerText = ride.dist.toFixed(2) + " km";
         document.getElementById('det-avg').innerText = ride.avg + " km/h";
+        document.getElementById('det-max').innerText = maxSpeed + " km/h"; // NEU
         document.getElementById('det-time').innerText = ride.time;
 
-        // --- 1. MAP (BUNTE SEGMENTE) ---
+        // --- MAP RENDERN ---
         if (!detailMapInstance) {
             detailMapInstance = L.map('detail-map', { zoomControl: false, attributionControl: false }).setView([0,0], 13);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(detailMapInstance);
         }
         
-        // Alte Layer weg
+        // Layer leeren
         detailMapInstance.eachLayer(l => { if(!(l instanceof L.TileLayer)) l.remove(); });
 
         if (ride.path && ride.path.length > 0) {
-            // Wir müssen checken, ob 'path' Objekte {lat,lng,speed} oder nur Arrays [lat,lng] sind (wegen alter Speicherungen)
-            const isRichData = ride.path[0].lat !== undefined;
+            const isRichData = ride.path[0].lat !== undefined; // Check: Neue Datenstruktur?
+            
+            // Start & End Punkt
+            const startPt = isRichData ? [ride.path[0].lat, ride.path[0].lng] : ride.path[0];
+            const endPt = isRichData ? [ride.path[ride.path.length-1].lat, ride.path[ride.path.length-1].lng] : ride.path[ride.path.length-1];
 
+            L.circleMarker(startPt, {radius: 6, color: '#32cd32', fillOpacity: 1, fillColor: '#32cd32'}).addTo(detailMapInstance);
+            L.circleMarker(endPt, {radius: 6, color: '#ff3b30', fillOpacity: 1, fillColor: '#ff3b30'}).addTo(detailMapInstance);
+
+            // Linie zeichnen
             if (isRichData) {
-                // NEU: Bunte Segmente
+                // Bunte Segmente
                 const latLngs = [];
                 for(let i=0; i < ride.path.length - 1; i++) {
                     const p1 = ride.path[i];
                     const p2 = ride.path[i+1];
                     const segmentSpeed = (p1.speed + p2.speed) / 2;
                     
-                    // Farbe berechnen
-                    let color = '#00ff00'; // Grün (Langsam)
-                    if (segmentSpeed > 30) color = '#ffff00'; // Gelb
-                    if (segmentSpeed > 50) color = '#ff0000'; // Rot (Schnell)
-                    if (segmentSpeed > 100) color = '#bf5af2'; // Lila (Raser)
+                    let color = '#00ff00';
+                    if (segmentSpeed > 30) color = '#ffff00';
+                    if (segmentSpeed > 50) color = '#ff0000';
+                    if (segmentSpeed > 100) color = '#bf5af2';
 
                     L.polyline([[p1.lat, p1.lng], [p2.lat, p2.lng]], {color: color, weight: 4}).addTo(detailMapInstance);
                     latLngs.push([p1.lat, p1.lng]);
                 }
-                latLngs.push([ride.path[ride.path.length-1].lat, ride.path[ride.path.length-1].lng]); // Letzter Punkt
-                
-                if(latLngs.length > 0) detailMapInstance.fitBounds(L.polyline(latLngs).getBounds(), {padding:[30,30]});
+                // Fallback: Wenn nur 1 Punkt, array trotzdem füllen für fitBounds
+                if(latLngs.length === 0) latLngs.push([ride.path[0].lat, ride.path[0].lng]);
+                else latLngs.push([ride.path[ride.path.length-1].lat, ride.path[ride.path.length-1].lng]);
+
+                detailMapInstance.fitBounds(L.polyline(latLngs).getBounds(), {padding:[30,30]});
             } else {
-                // FALLBACK für alte Daten (nur Blaue Linie)
+                // Alte Daten (Blaue Linie)
                 const line = L.polyline(ride.path, {color: '#007aff', weight: 4}).addTo(detailMapInstance);
                 detailMapInstance.fitBounds(line.getBounds(), {padding:[30,30]});
             }
+        } else {
+            // Wenn keine Route da ist (0 Punkte) -> Zeige Berlin oder 0,0
+            detailMapInstance.setView([51.16, 10.45], 6);
         }
+        
         setTimeout(() => detailMapInstance.invalidateSize(), 200);
 
-        // --- 2. GRAPH (CHART.JS) ---
+        // --- GRAPH ---
         const ctx = document.getElementById('speedChart').getContext('2d');
-        if (speedChartInstance) speedChartInstance.destroy(); // Alten Chart löschen
+        if (speedChartInstance) speedChartInstance.destroy();
 
-        // Daten vorbereiten
         let labels = [];
         let dataPoints = [];
         
-        if (ride.path && ride.path.length > 0 && ride.path[0].speed !== undefined) {
-            ride.path.forEach((p, i) => {
-                labels.push(i); // Einfach Index als X-Achse
-                dataPoints.push(p.speed);
-            });
+        if (ride.path && ride.path.length > 0) {
+            // Check ob Speed-Daten vorhanden sind
+            const hasSpeed = ride.path[0].speed !== undefined;
+            if(hasSpeed) {
+                ride.path.forEach((p, i) => {
+                    labels.push(i);
+                    dataPoints.push(p.speed);
+                });
+            } else {
+                // Keine Speed Daten (alte Fahrten)
+                dataPoints = Array(ride.path.length).fill(0);
+                labels = ride.path.map((_, i) => i);
+            }
         }
 
         speedChartInstance = new Chart(ctx, {
@@ -129,8 +158,8 @@ const GarageLogic = {
                     borderColor: '#007aff',
                     backgroundColor: 'rgba(0, 122, 255, 0.1)',
                     borderWidth: 2,
-                    tension: 0.4, // Weiche Kurve
-                    pointRadius: 0, // Keine Punkte
+                    tension: 0.4, 
+                    pointRadius: 0, 
                     fill: true
                 }]
             },
@@ -139,7 +168,7 @@ const GarageLogic = {
                 maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { display: false }, // Keine X-Achse
+                    x: { display: false },
                     y: { 
                         beginAtZero: true, 
                         grid: { color: 'rgba(255,255,255,0.1)' },
