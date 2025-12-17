@@ -1,4 +1,4 @@
-let summaryMap = null; // Map Instanz global halten
+let summaryMap = null; // Globale Variable für die Karte
 
 const DriverLogic = {
     startTime: null, 
@@ -12,7 +12,7 @@ const DriverLogic = {
         this.startTime = Date.now();
         this.totalDist = 0; 
         this.lastPos = null; 
-        this.historyPoints = []; // Route leeren
+        this.historyPoints = []; // Liste leeren!
         
         document.getElementById('hud-time').innerText = "00:00";
         document.getElementById('hud-dist').innerText = "0.00";
@@ -45,6 +45,7 @@ const DriverLogic = {
                 lat, lng
             );
             
+            // Nur speichern wenn wir uns bewegen (Rauschen filtern)
             if (dist > 0.005) { 
                 this.totalDist += dist;
                 document.getElementById('hud-dist').innerText = this.totalDist.toFixed(2);
@@ -52,13 +53,13 @@ const DriverLogic = {
                 this.historyPoints.push([lat, lng]);
             }
         } else {
-            // Erster Punkt (Start) sofort speichern
+            // Erster Punkt
             this.lastPos = pos.coords;
             this.historyPoints.push([lat, lng]); 
         }
     },
 
-    // STOP (Hier ist der Fix!)
+    // STOP
     stop: function() {
         clearInterval(this.timerInterval);
         const durationHours = (Date.now() - this.startTime) / 3600000;
@@ -71,21 +72,35 @@ const DriverLogic = {
 
         switchScreen('summary-screen');
 
-        // --- MAP IN SUMMARY RENDERN ---
+        // --- KARTE RENDERN (Mit Verzögerung für Animation) ---
         setTimeout(() => {
-            // 1. ZENTRUM BESTIMMEN
-            let center = [51.1657, 10.4515]; // Default
-            if (this.historyPoints.length > 0) {
-                center = this.historyPoints[this.historyPoints.length - 1]; // Letzter Punkt
-            }
-
-            // 2. HARD RESET: Karte komplett zerstören falls sie existiert
+            // 1. Container Hard-Reset (Verhindert Fehler beim 2. Mal)
+            const mapContainer = document.getElementById('summary-map');
+            
+            // Wenn schon eine Karte da war -> weg damit
             if (summaryMap) {
-                summaryMap.remove(); // Löscht die alte Instanz komplett
+                summaryMap.off();
+                summaryMap.remove();
                 summaryMap = null;
             }
+            
+            // Container HTML leeren (Sicherheitshalber)
+            if(mapContainer) {
+                mapContainer.innerHTML = "";
+            }
 
-            // 3. FRISCH ERSTELLEN
+            // 2. Mittelpunkt bestimmen
+            let center = [51.1657, 10.4515]; // Fallback
+            
+            if (this.historyPoints.length > 0) {
+                // Wenn wir gefahren sind -> Letzter Punkt
+                center = this.historyPoints[this.historyPoints.length - 1];
+            } else if (typeof userMarker !== 'undefined' && userMarker) {
+                // Wenn wir SOFORT gestoppt haben -> Nimm den blauen Punkt (User Position)
+                center = userMarker.getLatLng();
+            }
+
+            // 3. Neue Karte erstellen
             summaryMap = L.map('summary-map', { 
                 zoomControl: false, 
                 attributionControl: false,
@@ -99,15 +114,14 @@ const DriverLogic = {
                 detectRetina: true
             }).addTo(summaryMap);
             
-            // 4. ROUTE ZEICHNEN
+            // 4. Route zeichnen
             if (this.historyPoints.length > 0) {
-                // Linie (nur wenn wir uns bewegt haben)
+                // Blaue Linie
                 if (this.historyPoints.length > 1) {
                     const line = L.polyline(this.historyPoints, {color: '#007aff', weight: 4}).addTo(summaryMap);
                     summaryMap.fitBounds(line.getBounds(), {padding:[40,40]});
                 } else {
-                    // Wenn wir uns nicht bewegt haben -> Zoom auf den einen Punkt
-                    summaryMap.setView(this.historyPoints[0], 16);
+                    summaryMap.setView(center, 16);
                 }
 
                 const startPt = this.historyPoints[0];
@@ -115,17 +129,21 @@ const DriverLogic = {
 
                 // Start (Grün)
                 L.circleMarker(startPt, {radius: 6, color: '#32cd32', fillOpacity: 1, fillColor: '#32cd32'}).addTo(summaryMap);
-                // Ende (Rot) - Wenn du dich nicht bewegt hast, liegt Rot über Grün (deshalb siehst du Rot)
+                // Ende (Rot)
                 L.circleMarker(endPt, {radius: 6, color: '#ff3b30', fillOpacity: 1, fillColor: '#ff3b30'}).addTo(summaryMap);
+            } else {
+                // Wenn gar keine Punkte (0m gefahren): Zeige einfach aktuellen Standort
+                L.circleMarker(center, {radius: 6, color: '#007aff', fillOpacity: 1, fillColor: '#007aff'}).addTo(summaryMap);
             }
 
             summaryMap.invalidateSize();
-        }, 100);
+        }, 350); // Timing wichtig!
 
-        // Buttons
+        // Buttons binden
         const btnSave = document.getElementById('btn-save');
         const btnDiscard = document.getElementById('btn-discard');
 
+        // Alte Listener entfernen (indem wir .onclick überschreiben)
         btnSave.onclick = () => {
             GarageLogic.save({ 
                 date: Date.now(), 
