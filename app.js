@@ -1,12 +1,13 @@
 let map, userMarker;
 let isDriveMode = false;
 let watchId = null;
+let isZooming = false; // Flag gegen Ruckeln
 
 window.addEventListener('load', () => {
     // Splash
     setTimeout(() => {
-        document.getElementById('splash-screen').style.opacity = '0';
-        setTimeout(() => document.getElementById('splash-screen').classList.add('hidden'), 800);
+        const s = document.getElementById('splash-screen');
+        if(s) { s.style.opacity = '0'; setTimeout(() => s.classList.add('hidden'), 800); }
     }, 1500);
 
     initMap();
@@ -17,45 +18,36 @@ window.addEventListener('load', () => {
     document.getElementById('nav-home-from-garage').onclick = hideGarage;
     document.getElementById('btn-start').onclick = startDriveMode;
     document.getElementById('btn-stop').onclick = () => DriverLogic.stop();
-    document.getElementById('btn-recenter').onclick = () => centerMapOnUser();
+    document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
 });
 
 function initMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
-        dragging: false, touchZoom: false, doubleClickZoom: false,
-        zoomSnap: 0, zoomDelta: 0.5 
+        dragging: false, touchZoom: false, doubleClickZoom: false
     }).setView([51.1657, 10.4515], 14);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
-        maxZoom: 20, detectRetina: true 
-    }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
 
-    startGPS();
-
-    map.on('dragstart', () => {
-        if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden');
-    });
-}
-
-function startGPS() {
-    if (navigator.geolocation && !watchId) {
+    // Marker SOFORT initialisieren, wenn GPS da ist
+    if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(handlePositionUpdate, 
             (err) => console.warn(err), 
-            { enableHighAccuracy: true, maximumAge: 0 }
+            { enableHighAccuracy: true }
         );
     }
-}
-function stopGPS() {
-    if(watchId) {
-        navigator.geolocation.clearWatch(watchId);
-        watchId = null;
-    }
+
+    map.on('dragstart', () => { if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden'); });
+    
+    // WICHTIG: Flag setzen beim Zoomen
+    map.on('zoomstart', () => { isZooming = true; });
+    map.on('zoomend', () => { isZooming = false; });
 }
 
 function handlePositionUpdate(pos) {
     const newLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
 
+    // Marker erstellen/updaten
     if (!userMarker) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
@@ -64,11 +56,15 @@ function handlePositionUpdate(pos) {
         userMarker.setLatLng(newLatLng);
     }
 
+    // Wenn gerade gezoomt wird -> KEIN Update der Karte (verhindert Ruckeln)
+    if (isZooming) return;
+
     if (isDriveMode) {
         DriverLogic.update(pos);
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
             const dist = map.getCenter().distanceTo(newLatLng);
-            if (dist > 10) map.panTo(newLatLng, { animate: true, duration: 0.8 });
+            // Nur bewegen wenn > 10m Diff
+            if (dist > 10) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
         const dist = map.getCenter().distanceTo(newLatLng);
@@ -81,26 +77,18 @@ function startDriveMode() {
     switchScreen('drive-screen');
     map.dragging.enable();
     map.touchZoom.enable();
-    map.doubleClickZoom.enable();
     
-    // ZOOM FIX: GPS kurz aus, schneller Zoom
-    stopGPS(); 
     if(userMarker) {
-        // Duration 0.8s ist kurz genug, dass man kein Ruckeln sieht
-        map.flyTo(userMarker.getLatLng(), 18, { animate: true, duration: 0.8 });
+        // WICHTIG: setView ist viel stabiler als flyTo
+        map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.5 });
     }
-    setTimeout(() => {
-        startGPS();
-        DriverLogic.start();
-    }, 900);
+    DriverLogic.start();
 }
 
 function centerMapOnUser() {
     if(userMarker) {
-        stopGPS();
-        map.flyTo(userMarker.getLatLng(), 18, { duration: 0.8 });
+        map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
         document.getElementById('btn-recenter').classList.add('hidden');
-        setTimeout(() => startGPS(), 900);
     }
 }
 
@@ -109,11 +97,7 @@ function hideGarage() {
     switchScreen('home-screen'); 
     isDriveMode = false;
     map.dragging.disable();
-    if(userMarker) {
-        stopGPS();
-        map.flyTo(userMarker.getLatLng(), 14, { duration: 1.0 });
-        setTimeout(() => startGPS(), 1100);
-    }
+    if(userMarker) map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
 }
 
 function switchScreen(id) {
