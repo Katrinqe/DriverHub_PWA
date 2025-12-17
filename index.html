@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DriverHub 4.0</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="logo.png">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=18">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <link rel="stylesheet" href="style.css?v=23">
 </head>
 <body>
 
@@ -93,23 +97,42 @@
             <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
         </div>
         <div id="garage-list" class="garage-list interactive-element"></div>
-        
         <div class="bottom-nav interactive-element">
             <div class="nav-item" id="nav-home-from-garage"><i class="fa-solid fa-house"></i><span>Home</span></div>
             <div class="nav-item active-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
         </div>
 
         <div id="detail-overlay" class="hidden interactive-element">
-            <button class="close-detail-btn interactive-element" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
-            <div id="detail-map"></div>
-            <div class="detail-info">
+            <div class="detail-header">
                 <h3 id="det-date">Date</h3>
-                <div class="hud-row">
-                    <div class="hud-item"><span class="hud-label">DIST</span><span class="hud-value" id="det-dist">0</span></div>
-                    <div class="hud-item"><span class="hud-label">AVG</span><span class="hud-value" id="det-avg">0</span></div>
-                    <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="det-time">00:00</span></div>
-                </div>
+                <button class="close-detail-btn" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
             </div>
+            
+            <div class="detail-content">
+                <div id="detail-map-container">
+                    <div id="detail-map"></div>
+                </div>
+
+                <div class="detail-stats-row">
+                    <div class="d-stat-box">
+                        <span class="label">DIST</span>
+                        <span class="val" id="det-dist">0 km</span>
+                    </div>
+                    <div class="d-stat-box">
+                        <span class="label">TIME</span>
+                        <span class="val" id="det-time">00:00</span>
+                    </div>
+                    <div class="d-stat-box">
+                        <span class="label">AVG</span>
+                        <span class="val" id="det-avg">0 km/h</span>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="speedChart"></canvas>
+                </div>
+                
+                <div style="height: 50px;"></div> </div>
         </div>
     </div>
 
