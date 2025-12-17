@@ -4,12 +4,11 @@ let watchId = null;
 let isZooming = false; 
 let currentRotation = 0; 
 
-// Variablen für Long-Press (Stop Button)
+// Variablen für Long-Press
 let pressTimer = null;
 const LONG_PRESS_DURATION = 1500; 
 
 window.addEventListener('load', () => {
-    // Splash Screen Logik
     setTimeout(() => {
         const s = document.getElementById('splash-screen');
         if(s) { s.style.opacity = '0'; setTimeout(() => s.classList.add('hidden'), 800); }
@@ -18,30 +17,23 @@ window.addEventListener('load', () => {
     initMap();
     initWeather();
     
-    // Explore Modul laden, falls vorhanden
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
 
-    // --- BUTTON WIRING ---
-    
-    // Home Button (von überall)
+    // BUTTON WIRING
     document.getElementById('nav-home').onclick = showHome;
     document.getElementById('nav-home-from-garage').onclick = showHome;
     document.getElementById('nav-home-from-explore').onclick = showHome;
     
-    // Garage Button
     document.getElementById('nav-garage').onclick = showGarage;
     document.getElementById('nav-garage-from-explore').onclick = showGarage;
     
-    // Explore / Map Button
     document.getElementById('nav-explore').onclick = showExplore;
     document.getElementById('nav-explore-from-garage').onclick = showExplore;
     document.getElementById('nav-explore-active').onclick = showExplore;
 
-    // Drive Start & Recenter
     document.getElementById('btn-start').onclick = startDriveMode;
     document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
 
-    // Stop Button mit Long-Press Logik
     const btnStop = document.getElementById('btn-stop');
     function startPress(e) {
         if (e.type === 'touchstart') e.preventDefault(); 
@@ -85,7 +77,6 @@ function handlePositionUpdate(pos) {
     const heading = pos.coords.heading; 
     const speedKm = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
 
-    // Marker Update (Animation passiert via CSS Transition)
     if (!userMarker) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
@@ -94,14 +85,11 @@ function handlePositionUpdate(pos) {
         userMarker.setLatLng(newLatLng);
     }
 
-    // --- MAP ROTATION LOGIC ---
     const mapEl = document.getElementById('background-map');
     
     if (isDriveMode) {
-        // Nur rotieren wenn wir fahren (> 5 km/h) um Zittern zu vermeiden
         if (heading !== null && !isNaN(heading) && speedKm > 5) {
             let targetRot = -heading; 
-            // Shortest Path Berechnung für sanfte Drehung
             let diff = targetRot - currentRotation;
             while (diff < -180) diff += 360;
             while (diff > 180) diff -= 360;
@@ -109,7 +97,6 @@ function handlePositionUpdate(pos) {
             if(mapEl) mapEl.style.transform = `rotate(${currentRotation}deg)`;
         }
     } else {
-        // Im Home/Explore Mode immer genordet (0°)
         if (currentRotation !== 0) {
             currentRotation = 0;
             if(mapEl) mapEl.style.transform = `rotate(0deg)`;
@@ -118,37 +105,29 @@ function handlePositionUpdate(pos) {
 
     if (isZooming) return;
 
-    // --- TRACKING LOGIC ---
     if (isDriveMode) {
         DriverLogic.update(pos);
-        // Wenn Recenter aktiv ist (Button hidden), folge dem User hart
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
             const dist = map.getCenter().distanceTo(newLatLng);
             if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
-        // Wenn wir NICHT im Drive Mode sind...
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
-        
-        // ...und NICHT im Explore Mode sind (also Home Screen):
         if (!isExplore) {
-            // Nur sanft folgen, wenn der Abstand zu groß wird
             const dist = map.getCenter().distanceTo(newLatLng);
             if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
         }
-        // Im Explore Mode machen wir gar nichts automatisch (User hat Kontrolle)
     }
 }
 
 function startDriveMode() {
-    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave(); // Aufräumen falls nötig
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     
     isDriveMode = true;
     switchScreen('drive-screen');
     map.dragging.enable();
     map.touchZoom.enable();
     
-    // Beim Start einmal reinzoomen und zentrieren
     if(userMarker) {
         map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.5 });
     }
@@ -164,19 +143,15 @@ function centerMapOnUser() {
 
 function showHome() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
-    
     switchScreen('home-screen');
     isDriveMode = false;
     
-    // Reset Rotation
     const mapEl = document.getElementById('background-map');
     currentRotation = 0;
     if(mapEl) mapEl.style.transform = `rotate(0deg)`;
     
     map.dragging.disable();
     
-    // FIX: Kein harter Zoom (setView), nur sanftes Zurückgleiten (panTo)
-    // Wir behalten den Zoom-Level bei, den der User evtl. eingestellt hat
     if(userMarker) {
         map.panTo(userMarker.getLatLng(), { animate: true, duration: 1.5 });
     }
@@ -190,15 +165,36 @@ function showGarage() {
 
 function showExplore() {
     switchScreen('explore-screen');
-    // Explore Logic aktivieren (Map freigeben etc.)
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
 }
 
+// --- OPTIMIZED SCREEN SWITCHING (CROSS FADE) ---
 function switchScreen(id) {
-    document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.classList.add('hidden'); });
-    const t = document.getElementById(id);
-    t.classList.remove('hidden');
-    setTimeout(() => t.classList.add('active'), 10);
+    // 1. Finde alle aktiven Screens
+    const activeScreens = document.querySelectorAll('.screen.active');
+    
+    // 2. Entferne 'active' sofort (Startet CSS Fade-Out)
+    // Wir fügen 'fading-out' hinzu, um sie kurz oben zu halten
+    activeScreens.forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('fading-out');
+        
+        // Erst nach 350ms (wenn Transition fertig) auf 'hidden' setzen
+        setTimeout(() => {
+            s.classList.remove('fading-out');
+            s.classList.add('hidden');
+        }, 350); 
+    });
+
+    // 3. Neuen Screen vorbereiten
+    const nextScreen = document.getElementById(id);
+    // 'hidden' sofort entfernen, damit er sichtbar wird (aber opacity ist noch 0)
+    nextScreen.classList.remove('hidden');
+    
+    // Kleiner Timeout, damit der Browser den Statuswechsel checkt, dann einfaden
+    setTimeout(() => {
+        nextScreen.classList.add('active');
+    }, 20);
 }
 
 function initWeather() {
