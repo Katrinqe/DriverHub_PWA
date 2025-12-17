@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DriverHub 4.0</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="logo.png">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css?v=27">
+    
+    <link rel="stylesheet" href="style.css?v=30">
 </head>
 <body>
 
@@ -37,7 +40,29 @@
         </div>
         <div class="bottom-nav interactive-element">
             <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="nav-item" id="nav-explore"><i class="fa-solid fa-map"></i><span>Map</span></div>
             <div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
+        </div>
+    </div>
+
+    <div id="explore-screen" class="screen hidden">
+        <div class="explore-top-ui interactive-element">
+            <div class="search-bar-glass">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" placeholder="Where to go?">
+            </div>
+            
+            <div class="filter-row">
+                <button class="filter-chip" id="filter-gas"><i class="fa-solid fa-gas-pump"></i> Gas</button>
+                <button class="filter-chip" id="filter-cam"><i class="fa-solid fa-camera"></i> Cams</button>
+                <button class="filter-chip" id="filter-parking"><i class="fa-solid fa-square-parking"></i> Park</button>
+            </div>
+        </div>
+
+        <div class="bottom-nav interactive-element">
+            <div class="nav-item" id="nav-home-from-explore"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="nav-item active-map" id="nav-explore-active"><i class="fa-solid fa-map"></i><span>Map</span></div>
+            <div class="nav-item" id="nav-garage-from-explore"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
         </div>
     </div>
 
@@ -88,6 +113,7 @@
         <div id="garage-list" class="garage-list interactive-element"></div>
         <div class="bottom-nav interactive-element">
             <div class="nav-item" id="nav-home-from-garage"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="nav-item" id="nav-explore-from-garage"><i class="fa-solid fa-map"></i><span>Map</span></div>
             <div class="nav-item active-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
         </div>
 
@@ -113,6 +139,7 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="explore.js"></script>
     <script src="garage.js"></script>
     <script src="drive.js"></script>
     <script src="app.js"></script>
