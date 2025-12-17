@@ -1,10 +1,13 @@
 let map, userMarker;
 let isDriveMode = false;
 let watchId = null;
-let isZooming = false; // Flag gegen Ruckeln
+let isZooming = false; 
+
+// Variablen für Long-Press
+let pressTimer = null;
+const LONG_PRESS_DURATION = 1500; // 1.5 Sekunden halten
 
 window.addEventListener('load', () => {
-    // Splash
     setTimeout(() => {
         const s = document.getElementById('splash-screen');
         if(s) { s.style.opacity = '0'; setTimeout(() => s.classList.add('hidden'), 800); }
@@ -17,19 +20,50 @@ window.addEventListener('load', () => {
     document.getElementById('nav-home').onclick = hideGarage;
     document.getElementById('nav-home-from-garage').onclick = hideGarage;
     document.getElementById('btn-start').onclick = startDriveMode;
-    document.getElementById('btn-stop').onclick = () => DriverLogic.stop();
     document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
+
+    // --- STOP BUTTON LONG PRESS LOGIC ---
+    const btnStop = document.getElementById('btn-stop');
+
+    function startPress(e) {
+        // Verhindert Rechtsklick Menü am Handy
+        if (e.type === 'touchstart') e.preventDefault(); 
+        
+        btnStop.classList.add('holding'); // Startet CSS Animation
+        
+        pressTimer = setTimeout(() => {
+            // Wenn Zeit abgelaufen -> STOPPEN
+            DriverLogic.stop();
+            resetPress(); // Reset UI
+        }, LONG_PRESS_DURATION);
+    }
+
+    function resetPress() {
+        if (pressTimer) {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+        }
+        btnStop.classList.remove('holding'); // Stoppt Animation
+    }
+
+    // Events für Maus & Touch
+    btnStop.addEventListener('mousedown', startPress);
+    btnStop.addEventListener('touchstart', startPress);
+    
+    btnStop.addEventListener('mouseup', resetPress);
+    btnStop.addEventListener('mouseleave', resetPress);
+    btnStop.addEventListener('touchend', resetPress);
 });
 
 function initMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
-        dragging: false, touchZoom: false, doubleClickZoom: false
+        dragging: false, touchZoom: false, doubleClickZoom: false,
+        zoomSnap: 0, zoomDelta: 0.5 
     }).setView([51.1657, 10.4515], 14);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
 
-    // Marker SOFORT initialisieren, wenn GPS da ist
     if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(handlePositionUpdate, 
             (err) => console.warn(err), 
@@ -38,8 +72,6 @@ function initMap() {
     }
 
     map.on('dragstart', () => { if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden'); });
-    
-    // WICHTIG: Flag setzen beim Zoomen
     map.on('zoomstart', () => { isZooming = true; });
     map.on('zoomend', () => { isZooming = false; });
 }
@@ -47,7 +79,6 @@ function initMap() {
 function handlePositionUpdate(pos) {
     const newLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
 
-    // Marker erstellen/updaten
     if (!userMarker) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
@@ -56,14 +87,12 @@ function handlePositionUpdate(pos) {
         userMarker.setLatLng(newLatLng);
     }
 
-    // Wenn gerade gezoomt wird -> KEIN Update der Karte (verhindert Ruckeln)
     if (isZooming) return;
 
     if (isDriveMode) {
         DriverLogic.update(pos);
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
             const dist = map.getCenter().distanceTo(newLatLng);
-            // Nur bewegen wenn > 10m Diff
             if (dist > 10) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
@@ -79,7 +108,6 @@ function startDriveMode() {
     map.touchZoom.enable();
     
     if(userMarker) {
-        // WICHTIG: setView ist viel stabiler als flyTo
         map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.5 });
     }
     DriverLogic.start();
