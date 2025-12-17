@@ -4,13 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DriverHub 4.0</title>
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="logo.png">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="style.css?v=24">
+    
+    <link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 
@@ -42,6 +45,11 @@
     </div>
 
     <div id="drive-screen" class="screen hidden">
+        
+        <div id="speed-limit" class="hidden">
+            <span>--</span>
+        </div>
+
         <div class="drive-hud-top interactive-element">
             <div class="hud-row">
                 <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="hud-time">00:00</span></div>
@@ -122,7 +130,6 @@
                 <div class="chart-container">
                     <canvas id="speedChart"></canvas>
                 </div>
-                
                 <div style="height: 50px;"></div>
             </div>
         </div>
