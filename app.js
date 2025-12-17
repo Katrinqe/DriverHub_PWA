@@ -67,7 +67,7 @@ function initMap() {
         );
     }
 
-    // --- FIX FÜR SCHWIMMENDEN PUNKT ---
+    // FIX FÜR SCHWIMMENDEN PUNKT
     // Wenn User interagiert (Zoom/Pan), schalten wir die CSS-Animation aus
     map.on('zoomstart movestart', () => {
         isZooming = true;
@@ -94,12 +94,10 @@ function handlePositionUpdate(pos) {
     if (!userMarker) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
-        // Initial einmal 'smooth' hinzufügen
         setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
         map.setView(newLatLng, 14);
     } else {
         userMarker.setLatLng(newLatLng);
-        // Sicherstellen dass Klasse da ist (falls sie mal verloren ging)
         if(userMarker.getElement() && !isZooming) userMarker.getElement().classList.add('smooth');
     }
 
@@ -133,7 +131,6 @@ function handlePositionUpdate(pos) {
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
         if (!isExplore) {
             const dist = map.getCenter().distanceTo(newLatLng);
-            // Home Screen folgt locker
             if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
         }
     }
@@ -172,9 +169,7 @@ function showHome() {
     
     map.dragging.disable();
     
-    // --- HOME PAGE RESET ---
-    // Hier erzwingen wir den Zoom 14 und die User-Position
-    // Egal wo wir in Explore waren, Home ist immer gleich.
+    // HOME PAGE RESET (Passiert auch wenn switchScreen abbricht, was gut ist)
     if(userMarker) {
         map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
     }
@@ -191,7 +186,15 @@ function showExplore() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
 }
 
+// --- BUG FIX IN DIESER FUNKTION ---
 function switchScreen(id) {
+    const nextScreen = document.getElementById(id);
+    
+    // GUARD: Wenn wir schon auf dem Ziel-Screen sind -> ABBRUCH der Animation
+    // Das verhindert, dass wir den aktuellen Screen ausblenden und nichts mehr sehen.
+    if (nextScreen.classList.contains('active')) return;
+
+    // Alte Screens ausblenden
     const activeScreens = document.querySelectorAll('.screen.active');
     activeScreens.forEach(s => {
         s.classList.remove('active');
@@ -202,7 +205,7 @@ function switchScreen(id) {
         }, 350); 
     });
 
-    const nextScreen = document.getElementById(id);
+    // Neuen Screen einblenden
     nextScreen.classList.remove('hidden');
     setTimeout(() => {
         nextScreen.classList.add('active');
