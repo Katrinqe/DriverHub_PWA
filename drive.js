@@ -1,5 +1,5 @@
 let summaryMap = null;
-let lastSpeedCheck = 0; // Timestamp, damit wir die API nicht überlasten
+let lastSpeedCheck = 0; 
 
 const DriverLogic = {
     startTime: null, timerInterval: null, totalDist: 0, lastPos: null, historyPoints: [],
@@ -10,8 +10,6 @@ const DriverLogic = {
         document.getElementById('hud-time').innerText = "00:00";
         document.getElementById('hud-dist').innerText = "0.00";
         document.getElementById('hud-speed').innerText = "0";
-        
-        // Schild erst mal verstecken
         document.getElementById('speed-limit').classList.add('hidden');
 
         if(this.timerInterval) clearInterval(this.timerInterval);
@@ -30,11 +28,10 @@ const DriverLogic = {
         document.getElementById('hud-speed').innerText = speedKm;
 
         const lat = pos.coords.latitude; const lng = pos.coords.longitude;
-
-        // --- ECHTE API ABFRAGE (Alle 10-15 Sekunden) ---
-        // Wir nutzen Overpass API (OpenStreetMap)
         const now = Date.now();
-        if (now - lastSpeedCheck > 12000) { // Alle 12 Sekunden checken
+
+        // Speed Limit API Check (alle 12s)
+        if (now - lastSpeedCheck > 12000) { 
             lastSpeedCheck = now;
             this.fetchRealSpeedLimit(lat, lng);
         }
@@ -45,60 +42,32 @@ const DriverLogic = {
                 this.totalDist += dist;
                 document.getElementById('hud-dist').innerText = this.totalDist.toFixed(2);
                 this.lastPos = pos.coords;
-                this.historyPoints.push({lat: lat, lng: lng, speed: speedKm});
+                // WICHTIG: Jetzt speichern wir auch die ZEIT (timestamp)
+                this.historyPoints.push({lat: lat, lng: lng, speed: speedKm, time: now});
             }
         } else {
             this.lastPos = pos.coords;
-            this.historyPoints.push({lat: lat, lng: lng, speed: speedKm}); 
+            this.historyPoints.push({lat: lat, lng: lng, speed: speedKm, time: now}); 
         }
     },
 
-    // DIE ECHTE ABFRAGE
     fetchRealSpeedLimit: function(lat, lng) {
-        // Query: Suche Straßen im Umkreis von 25m mit "maxspeed" Tag
-        const query = `
-            [out:json];
-            way(around:25,${lat},${lng})["maxspeed"];
-            out tags;
-        `;
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-
-        fetch(url)
-            .then(r => r.json())
-            .then(data => {
+        const query = `[out:json];way(around:25,${lat},${lng})["maxspeed"];out tags;`;
+        fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`)
+            .then(r => r.json()).then(data => {
                 const sign = document.getElementById('speed-limit');
-                const span = sign.querySelector('span');
-
                 if (data.elements && data.elements.length > 0) {
-                    // Wir nehmen das erste Ergebnis (meistens die Straße auf der man ist)
                     let maxSpeed = data.elements[0].tags.maxspeed;
-                    
-                    // Fallback für Text-Werte (Deutschland)
                     if (maxSpeed === "DE:urban") maxSpeed = "50";
                     if (maxSpeed === "DE:rural") maxSpeed = "100";
                     if (maxSpeed === "DE:zone:30") maxSpeed = "30";
-
-                    // Zahl extrahieren
                     const cleanSpeed = parseInt(maxSpeed);
-
                     if (!isNaN(cleanSpeed)) {
-                        span.innerText = cleanSpeed;
-                        sign.classList.remove('hidden');
-                        sign.style.opacity = '1';
-                    } else if (maxSpeed === "none") {
-                        // Keine Begrenzung (Autobahn) -> Ausblenden
-                        sign.classList.add('hidden');
-                        sign.style.opacity = '0';
-                    }
-                } else {
-                    // Kein Schild gefunden in OSM -> Ausblenden
-                    sign.classList.add('hidden');
-                    sign.style.opacity = '0';
-                }
-            })
-            .catch(err => {
-                console.log("Overpass API Error (evtl. offline oder timeout)", err);
-            });
+                        sign.querySelector('span').innerText = cleanSpeed;
+                        sign.classList.remove('hidden'); sign.style.opacity = '1';
+                    } else sign.classList.add('hidden');
+                } else sign.classList.add('hidden');
+            }).catch(e => console.log(e));
     },
 
     stop: function() {
@@ -110,8 +79,6 @@ const DriverLogic = {
         document.getElementById('sum-avg').innerText = avgSpeed;
         document.getElementById('sum-dist').innerText = this.totalDist.toFixed(2);
         document.getElementById('sum-time').innerText = finalTime;
-        
-        // Schild weg
         document.getElementById('speed-limit').classList.add('hidden');
 
         switchScreen('summary-screen');
@@ -144,7 +111,7 @@ const DriverLogic = {
         const btnDiscard = document.getElementById('btn-discard');
 
         btnSave.onclick = () => {
-            GarageLogic.save({ date: Date.now(), dist: this.totalDist, time: finalTime, avg: avgSpeed, path: this.historyPoints });
+            GarageLogic.save({ date: Date.now(), dist: this.totalDist, time: finalTime, avg: avgSpeed, path: this.historyPoints, startTime: this.startTime });
             showGarage();
         };
         btnDiscard.onclick = () => { hideGarage(); };
