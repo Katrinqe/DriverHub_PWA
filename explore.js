@@ -1,4 +1,4 @@
-const TANKERKOENIG_API_KEY = ''; // KEY HIER EINFÜGEN
+const TANKERKOENIG_API_KEY = ''; // KEY HIER REIN
 
 let exploreLayers = { gas: null, cam: null, parking: null };
 let exploreState = { gas: false, cam: false, parking: false };
@@ -129,7 +129,6 @@ const ExploreLogic = {
         const center = map.getCenter();
         let radius = 3000; 
         
-        // FIX: Radius für Filter vergrößern
         if (map.getZoom() < 12) radius = 15000; 
         else if (map.getZoom() > 14) radius = 5000; 
         else radius = 8000;
