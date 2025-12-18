@@ -18,6 +18,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 }
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
+
 .user-marker-wrap { position: relative; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; transition: none; }
 .user-marker-wrap.smooth { transition: transform 1s linear; }
 .user-dot { width: 18px; height: 18px; background-color: #007aff; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 999; position: relative; }
@@ -34,9 +35,20 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 /* --- MINI PREIS-TOTEMS (Tankstellen auf Map) --- */
 .price-marker-wrap {
     background: #000; border: 1px solid #333; border-radius: 6px; display: flex; flex-direction: column; overflow: hidden;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.7); transition: transform 0.2s; width: 70px !important; height: auto !important;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.7); transition: all 0.3s; width: 70px !important; height: auto !important;
 }
 .price-marker-wrap:active { transform: scale(1.1); z-index: 1000 !important; border-color: white; }
+
+/* NEU: Style für geschlossene Tankstellen */
+.price-marker-wrap.closed {
+    filter: grayscale(100%) opacity(0.6); 
+    transform: scale(0.9);
+    border-color: #444;
+}
+/* Im geschlossenen Zustand Preis ändern */
+.price-marker-wrap.closed .pm-price {
+    color: #888; text-decoration: line-through; text-shadow: none;
+}
 
 /* Marken-Balken mit Name oben */
 .pm-brand-bar {
@@ -114,7 +126,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 #totem-status { color: #30d158; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 5px; }
 .btn-navigate { background: var(--primary); color: white; border: none; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
 
-/* BUTTONS & OTHERS */
+/* BUTTONS */
 .btn-super-glass { width: 100%; max-width: 240px; height: 52px; border-radius: 50px; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.5px; color: white; border: none; cursor: pointer; background: linear-gradient(135deg, rgba(0, 122, 255, 0.5), rgba(0, 210, 255, 0.3)); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.4); border-bottom: 1px solid rgba(0, 80, 255, 0.3); border-left: 1px solid rgba(255, 255, 255, 0.15); border-right: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 10px 30px rgba(0, 122, 255, 0.25), inset 0 2px 5px rgba(255, 255, 255, 0.2); transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); pointer-events: auto; }
 .btn-super-glass:active { transform: scale(0.97); box-shadow: 0 5px 15px rgba(0, 122, 255, 0.2); }
 .btn-stop-glass { width: 100%; max-width: 200px; height: 50px; border-radius: 20px; background: rgba(0,0,0,0.5); border: 1px solid var(--danger); backdrop-filter: blur(10px); color: var(--danger); font-weight: 800; font-size: 1rem; pointer-events: auto; position: relative; overflow: hidden; transition: transform 0.1s; }
