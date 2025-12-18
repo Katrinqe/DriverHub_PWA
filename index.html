@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=41">
+    <link rel="stylesheet" href="style.css?v=42">
 </head>
 <body>
 
@@ -62,12 +62,21 @@
         </button>
 
         <div id="gas-filter-modal" class="hidden interactive-element">
-            <div class="filter-sheet">
+            <div class="filter-card">
                 <div class="filter-title-row">
-                    <h3>Gas Filter</h3>
+                    <h3>Find Cheapest</h3>
                     <button class="btn-close-filter" onclick="ExploreLogic.closeFilter()"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 
+                <div class="filter-section">
+                    <label>Fuel Type</label>
+                    <div class="filter-grid">
+                        <button class="filter-btn active" id="btn-type-e10" onclick="ExploreLogic.setFuelFilter('e10')">E10</button>
+                        <button class="filter-btn" id="btn-type-e5" onclick="ExploreLogic.setFuelFilter('e5')">E5</button>
+                        <button class="filter-btn" id="btn-type-diesel" onclick="ExploreLogic.setFuelFilter('diesel')">Diesel</button>
+                    </div>
+                </div>
+
                 <div class="filter-section">
                     <label>Radius</label>
                     <div class="radius-control">
@@ -78,18 +87,17 @@
 
                 <div class="filter-section">
                     <label>Brand</label>
-                    <div class="brand-grid">
-                        <button class="brand-btn active" onclick="ExploreLogic.setBrandFilter('all', this)">ALL</button>
-                        <button class="brand-btn" onclick="ExploreLogic.setBrandFilter('aral', this)">ARAL</button>
-                        <button class="brand-btn" onclick="ExploreLogic.setBrandFilter('shell', this)">SHELL</button>
-                        <button class="brand-btn" onclick="ExploreLogic.setBrandFilter('total', this)">TOTAL</button>
-                        <button class="brand-btn" onclick="ExploreLogic.setBrandFilter('esso', this)">ESSO</button>
-                        <button class="brand-btn" onclick="ExploreLogic.setBrandFilter('jet', this)">JET</button>
+                    <div class="filter-grid">
+                        <button class="filter-btn active" onclick="ExploreLogic.setBrandFilter('all', this)">ALL</button>
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('aral', this)">ARAL</button>
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('shell', this)">SHELL</button>
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('total', this)">TOTAL</button>
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('jet', this)">JET</button>
                     </div>
                 </div>
 
                 <div class="filter-section">
-                    <label>Cheapest Nearby</label>
+                    <label>Results</label>
                     <div id="filter-results" class="filter-results-list">
                         </div>
                 </div>
