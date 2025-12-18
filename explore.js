@@ -1,25 +1,17 @@
-// --- KONFIGURATION ---
-// Für echte Preise: Hol dir einen kostenlosen Key auf https://creativecommons.tankerkoenig.de/
-// und füge ihn hier ein. Wenn leer oder ungültig -> Smarte Simulation.
-const TANKERKOENIG_API_KEY = ''; 
+const TANKERKOENIG_API_KEY = ''; // Hier Key rein, wenn da
 
-let exploreLayers = {
-    gas: null,
-    cam: null,
-    parking: null
-};
+// Globale Variablen
+let exploreLayers = { gas: null, cam: null, parking: null };
+let exploreState = { gas: false, cam: false, parking: false };
 
-let exploreState = {
-    gas: false,
-    cam: false,
-    parking: false
-};
+// Cache für Tankstellen (damit wir nicht ständig neu laden müssen beim Umschalten)
+let cachedGasStations = []; 
+let currentFuelType = 'e10'; // Standard: E10
 
 const ExploreLogic = {
     init: function() {
-        console.log("Explore Module: Initializing...");
-
-        if (typeof L === 'undefined') { console.error("Leaflet Missing"); return; }
+        console.log("Explore Init");
+        if (typeof L === 'undefined') return;
 
         exploreLayers.gas = L.layerGroup();
         exploreLayers.cam = L.layerGroup();
@@ -32,9 +24,7 @@ const ExploreLogic = {
         const btnRecenter = document.getElementById('btn-explore-recenter');
         if(btnRecenter) {
             btnRecenter.onclick = () => {
-                if(map && userMarker) {
-                    map.panTo(userMarker.getLatLng(), { animate: true, duration: 1.0 });
-                }
+                if(map && userMarker) map.panTo(userMarker.getLatLng(), { animate: true, duration: 1.0 });
             };
         }
     },
@@ -92,9 +82,13 @@ const ExploreLogic = {
     },
 
     onMapMove: function() {
-        if (exploreState.gas) ExploreLogic.fetchData('gas');
-        if (exploreState.cam) ExploreLogic.fetchData('cam');
-        if (exploreState.parking) ExploreLogic.fetchData('parking');
+        // Debounce (nicht zu oft feuern)
+        if (this.moveTimeout) clearTimeout(this.moveTimeout);
+        this.moveTimeout = setTimeout(() => {
+            if (exploreState.gas) ExploreLogic.fetchData('gas');
+            if (exploreState.cam) ExploreLogic.fetchData('cam');
+            if (exploreState.parking) ExploreLogic.fetchData('parking');
+        }, 500);
     },
 
     fetchData: function(type) {
@@ -102,7 +96,11 @@ const ExploreLogic = {
         const center = map.getCenter();
         let radius = 3000; 
         if (map.getZoom() < 12) radius = 10000; 
-        if (map.getZoom() > 15) radius = 1500;
+        if (map.getZoom() > 14) radius = 2000;
+
+        // Loading anzeigen
+        const loader = document.getElementById('map-loading');
+        if(loader) loader.classList.add('visible');
 
         let query = "";
         if (type === 'gas') query = `[out:json];node["amenity"="fuel"](around:${radius},${center.lat},${center.lng});out;`;
@@ -114,130 +112,144 @@ const ExploreLogic = {
         fetch(url)
             .then(r => r.json())
             .then(data => {
-                if(exploreLayers[type]) exploreLayers[type].clearLayers();
-                if (!data.elements) return;
-
-                data.elements.forEach(el => {
-                    let iconHtml = '';
-                    let className = '';
-
-                    if (type === 'gas') { iconHtml = '<i class="fa-solid fa-gas-pump"></i>'; className = 'icon-gas'; }
-                    else if (type === 'cam') { iconHtml = '<i class="fa-solid fa-camera"></i>'; className = 'icon-cam'; }
-                    else if (type === 'parking') { iconHtml = '<i class="fa-solid fa-square-parking"></i>'; className = 'icon-parking'; }
-
-                    const icon = L.divIcon({
-                        className: 'custom-div-icon', 
-                        html: `<div class="custom-map-icon ${className}">${iconHtml}</div>`,
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    });
-
-                    const marker = L.marker([el.lat, el.lon], {icon: icon});
-                    
-                    // --- TOTEM LOGIK ---
-                    if (type === 'gas') {
-                        marker.on('click', () => {
-                            const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
-                            // Wir übergeben jetzt Koordinaten für die Live-Abfrage
-                            ExploreLogic.openTotem(name, el.lat, el.lon);
-                        });
-                    } else if (el.tags && el.tags.name) {
-                        marker.bindPopup(`<b>${el.tags.name}</b>`);
-                    }
-                    
-                    if(exploreLayers[type]) exploreLayers[type].addLayer(marker);
-                });
+                if(loader) loader.classList.remove('visible');
+                
+                // Wir löschen den Layer NICHT sofort, sondern nur wenn neue Daten da sind
+                // Bei Gas speichern wir die Daten im Cache
+                if (type === 'gas') {
+                    cachedGasStations = data.elements || [];
+                    this.redrawGasMarkers(); // Spezial-Funktion für Gas
+                } else {
+                    // Standard Logic für Cam/Parken
+                    if(exploreLayers[type]) exploreLayers[type].clearLayers();
+                    if (!data.elements) return;
+                    this.renderGenericMarkers(type, data.elements);
+                }
             })
-            .catch(err => console.log("API Error:", err));
+            .catch(err => {
+                if(loader) loader.classList.remove('visible');
+                console.log("API Error:", err);
+            });
     },
 
-    // --- HYBRIDE TOTEM LOGIK (Real + Simulation) ---
-    openTotem: function(name, lat, lng) {
+    // --- NEU: Gas Marker Logik (Mini Totems) ---
+    redrawGasMarkers: function() {
+        exploreLayers.gas.clearLayers();
+        
+        cachedGasStations.forEach(el => {
+            const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
+            const brandClass = this.getBrandClass(name);
+            
+            // SIMULATION: Wir generieren Preise hier, wenn sie noch nicht existieren
+            // Damit sie stabil bleiben, hängen wir sie ans Objekt
+            if (!el.simPrices) {
+                const baseE10 = 1.70 + (Math.random() * 0.14 - 0.07);
+                el.simPrices = {
+                    e10: baseE10.toFixed(2),
+                    diesel: (1.60 + (Math.random() * 0.14 - 0.07)).toFixed(2),
+                    e5: (baseE10 + 0.06).toFixed(2)
+                };
+            }
+
+            // Welcher Preis soll angezeigt werden?
+            let displayPrice = el.simPrices[currentFuelType];
+            
+            // Mini Totem HTML
+            const html = `
+                <div class="price-marker-wrap">
+                    <div class="pm-brand ${brandClass}"></div>
+                    <div class="pm-price">
+                        ${displayPrice}
+                    </div>
+                </div>
+            `;
+
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: html,
+                iconSize: [46, 38], // Breite/Höhe des Markers
+                iconAnchor: [23, 40] // Mitte unten
+            });
+
+            const marker = L.marker([el.lat, el.lon], {icon: icon});
+            
+            marker.on('click', () => {
+                this.openTotem(el);
+            });
+            
+            exploreLayers.gas.addLayer(marker);
+        });
+    },
+
+    renderGenericMarkers: function(type, elements) {
+        elements.forEach(el => {
+            let iconHtml = '';
+            let className = '';
+
+            if (type === 'cam') { iconHtml = '<i class="fa-solid fa-camera"></i>'; className = 'icon-cam'; }
+            else if (type === 'parking') { iconHtml = '<i class="fa-solid fa-square-parking"></i>'; className = 'icon-parking'; }
+
+            const icon = L.divIcon({
+                className: 'custom-div-icon', 
+                html: `<div class="custom-map-icon ${className}">${iconHtml}</div>`,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            });
+
+            const marker = L.marker([el.lat, el.lon], {icon: icon});
+            if (el.tags && el.tags.name) marker.bindPopup(`<b>${el.tags.name}</b>`);
+            exploreLayers[type].addLayer(marker);
+        });
+    },
+
+    getBrandClass: function(name) {
+        const n = name.toLowerCase();
+        if(n.includes('aral')) return 'aral';
+        if(n.includes('shell')) return 'shell';
+        if(n.includes('esso')) return 'esso';
+        if(n.includes('total')) return 'total';
+        if(n.includes('jet')) return 'jet';
+        if(n.includes('hem')) return 'hem';
+        if(n.includes('avanti')) return 'avanti';
+        return ''; // Default Grau
+    },
+
+    // --- TOTEM LOGIK ---
+    openTotem: function(el) {
         const overlay = document.getElementById('gas-totem-overlay');
         const brandHeader = document.getElementById('totem-brand-header');
         const brandTitle = document.getElementById('totem-brand');
         
-        // 1. UI Reset & Loading State
-        brandHeader.className = 'totem-header'; // Reset Colors
-        document.getElementById('price-diesel').innerText = "-.--";
-        document.getElementById('price-e10').innerText = "-.--";
-        document.getElementById('price-e5').innerText = "-.--";
-        document.getElementById('totem-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
+        const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
         
-        // Marke erkennen & Styling (funktioniert immer)
-        const n = name.toLowerCase();
-        if(n.includes('aral')) brandHeader.classList.add('aral');
-        else if(n.includes('shell')) brandHeader.classList.add('shell');
-        else if(n.includes('esso')) brandHeader.classList.add('esso');
-        else if(n.includes('total')) brandHeader.classList.add('total');
-        else if(n.includes('jet')) brandHeader.classList.add('jet');
-        
+        brandHeader.className = 'totem-header ' + this.getBrandClass(name);
         brandTitle.innerText = name;
+        
+        // Preise setzen (aus dem simulierten Objekt)
+        document.getElementById('price-diesel').innerText = el.simPrices.diesel;
+        document.getElementById('price-e10').innerText = el.simPrices.e10;
+        document.getElementById('price-e5').innerText = el.simPrices.e5;
+
+        // UI Update für selektierten Kraftstoff
+        this.updateTotemSelectionUI();
+
         overlay.classList.remove('hidden');
-
-        // 2. Entscheidung: Live API oder Simulation?
-        if (TANKERKOENIG_API_KEY && TANKERKOENIG_API_KEY.length > 10) {
-            // --- OPTION A: ECHTE DATEN ---
-            // Wir suchen im Umkreis von 1km nach dieser Station bei Tankerkönig
-            const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${TANKERKOENIG_API_KEY}`;
-            
-            fetch(url)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.ok && data.stations && data.stations.length > 0) {
-                        // Wir nehmen die nächste Station (meistens die richtige)
-                        const station = data.stations[0];
-                        
-                        // Status
-                        const isOpen = station.isOpen;
-                        document.getElementById('totem-status').innerHTML = isOpen 
-                            ? '<i class="fa-solid fa-circle-check"></i> OPEN' 
-                            : '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
-                        document.getElementById('totem-status').style.color = isOpen ? '#30d158' : '#ff3b30';
-
-                        // Preise (falls geschlossen, oft 0 oder undefined)
-                        if (isOpen) {
-                            document.getElementById('price-diesel').innerText = station.diesel ? station.diesel.toFixed(2) : "-.--";
-                            document.getElementById('price-e10').innerText = station.e10 ? station.e10.toFixed(2) : "-.--";
-                            document.getElementById('price-e5').innerText = station.e5 ? station.e5.toFixed(2) : "-.--";
-                        } else {
-                            // Wenn zu, zeigen wir Striche
-                            document.getElementById('price-diesel').innerText = "-.--";
-                            document.getElementById('price-e10').innerText = "-.--";
-                            document.getElementById('price-e5').innerText = "-.--";
-                        }
-                    } else {
-                        // Fallback, falls Tankerkönig die Station nicht kennt
-                        console.warn("Station not found in API, switching to Sim");
-                        ExploreLogic.simulatePrices();
-                    }
-                })
-                .catch(err => {
-                    console.error("Tankerkönig Error", err);
-                    ExploreLogic.simulatePrices();
-                });
-
-        } else {
-            // --- OPTION B: SIMULATION (Fallback) ---
-            // Kurzer künstlicher Delay für "Realismus"
-            setTimeout(() => {
-                ExploreLogic.simulatePrices();
-            }, 300);
-        }
     },
 
-    simulatePrices: function() {
-        // Basispreise + Zufallsschwankung
-        const baseE10 = 1.70 + (Math.random() * 0.14 - 0.07); // 1.63 - 1.77
-        const baseDiesel = 1.60 + (Math.random() * 0.14 - 0.07); // 1.53 - 1.67
-        const baseE5 = baseE10 + 0.06;
+    // Wenn man im Totem auf eine Sorte klickt
+    selectFuel: function(type) {
+        currentFuelType = type;
+        this.updateTotemSelectionUI();
+        
+        // MAGIE: Wir malen die Map sofort neu mit den neuen Preisen!
+        this.redrawGasMarkers();
+    },
 
-        document.getElementById('price-diesel').innerText = baseDiesel.toFixed(2);
-        document.getElementById('price-e10').innerText = baseE10.toFixed(2);
-        document.getElementById('price-e5').innerText = baseE5.toFixed(2);
-
-        document.getElementById('totem-status').innerHTML = '<i class="fa-solid fa-circle-check"></i> OPEN 24/7';
-        document.getElementById('totem-status').style.color = '#30d158';
+    updateTotemSelectionUI: function() {
+        // Alle Rows resetten
+        document.querySelectorAll('.price-row').forEach(r => r.classList.remove('selected'));
+        // Aktiven markieren
+        document.getElementById('row-' + currentFuelType).classList.add('selected');
     },
 
     closeTotem: function() {
