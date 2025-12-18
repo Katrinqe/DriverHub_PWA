@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=44">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -64,7 +64,7 @@
         <div id="gas-filter-modal" class="hidden interactive-element">
             <div class="filter-card">
                 <div class="filter-title-row">
-                    <h3>Find Cheapest</h3>
+                    <h3>Gas Filter</h3>
                     <button class="btn-close-filter" onclick="ExploreLogic.closeFilter()"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 
@@ -88,16 +88,17 @@
                 <div class="filter-section">
                     <label>Brand</label>
                     <div class="filter-grid">
-                        <button class="filter-btn active" onclick="ExploreLogic.setBrandFilter('all', this)">ALL</button>
+                        <button class="filter-btn active" id="btn-brand-all" onclick="ExploreLogic.setBrandFilter('all', this)">ALL BRANDS</button>
                         <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('aral', this)">ARAL</button>
                         <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('shell', this)">SHELL</button>
                         <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('total', this)">TOTAL</button>
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('esso', this)">ESSO</button>
                         <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('jet', this)">JET</button>
                     </div>
                 </div>
 
                 <div class="filter-section">
-                    <label>Results</label>
+                    <label>Best Deals Nearby</label>
                     <div id="filter-results" class="filter-results-list"></div>
                 </div>
             </div>
@@ -182,25 +183,6 @@
             <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
         </div>
         <div id="garage-list" class="garage-list interactive-element"></div>
-        <div id="detail-overlay" class="hidden interactive-element">
-            <div class="detail-header">
-                <h3 id="det-date">Date</h3>
-                <button class="close-detail-btn" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="detail-content">
-                <div id="detail-map-container"><div id="detail-map"></div></div>
-                <div class="detail-stats-row">
-                    <div class="d-stat-box"><span class="label">DIST</span><span class="val" id="det-dist">0 km</span></div>
-                    <div class="d-stat-box"><span class="label">AVG</span><span class="val" id="det-avg">0</span></div>
-                    <div class="d-stat-box"><span class="label">MAX</span><span class="val" id="det-max">0</span></div>
-                </div>
-                <div style="text-align: center; margin: 10px 0; font-size: 0.9rem; color: #888;">
-                    Duration: <span id="det-time" style="color:white; font-weight:700;">00:00</span>
-                </div>
-                <div class="chart-container"><canvas id="speedChart"></canvas></div>
-                <div style="height: 50px;"></div>
-            </div>
-        </div>
     </div>
 
     <div id="global-nav" class="bottom-nav interactive-element">
