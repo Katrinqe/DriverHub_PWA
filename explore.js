@@ -122,10 +122,9 @@ const ExploreLogic = {
         if (!map) return;
         const center = map.getCenter();
         
-        // FIX: Radius für Gas-Filter wird jetzt vom Slider übernommen!
         let radius = 3000;
         if (type === 'gas') {
-            radius = currentRadiusFilter * 1000; // km in meter
+            radius = currentRadiusFilter * 1000; // Radius vom Slider
         } else {
             if (map.getZoom() < 12) radius = 15000; 
             else if (map.getZoom() > 14) radius = 5000; 
@@ -151,7 +150,6 @@ const ExploreLogic = {
                 if (type === 'gas') {
                     cachedGasStations = data.elements || [];
                     this.redrawGasMarkers();
-                    // Wenn Filter offen ist, auch Liste updaten
                     if(!document.getElementById('gas-filter-modal').classList.contains('hidden')) {
                         this.filterGasStations(); 
                     }
@@ -252,7 +250,7 @@ const ExploreLogic = {
     updateRadiusDisplay: function(val) {
         document.getElementById('rad-disp').innerText = val;
         currentRadiusFilter = parseInt(val);
-        // FIX: Sofort neue Daten laden mit neuem Radius
+        // FIX: Neue Daten laden!
         this.fetchData('gas');
     },
 
