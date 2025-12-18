@@ -1,4 +1,4 @@
-const TANKERKOENIG_API_KEY = ''; // DEIN KEY HIER
+const TANKERKOENIG_API_KEY = ''; // HIER KEY EINFÜGEN
 
 let exploreLayers = { gas: null, cam: null, parking: null };
 let exploreState = { gas: false, cam: false, parking: false };
@@ -18,10 +18,7 @@ const ExploreLogic = {
         exploreLayers.cam = L.layerGroup();
         exploreLayers.parking = L.layerGroup();
 
-        // Special Setup für Gas Button (Long Press)
-        this.setupGasButton();
-        
-        // Standard Buttons
+        this.setupGasButton(); // Long Press Logic
         this.setupButton('filter-cam', 'cam');
         this.setupButton('filter-parking', 'parking');
 
@@ -48,26 +45,22 @@ const ExploreLogic = {
         const btn = document.getElementById('filter-gas');
         if(!btn) return;
 
-        // Mouse Down / Touch Start
         const start = (e) => {
             if(e.type === 'touchstart') e.preventDefault();
             btn.classList.add('holding');
             gasPressTimer = setTimeout(() => {
-                // Long Press ausgelöst!
                 btn.classList.remove('holding');
-                this.openFilter();
-            }, 800); // 800ms halten
+                this.openFilter(); // Öffnet Filter Menü
+            }, 800); 
         };
 
-        // Mouse Up / Touch End
         const end = () => {
             if (gasPressTimer) {
                 clearTimeout(gasPressTimer);
                 gasPressTimer = null;
-                // Wenn wir hier sind, war es ein kurzer Klick
                 if(btn.classList.contains('holding')) {
                     btn.classList.remove('holding');
-                    // Toggle Logic
+                    // Short Click -> Toggle
                     btn.classList.toggle('active');
                     exploreState.gas = !exploreState.gas;
                     this.toggleLayer('gas', exploreState.gas);
@@ -136,8 +129,12 @@ const ExploreLogic = {
         if (!map) return;
         const center = map.getCenter();
         let radius = 3000; 
-        if (map.getZoom() < 12) radius = 10000; 
-        if (map.getZoom() > 14) radius = 2500; 
+        
+        // FIX für "3.3km Problem": Wir laden standardmäßig mehr Daten (8km)
+        // damit der Filter auch was zum Anzeigen hat.
+        if (map.getZoom() < 12) radius = 15000; 
+        else if (map.getZoom() > 14) radius = 5000; 
+        else radius = 8000;
 
         const loader = document.getElementById('map-loading');
         if(loader) loader.classList.add('visible');
@@ -196,9 +193,7 @@ const ExploreLogic = {
                 };
             }
 
-            if (el.realData) {
-                el.simPrices.isOpen = el.realData.isOpen;
-            }
+            if (el.realData) el.simPrices.isOpen = el.realData.isOpen;
 
             let displayPrice = el.simPrices[currentFuelType];
             const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
@@ -221,10 +216,7 @@ const ExploreLogic = {
             });
 
             const marker = L.marker([lat, lon], {icon: icon});
-            marker.on('click', () => {
-                this.openTotem(name, lat, lon, el); 
-            });
-            
+            marker.on('click', () => { this.openTotem(name, lat, lon, el); });
             exploreLayers.gas.addLayer(marker);
         });
     },
@@ -263,15 +255,23 @@ const ExploreLogic = {
         return ''; 
     },
 
-    // --- FILTER LOGIK ---
+    // --- FILTER WINDOW ---
     openFilter: function() {
+        document.getElementById('gas-filter-modal').classList.add('active'); // CSS Transition
         document.getElementById('gas-filter-modal').classList.remove('hidden');
-        // Initial einmal filtern (oder leere Liste füllen)
+        
+        // Buttons highlighten
+        document.getElementById('btn-type-e10').classList.remove('active');
+        document.getElementById('btn-type-e5').classList.remove('active');
+        document.getElementById('btn-type-diesel').classList.remove('active');
+        document.getElementById('btn-type-' + currentFuelType).classList.add('active');
+
         this.filterGasStations();
     },
 
     closeFilter: function() {
-        document.getElementById('gas-filter-modal').classList.add('hidden');
+        document.getElementById('gas-filter-modal').classList.remove('active');
+        setTimeout(() => document.getElementById('gas-filter-modal').classList.add('hidden'), 300);
     },
 
     updateRadiusDisplay: function(val) {
@@ -282,53 +282,60 @@ const ExploreLogic = {
 
     setBrandFilter: function(brand, btn) {
         currentBrandFilter = brand;
-        // UI Update
-        document.querySelectorAll('.brand-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.filter-grid .filter-btn').forEach(b => {
+            // Nur Brand Buttons (die ohne ID) resetten
+            if(!b.id) b.classList.remove('active'); 
+        });
         btn.classList.add('active');
         this.filterGasStations();
     },
 
-    // Die Haupt-Filter-Funktion
+    setFuelFilter: function(type) {
+        currentFuelType = type;
+        
+        // Buttons update
+        document.getElementById('btn-type-e10').classList.remove('active');
+        document.getElementById('btn-type-e5').classList.remove('active');
+        document.getElementById('btn-type-diesel').classList.remove('active');
+        document.getElementById('btn-type-' + type).classList.add('active');
+
+        // Karte UND Liste aktualisieren
+        this.redrawGasMarkers(); 
+        this.filterGasStations();
+    },
+
     filterGasStations: function() {
         if(!map || !userMarker) return;
         const userLatLng = userMarker.getLatLng();
         const listContainer = document.getElementById('filter-results');
-        listContainer.innerHTML = ''; // Reset
+        listContainer.innerHTML = '';
 
-        // 1. Filtern und Distanz berechnen
         let results = cachedGasStations.filter(el => {
-            // Coord Check
             let lat = el.lat; let lon = el.lon;
             if (el.center) { lat = el.center.lat; lon = el.center.lon; }
             if (!lat || !lon) return false;
 
-            // Distanz berechnen
             const stationLatLng = L.latLng(lat, lon);
             const distKm = userLatLng.distanceTo(stationLatLng) / 1000;
-            el._tempDist = distKm; // Speichern für Sortierung
+            el._tempDist = distKm;
 
-            // Radius Check
             if (distKm > currentRadiusFilter) return false;
 
-            // Brand Check
             if (currentBrandFilter !== 'all') {
                 const name = (el.tags && el.tags.name) ? el.tags.name.toLowerCase() : "";
                 if (!name.includes(currentBrandFilter)) return false;
             }
-
             return true;
         });
 
-        // 2. Sortieren nach Preis (billigste zuerst)
         results.sort((a, b) => {
             const priceA = parseFloat(a.simPrices[currentFuelType]);
             const priceB = parseFloat(b.simPrices[currentFuelType]);
             return priceA - priceB;
         });
 
-        // 3. Render List
         if (results.length === 0) {
-            listContainer.innerHTML = '<div style="color:#666; text-align:center; padding:20px;">No stations found within range.</div>';
+            listContainer.innerHTML = '<div style="color:#666; text-align:center; padding:20px; font-size:0.8rem;">No stations nearby. Try increasing radius or move map.</div>';
             return;
         }
 
@@ -336,8 +343,6 @@ const ExploreLogic = {
             const name = (el.tags && el.tags.name) ? el.tags.name : "Station";
             const price = el.simPrices[currentFuelType];
             const dist = el._tempDist.toFixed(1);
-            
-            // Koordinaten für Click Event
             let lat = el.lat; let lon = el.lon;
             if (el.center) { lat = el.center.lat; lon = el.center.lon; }
 
@@ -346,7 +351,7 @@ const ExploreLogic = {
             div.innerHTML = `
                 <div class="fri-left">
                     <h4>${name}</h4>
-                    <p>${dist} km away</p>
+                    <p>${dist} km</p>
                 </div>
                 <div class="fri-price">${price}</div>
             `;
@@ -354,7 +359,6 @@ const ExploreLogic = {
             div.onclick = () => {
                 this.closeFilter();
                 map.setView([lat, lon], 16, {animate: true});
-                // Kleiner Timeout damit Map sich erst bewegt
                 setTimeout(() => this.openTotem(name, lat, lon, el), 500);
             };
 
@@ -376,27 +380,20 @@ const ExploreLogic = {
 
         if (TANKERKOENIG_API_KEY && TANKERKOENIG_API_KEY.length > 10) {
             const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${TANKERKOENIG_API_KEY}`;
-            fetch(url)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.ok && data.stations && data.stations.length > 0) {
-                        const station = data.stations[0];
-                        if(elementRef) {
-                            elementRef.realData = station; 
-                            elementRef.simPrices.isOpen = station.isOpen; 
-                            if(station.diesel) elementRef.simPrices.diesel = station.diesel.toFixed(2);
-                            if(station.e10) elementRef.simPrices.e10 = station.e10.toFixed(2);
-                            if(station.e5) elementRef.simPrices.e5 = station.e5.toFixed(2);
-                        }
-                        this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
-                        this.redrawGasMarkers(); 
-                    } else {
-                        this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
+            fetch(url).then(r => r.json()).then(data => {
+                if (data.ok && data.stations && data.stations.length > 0) {
+                    const station = data.stations[0];
+                    if(elementRef) {
+                        elementRef.realData = station; 
+                        elementRef.simPrices.isOpen = station.isOpen; 
+                        if(station.diesel) elementRef.simPrices.diesel = station.diesel.toFixed(2);
+                        if(station.e10) elementRef.simPrices.e10 = station.e10.toFixed(2);
+                        if(station.e5) elementRef.simPrices.e5 = station.e5.toFixed(2);
                     }
-                })
-                .catch(e => {
-                    this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
-                });
+                    this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
+                    this.redrawGasMarkers(); 
+                } else { this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5); }
+            }).catch(e => this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5));
         } else {
             setTimeout(() => {
                 this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
@@ -413,11 +410,9 @@ const ExploreLogic = {
             statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
             statusEl.style.color = '#ff3b30';
         }
-
         document.getElementById('price-diesel').innerText = diesel ? Number(diesel).toFixed(2) : "-.--";
         document.getElementById('price-e10').innerText = e10 ? Number(e10).toFixed(2) : "-.--";
         document.getElementById('price-e5').innerText = e5 ? Number(e5).toFixed(2) : "-.--";
-        
         this.updateTotemSelectionUI();
     },
 
