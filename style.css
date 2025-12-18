@@ -19,21 +19,20 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
-/* --- MARKER (User) --- */
+/* --- MARKER --- */
 .user-marker-wrap { position: relative; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; transition: none; }
 .user-marker-wrap.smooth { transition: transform 1s linear; }
 .user-dot { width: 18px; height: 18px; background-color: #007aff; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 999; position: relative; }
 .user-pulse { position: absolute; top: 0; left: 0; width: 40px; height: 40px; background-color: rgba(0, 122, 255, 0.5); border-radius: 50%; z-index: 998; animation: pulse-animation 2s infinite; }
 @keyframes pulse-animation { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
 
-/* --- GENERIC ICONS (Cam, Parking) --- */
 .custom-map-icon { display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 1.2rem; border: 2px solid white; width: 30px; height: 30px; transition: transform 0.2s; }
 .custom-map-icon:active { transform: scale(1.2); }
 .icon-cam { background: linear-gradient(135deg, #ff3b30, #ff453a); animation: slow-pulse 2s infinite; }
 .icon-parking { background: linear-gradient(135deg, #007aff, #5ac8fa); }
 @keyframes slow-pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); } }
 
-/* --- TANKSTELLEN MARKER (Mini Totems) --- */
+/* --- TANKSTELLEN MARKER --- */
 .price-marker-wrap {
     background: #000; border: 1px solid #333; border-radius: 6px; display: flex; flex-direction: column; overflow: hidden;
     box-shadow: 0 6px 15px rgba(0,0,0,0.7); transition: all 0.2s; width: 60px !important; height: auto !important;
@@ -64,13 +63,11 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .solid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; z-index: 50; pointer-events: auto; overflow-y: auto; }
 .spacer-flex { flex: 1; }
 
-/* --- UI ELEMENTS --- */
 .blur-zone-top { width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
 .blur-zone-bottom { width: 100%; padding-bottom: 120px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); display: flex; justify-content: center; pointer-events: none; }
 .weather-pill { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 18px; border-radius: 30px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; pointer-events: auto; min-width: 150px; justify-content: center; }
 .dh-logo { width: 120px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
 
-/* NAV */
 .bottom-nav { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 260px; height: 65px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; display: flex; justify-content: space-around; align-items: center; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.6); pointer-events: auto; }
 .nav-item { color: #666; width: 33%; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.2s; cursor: pointer; height: 100%; }
 .nav-item i { font-size: 1.2rem; margin-bottom: 3px; }
@@ -79,7 +76,6 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* EXPLORE UI */
 .explore-top-ui { width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); display: flex; flex-direction: column; gap: 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0) 100%); pointer-events: none; }
 .search-bar-glass { width: 100%; height: 50px; background: rgba(40, 40, 40, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; display: flex; align-items: center; padding: 0 15px; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .search-bar-glass i { color: #888; margin-right: 10px; }
@@ -88,12 +84,12 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .filter-chip { background: rgba(40, 40, 40, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 8px 16px; color: #ccc; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap; position: relative; overflow: hidden; }
 .filter-chip.active { background: rgba(0, 122, 255, 0.2); border-color: var(--primary); color: white; box-shadow: 0 0 10px rgba(0, 122, 255, 0.3); }
 
-/* LONG PRESS FILL ANIMATION */
+/* LONG PRESS FILL */
 #filter-gas::after { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 0%; background: rgba(0, 122, 255, 0.5); transition: width 0s; z-index: 0; }
 #filter-gas.holding::after { width: 100%; transition: width 0.8s linear; }
 #filter-gas i, #filter-gas span { position: relative; z-index: 1; }
 
-/* LOADING SPINNER (Fixed Position) */
+/* SPINNER */
 .loading-indicator {
     position: absolute; top: 130px; right: 20px; width: 40px; height: 40px;
     background: rgba(0,0,0,0.6); color: var(--primary); border-radius: 50%;
@@ -106,8 +102,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 /* --- FILTER MODAL (Floating Card) --- */
 #gas-filter-modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 5000; /* Sehr hoch, damit über allem */
-    background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+    z-index: 5000; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
     display: flex; align-items: center; justify-content: center;
     opacity: 0; pointer-events: none; transition: opacity 0.3s;
 }
@@ -131,7 +126,6 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .filter-btn { background: #222; border: 1px solid #333; color: #aaa; padding: 8px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: 0.2s; flex: 1; text-align: center; white-space: nowrap; }
 .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 0 10px rgba(0,122,255,0.3); }
 
-/* Radius Slider */
 .radius-control { display: flex; align-items: center; gap: 10px; }
 input[type=range] { flex: 1; -webkit-appearance: none; background: #333; height: 6px; border-radius: 5px; outline: none; }
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); cursor: pointer; box-shadow: 0 0 10px rgba(0,122,255,0.6); }
@@ -144,17 +138,48 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .fri-left p { margin: 2px 0 0; font-size: 0.7rem; color: #666; font-weight: 600; }
 .fri-price { font-family: monospace; font-weight: 700; font-size: 1.1rem; color: #ff3b30; text-shadow: 0 0 8px rgba(255, 59, 48, 0.4); }
 
-/* --- BUTTONS --- */
+/* --- TOTEM OVERLAY (FIXED POSITION) --- */
+/* WICHTIG: position: fixed und z-index: 6000 damit es über allem liegt */
+#gas-totem-overlay { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    z-index: 6000; /* Höher als Filter (5000) */
+    display: flex; align-items: center; justify-content: center; 
+    background: rgba(0,0,0,0.4); backdrop-filter: blur(5px); 
+    animation: fadeIn 0.2s ease-out; 
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.gas-totem-card { width: 280px; background: #1a1a1a; border-radius: 15px; border: 1px solid #333; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); transform: scale(1); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.totem-header { height: 70px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; background: linear-gradient(to right, #444, #333); position: relative; }
+.totem-header.aral { background: linear-gradient(to right, #005eb8, #00a3e0); }
+.totem-header.shell { background: linear-gradient(to right, #fbce07, #ea0000); color: black !important; }
+.totem-header.esso { background: linear-gradient(to right, #e21d38, #0033a0); }
+.totem-header.total { background: linear-gradient(to right, #ed0000, #004c99); }
+.totem-header.jet { background: linear-gradient(to right, #ffcc00, #004c99); color: black; }
+.totem-header h2 { margin: 0; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+.totem-close { background: rgba(0,0,0,0.2); border: none; color: inherit; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+.totem-body { padding: 20px; background: #0a0a0a; display: flex; flex-direction: column; gap: 15px; }
+.price-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-radius: 10px; border: 1px solid transparent; transition: 0.2s; cursor: pointer; }
+.price-row:active { transform: scale(0.98); }
+.price-row.selected { background: rgba(0, 122, 255, 0.15); border-color: var(--primary); }
+.price-row.selected .fuel-type { color: white; }
+.fuel-type { font-weight: 700; color: #888; font-size: 0.9rem; }
+.led-price-box { background: #000; border: 1px solid #333; padding: 5px 10px; border-radius: 5px; color: #ff3b30; font-family: monospace; font-size: 1.6rem; font-weight: 700; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255, 59, 48, 0.6); display: flex; align-items: baseline; }
+.led-price-box small { font-size: 0.8rem; margin-left: 2px; opacity: 0.8; }
+.totem-footer { padding: 15px 20px; background: #111; border-top: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+#totem-status { color: #30d158; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+.btn-navigate { background: var(--primary); color: white; border: none; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+
+/* BUTTONS */
 .btn-super-glass { width: 100%; max-width: 240px; height: 52px; border-radius: 50px; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.5px; color: white; border: none; cursor: pointer; background: linear-gradient(135deg, rgba(0, 122, 255, 0.5), rgba(0, 210, 255, 0.3)); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.4); border-bottom: 1px solid rgba(0, 80, 255, 0.3); border-left: 1px solid rgba(255, 255, 255, 0.15); border-right: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 10px 30px rgba(0, 122, 255, 0.25), inset 0 2px 5px rgba(255, 255, 255, 0.2); transition: all 0.2s; pointer-events: auto; }
-.btn-super-glass:active { transform: scale(0.97); }
+.btn-super-glass:active { transform: scale(0.97); box-shadow: 0 5px 15px rgba(0, 122, 255, 0.2); }
 .btn-stop-glass { width: 100%; max-width: 200px; height: 50px; border-radius: 20px; background: rgba(0,0,0,0.5); border: 1px solid var(--danger); backdrop-filter: blur(10px); color: var(--danger); font-weight: 800; font-size: 1rem; pointer-events: auto; position: relative; overflow: hidden; transition: transform 0.1s; }
 .btn-stop-glass::after { content: ''; position: absolute; top: 0; left: 0; bottom: 0; width: 0%; background: rgba(255, 59, 48, 0.5); transition: width 0s; z-index: 0; }
 .btn-stop-glass.holding::after { width: 100%; transition: width 1.5s linear; }
 .btn-stop-glass i, .btn-stop-glass span { position: relative; z-index: 1; }
 .btn-danger-glass { width: 100%; max-width: 160px; height: 40px; border-radius: 50px; font-size: 0.9rem; font-weight: 700; margin-top: 20px; cursor: pointer; color: white; border: none; background: linear-gradient(135deg, rgba(255, 59, 48, 0.5), rgba(255, 100, 80, 0.3)); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.4); border-bottom: 1px solid rgba(180, 0, 0, 0.3); box-shadow: 0 10px 30px rgba(255, 59, 48, 0.25); transition: all 0.2s; pointer-events: auto; }
 .btn-danger-glass:active { transform: scale(0.95); opacity: 0.7; }
-
-/* --- HUD & EXTRAS --- */
 #speed-limit { position: absolute; top: 130px; left: 20px; width: 55px; height: 55px; background: white; border-radius: 50%; border: 5px solid #cc0000; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 60; pointer-events: none; transform: scale(1); transition: transform 0.3s; }
 #speed-limit.hidden { transform: scale(0); opacity: 0; }
 #speed-limit span { color: #111; font-weight: 800; font-size: 1.4rem; letter-spacing: -1px; }
@@ -167,8 +192,6 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .hud-value.big { font-size: 2.5rem; line-height: 1; text-shadow: 0 0 20px rgba(0,122,255,0.3); }
 .hud-unit { font-size: 0.8rem; color: var(--primary); font-weight: 700; }
 .icon-btn-floating { position: absolute; top: 160px; right: 20px; width: 45px; height: 45px; border-radius: 50%; background: rgba(0,0,0,0.6); border: 1px solid #444; color: white; display: flex; align-items: center; justify-content: center; z-index: 50; pointer-events: auto; }
-
-/* --- SUMMARY & GARAGE --- */
 #summary-map { width: 90%; height: 200px; background: #222; border-radius: 20px; border: 1px solid #333; margin-bottom: 20px; }
 .summary-card { width: 90%; background: #111; border-radius: 24px; padding: 30px; border: 1px solid #222; margin-bottom: 30px; pointer-events: auto; display: flex; flex-direction: column; gap: 20px; }
 .sum-row { display: flex; width: 100%; justify-content: space-around; align-items: center; }
