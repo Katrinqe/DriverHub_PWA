@@ -1,4 +1,4 @@
-const TANKERKOENIG_API_KEY = ''; // HIER KEY EINFÜGEN
+const TANKERKOENIG_API_KEY = ''; // KEY HIER EINFÜGEN
 
 let exploreLayers = { gas: null, cam: null, parking: null };
 let exploreState = { gas: false, cam: false, parking: false };
@@ -18,7 +18,7 @@ const ExploreLogic = {
         exploreLayers.cam = L.layerGroup();
         exploreLayers.parking = L.layerGroup();
 
-        this.setupGasButton(); // Long Press Logic
+        this.setupGasButton();
         this.setupButton('filter-cam', 'cam');
         this.setupButton('filter-parking', 'parking');
 
@@ -50,7 +50,7 @@ const ExploreLogic = {
             btn.classList.add('holding');
             gasPressTimer = setTimeout(() => {
                 btn.classList.remove('holding');
-                this.openFilter(); // Öffnet Filter Menü
+                this.openFilter();
             }, 800); 
         };
 
@@ -60,7 +60,6 @@ const ExploreLogic = {
                 gasPressTimer = null;
                 if(btn.classList.contains('holding')) {
                     btn.classList.remove('holding');
-                    // Short Click -> Toggle
                     btn.classList.toggle('active');
                     exploreState.gas = !exploreState.gas;
                     this.toggleLayer('gas', exploreState.gas);
@@ -130,8 +129,7 @@ const ExploreLogic = {
         const center = map.getCenter();
         let radius = 3000; 
         
-        // FIX für "3.3km Problem": Wir laden standardmäßig mehr Daten (8km)
-        // damit der Filter auch was zum Anzeigen hat.
+        // FIX: Radius für Filter vergrößern
         if (map.getZoom() < 12) radius = 15000; 
         else if (map.getZoom() > 14) radius = 5000; 
         else radius = 8000;
@@ -211,8 +209,8 @@ const ExploreLogic = {
             const icon = L.divIcon({
                 className: 'custom-div-icon',
                 html: html,
-                iconSize: [70, 50], 
-                iconAnchor: [35, 50] 
+                iconSize: [60, 45], 
+                iconAnchor: [30, 45] 
             });
 
             const marker = L.marker([lat, lon], {icon: icon});
@@ -255,12 +253,10 @@ const ExploreLogic = {
         return ''; 
     },
 
-    // --- FILTER WINDOW ---
     openFilter: function() {
-        document.getElementById('gas-filter-modal').classList.add('active'); // CSS Transition
+        document.getElementById('gas-filter-modal').classList.add('active'); 
         document.getElementById('gas-filter-modal').classList.remove('hidden');
         
-        // Buttons highlighten
         document.getElementById('btn-type-e10').classList.remove('active');
         document.getElementById('btn-type-e5').classList.remove('active');
         document.getElementById('btn-type-diesel').classList.remove('active');
@@ -283,7 +279,6 @@ const ExploreLogic = {
     setBrandFilter: function(brand, btn) {
         currentBrandFilter = brand;
         document.querySelectorAll('.filter-grid .filter-btn').forEach(b => {
-            // Nur Brand Buttons (die ohne ID) resetten
             if(!b.id) b.classList.remove('active'); 
         });
         btn.classList.add('active');
@@ -292,14 +287,10 @@ const ExploreLogic = {
 
     setFuelFilter: function(type) {
         currentFuelType = type;
-        
-        // Buttons update
         document.getElementById('btn-type-e10').classList.remove('active');
         document.getElementById('btn-type-e5').classList.remove('active');
         document.getElementById('btn-type-diesel').classList.remove('active');
         document.getElementById('btn-type-' + type).classList.add('active');
-
-        // Karte UND Liste aktualisieren
         this.redrawGasMarkers(); 
         this.filterGasStations();
     },
@@ -335,7 +326,7 @@ const ExploreLogic = {
         });
 
         if (results.length === 0) {
-            listContainer.innerHTML = '<div style="color:#666; text-align:center; padding:20px; font-size:0.8rem;">No stations nearby. Try increasing radius or move map.</div>';
+            listContainer.innerHTML = '<div style="color:#666; text-align:center; padding:20px; font-size:0.8rem;">No stations found. Try increasing radius or move map.</div>';
             return;
         }
 
@@ -366,7 +357,6 @@ const ExploreLogic = {
         });
     },
 
-    // --- TOTEM ---
     openTotem: function(name, lat, lng, elementRef) {
         const overlay = document.getElementById('gas-totem-overlay');
         const brandHeader = document.getElementById('totem-brand-header');
