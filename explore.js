@@ -1,4 +1,4 @@
-const TANKERKOENIG_API_KEY = ''; // Hier Key rein, wenn da
+const TANKERKOENIG_API_KEY = ''; // Hier Key rein, wenn vorhanden
 
 // Globale Variablen
 let exploreLayers = { gas: null, cam: null, parking: null };
@@ -82,7 +82,7 @@ const ExploreLogic = {
     },
 
     onMapMove: function() {
-        // Debounce (nicht zu oft feuern)
+        // Debounce
         if (this.moveTimeout) clearTimeout(this.moveTimeout);
         this.moveTimeout = setTimeout(() => {
             if (exploreState.gas) ExploreLogic.fetchData('gas');
@@ -98,7 +98,6 @@ const ExploreLogic = {
         if (map.getZoom() < 12) radius = 10000; 
         if (map.getZoom() > 14) radius = 2000;
 
-        // Loading anzeigen
         const loader = document.getElementById('map-loading');
         if(loader) loader.classList.add('visible');
 
@@ -114,13 +113,10 @@ const ExploreLogic = {
             .then(data => {
                 if(loader) loader.classList.remove('visible');
                 
-                // Wir löschen den Layer NICHT sofort, sondern nur wenn neue Daten da sind
-                // Bei Gas speichern wir die Daten im Cache
                 if (type === 'gas') {
                     cachedGasStations = data.elements || [];
-                    this.redrawGasMarkers(); // Spezial-Funktion für Gas
+                    this.redrawGasMarkers();
                 } else {
-                    // Standard Logic für Cam/Parken
                     if(exploreLayers[type]) exploreLayers[type].clearLayers();
                     if (!data.elements) return;
                     this.renderGenericMarkers(type, data.elements);
@@ -132,7 +128,7 @@ const ExploreLogic = {
             });
     },
 
-    // --- NEU: Gas Marker Logik (Mini Totems) ---
+    // --- NEU: Gas Marker Logik mit Name & Sorte ---
     redrawGasMarkers: function() {
         exploreLayers.gas.clearLayers();
         
@@ -140,8 +136,12 @@ const ExploreLogic = {
             const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
             const brandClass = this.getBrandClass(name);
             
-            // SIMULATION: Wir generieren Preise hier, wenn sie noch nicht existieren
-            // Damit sie stabil bleiben, hängen wir sie ans Objekt
+            // Name aufräumen & kürzen für die kleine Anzeige
+            let displayName = name.replace(/Tankstelle|Station/gi, "").trim();
+            if (displayName.length > 12) displayName = displayName.substring(0, 11) + "..";
+            if (displayName === "") displayName = "TANK";
+
+            // Preise simulieren falls nötig
             if (!el.simPrices) {
                 const baseE10 = 1.70 + (Math.random() * 0.14 - 0.07);
                 el.simPrices = {
@@ -151,15 +151,15 @@ const ExploreLogic = {
                 };
             }
 
-            // Welcher Preis soll angezeigt werden?
             let displayPrice = el.simPrices[currentFuelType];
             
-            // Mini Totem HTML
+            // DAS NEUE MARKER HTML
             const html = `
                 <div class="price-marker-wrap">
-                    <div class="pm-brand ${brandClass}"></div>
-                    <div class="pm-price">
-                        ${displayPrice}
+                    <div class="pm-brand-bar ${brandClass}">${displayName}</div>
+                    <div class="pm-content">
+                        <div class="pm-price">${displayPrice}</div>
+                        <div class="pm-fuel-label">${currentFuelType.toUpperCase()}</div>
                     </div>
                 </div>
             `;
@@ -167,8 +167,8 @@ const ExploreLogic = {
             const icon = L.divIcon({
                 className: 'custom-div-icon',
                 html: html,
-                iconSize: [46, 38], // Breite/Höhe des Markers
-                iconAnchor: [23, 40] // Mitte unten
+                iconSize: [70, 50], 
+                iconAnchor: [35, 50] 
             });
 
             const marker = L.marker([el.lat, el.lon], {icon: icon});
@@ -183,17 +183,14 @@ const ExploreLogic = {
 
     renderGenericMarkers: function(type, elements) {
         elements.forEach(el => {
-            let iconHtml = '';
-            let className = '';
-
+            let iconHtml = ''; let className = '';
             if (type === 'cam') { iconHtml = '<i class="fa-solid fa-camera"></i>'; className = 'icon-cam'; }
             else if (type === 'parking') { iconHtml = '<i class="fa-solid fa-square-parking"></i>'; className = 'icon-parking'; }
 
             const icon = L.divIcon({
                 className: 'custom-div-icon', 
                 html: `<div class="custom-map-icon ${className}">${iconHtml}</div>`,
-                iconSize: [30, 30],
-                iconAnchor: [15, 15]
+                iconSize: [30, 30], iconAnchor: [15, 15]
             });
 
             const marker = L.marker([el.lat, el.lon], {icon: icon});
@@ -211,7 +208,7 @@ const ExploreLogic = {
         if(n.includes('jet')) return 'jet';
         if(n.includes('hem')) return 'hem';
         if(n.includes('avanti')) return 'avanti';
-        return ''; // Default Grau
+        return ''; 
     },
 
     // --- TOTEM LOGIK ---
@@ -225,30 +222,22 @@ const ExploreLogic = {
         brandHeader.className = 'totem-header ' + this.getBrandClass(name);
         brandTitle.innerText = name;
         
-        // Preise setzen (aus dem simulierten Objekt)
         document.getElementById('price-diesel').innerText = el.simPrices.diesel;
         document.getElementById('price-e10').innerText = el.simPrices.e10;
         document.getElementById('price-e5').innerText = el.simPrices.e5;
 
-        // UI Update für selektierten Kraftstoff
         this.updateTotemSelectionUI();
-
         overlay.classList.remove('hidden');
     },
 
-    // Wenn man im Totem auf eine Sorte klickt
     selectFuel: function(type) {
         currentFuelType = type;
         this.updateTotemSelectionUI();
-        
-        // MAGIE: Wir malen die Map sofort neu mit den neuen Preisen!
-        this.redrawGasMarkers();
+        this.redrawGasMarkers(); // Sofortiges Update der Map!
     },
 
     updateTotemSelectionUI: function() {
-        // Alle Rows resetten
         document.querySelectorAll('.price-row').forEach(r => r.classList.remove('selected'));
-        // Aktiven markieren
         document.getElementById('row-' + currentFuelType).classList.add('selected');
     },
 
