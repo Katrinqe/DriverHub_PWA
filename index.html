@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=47">
+    <link rel="stylesheet" href="style.css?v=48">
 </head>
 <body>
 
@@ -44,8 +44,11 @@
         <div class="explore-top-ui interactive-element">
             <div class="search-bar-glass">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" placeholder="Where to go?">
+                <input type="text" id="nav-search-input" placeholder="Where to go?">
             </div>
+            
+            <div id="nav-search-results" class="search-results-container interactive-element"></div>
+
             <div class="filter-row">
                 <button class="filter-chip" id="filter-gas"><i class="fa-solid fa-gas-pump"></i> Gas</button>
                 <button class="filter-chip" id="filter-cam"><i class="fa-solid fa-camera"></i> Cams</button>
@@ -60,6 +63,28 @@
         <button id="btn-explore-recenter" class="icon-btn-floating interactive-element" style="top: auto; bottom: 120px;">
             <i class="fa-solid fa-location-crosshairs"></i>
         </button>
+
+        <div id="navi-route-card" class="interactive-element">
+            <button class="btn-nav-cancel" onclick="NaviLogic.cancelRoute()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="route-stats-row">
+                <div class="route-stat-main">
+                    <h2 id="route-time">0 min</h2>
+                    <span id="route-dest">Destination</span>
+                </div>
+                <div class="route-stat-sub">
+                    <h3 id="route-dist">0 km</h3>
+                    <span>Distance</span>
+                </div>
+            </div>
+            <div class="route-actions">
+                <button class="btn-nav-start" onclick="NaviLogic.startNavigation('record')">
+                    <i class="fa-solid fa-play"></i> START RECORD
+                </button>
+                <button class="btn-nav-ghost" onclick="NaviLogic.startNavigation('ghost')">
+                    GHOST MODE
+                </button>
+            </div>
+        </div>
 
         <div id="gas-filter-modal" class="hidden interactive-element">
             <div class="filter-card">
@@ -183,7 +208,6 @@
             <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
         </div>
         <div id="garage-list" class="garage-list interactive-element"></div>
-        
         <div id="detail-overlay" class="hidden interactive-element">
             <div class="detail-header">
                 <h3 id="det-date">Date</h3>
@@ -213,9 +237,9 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <script src="explore.js?v=47"></script>
-    <script src="garage.js?v=47"></script>
-    <script src="drive.js?v=47"></script>
-    <script src="app.js?v=47"></script>
+    <script src="explore.js?v=48"></script>
+    <script src="garage.js?v=48"></script>
+    <script src="drive.js?v=48"></script>
+    <script src="navi.js?v=48"></script> <script src="app.js?v=48"></script>
 </body>
 </html>
