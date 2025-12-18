@@ -1,3 +1,8 @@
+// --- KONFIGURATION ---
+// Für echte Preise: Hol dir einen kostenlosen Key auf https://creativecommons.tankerkoenig.de/
+// und füge ihn hier ein. Wenn leer oder ungültig -> Smarte Simulation.
+const TANKERKOENIG_API_KEY = ''; 
+
 let exploreLayers = {
     gas: null,
     cam: null,
@@ -129,11 +134,12 @@ const ExploreLogic = {
 
                     const marker = L.marker([el.lat, el.lon], {icon: icon});
                     
-                    // --- CLICK HANDLER FÜR TOTEM (NUR BEI GAS) ---
+                    // --- TOTEM LOGIK ---
                     if (type === 'gas') {
                         marker.on('click', () => {
                             const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
-                            ExploreLogic.openTotem(name);
+                            // Wir übergeben jetzt Koordinaten für die Live-Abfrage
+                            ExploreLogic.openTotem(name, el.lat, el.lon);
                         });
                     } else if (el.tags && el.tags.name) {
                         marker.bindPopup(`<b>${el.tags.name}</b>`);
@@ -145,16 +151,20 @@ const ExploreLogic = {
             .catch(err => console.log("API Error:", err));
     },
 
-    // --- TOTEM LOGIK ---
-    openTotem: function(name) {
+    // --- HYBRIDE TOTEM LOGIK (Real + Simulation) ---
+    openTotem: function(name, lat, lng) {
         const overlay = document.getElementById('gas-totem-overlay');
         const brandHeader = document.getElementById('totem-brand-header');
         const brandTitle = document.getElementById('totem-brand');
         
-        // Reset classes
-        brandHeader.className = 'totem-header';
+        // 1. UI Reset & Loading State
+        brandHeader.className = 'totem-header'; // Reset Colors
+        document.getElementById('price-diesel').innerText = "-.--";
+        document.getElementById('price-e10').innerText = "-.--";
+        document.getElementById('price-e5').innerText = "-.--";
+        document.getElementById('totem-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
         
-        // Marke erkennen & Styling setzen
+        // Marke erkennen & Styling (funktioniert immer)
         const n = name.toLowerCase();
         if(n.includes('aral')) brandHeader.classList.add('aral');
         else if(n.includes('shell')) brandHeader.classList.add('shell');
@@ -163,17 +173,71 @@ const ExploreLogic = {
         else if(n.includes('jet')) brandHeader.classList.add('jet');
         
         brandTitle.innerText = name;
+        overlay.classList.remove('hidden');
 
-        // Preise simulieren (Basispreis + Zufallsschwankung)
-        const baseE10 = 1.70 + (Math.random() * 0.10 - 0.05);
-        const baseDiesel = 1.60 + (Math.random() * 0.10 - 0.05);
+        // 2. Entscheidung: Live API oder Simulation?
+        if (TANKERKOENIG_API_KEY && TANKERKOENIG_API_KEY.length > 10) {
+            // --- OPTION A: ECHTE DATEN ---
+            // Wir suchen im Umkreis von 1km nach dieser Station bei Tankerkönig
+            const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${TANKERKOENIG_API_KEY}`;
+            
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok && data.stations && data.stations.length > 0) {
+                        // Wir nehmen die nächste Station (meistens die richtige)
+                        const station = data.stations[0];
+                        
+                        // Status
+                        const isOpen = station.isOpen;
+                        document.getElementById('totem-status').innerHTML = isOpen 
+                            ? '<i class="fa-solid fa-circle-check"></i> OPEN' 
+                            : '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
+                        document.getElementById('totem-status').style.color = isOpen ? '#30d158' : '#ff3b30';
+
+                        // Preise (falls geschlossen, oft 0 oder undefined)
+                        if (isOpen) {
+                            document.getElementById('price-diesel').innerText = station.diesel ? station.diesel.toFixed(2) : "-.--";
+                            document.getElementById('price-e10').innerText = station.e10 ? station.e10.toFixed(2) : "-.--";
+                            document.getElementById('price-e5').innerText = station.e5 ? station.e5.toFixed(2) : "-.--";
+                        } else {
+                            // Wenn zu, zeigen wir Striche
+                            document.getElementById('price-diesel').innerText = "-.--";
+                            document.getElementById('price-e10').innerText = "-.--";
+                            document.getElementById('price-e5').innerText = "-.--";
+                        }
+                    } else {
+                        // Fallback, falls Tankerkönig die Station nicht kennt
+                        console.warn("Station not found in API, switching to Sim");
+                        ExploreLogic.simulatePrices();
+                    }
+                })
+                .catch(err => {
+                    console.error("Tankerkönig Error", err);
+                    ExploreLogic.simulatePrices();
+                });
+
+        } else {
+            // --- OPTION B: SIMULATION (Fallback) ---
+            // Kurzer künstlicher Delay für "Realismus"
+            setTimeout(() => {
+                ExploreLogic.simulatePrices();
+            }, 300);
+        }
+    },
+
+    simulatePrices: function() {
+        // Basispreise + Zufallsschwankung
+        const baseE10 = 1.70 + (Math.random() * 0.14 - 0.07); // 1.63 - 1.77
+        const baseDiesel = 1.60 + (Math.random() * 0.14 - 0.07); // 1.53 - 1.67
         const baseE5 = baseE10 + 0.06;
 
         document.getElementById('price-diesel').innerText = baseDiesel.toFixed(2);
         document.getElementById('price-e10').innerText = baseE10.toFixed(2);
         document.getElementById('price-e5').innerText = baseE5.toFixed(2);
 
-        overlay.classList.remove('hidden');
+        document.getElementById('totem-status').innerHTML = '<i class="fa-solid fa-circle-check"></i> OPEN 24/7';
+        document.getElementById('totem-status').style.color = '#30d158';
     },
 
     closeTotem: function() {
