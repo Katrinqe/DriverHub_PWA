@@ -1,11 +1,13 @@
-const TANKERKOENIG_API_KEY = ''; // DEIN KEY HIER REIN (wenn er da ist)
+const TANKERKOENIG_API_KEY = ''; // DEIN KEY HIER
 
-// Globale Variablen
 let exploreLayers = { gas: null, cam: null, parking: null };
 let exploreState = { gas: false, cam: false, parking: false };
 
 let cachedGasStations = []; 
 let currentFuelType = 'e10'; 
+let gasPressTimer = null;
+let currentBrandFilter = 'all';
+let currentRadiusFilter = 10;
 
 const ExploreLogic = {
     init: function() {
@@ -16,7 +18,10 @@ const ExploreLogic = {
         exploreLayers.cam = L.layerGroup();
         exploreLayers.parking = L.layerGroup();
 
-        this.setupButton('filter-gas', 'gas');
+        // Special Setup für Gas Button (Long Press)
+        this.setupGasButton();
+        
+        // Standard Buttons
         this.setupButton('filter-cam', 'cam');
         this.setupButton('filter-parking', 'parking');
 
@@ -37,6 +42,44 @@ const ExploreLogic = {
                 this.toggleLayer(type, exploreState[type]);
             };
         }
+    },
+
+    setupGasButton: function() {
+        const btn = document.getElementById('filter-gas');
+        if(!btn) return;
+
+        // Mouse Down / Touch Start
+        const start = (e) => {
+            if(e.type === 'touchstart') e.preventDefault();
+            btn.classList.add('holding');
+            gasPressTimer = setTimeout(() => {
+                // Long Press ausgelöst!
+                btn.classList.remove('holding');
+                this.openFilter();
+            }, 800); // 800ms halten
+        };
+
+        // Mouse Up / Touch End
+        const end = () => {
+            if (gasPressTimer) {
+                clearTimeout(gasPressTimer);
+                gasPressTimer = null;
+                // Wenn wir hier sind, war es ein kurzer Klick
+                if(btn.classList.contains('holding')) {
+                    btn.classList.remove('holding');
+                    // Toggle Logic
+                    btn.classList.toggle('active');
+                    exploreState.gas = !exploreState.gas;
+                    this.toggleLayer('gas', exploreState.gas);
+                }
+            }
+        };
+
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('touchstart', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('mouseleave', end);
+        btn.addEventListener('touchend', end);
     },
 
     enter: function() {
@@ -94,13 +137,11 @@ const ExploreLogic = {
         const center = map.getCenter();
         let radius = 3000; 
         if (map.getZoom() < 12) radius = 10000; 
-        if (map.getZoom() > 14) radius = 2500; // Etwas größerer Radius
+        if (map.getZoom() > 14) radius = 2500; 
 
         const loader = document.getElementById('map-loading');
         if(loader) loader.classList.add('visible');
 
-        // WICHTIG: nwr statt node (findet auch Gebäude/Ways)
-        // und 'out center' damit wir Koordinaten für Gebäude kriegen
         let query = "";
         let endTag = "out center;"; 
 
@@ -116,8 +157,6 @@ const ExploreLogic = {
                 if(loader) loader.classList.remove('visible');
                 
                 if (type === 'gas') {
-                    // Wir filtern Duplikate (manche Tankstellen sind als Node UND Way drin)
-                    // Simple Deduplizierung über ID wäre gut, aber für jetzt reicht das Array
                     cachedGasStations = data.elements || [];
                     this.redrawGasMarkers();
                 } else {
@@ -132,19 +171,13 @@ const ExploreLogic = {
             });
     },
 
-    // --- MARKER LOGIK MIT OPEN/CLOSED STATUS ---
     redrawGasMarkers: function() {
         exploreLayers.gas.clearLayers();
         
         cachedGasStations.forEach(el => {
-            // Geometrie Check: Ist es ein Punkt oder ein Gebäude?
-            let lat = el.lat;
-            let lon = el.lon;
-            if (el.center) {
-                lat = el.center.lat;
-                lon = el.center.lon;
-            }
-            if (!lat || !lon) return; // Skip broken data
+            let lat = el.lat; let lon = el.lon;
+            if (el.center) { lat = el.center.lat; lon = el.center.lon; }
+            if (!lat || !lon) return; 
 
             const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
             const brandClass = this.getBrandClass(name);
@@ -153,28 +186,21 @@ const ExploreLogic = {
             if (displayName.length > 12) displayName = displayName.substring(0, 11) + "..";
             if (displayName === "") displayName = "TANK";
 
-            // Preise simulieren (Fallback) oder behalten
             if (!el.simPrices) {
                 const baseE10 = 1.70 + (Math.random() * 0.14 - 0.07);
                 el.simPrices = {
                     e10: baseE10.toFixed(2),
                     diesel: (1.60 + (Math.random() * 0.14 - 0.07)).toFixed(2),
                     e5: (baseE10 + 0.06).toFixed(2),
-                    isOpen: true // Default: Offen (bis Key da ist)
+                    isOpen: true 
                 };
             }
 
-            // Wenn wir echte Daten haben (vom Key), nutzen wir die
             if (el.realData) {
                 el.simPrices.isOpen = el.realData.isOpen;
-                // Echte Preise nutzen wir hier noch nicht für die Map (erst im Popup), 
-                // weil wir sonst die Map neu laden müssten.
             }
 
             let displayPrice = el.simPrices[currentFuelType];
-            
-            // STATUS CHECK: CSS Klasse für "Geschlossen"
-            // Wenn Key da ist -> Echtes isOpen. Wenn nicht -> Immer offen (sicherer als falsch zu).
             const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
 
             const html = `
@@ -195,9 +221,8 @@ const ExploreLogic = {
             });
 
             const marker = L.marker([lat, lon], {icon: icon});
-            
             marker.on('click', () => {
-                this.openTotem(name, lat, lon, el); // el mitgeben um Daten zu speichern
+                this.openTotem(name, lat, lon, el); 
             });
             
             exploreLayers.gas.addLayer(marker);
@@ -238,7 +263,106 @@ const ExploreLogic = {
         return ''; 
     },
 
-    // --- HYBRIDE TOTEM LOGIK ---
+    // --- FILTER LOGIK ---
+    openFilter: function() {
+        document.getElementById('gas-filter-modal').classList.remove('hidden');
+        // Initial einmal filtern (oder leere Liste füllen)
+        this.filterGasStations();
+    },
+
+    closeFilter: function() {
+        document.getElementById('gas-filter-modal').classList.add('hidden');
+    },
+
+    updateRadiusDisplay: function(val) {
+        document.getElementById('rad-disp').innerText = val;
+        currentRadiusFilter = parseInt(val);
+        this.filterGasStations();
+    },
+
+    setBrandFilter: function(brand, btn) {
+        currentBrandFilter = brand;
+        // UI Update
+        document.querySelectorAll('.brand-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.filterGasStations();
+    },
+
+    // Die Haupt-Filter-Funktion
+    filterGasStations: function() {
+        if(!map || !userMarker) return;
+        const userLatLng = userMarker.getLatLng();
+        const listContainer = document.getElementById('filter-results');
+        listContainer.innerHTML = ''; // Reset
+
+        // 1. Filtern und Distanz berechnen
+        let results = cachedGasStations.filter(el => {
+            // Coord Check
+            let lat = el.lat; let lon = el.lon;
+            if (el.center) { lat = el.center.lat; lon = el.center.lon; }
+            if (!lat || !lon) return false;
+
+            // Distanz berechnen
+            const stationLatLng = L.latLng(lat, lon);
+            const distKm = userLatLng.distanceTo(stationLatLng) / 1000;
+            el._tempDist = distKm; // Speichern für Sortierung
+
+            // Radius Check
+            if (distKm > currentRadiusFilter) return false;
+
+            // Brand Check
+            if (currentBrandFilter !== 'all') {
+                const name = (el.tags && el.tags.name) ? el.tags.name.toLowerCase() : "";
+                if (!name.includes(currentBrandFilter)) return false;
+            }
+
+            return true;
+        });
+
+        // 2. Sortieren nach Preis (billigste zuerst)
+        results.sort((a, b) => {
+            const priceA = parseFloat(a.simPrices[currentFuelType]);
+            const priceB = parseFloat(b.simPrices[currentFuelType]);
+            return priceA - priceB;
+        });
+
+        // 3. Render List
+        if (results.length === 0) {
+            listContainer.innerHTML = '<div style="color:#666; text-align:center; padding:20px;">No stations found within range.</div>';
+            return;
+        }
+
+        results.forEach(el => {
+            const name = (el.tags && el.tags.name) ? el.tags.name : "Station";
+            const price = el.simPrices[currentFuelType];
+            const dist = el._tempDist.toFixed(1);
+            
+            // Koordinaten für Click Event
+            let lat = el.lat; let lon = el.lon;
+            if (el.center) { lat = el.center.lat; lon = el.center.lon; }
+
+            const div = document.createElement('div');
+            div.className = 'filter-res-item';
+            div.innerHTML = `
+                <div class="fri-left">
+                    <h4>${name}</h4>
+                    <p>${dist} km away</p>
+                </div>
+                <div class="fri-price">${price}</div>
+            `;
+            
+            div.onclick = () => {
+                this.closeFilter();
+                map.setView([lat, lon], 16, {animate: true});
+                // Kleiner Timeout damit Map sich erst bewegt
+                setTimeout(() => this.openTotem(name, lat, lon, el), 500);
+            };
+
+            listContainer.appendChild(div);
+        });
+    },
+
+    // --- TOTEM ---
     openTotem: function(name, lat, lng, elementRef) {
         const overlay = document.getElementById('gas-totem-overlay');
         const brandHeader = document.getElementById('totem-brand-header');
@@ -247,11 +371,9 @@ const ExploreLogic = {
         brandHeader.className = 'totem-header ' + this.getBrandClass(name);
         brandTitle.innerText = name;
         
-        // Reset
         document.getElementById('totem-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
         overlay.classList.remove('hidden');
 
-        // CHECK API
         if (TANKERKOENIG_API_KEY && TANKERKOENIG_API_KEY.length > 10) {
             const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${TANKERKOENIG_API_KEY}`;
             fetch(url)
@@ -259,22 +381,16 @@ const ExploreLogic = {
                 .then(data => {
                     if (data.ok && data.stations && data.stations.length > 0) {
                         const station = data.stations[0];
-                        
-                        // Echte Daten speichern für die Map-Anzeige (Update beim nächsten Redraw)
                         if(elementRef) {
-                            elementRef.realData = station; // Speichern
-                            elementRef.simPrices.isOpen = station.isOpen; // Status update
-                            // Optional: Preise auch im Marker updaten
+                            elementRef.realData = station; 
+                            elementRef.simPrices.isOpen = station.isOpen; 
                             if(station.diesel) elementRef.simPrices.diesel = station.diesel.toFixed(2);
                             if(station.e10) elementRef.simPrices.e10 = station.e10.toFixed(2);
                             if(station.e5) elementRef.simPrices.e5 = station.e5.toFixed(2);
                         }
-
                         this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
-                        // Map updaten, damit der Marker grau wird falls zu
                         this.redrawGasMarkers(); 
                     } else {
-                        // Fallback Simulation
                         this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
                     }
                 })
@@ -282,7 +398,6 @@ const ExploreLogic = {
                     this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
                 });
         } else {
-            // Nur Simulation
             setTimeout(() => {
                 this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
             }, 300);
