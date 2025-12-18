@@ -231,3 +231,77 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.8s ease-out; pointer-events: none;}
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+
+/* ... (Dein ganzer bisheriger Code) ... */
+
+/* --- NAVI SEARCH RESULTS (Dropdown) --- */
+.search-results-container {
+    position: absolute;
+    top: 75px; /* Unter der Search Bar */
+    left: 20px; right: 20px;
+    background: rgba(20, 20, 20, 0.95);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 15px;
+    max-height: 0; /* Erst unsichtbar */
+    overflow-y: auto;
+    transition: max-height 0.3s ease;
+    z-index: 4000;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+.search-results-container.open {
+    max-height: 300px;
+    padding: 10px 0;
+}
+
+.search-result-item {
+    padding: 12px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: #eee;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:active { background: rgba(255,255,255,0.1); }
+.search-result-item i { color: #888; font-size: 0.8rem; }
+
+/* --- NAVI INFO CARD (Unten, wenn Route gefunden) --- */
+#navi-route-card {
+    position: absolute; bottom: 30px; left: 20px; right: 20px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 24px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    transform: translateY(150%); /* Versteckt nach unten */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 3000; /* Über der Map, aber unter Filtern */
+}
+#navi-route-card.active { transform: translateY(0); }
+
+.route-stats-row {
+    display: flex; justify-content: space-between; align-items: center;
+}
+.route-stat-main h2 { margin: 0; font-size: 1.8rem; color: #fff; font-weight: 800; }
+.route-stat-main span { font-size: 0.9rem; color: #888; font-weight: 600; }
+.route-stat-sub { text-align: right; }
+.route-stat-sub h3 { margin: 0; font-size: 1.2rem; color: var(--primary); }
+.route-stat-sub span { font-size: 0.8rem; color: #666; }
+
+.route-actions { display: flex; gap: 10px; }
+.btn-nav-start {
+    flex: 2; background: var(--primary); color: white; border: none; height: 50px;
+    border-radius: 15px; font-weight: 800; font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.btn-nav-ghost {
+    flex: 1; background: #222; border: 1px solid #333; color: #aaa; height: 50px;
+    border-radius: 15px; font-weight: 700; font-size: 0.8rem; cursor: pointer;
+}
+.btn-nav-cancel {
+    position: absolute; top: -15px; right: -10px;
+    width: 35px; height: 35px; background: #333; border: 2px solid #111; border-radius: 50%;
+    color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
