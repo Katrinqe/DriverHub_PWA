@@ -10,7 +10,7 @@ let currentBrandFilter = 'all';
 let currentRadiusFilter = 10;
 
 const ExploreLogic = {
-    moveTimeout: null, // Timer Variable explizit machen
+    moveTimeout: null,
 
     init: function() {
         console.log("Explore Init");
@@ -28,6 +28,7 @@ const ExploreLogic = {
         if(btnRecenter) {
             btnRecenter.onclick = () => {
                 if(map && userMarker) {
+                    // FIX: Zoom 15 (Synchron mit Home)
                     map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
                 }
             };
@@ -112,7 +113,6 @@ const ExploreLogic = {
     },
 
     leave: function() {
-        // FIX: Timer sofort töten!
         if (this.moveTimeout) {
             clearTimeout(this.moveTimeout);
             this.moveTimeout = null;
