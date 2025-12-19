@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=51">
+    <link rel="stylesheet" href="style.css?v=52">
 </head>
 <body>
 
@@ -71,31 +71,35 @@
                 </div>
                 
                 <div id="preview-map-container">
+                    <button class="map-expand-btn" onclick="NaviLogic.togglePreviewMap()"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+                    <button class="map-shrink-btn" onclick="NaviLogic.togglePreviewMap()"><i class="fa-solid fa-arrow-left"></i></button>
                     <div id="preview-map-obj"></div>
                 </div>
 
-                <div class="route-preview-stats">
-                    <div class="rps-item">
-                        <span class="rps-label">DURATION</span>
-                        <span class="rps-val" id="preview-time">0 min</span>
+                <div class="preview-content-wrapper">
+                    <div class="route-preview-stats">
+                        <div class="rps-item">
+                            <span class="rps-label">DURATION</span>
+                            <span class="rps-val" id="preview-time">0 min</span>
+                        </div>
+                        <div class="rps-item">
+                            <span class="rps-label">DISTANCE</span>
+                            <span class="rps-val" id="preview-dist">0 km</span>
+                        </div>
                     </div>
-                    <div class="rps-item">
-                        <span class="rps-label">DISTANCE</span>
-                        <span class="rps-val" id="preview-dist">0 km</span>
+                    
+                    <div class="route-preview-dest">
+                        <i class="fa-solid fa-flag-checkered"></i> <span id="preview-dest-name">Destination</span>
                     </div>
-                </div>
-                
-                <div class="route-preview-dest">
-                    <i class="fa-solid fa-flag-checkered"></i> <span id="preview-dest-name">Destination</span>
-                </div>
 
-                <div class="route-preview-actions">
-                    <button class="btn-nav-start" onclick="NaviLogic.startNavigation('record')">
-                        <i class="fa-solid fa-play"></i> START & RECORD
-                    </button>
-                    <button class="btn-nav-ghost" onclick="NaviLogic.startNavigation('ghost')">
-                        <i class="fa-solid fa-ghost"></i> GHOST RIDE
-                    </button>
+                    <div class="route-preview-actions">
+                        <button class="btn-nav-start" onclick="NaviLogic.startNavigation('record')">
+                            <i class="fa-solid fa-play"></i> START & RECORD
+                        </button>
+                        <button class="btn-nav-ghost" onclick="NaviLogic.startNavigation('ghost')">
+                            <i class="fa-solid fa-ghost"></i> GHOST RIDE
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -182,27 +186,26 @@
 
         <div id="nav-speed-limit" class="hidden"><span>50</span></div>
 
-        <button id="btn-nav-recenter" class="icon-btn-floating hidden interactive-element" onclick="NaviLogic.recenterNav()"><i class="fa-solid fa-location-arrow"></i></button>
-
         <div class="navi-bottom-hud interactive-element">
-            <button class="btn-nav-cancel-circle" onclick="NaviLogic.stopNavigation()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <div class="nbh-controls">
+                <button class="btn-nav-circle recenter hidden" id="btn-nav-recenter" onclick="NaviLogic.recenterNav()"><i class="fa-solid fa-location-arrow"></i></button>
+                <button class="btn-nav-circle cancel" onclick="NaviLogic.stopNavigation()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
             
             <div class="nbh-stats">
                 <div class="nbh-item">
+                    <span class="label">SPEED</span>
                     <span class="val" id="nav-speed">0</span>
-                    <span class="unit">km/h</span>
                 </div>
                 <div class="nbh-divider"></div>
                 <div class="nbh-item">
+                    <span class="label">TIME</span>
                     <span class="val" id="nav-remain-time">0 min</span>
-                    <span class="unit">Rest</span>
                 </div>
                 <div class="nbh-divider"></div>
                 <div class="nbh-item">
+                    <span class="label">DIST</span>
                     <span class="val" id="nav-remain-dist">0 km</span>
-                    <span class="unit">Strecke</span>
                 </div>
             </div>
         </div>
@@ -286,10 +289,10 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="explore.js?v=51"></script>
-    <script src="garage.js?v=51"></script>
-    <script src="drive.js?v=51"></script>
-    <script src="navi.js?v=51"></script>
-    <script src="app.js?v=51"></script>
+    <script src="explore.js?v=52"></script>
+    <script src="garage.js?v=52"></script>
+    <script src="drive.js?v=52"></script>
+    <script src="navi.js?v=52"></script>
+    <script src="app.js?v=52"></script>
 </body>
 </html>
