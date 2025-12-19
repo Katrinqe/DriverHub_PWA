@@ -15,16 +15,14 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; 
     background-color: #000; 
     transform-origin: center center;
-    transition: none; /* Standard: Keine Animation */
+    transition: none; 
 }
 
-/* Erlaubt weiche Drehung nur im Drive/Navi Mode */
 .map-smooth-rotate {
     transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
 }
 
-/* FIX: DIE BETON-LÖSUNG */
-/* Wenn diese Klasse aktiv ist, ist die Karte tot für Klicks/Touch */
+/* BETON-LÖSUNG: Map Interaktion sperren */
 .map-locked {
     pointer-events: none !important;
 }
@@ -32,23 +30,30 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
+/* FIX: GLOBAL FADE (Festgenagelt) */
+.nav-fade-top {
+    position: fixed; /* Global fixiert */
+    top: 0; left: 0; width: 100%; 
+    height: 150px; 
+    background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
+    pointer-events: none; 
+    z-index: 5; /* Über Map, unter UI */
+    opacity: 0; /* Default aus */
+    transition: opacity 0.6s ease; /* Sanftes Einblenden */
+}
+/* Wenn diese Klasse da ist, wird er sichtbar */
+.nav-fade-top.visible {
+    opacity: 1;
+}
+
 /* MARKER */
 .user-marker-wrap { position: relative; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; transition: none; }
 .user-marker-wrap.smooth { transition: transform 1s linear; }
 .user-dot { width: 18px; height: 18px; background-color: #007aff; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 999; position: relative; }
 .user-pulse { position: absolute; top: 0; left: 0; width: 40px; height: 40px; background-color: rgba(0, 122, 255, 0.5); border-radius: 50%; z-index: 998; animation: pulse-animation 2s infinite; }
 
-.user-arrow-icon {
-    width: 40px; height: 40px; 
-    background: transparent; 
-    display: flex; justify-content: center; align-items: center;
-    z-index: 1000;
-}
-.user-arrow-icon i {
-    color: #007aff; 
-    font-size: 2rem; 
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); 
-}
+.user-arrow-icon { width: 40px; height: 40px; background: transparent; display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.user-arrow-icon i { color: #007aff; font-size: 2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
 @keyframes pulse-animation { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
 
@@ -97,7 +102,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-.nav-fade-top { position: absolute; top: 0; left: 0; width: 100%; height: 150px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); pointer-events: none; z-index: 5; }
+/* NAVI UI */
 .navi-top-hud { position: absolute; top: calc(env(safe-area-inset-top) + 20px); left: 20px; right: 20px; background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); padding: 15px 20px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; z-index: 10; }
 .nav-arrow-box { width: 60px; height: 60px; background: #222; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #fff; }
 .nav-instruction-box { flex: 1; }
