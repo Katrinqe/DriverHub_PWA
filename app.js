@@ -22,6 +22,16 @@ window.addEventListener('load', () => {
     document.getElementById('nav-garage').onclick = showGarage;
     document.getElementById('nav-explore').onclick = showExplore;
 
+    // FIX: Doppeltippen auf Nav verhindern
+    const nav = document.getElementById('global-nav');
+    if(nav) {
+        nav.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        });
+    }
+
     document.getElementById('btn-start').onclick = startDriveMode;
     document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
 
@@ -139,7 +149,6 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
-    // FIX: Map Interaktion erlauben
     map.dragging.enable();
     map.touchZoom.enable();
     map.doubleClickZoom.enable();
@@ -159,6 +168,9 @@ function centerMapOnUser() {
 }
 
 function showHome() {
+    // FIX: Wenn schon auf Home, nichts tun (kein Zoom, kein Reset)
+    if(document.getElementById('home-screen').classList.contains('active')) return;
+
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
@@ -170,7 +182,6 @@ function showHome() {
     currentRotation = 0;
     if(mapEl) mapEl.style.transform = `rotate(0deg)`;
     
-    // FIX: Karte KOMPLETT einfrieren
     map.dragging.disable();
     map.touchZoom.disable();
     map.doubleClickZoom.disable();
