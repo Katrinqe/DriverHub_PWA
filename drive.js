@@ -6,6 +6,7 @@ const DriverLogic = {
     distance: 0,
     lastPos: null,
     path: [],
+
     
     start: function() {
         console.log("Drive Started");
