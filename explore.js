@@ -14,7 +14,6 @@ const ExploreLogic = {
         console.log("Explore Init");
         if (typeof L === 'undefined') return;
 
-        // Layer Groups initialisieren
         if (!exploreLayers.gas) exploreLayers.gas = L.layerGroup();
         if (!exploreLayers.cam) exploreLayers.cam = L.layerGroup();
         if (!exploreLayers.parking) exploreLayers.parking = L.layerGroup();
@@ -27,7 +26,6 @@ const ExploreLogic = {
         if(btnRecenter) {
             btnRecenter.onclick = () => {
                 if(map && userMarker) {
-                    // FIX: SetView statt PanTo setzt auch den Zoom zurück
                     map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
                 }
             };
@@ -78,22 +76,14 @@ const ExploreLogic = {
         btn.addEventListener('touchend', end);
     },
 
-    // NEU: Harter Reset für Navi-Start
     resetAll: function() {
-        // State resetten
         exploreState.gas = false;
         exploreState.cam = false;
         exploreState.parking = false;
-
-        // UI Reset
         document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-
-        // Map Clean
         if(exploreLayers.gas) exploreLayers.gas.clearLayers();
         if(exploreLayers.cam) exploreLayers.cam.clearLayers();
         if(exploreLayers.parking) exploreLayers.parking.clearLayers();
-        
-        // Remove from map if added
         if(map) {
             if(map.hasLayer(exploreLayers.gas)) map.removeLayer(exploreLayers.gas);
             if(map.hasLayer(exploreLayers.cam)) map.removeLayer(exploreLayers.cam);
@@ -103,14 +93,15 @@ const ExploreLogic = {
 
     enter: function() {
         if(map) {
+            // FIX: Interaktion im Explore Mode erlauben
             map.dragging.enable();
             map.touchZoom.enable();
+            map.doubleClickZoom.enable();
             map.scrollWheelZoom.enable();
             
             const mapEl = document.getElementById('background-map');
             if(mapEl) mapEl.style.transform = `rotate(0deg)`;
 
-            // Layers wieder hinzufügen, falls sie im State "an" waren
             if(exploreState.gas) { exploreLayers.gas.addTo(map); this.fetchData('gas'); }
             if(exploreState.cam) { exploreLayers.cam.addTo(map); this.fetchData('cam'); }
             if(exploreState.parking) { exploreLayers.parking.addTo(map); this.fetchData('parking'); }
@@ -121,6 +112,7 @@ const ExploreLogic = {
 
     leave: function() {
         if(map) {
+            // Beim Verlassen sicherheitshalber aus, showHome() macht es eh auch
             map.dragging.disable();
             map.touchZoom.disable();
             map.scrollWheelZoom.disable();
@@ -143,7 +135,6 @@ const ExploreLogic = {
             this.fetchData(type); 
         } 
         else { 
-            // FIX: Sofortiges Löschen
             if(exploreLayers[type]) {
                 exploreLayers[type].clearLayers();
                 exploreLayers[type].remove();
@@ -209,7 +200,7 @@ const ExploreLogic = {
     },
 
     redrawGasMarkers: function() {
-        if(!exploreState.gas) return; // Sicherheitscheck
+        if(!exploreState.gas) return; 
         exploreLayers.gas.clearLayers();
         
         cachedGasStations.forEach(el => {
@@ -263,7 +254,7 @@ const ExploreLogic = {
     },
 
     renderGenericMarkers: function(type, elements) {
-        if(!exploreState[type]) return; // Sicherheitscheck
+        if(!exploreState[type]) return; 
         elements.forEach(el => {
             let lat = el.lat; let lon = el.lon;
             if (el.center) { lat = el.center.lat; lon = el.center.lon; }
