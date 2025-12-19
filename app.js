@@ -63,7 +63,6 @@ function initMap() {
         if(userMarker && userMarker.getElement()) {
             userMarker.getElement().classList.remove('smooth');
         }
-        // Button Logic für beide Screens
         if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden');
         if(typeof NaviLogic !== 'undefined' && NaviLogic.isNavigating) document.getElementById('btn-nav-recenter').classList.remove('hidden');
     });
@@ -120,7 +119,6 @@ function handlePositionUpdate(pos) {
         }
     } else if (isNavi) {
         NaviLogic.updatePosition(pos); 
-        // Logic für Navi Recenter Button
         if (document.getElementById('btn-nav-recenter').classList.contains('hidden')) {
             const dist = map.getCenter().distanceTo(newLatLng);
             if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
