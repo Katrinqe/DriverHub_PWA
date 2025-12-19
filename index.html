@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=49">
+    <link rel="stylesheet" href="style.css?v=51">
 </head>
 <body>
 
@@ -70,6 +70,10 @@
                     <button class="btn-close-filter" onclick="NaviLogic.cancelRoute()"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 
+                <div id="preview-map-container">
+                    <div id="preview-map-obj"></div>
+                </div>
+
                 <div class="route-preview-stats">
                     <div class="rps-item">
                         <span class="rps-label">DURATION</span>
@@ -164,7 +168,6 @@
     </div>
 
     <div id="navi-screen" class="screen hidden">
-        
         <div class="navi-top-hud interactive-element">
             <div class="nav-arrow-box"><i id="nav-arrow-icon" class="fa-solid fa-arrow-up"></i></div>
             <div class="nav-instruction-box">
@@ -182,6 +185,10 @@
         <button id="btn-nav-recenter" class="icon-btn-floating hidden interactive-element" onclick="NaviLogic.recenterNav()"><i class="fa-solid fa-location-arrow"></i></button>
 
         <div class="navi-bottom-hud interactive-element">
+            <button class="btn-nav-cancel-circle" onclick="NaviLogic.stopNavigation()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
             <div class="nbh-stats">
                 <div class="nbh-item">
                     <span class="val" id="nav-speed">0</span>
@@ -198,10 +205,6 @@
                     <span class="unit">Strecke</span>
                 </div>
             </div>
-            
-            <button class="btn-nav-cancel-circle" onclick="NaviLogic.stopNavigation()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
         </div>
     </div>
 
@@ -254,6 +257,7 @@
             <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
         </div>
         <div id="garage-list" class="garage-list interactive-element"></div>
+        
         <div id="detail-overlay" class="hidden interactive-element">
             <div class="detail-header">
                 <h3 id="det-date">Date</h3>
@@ -282,10 +286,10 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="explore.js?v=49"></script>
-    <script src="garage.js?v=49"></script>
-    <script src="drive.js?v=49"></script>
-    <script src="navi.js?v=49"></script>
-    <script src="app.js?v=49"></script>
+    <script src="explore.js?v=51"></script>
+    <script src="garage.js?v=51"></script>
+    <script src="drive.js?v=51"></script>
+    <script src="navi.js?v=51"></script>
+    <script src="app.js?v=51"></script>
 </body>
 </html>
