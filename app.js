@@ -63,7 +63,6 @@ function initMap() {
         dragging: false, touchZoom: false, doubleClickZoom: false, 
         zoomSnap: 0, zoomDelta: 0.5,
         tap: false 
-    // FIX: Standard Zoom 15
     }).setView([51.1657, 10.4515], 15);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
@@ -145,7 +144,6 @@ function handlePositionUpdate(pos) {
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
         
         if (isHome) {
-            // FIX: Immer auf Zoom 15 halten
             map.setView(newLatLng, 15, { animate: false });
         } 
         else if (!isExplore) {
@@ -162,6 +160,9 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
+    // Fade AUS im Drive
+    document.getElementById('global-top-fade').classList.remove('visible');
+
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.add('map-smooth-rotate');
 
@@ -189,7 +190,9 @@ function showHome() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
-    // FIX: ERST RESETTEN
+    // FIX: Fade AN in Home
+    document.getElementById('global-top-fade').classList.add('visible');
+
     const mapEl = document.getElementById('background-map');
     mapEl.classList.remove('map-smooth-rotate');
     mapEl.classList.add('map-locked'); 
@@ -208,10 +211,7 @@ function showHome() {
 
     if(userMarker) {
         if(userMarker.getElement()) userMarker.getElement().classList.remove('smooth');
-        
-        // FIX: ZOOM 15
         map.setView(userMarker.getLatLng(), 15, { animate: false });
-        
         setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
     }
 
@@ -224,6 +224,9 @@ function showGarage() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
+    // FIX: Fade AUS in Garage
+    document.getElementById('global-top-fade').classList.remove('visible');
+
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
@@ -236,6 +239,9 @@ function showExplore() {
     switchScreen('explore-screen');
     updateNav('explore');
     
+    // FIX: Fade AN in Explore
+    document.getElementById('global-top-fade').classList.add('visible');
+
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
