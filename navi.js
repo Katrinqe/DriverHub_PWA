@@ -192,6 +192,9 @@ const NaviLogic = {
         this.isNavigating = false;
         if(this.navInterval) clearInterval(this.navInterval);
 
+        // FIX: Fade entfernen beim Cancel
+        document.getElementById('global-top-fade').classList.remove('visible');
+
         if(userMarker && map) {
             map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
         }
@@ -202,7 +205,8 @@ const NaviLogic = {
         this.isNavigating = true;
         this.navStartTime = Date.now();
 
-        // FIX: Animation EINschalten für Navi
+        // FIX: Fade sichtbar machen
+        document.getElementById('global-top-fade').classList.add('visible');
         document.getElementById('background-map').classList.add('map-smooth-rotate');
 
         document.getElementById('route-preview-modal').classList.remove('active');
@@ -351,7 +355,8 @@ const NaviLogic = {
         this.isNavigating = false;
         clearInterval(this.navInterval);
 
-        // FIX: Animation AUSschalten beim Stop
+        // FIX: Fade unsichtbar machen
+        document.getElementById('global-top-fade').classList.remove('visible');
         document.getElementById('background-map').classList.remove('map-smooth-rotate');
 
         const mapEl = document.getElementById('background-map');
