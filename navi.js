@@ -15,6 +15,9 @@ const NaviLogic = {
     
     routeDistance: 0,
     routeDuration: 0,
+    routeSteps: [], // Speichert Abbiegehinweise
+    destMarker: null, // Marker auf der Hauptkarte
+    
     recordStats: null,
     
     init: function() {
@@ -74,13 +77,15 @@ const NaviLogic = {
             document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
         }
 
-        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson`;
+        // Steps=true für Anweisungen
+        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
         document.getElementById('map-loading').classList.add('visible');
 
         fetch(osrmUrl).then(r => r.json()).then(data => {
             document.getElementById('map-loading').classList.remove('visible');
             if (data.routes && data.routes.length > 0) {
                 this.currentDestination = { name: name, lat: endLat, lng: endLng };
+                this.routeSteps = data.routes[0].legs[0].steps; // Schritte speichern
                 this.drawRoute(data.routes[0]);
                 this.showPreview(data.routes[0], name, [startLat, startLng], [endLat, endLng]);
             } else { alert("No route found."); }
@@ -92,9 +97,17 @@ const NaviLogic = {
 
     drawRoute: function(route) {
         if (this.routeLayer) { map.removeLayer(this.routeLayer); this.routeLayer = null; }
+        if (this.destMarker) { map.removeLayer(this.destMarker); this.destMarker = null; }
+
         const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]); 
-        // GREEN LINE
         this.routeLayer = L.polyline(coordinates, { color: '#30d158', weight: 6, opacity: 0.8, lineCap: 'round' }).addTo(map);
+        
+        // Ziel Marker auf Hauptkarte
+        if(this.currentDestination) {
+            const endIcon = L.divIcon({className: 'preview-end-icon', html:'<i class="fa-solid fa-flag-checkered"></i>', iconSize:[20,20]});
+            this.destMarker = L.marker([this.currentDestination.lat, this.currentDestination.lng], {icon: endIcon}).addTo(map);
+        }
+
         map.fitBounds(this.routeLayer.getBounds(), { padding: [50, 50], maxZoom: 16 });
     },
 
@@ -102,15 +115,12 @@ const NaviLogic = {
         const container = document.getElementById('preview-map-container');
         const content = document.querySelector('.preview-content-wrapper');
         const isExpanded = container.classList.contains('expanded');
-        
         container.classList.toggle('expanded');
         content.classList.toggle('hidden-visually');
-        
         setTimeout(() => { 
             if(this.previewMap) {
                 this.previewMap.invalidateSize();
                 if(isExpanded && this.previewBounds) {
-                    // Zurück zu den ursprünglichen Bounds zoomen
                     this.previewMap.fitBounds(this.previewBounds, {animate: true, padding: [20,20]});
                 }
             }
@@ -121,22 +131,17 @@ const NaviLogic = {
         if(this.previewMap) { this.previewMap.remove(); this.previewMap = null; }
         const el = document.getElementById('preview-map-obj');
         if(!el) return;
-        
         this.previewMap = L.map('preview-map-obj', {
             zoomControl: false, attributionControl: false, dragging: true,
             touchZoom: true, doubleClickZoom: true, scrollWheelZoom: false
         });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.previewMap);
-
-        // GREEN LINE PREVIEW
         const line = L.polyline(coordinates, { color: '#30d158', weight: 4 }).addTo(this.previewMap);
         this.previewBounds = line.getBounds();
-
         const startIcon = L.divIcon({className: 'preview-start-icon', iconSize:[14,14]});
         const endIcon = L.divIcon({className: 'preview-end-icon', html:'<i class="fa-solid fa-flag-checkered"></i>', iconSize:[20,20]});
         L.marker(startLatLng, {icon: startIcon}).addTo(this.previewMap);
         L.marker(endLatLng, {icon: endIcon}).addTo(this.previewMap);
-
         setTimeout(() => {
             if(this.previewMap) {
                 this.previewMap.invalidateSize();
@@ -175,6 +180,8 @@ const NaviLogic = {
 
     cancelRoute: function() {
         if (this.routeLayer && map) { map.removeLayer(this.routeLayer); this.routeLayer = null; }
+        if (this.destMarker && map) { map.removeLayer(this.destMarker); this.destMarker = null; }
+        
         const modal = document.getElementById('route-preview-modal');
         if(modal) { modal.classList.remove('active'); setTimeout(() => modal.classList.add('hidden'), 300); }
         const input = document.getElementById('nav-search-input');
@@ -225,12 +232,14 @@ const NaviLogic = {
             this.updateETA();
             const elapsedSec = (Date.now() - this.navStartTime) / 1000;
             
+            // PRÄZISERE REST-BERECHNUNG (Summe der verbleibenden Koordinaten)
+            // Hier vereinfacht: Luftlinie zum Ziel (Client-Side Routing Engine wäre nötig für exakt)
             let distRemain = 0;
             if(userMarker && this.currentDestination) {
                 const destLatLng = L.latLng(this.currentDestination.lat, this.currentDestination.lng);
                 distRemain = (userMarker.getLatLng().distanceTo(destLatLng) / 1000).toFixed(1);
             }
-            document.getElementById('nav-remain-dist').innerText = distRemain; // Unit steht im CSS/HTML
+            document.getElementById('nav-remain-dist').innerText = distRemain + " km";
 
             let remainSec = Math.max(0, this.routeDuration - elapsedSec);
             let remainMin = Math.ceil(remainSec / 60);
@@ -256,6 +265,8 @@ const NaviLogic = {
     updatePosition: function(pos) {
         if(!this.isNavigating) return;
 
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
         const speedKm = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
         document.getElementById('nav-speed').innerText = speedKm;
 
@@ -265,21 +276,94 @@ const NaviLogic = {
              mapEl.style.transform = `rotate(${-heading}deg)`;
         }
 
+        // --- SPEED LIMIT LIVE CHECK (THROTTLE) ---
+        // Nur alle 5 Sekunden prüfen, um API nicht zu spammen
+        if(!this.lastSpeedCheck || Date.now() - this.lastSpeedCheck > 5000) {
+            this.lastSpeedCheck = Date.now();
+            this.checkSpeedLimit(lat, lng);
+        }
+
+        // --- TURN BY TURN LOGIC ---
+        // Finde den nächsten Schritt
+        this.updateInstructions(lat, lng);
+
         if(this.navMode === 'record' && this.recordStats) {
-            this.recordStats.path.push({
-                lat: pos.coords.latitude, 
-                lng: pos.coords.longitude, 
-                speed: speedKm,
-                time: Date.now()
-            });
+            this.recordStats.path.push({ lat: lat, lng: lng, speed: speedKm, time: Date.now() });
+        }
+    },
+
+    checkSpeedLimit: function(lat, lng) {
+        // Radius 25m
+        const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+        
+        fetch(url).then(r=>r.json()).then(data => {
+            const el = document.getElementById('nav-speed-limit');
+            if(data.elements && data.elements.length > 0) {
+                let max = data.elements[0].tags.maxspeed;
+                if(max && !isNaN(parseInt(max))) {
+                    el.querySelector('span').innerText = max;
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                }
+            } else {
+                el.classList.add('hidden');
+            }
+        }).catch(e => {}); // Silent Fail
+    },
+
+    updateInstructions: function(lat, lng) {
+        if(!this.routeSteps || this.routeSteps.length === 0) return;
+        
+        // Finde den nächsten Schritt
+        // Wir nehmen an, dass Steps der Reihe nach sind.
+        // Wir suchen den ersten Step, der noch nicht "passiert" ist.
+        // Vereinfacht: Der nächste Step ist der, dessen Distanz > 20m ist.
+        
+        let nextStep = null;
+        let distToNext = 99999;
+        const userLoc = L.latLng(lat, lng);
+
+        for(let i=0; i<this.routeSteps.length; i++) {
+            const step = this.routeSteps[i];
+            const stepLoc = L.latLng(step.maneuver.location[1], step.maneuver.location[0]);
+            const dist = userLoc.distanceTo(stepLoc);
+            
+            // Wenn wir näher als 30m an einem Punkt sind, gilt er als erreicht -> nimm den nächsten
+            if(dist > 40) {
+                nextStep = step;
+                distToNext = dist;
+                break; // Den ersten gefundenen nehmen
+            }
+        }
+
+        if(nextStep) {
+            // Icon Mapping (Basic)
+            let iconClass = "fa-arrow-up";
+            const type = nextStep.maneuver.type;
+            const modifier = nextStep.maneuver.modifier;
+            
+            if(modifier) {
+                if(modifier.includes('left')) iconClass = "fa-arrow-left";
+                else if(modifier.includes('right')) iconClass = "fa-arrow-right";
+                else if(modifier.includes('slight left')) iconClass = "fa-arrow-up-left"; // Braucht custom rotation
+            }
+            
+            // Text säubern
+            let text = nextStep.name || nextStep.maneuver.type || "Folgen Sie der Route";
+            if (text === "new name") text = "Geradeaus"; // OSRM Default manchmal
+
+            document.getElementById('nav-instruction').innerText = text;
+            document.getElementById('nav-next-dist').innerText = "in " + Math.round(distToNext) + " m";
+            document.getElementById('nav-arrow-icon').className = `fa-solid ${iconClass}`;
         }
     },
 
     recenterNav: function() {
         if(userMarker) {
             map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
-            // Button soll NICHT verschwinden, also entfernen wir das add('hidden')
-            // document.getElementById('btn-nav-recenter').classList.add('hidden'); // Gelöscht
+            // Button bleibt da!
         }
     },
 
@@ -316,7 +400,6 @@ const NaviLogic = {
 
     showSummary: function() {
         if(!this.recordStats) return;
-        
         const durationMs = Date.now() - this.recordStats.startTime;
         const durationMin = Math.floor(durationMs / 60000);
         const durationSec = Math.floor((durationMs % 60000) / 1000);
