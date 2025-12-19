@@ -16,8 +16,9 @@ window.addEventListener('load', () => {
     initWeather();
     
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
-    if(typeof NaviLogic !== 'undefined') NaviLogic.init(); // NEU
+    if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
+    // NAV HANDLER
     document.getElementById('nav-home').onclick = showHome;
     document.getElementById('nav-garage').onclick = showGarage;
     document.getElementById('nav-explore').onclick = showExplore;
@@ -91,8 +92,6 @@ function handlePositionUpdate(pos) {
 
     // MAP ROTATION (Nur bei Drive oder Navi)
     const mapEl = document.getElementById('background-map');
-    
-    // Check if Navi is active
     const isNavi = (typeof NaviLogic !== 'undefined' && NaviLogic.isNavigating);
 
     if (isDriveMode || isNavi) {
@@ -113,7 +112,6 @@ function handlePositionUpdate(pos) {
 
     if (isZooming) return;
 
-    // TRACKING LOGIC
     if (isDriveMode) {
         DriverLogic.update(pos);
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
@@ -121,8 +119,7 @@ function handlePositionUpdate(pos) {
             if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else if (isNavi) {
-        NaviLogic.updatePosition(pos); // NEU: Update Navi Logic
-        // Im Navi Modus folgen wir immer hart, außer User schiebt (Logic in navi.js btn)
+        NaviLogic.updatePosition(pos); 
         const dist = map.getCenter().distanceTo(newLatLng);
         if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
     } else {
@@ -136,6 +133,9 @@ function handlePositionUpdate(pos) {
 
 function startDriveMode() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
+    // FIX: Falls Navi Route aktiv war, löschen
+    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute(); 
+    
     isDriveMode = true;
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
@@ -156,6 +156,9 @@ function centerMapOnUser() {
 
 function showHome() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
+    // FIX: Route löschen, wenn Home gedrückt wird
+    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
+
     switchScreen('home-screen');
     updateNav('home');
     isDriveMode = false;
@@ -170,12 +173,17 @@ function showHome() {
 
 function showGarage() { 
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
+    // FIX: Route löschen, wenn Garage gedrückt wird
+    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
+
     switchScreen('garage-screen'); 
     updateNav('garage');
     GarageLogic.render(); 
 }
 
 function showExplore() {
+    // Hier löschen wir die Route NICHT sofort, weil man vielleicht vom Navi zurück zur Map will um die Route zu sehen.
+    // Aber wenn man gerade im Navi-Modus war, sollte man es stoppen.
     switchScreen('explore-screen');
     updateNav('explore');
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
