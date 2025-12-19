@@ -18,17 +18,40 @@ window.addEventListener('load', () => {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
-    // NAV LEISTE LOGIK
-    const navBar = document.getElementById('global-nav');
-    if(navBar) {
-        // FIX: Dies verhindert, dass Klicks auf die Leiste zur Karte durchdringen
-        L.DomEvent.disableClickPropagation(navBar);
-        L.DomEvent.disableScrollPropagation(navBar);
+    // FIX: Nav Buttons komplett isolieren
+    function bindNavBtn(id, actionFn) {
+        const btn = document.getElementById(id);
+        if(!btn) return;
+
+        // Normale Klick-Funktion
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Nicht zur Karte durchlassen
+            actionFn();
+        });
+
+        // Doppelklick töten
+        btn.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        // Touchstart töten (verhindert Ghost-Clicks auf Map)
+        btn.addEventListener('touchstart', (e) => {
+            e.stopPropagation();
+        }, {passive: false});
     }
 
-    document.getElementById('nav-home').onclick = showHome;
-    document.getElementById('nav-garage').onclick = showGarage;
-    document.getElementById('nav-explore').onclick = showExplore;
+    bindNavBtn('nav-home', showHome);
+    bindNavBtn('nav-garage', showGarage);
+    bindNavBtn('nav-explore', showExplore);
+
+    // Nav Bar Container auch schützen
+    const navBar = document.getElementById('global-nav');
+    if(navBar) {
+        L.DomEvent.disableClickPropagation(navBar);
+        L.DomEvent.disableScrollPropagation(navBar);
+        navBar.addEventListener('dblclick', (e) => { e.stopPropagation(); e.preventDefault(); });
+    }
 
     document.getElementById('btn-start').onclick = startDriveMode;
     document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
@@ -53,8 +76,9 @@ window.addEventListener('load', () => {
 function initMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
-        dragging: false, touchZoom: false, doubleClickZoom: false, // Default aus
-        zoomSnap: 0, zoomDelta: 0.5 
+        dragging: false, touchZoom: false, doubleClickZoom: false, 
+        zoomSnap: 0, zoomDelta: 0.5,
+        tap: false // WICHTIG: Manchmal hilft das bei Touch-Problemen
     }).setView([51.1657, 10.4515], 14);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
@@ -147,6 +171,7 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
+    // Drive Mode: Alles an
     map.dragging.enable();
     map.touchZoom.enable();
     map.doubleClickZoom.enable();
@@ -179,16 +204,16 @@ function showHome() {
     currentRotation = 0;
     if(mapEl) mapEl.style.transform = `rotate(0deg)`;
     
-    // FIX: Komplett einfrieren
+    // FIX: Alles AUS auf Home
     map.dragging.disable();
     map.touchZoom.disable();
     map.doubleClickZoom.disable();
     map.scrollWheelZoom.disable();
     map.boxZoom.disable();
     map.keyboard.disable();
+    if (map.tap) map.tap.disable();
 
     if(userMarker) {
-        // Fix: Immer Zoom 14
         map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
     }
 }
