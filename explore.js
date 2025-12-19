@@ -28,7 +28,7 @@ const ExploreLogic = {
         if(btnRecenter) {
             btnRecenter.onclick = () => {
                 if(map && userMarker) {
-                    // FIX: Zoom 15 (Synchron mit Home)
+                    // Zoom 15 passend zur Home Page
                     map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
                 }
             };
@@ -102,7 +102,8 @@ const ExploreLogic = {
             map.scrollWheelZoom.enable();
             
             const mapEl = document.getElementById('background-map');
-            if(mapEl) mapEl.style.transform = `rotate(0deg)`;
+            // FIX: Reset Rotation mit TRANSLATE für Big Map
+            if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
 
             if(exploreState.gas) { exploreLayers.gas.addTo(map); this.fetchData('gas'); }
             if(exploreState.cam) { exploreLayers.cam.addTo(map); this.fetchData('cam'); }
@@ -113,6 +114,7 @@ const ExploreLogic = {
     },
 
     leave: function() {
+        // Timer sofort töten
         if (this.moveTimeout) {
             clearTimeout(this.moveTimeout);
             this.moveTimeout = null;
