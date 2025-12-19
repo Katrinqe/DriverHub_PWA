@@ -15,13 +15,13 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
-/* USER MARKER (DOT) */
+/* MARKER */
 .user-marker-wrap { position: relative; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; transition: none; }
 .user-marker-wrap.smooth { transition: transform 1s linear; }
 .user-dot { width: 18px; height: 18px; background-color: #007aff; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 999; position: relative; }
 .user-pulse { position: absolute; top: 0; left: 0; width: 40px; height: 40px; background-color: rgba(0, 122, 255, 0.5); border-radius: 50%; z-index: 998; animation: pulse-animation 2s infinite; }
 
-/* NEU: USER ARROW (NAVI) */
+/* USER ARROW (NAVI) */
 .user-arrow-icon {
     font-size: 2rem; color: #007aff; 
     text-shadow: 0 0 10px rgba(0, 122, 255, 0.8);
@@ -42,6 +42,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .preview-start-icon { width: 14px; height: 14px; background: #30d158; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
 .preview-end-icon { font-size: 1.2rem; color: #ff3b30; text-shadow: 0 2px 5px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: flex-end; }
 
+/* TANKSTELLEN MARKER */
 .price-marker-wrap { background: #000; border: 1px solid #333; border-radius: 6px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.7); transition: all 0.2s; width: 60px !important; height: auto !important; }
 .price-marker-wrap:active { transform: scale(1.1); z-index: 9999 !important; border-color: white; }
 .price-marker-wrap.closed { filter: grayscale(100%) opacity(0.6); transform: scale(0.9); border-color: #444; }
@@ -80,16 +81,15 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
 /* --- NAVI UI UPDATED --- */
-/* NEU: Top Fade im Navi Modus */
 .nav-fade-top {
     position: absolute; top: 0; left: 0; width: 100%; 
-    height: 150px; /* Fade Bereich */
+    height: 150px; 
     background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
     pointer-events: none; z-index: 5;
 }
 
 .navi-top-hud {
-    position: absolute; /* Über Fade legen */
+    position: absolute; 
     top: calc(env(safe-area-inset-top) + 20px);
     left: 20px; right: 20px;
     background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(15px);
@@ -105,45 +105,54 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-eta-box .label { font-size: 0.7rem; color: #666; font-weight: 800; letter-spacing: 1px; }
 .nav-eta-box .val { font-size: 1.6rem; font-weight: 800; color: #fff; }
 
-.navi-bottom-hud {
-    position: fixed; bottom: 40px; left: 20px; right: 20px;
-    pointer-events: none; 
-    display: flex; flex-direction: column; gap: 15px;
-    z-index: 10;
-}
-
-.nbh-controls {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    padding: 0 5px;
-}
-
-/* Gleiche Größe für Cancel und Recenter */
-.btn-nav-circle {
-    width: 55px; height: 55px; border-radius: 50%;
+/* FIX: Navi Bottom Layout (Symmetrisch & Fest) */
+/* Die Buttons sind jetzt losgelöst vom Container */
+.btn-nav-floating {
+    position: fixed; bottom: 110px; /* Über dem HUD */
+    width: 50px; height: 50px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     cursor: pointer; pointer-events: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
     transition: transform 0.2s; font-size: 1.2rem;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px); z-index: 20;
 }
-.btn-nav-circle.cancel { background: rgba(20,20,20,0.8); border: 2px solid #ff3b30; color: #ff3b30; }
-.btn-nav-circle.recenter { background: rgba(20,20,20,0.8); border: 2px solid #fff; color: #fff; }
-.btn-nav-circle:active { transform: scale(0.9); }
+.btn-nav-floating:active { transform: scale(0.9); }
+
+/* LINKS: Recenter */
+#btn-nav-recenter { left: 20px; background: rgba(20,20,20,0.8); border: 2px solid #fff; color: #fff; }
+/* RECHTS: Cancel */
+#btn-nav-cancel { right: 20px; background: rgba(20,20,20,0.8); border: 2px solid #ff3b30; color: #ff3b30; }
+
+.navi-bottom-hud {
+    position: fixed; bottom: 30px; left: 20px; right: 20px;
+    z-index: 10; pointer-events: auto;
+}
 
 .nbh-stats {
     width: 100%;
     background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(15px);
     border: 1px solid rgba(255,255,255,0.1); border-radius: 24px;
-    padding: 20px 0; display: flex; justify-content: space-between; align-items: center;
-    pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    padding: 20px 20px; 
+    display: flex; justify-content: space-between; align-items: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
-.nbh-item { display: flex; flex-direction: column; align-items: center; flex: 1; }
-/* UPDATE: Label oben, Value unten, Englisch */
-.nbh-item .label { font-size: 0.7rem; color: #888; font-weight: 800; letter-spacing: 1px; margin-bottom: 4px; }
-.nbh-item .val { font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1; }
-.nbh-divider { width: 1px; height: 40px; background: #333; }
+
+.nbh-item { 
+    display: flex; flex-direction: column; align-items: center; flex: 1; 
+}
+
+/* FIX: Nebeneinander Darstellung wenn Platz, sonst sauberer Stack */
+.nbh-value-group {
+    display: flex; align-items: baseline; gap: 5px;
+}
+
+.nbh-item .label { font-size: 0.65rem; color: #888; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px; }
+.nbh-item .val { font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1; }
+.nbh-item .unit { font-size: 0.9rem; color: #888; font-weight: 700; }
+
+.nbh-divider { width: 1px; height: 35px; background: #333; }
 
 #nav-speed-limit {
-    position: absolute; top: 125px; left: 25px; /* Angepasst an Top HUD */
+    position: absolute; top: 125px; left: 25px; 
     width: 55px; height: 55px; background: white; border-radius: 50%;
     border: 6px solid #cc0000; display: flex; align-items: center; justify-content: center;
     box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 60; pointer-events: none;
@@ -165,7 +174,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     width: 100%; height: 160px; 
     background: #222; border-radius: 15px; border: 1px solid #333;
     margin-bottom: 15px; overflow: hidden; position: relative;
-    transition: height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); /* Smooth Transition */
+    transition: height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); 
 }
 #preview-map-container.expanded { height: 450px; }
 
@@ -189,7 +198,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .btn-nav-start { width: 100%; height: 55px; background: var(--primary); border: none; border-radius: 18px; color: white; font-weight: 800; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .btn-nav-ghost { width: 100%; height: 50px; background: #222; border: 1px solid #333; border-radius: 18px; color: #aaa; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
-/* Rest aus vorheriger Version */
+/* EXPLORE UI & REST */
 .explore-top-ui { width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); display: flex; flex-direction: column; gap: 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0) 100%); pointer-events: none; }
 .search-bar-glass { width: 100%; height: 50px; background: rgba(40, 40, 40, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; display: flex; align-items: center; padding: 0 15px; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .search-bar-glass i { color: #888; margin-right: 10px; }
