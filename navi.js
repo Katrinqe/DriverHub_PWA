@@ -13,10 +13,12 @@ const NaviLogic = {
     navStartTime: 0,
     navInterval: null,
     
-    routeDistance: 0,
+    routeDistance: 0, // Road Distance in km
     routeDuration: 0,
     routeSteps: [],
     destMarker: null,
+    
+    distanceFactor: 1.0, // Factor to correct Air Distance
     
     recordStats: null,
     lastSpeedCheck: 0,
@@ -87,6 +89,14 @@ const NaviLogic = {
                 this.currentDestination = { name: name, lat: endLat, lng: endLng };
                 this.routeSteps = data.routes[0].legs[0].steps;
                 this.drawRoute(data.routes[0]);
+                
+                // --- DISTANCE FACTOR CALCULATION ---
+                // We calculate Air Distance vs Road Distance to fix the display in Navi
+                const destLatLng = L.latLng(endLat, endLng);
+                const airDistKm = userMarker.getLatLng().distanceTo(destLatLng) / 1000;
+                const roadDistKm = data.routes[0].distance / 1000;
+                this.distanceFactor = (airDistKm > 0) ? (roadDistKm / airDistKm) : 1.0;
+                
                 this.showPreview(data.routes[0], name, [startLat, startLng], [endLat, endLng]);
             } else { alert("No route found."); }
         }).catch(e => {
@@ -100,8 +110,8 @@ const NaviLogic = {
         if (this.destMarker) { map.removeLayer(this.destMarker); this.destMarker = null; }
 
         const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]); 
-        // BLUE LINE AGAIN
-        this.routeLayer = L.polyline(coordinates, { color: '#007aff', weight: 6, opacity: 0.8, lineCap: 'round' }).addTo(map);
+        // LILA LINIE (#bf5af2)
+        this.routeLayer = L.polyline(coordinates, { color: '#bf5af2', weight: 6, opacity: 0.8, lineCap: 'round' }).addTo(map);
         
         if(this.currentDestination) {
             const endIcon = L.divIcon({className: 'preview-end-icon', html:'<i class="fa-solid fa-flag-checkered"></i>', iconSize:[20,20]});
@@ -136,7 +146,7 @@ const NaviLogic = {
             touchZoom: true, doubleClickZoom: true, scrollWheelZoom: false
         });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.previewMap);
-        const line = L.polyline(coordinates, { color: '#007aff', weight: 4 }).addTo(this.previewMap);
+        const line = L.polyline(coordinates, { color: '#bf5af2', weight: 4 }).addTo(this.previewMap);
         this.previewBounds = line.getBounds();
         const startIcon = L.divIcon({className: 'preview-start-icon', iconSize:[14,14]});
         const endIcon = L.divIcon({className: 'preview-end-icon', html:'<i class="fa-solid fa-flag-checkered"></i>', iconSize:[20,20]});
@@ -211,6 +221,7 @@ const NaviLogic = {
             map.setView(userMarker.getLatLng(), 18, { animate: false });
             const el = userMarker.getElement();
             if(el) {
+                // Nur noch Pfeil, kein Container-Hintergrund (in CSS geregelt)
                 el.innerHTML = '<div class="user-arrow-icon"><i class="fa-solid fa-location-arrow"></i></div>';
                 el.className = 'user-marker-wrap'; 
             }
@@ -231,10 +242,13 @@ const NaviLogic = {
             this.updateETA();
             const elapsedSec = (Date.now() - this.navStartTime) / 1000;
             
+            // Distanz Berechnung MIT FAKTOR für Genauigkeit
             let distRemain = 0;
             if(userMarker && this.currentDestination) {
                 const destLatLng = L.latLng(this.currentDestination.lat, this.currentDestination.lng);
-                distRemain = (userMarker.getLatLng().distanceTo(destLatLng) / 1000).toFixed(1);
+                const airDist = userMarker.getLatLng().distanceTo(destLatLng) / 1000;
+                // Korrektur: Air Distance * Factor = Approx Road Distance
+                distRemain = (airDist * this.distanceFactor).toFixed(1);
             }
             document.getElementById('nav-remain-dist').innerText = distRemain;
 
@@ -387,28 +401,32 @@ const NaviLogic = {
         document.getElementById('sum-time').innerText = timeStr;
 
         const estMin = Math.round(this.routeDuration / 60);
-        // FIX: Zeige Est. Time Row NUR hier
         document.getElementById('sum-comparison-row').classList.remove('hidden');
         document.getElementById('sum-est-time').innerText = estMin + " min";
         document.getElementById('sum-real-time').innerText = durationMin + " min";
 
         switchScreen('summary-screen');
         
-        // FIX: Map Init im Summary
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
+            // FIX: Map Clean Reload
+            if (window.summaryMapInstance) {
+                window.summaryMapInstance.remove();
+                window.summaryMapInstance = null;
+            }
+            
             if(mapContainer) {
                 mapContainer.innerHTML = ""; 
-                const sumMap = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(sumMap);
+                window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.summaryMapInstance);
                 
-                if(this.recordStats.path.length > 1) {
+                if (this.recordStats.path.length > 1) {
                     const latLngs = this.recordStats.path.map(p => [p.lat, p.lng]);
-                    const line = L.polyline(latLngs, {color: '#007aff', weight: 4}).addTo(sumMap);
-                    sumMap.fitBounds(line.getBounds(), {padding:[40,40]});
+                    const line = L.polyline(latLngs, {color: '#bf5af2', weight: 4}).addTo(window.summaryMapInstance);
+                    window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[40,40]});
                 }
-                // WICHTIG: Map Größe aktualisieren, damit kein Grau
-                sumMap.invalidateSize();
+                // Wichtig: Invalidate
+                window.summaryMapInstance.invalidateSize();
             }
         }, 300);
 
