@@ -38,7 +38,6 @@ const DriverLogic = {
         
         if (this.lastPos) {
             const d = this.lastPos.distanceTo(latLng);
-            // Noise Filter: Nur wenn Bewegung > 5m
             if (d > 5) {
                 this.distance += d;
                 this.lastPos = latLng;
@@ -50,7 +49,6 @@ const DriverLogic = {
             this.path.push({lat: pos.coords.latitude, lng: pos.coords.longitude});
         }
 
-        // Speed Limit Check (Throttle alle 5s)
         if (!this.lastSpeedCheck || Date.now() - this.lastSpeedCheck > 5000) {
             this.lastSpeedCheck = Date.now();
             this.checkSpeedLimit(pos.coords.latitude, pos.coords.longitude);
@@ -87,26 +85,29 @@ const DriverLogic = {
         document.getElementById('sum-dist').innerText = (this.distance / 1000).toFixed(2);
         document.getElementById('sum-time').innerText = timeStr;
 
-        // FIX: HIER Verstecken wir die Navi-Zeile
         document.getElementById('sum-comparison-row').classList.add('hidden');
 
         switchScreen('summary-screen');
         
-        // Map Render Fix
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
+            // FIX: Map Clean Reload für Drive
+            if (window.summaryMapInstance) {
+                window.summaryMapInstance.remove();
+                window.summaryMapInstance = null;
+            }
+
             if(mapContainer) {
                 mapContainer.innerHTML = ""; 
-                const sumMap = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(sumMap);
+                window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.summaryMapInstance);
                 
                 if (this.path.length > 1) {
                     const latLngs = this.path.map(p => [p.lat, p.lng]);
-                    const line = L.polyline(latLngs, {color: '#007aff', weight: 4}).addTo(sumMap);
-                    sumMap.fitBounds(line.getBounds(), {padding:[40,40]});
+                    const line = L.polyline(latLngs, {color: '#007aff', weight: 4}).addTo(window.summaryMapInstance);
+                    window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[40,40]});
                 }
-                // Wichtig!
-                sumMap.invalidateSize();
+                window.summaryMapInstance.invalidateSize();
             }
         }, 300);
 
