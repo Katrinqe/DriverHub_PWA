@@ -1,8 +1,8 @@
 let map, userMarker;
 let isDriveMode = false;
 let watchId = null;
-// isZooming und isAutoPanning brauchen wir nicht mehr zwingend für die Logik,
-// da wir jetzt auf explizite User-Events hören.
+let isZooming = false; 
+let isAutoPanning = false; // WICHTIG: Schützt vor ungewolltem Stop
 let currentRotation = 0; 
 let pressTimer = null;
 const LONG_PRESS_DURATION = 1500; 
@@ -82,20 +82,25 @@ function initMap() {
         );
     }
 
-    // FIX: Nur auf DRAG (Finger) hören, nicht auf jede Bewegung!
+    // Wenn der User zieht -> Buttons zeigen
     map.on('dragstart', () => {
-        showRecenterButtons();
+        if(!isAutoPanning) showRecenterButtons();
     });
 
-    // FIX: Nur auf Zoom-Start durch User hören
+    // FIX: Wenn der User zoomt -> Buttons zeigen. ABER NICHT wenn der Code zoomt (isAutoPanning)
     map.on('zoomstart', () => {
-        showRecenterButtons();
-        if(userMarker && userMarker.getElement()) {
-            userMarker.getElement().classList.remove('smooth');
+        if(!isAutoPanning) {
+            showRecenterButtons();
+            if(userMarker && userMarker.getElement()) {
+                userMarker.getElement().classList.remove('smooth');
+            }
         }
     });
 
     map.on('zoomend moveend', () => {
+        // Flag nach jeder Bewegung sicherheitshalber resetten (verzögert)
+        setTimeout(() => { isAutoPanning = false; }, 500); 
+        
         if(userMarker && userMarker.getElement()) {
             userMarker.getElement().classList.add('smooth');
         }
@@ -110,7 +115,7 @@ function showRecenterButtons() {
 function handlePositionUpdate(pos) {
     const newLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
     const heading = pos.coords.heading; 
-    const speedKm = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
+    const speedKm = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
 
     if (!userMarker) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
@@ -119,13 +124,12 @@ function handlePositionUpdate(pos) {
         map.setView(newLatLng, 15, {animate: false});
     } else {
         userMarker.setLatLng(newLatLng);
-        if(userMarker.getElement()) userMarker.getElement().classList.add('smooth');
+        if(userMarker.getElement() && !isZooming) userMarker.getElement().classList.add('smooth');
     }
 
     const mapEl = document.getElementById('background-map');
     const isNavi = (typeof NaviLogic !== 'undefined' && NaviLogic.isNavigating);
 
-    // Rotation Logic (Big Map Translate Fix)
     if (isDriveMode || isNavi) {
         if (heading !== null && !isNaN(heading) && speedKm > 3) {
             let targetRot = -heading; 
@@ -142,28 +146,34 @@ function handlePositionUpdate(pos) {
         }
     }
 
-    // FIX: Einfache Logik - Wenn Button weg ist, MUSS er folgen.
+    if (isZooming && !isAutoPanning) return;
+
     if (isDriveMode) {
         DriverLogic.update(pos);
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
+            isAutoPanning = true; 
             map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else if (isNavi) {
         NaviLogic.updatePosition(pos); 
         if (document.getElementById('btn-nav-recenter').classList.contains('hidden')) {
+            isAutoPanning = true;
             map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
-        // Home / Explore Logik
         const isHome = document.getElementById('home-screen').classList.contains('active');
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
         
         if (isHome) {
+            isAutoPanning = true;
             map.setView(newLatLng, 15, { animate: false });
         } 
         else if (!isExplore) {
             const dist = map.getCenter().distanceTo(newLatLng);
-            if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
+            if(dist > 50) {
+                isAutoPanning = true;
+                map.panTo(newLatLng, { animate: true, duration: 2.0 });
+            }
         }
     }
 }
@@ -175,7 +185,7 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
-    // FIX: Button verstecken -> Auto Follow Aktiv
+    // FIX: Button verstecken
     document.getElementById('btn-recenter').classList.add('hidden');
 
     document.getElementById('global-top-fade').classList.remove('visible');
@@ -188,6 +198,7 @@ function startDriveMode() {
     map.scrollWheelZoom.enable();
 
     if(userMarker) {
+        isAutoPanning = true; // FIX: Wichtig für den Start-Zoom
         map.setView(userMarker.getLatLng(), 18, { animate: false });
     }
     DriverLogic.start();
@@ -195,9 +206,9 @@ function startDriveMode() {
 
 function centerMapOnUser() {
     if(userMarker) {
+        isAutoPanning = true; // FIX
         map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
         
-        // FIX: Button verstecken -> Auto Follow wieder aktiv
         document.getElementById('btn-recenter').classList.add('hidden');
         document.getElementById('btn-nav-recenter').classList.add('hidden');
     }
@@ -229,6 +240,7 @@ function showHome() {
 
     if(userMarker) {
         if(userMarker.getElement()) userMarker.getElement().classList.remove('smooth');
+        isAutoPanning = true;
         map.setView(userMarker.getLatLng(), 15, { animate: false });
         setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
     }
