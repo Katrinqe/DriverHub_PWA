@@ -111,9 +111,6 @@ const ExploreLogic = {
 
     leave: function() {
         if(map) {
-            // NUR Cleanup, KEIN Kamerabewegung mehr hier!
-            // Das übernimmt jetzt showHome() in app.js exklusiv.
-            
             map.dragging.disable();
             map.touchZoom.disable();
             map.scrollWheelZoom.disable();
@@ -123,6 +120,9 @@ const ExploreLogic = {
             if(exploreLayers.parking) exploreLayers.parking.remove();
             
             map.off('moveend', this.onMapMove);
+            
+            // FIX: KEINE Kamerabewegung mehr hier! 
+            // Wir überlassen das dem nächsten Screen.
         }
     },
 
