@@ -10,6 +10,8 @@ let currentBrandFilter = 'all';
 let currentRadiusFilter = 10;
 
 const ExploreLogic = {
+    moveTimeout: null, // Timer Variable explizit machen
+
     init: function() {
         console.log("Explore Init");
         if (typeof L === 'undefined') return;
@@ -110,6 +112,12 @@ const ExploreLogic = {
     },
 
     leave: function() {
+        // FIX: Timer sofort töten!
+        if (this.moveTimeout) {
+            clearTimeout(this.moveTimeout);
+            this.moveTimeout = null;
+        }
+
         if(map) {
             map.dragging.disable();
             map.touchZoom.disable();
@@ -120,9 +128,6 @@ const ExploreLogic = {
             if(exploreLayers.parking) exploreLayers.parking.remove();
             
             map.off('moveend', this.onMapMove);
-            
-            // FIX: KEINE Kamerabewegung mehr hier! 
-            // Wir überlassen das dem nächsten Screen.
         }
     },
 
