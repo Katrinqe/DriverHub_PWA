@@ -3,8 +3,6 @@ let isDriveMode = false;
 let watchId = null;
 let isZooming = false; 
 let currentRotation = 0; 
-
-// Variablen für Long-Press
 let pressTimer = null;
 const LONG_PRESS_DURATION = 1500; 
 
@@ -18,10 +16,8 @@ window.addEventListener('load', () => {
     initWeather();
     
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
+    if(typeof NaviLogic !== 'undefined') NaviLogic.init(); // NEU
 
-    // --- BUTTON WIRING (VEREINFACHT) ---
-    // Da es nur noch EINE Nav Bar gibt, brauchen wir keine IDs wie 'from-garage' mehr
-    
     document.getElementById('nav-home').onclick = showHome;
     document.getElementById('nav-garage').onclick = showGarage;
     document.getElementById('nav-explore').onclick = showExplore;
@@ -93,9 +89,13 @@ function handlePositionUpdate(pos) {
         if(userMarker.getElement() && !isZooming) userMarker.getElement().classList.add('smooth');
     }
 
+    // MAP ROTATION (Nur bei Drive oder Navi)
     const mapEl = document.getElementById('background-map');
     
-    if (isDriveMode) {
+    // Check if Navi is active
+    const isNavi = (typeof NaviLogic !== 'undefined' && NaviLogic.isNavigating);
+
+    if (isDriveMode || isNavi) {
         if (heading !== null && !isNaN(heading) && speedKm > 5) {
             let targetRot = -heading; 
             let diff = targetRot - currentRotation;
@@ -113,12 +113,18 @@ function handlePositionUpdate(pos) {
 
     if (isZooming) return;
 
+    // TRACKING LOGIC
     if (isDriveMode) {
         DriverLogic.update(pos);
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
             const dist = map.getCenter().distanceTo(newLatLng);
             if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
+    } else if (isNavi) {
+        NaviLogic.updatePosition(pos); // NEU: Update Navi Logic
+        // Im Navi Modus folgen wir immer hart, außer User schiebt (Logic in navi.js btn)
+        const dist = map.getCenter().distanceTo(newLatLng);
+        if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
     } else {
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
         if (!isExplore) {
@@ -130,16 +136,11 @@ function handlePositionUpdate(pos) {
 
 function startDriveMode() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
-    
     isDriveMode = true;
     switchScreen('drive-screen');
-    
-    // Global Nav ausblenden beim Fahren
     document.getElementById('global-nav').classList.add('hidden');
-    
     map.dragging.enable();
     map.touchZoom.enable();
-    
     if(userMarker) {
         map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.5 });
     }
@@ -155,18 +156,13 @@ function centerMapOnUser() {
 
 function showHome() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
-    
     switchScreen('home-screen');
-    updateNav('home'); // Nav Bar Highlights aktualisieren
-
+    updateNav('home');
     isDriveMode = false;
-    
     const mapEl = document.getElementById('background-map');
     currentRotation = 0;
     if(mapEl) mapEl.style.transform = `rotate(0deg)`;
-    
     map.dragging.disable();
-    
     if(userMarker) {
         map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
     }
@@ -185,21 +181,14 @@ function showExplore() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
 }
 
-// --- HELPER FÜR NAV BAR HIGHLIGHTS ---
 function updateNav(activeId) {
-    // Nav Bar wieder sichtbar machen (falls wir aus dem Drive Mode kommen)
     document.getElementById('global-nav').classList.remove('hidden');
-
     const homeBtn = document.getElementById('nav-home');
     const exploreBtn = document.getElementById('nav-explore');
     const garageBtn = document.getElementById('nav-garage');
-
-    // Alle Klassen entfernen
     homeBtn.classList.remove('active-home');
     exploreBtn.classList.remove('active-map');
     garageBtn.classList.remove('active-garage');
-
-    // Neue Klasse setzen
     if(activeId === 'home') homeBtn.classList.add('active-home');
     if(activeId === 'explore') exploreBtn.classList.add('active-map');
     if(activeId === 'garage') garageBtn.classList.add('active-garage');
@@ -208,7 +197,6 @@ function updateNav(activeId) {
 function switchScreen(id) {
     const nextScreen = document.getElementById(id);
     if (nextScreen.classList.contains('active')) return;
-
     const activeScreens = document.querySelectorAll('.screen.active');
     activeScreens.forEach(s => {
         s.classList.remove('active');
@@ -218,7 +206,6 @@ function switchScreen(id) {
             s.classList.add('hidden');
         }, 350); 
     });
-
     nextScreen.classList.remove('hidden');
     setTimeout(() => {
         nextScreen.classList.add('active');
