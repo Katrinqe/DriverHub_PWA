@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=53">
+    <link rel="stylesheet" href="style.css?v=54">
 </head>
 <body>
 
@@ -186,26 +186,32 @@
 
         <div id="nav-speed-limit" class="hidden"><span>50</span></div>
 
+        <button class="btn-nav-floating recenter interactive-element" id="btn-nav-recenter" onclick="NaviLogic.recenterNav()"><i class="fa-solid fa-location-arrow"></i></button>
+        <button class="btn-nav-floating cancel interactive-element" id="btn-nav-cancel" onclick="NaviLogic.stopNavigation()"><i class="fa-solid fa-xmark"></i></button>
+
         <div class="navi-bottom-hud interactive-element">
-            <div class="nbh-controls">
-                <button class="btn-nav-circle recenter hidden" id="btn-nav-recenter" onclick="NaviLogic.recenterNav()"><i class="fa-solid fa-location-arrow"></i></button>
-                <button class="btn-nav-circle cancel" onclick="NaviLogic.stopNavigation()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
             <div class="nbh-stats">
                 <div class="nbh-item">
                     <span class="label">SPEED</span>
-                    <span class="val" id="nav-speed">0</span>
+                    <div class="nbh-value-group">
+                        <span class="val" id="nav-speed">0</span>
+                        <span class="unit">km/h</span>
+                    </div>
                 </div>
                 <div class="nbh-divider"></div>
                 <div class="nbh-item">
                     <span class="label">REMAIN</span>
-                    <span class="val" id="nav-remain-time">0 min</span>
+                    <div class="nbh-value-group">
+                        <span class="val" id="nav-remain-time">0 min</span>
+                    </div>
                 </div>
                 <div class="nbh-divider"></div>
                 <div class="nbh-item">
                     <span class="label">DIST</span>
-                    <span class="val" id="nav-remain-dist">0 km</span>
+                    <div class="nbh-value-group">
+                        <span class="val" id="nav-remain-dist">0</span>
+                        <span class="unit">km</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -260,6 +266,7 @@
             <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
         </div>
         <div id="garage-list" class="garage-list interactive-element"></div>
+        
         <div id="detail-overlay" class="hidden interactive-element">
             <div class="detail-header">
                 <h3 id="det-date">Date</h3>
@@ -288,10 +295,10 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="explore.js?v=53"></script>
-    <script src="garage.js?v=53"></script>
-    <script src="drive.js?v=53"></script>
-    <script src="navi.js?v=53"></script>
-    <script src="app.js?v=53"></script>
+    <script src="explore.js?v=54"></script>
+    <script src="garage.js?v=54"></script>
+    <script src="drive.js?v=54"></script>
+    <script src="navi.js?v=54"></script>
+    <script src="app.js?v=54"></script>
 </body>
 </html>
