@@ -45,7 +45,7 @@ window.addEventListener('load', () => {
 function initMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
-        dragging: false, touchZoom: false, doubleClickZoom: false,
+        dragging: false, touchZoom: false, doubleClickZoom: false, // Default aus
         zoomSnap: 0, zoomDelta: 0.5 
     }).setView([51.1657, 10.4515], 14);
 
@@ -84,7 +84,6 @@ function handlePositionUpdate(pos) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
         setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
-        // FIX: Instant Jump beim ersten Mal
         map.setView(newLatLng, 14, {animate: false});
     } else {
         userMarker.setLatLng(newLatLng);
@@ -139,10 +138,15 @@ function startDriveMode() {
     isDriveMode = true;
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
+    
+    // FIX: Map Interaktion erlauben
     map.dragging.enable();
     map.touchZoom.enable();
+    map.doubleClickZoom.enable();
+    map.scrollWheelZoom.enable();
+
     if(userMarker) {
-        map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.5 });
+        map.setView(userMarker.getLatLng(), 18, { animate: false });
     }
     DriverLogic.start();
 }
@@ -157,13 +161,23 @@ function centerMapOnUser() {
 function showHome() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
+    
     switchScreen('home-screen');
     updateNav('home');
     isDriveMode = false;
+    
     const mapEl = document.getElementById('background-map');
     currentRotation = 0;
     if(mapEl) mapEl.style.transform = `rotate(0deg)`;
+    
+    // FIX: Karte KOMPLETT einfrieren
     map.dragging.disable();
+    map.touchZoom.disable();
+    map.doubleClickZoom.disable();
+    map.scrollWheelZoom.disable();
+    map.boxZoom.disable();
+    map.keyboard.disable();
+
     if(userMarker) {
         map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
     }
