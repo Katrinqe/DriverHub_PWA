@@ -18,7 +18,6 @@ window.addEventListener('load', () => {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
-    // Helper für sichere Buttons
     function bindNavBtn(id, actionFn) {
         const btn = document.getElementById(id);
         if(!btn) return;
@@ -64,7 +63,8 @@ function initMap() {
         dragging: false, touchZoom: false, doubleClickZoom: false, 
         zoomSnap: 0, zoomDelta: 0.5,
         tap: false 
-    }).setView([51.1657, 10.4515], 14);
+    // FIX: Standard Zoom 15
+    }).setView([51.1657, 10.4515], 15);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
 
@@ -101,7 +101,7 @@ function handlePositionUpdate(pos) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
         setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
-        map.setView(newLatLng, 14, {animate: false});
+        map.setView(newLatLng, 15, {animate: false});
     } else {
         userMarker.setLatLng(newLatLng);
         if(userMarker.getElement() && !isZooming) userMarker.getElement().classList.add('smooth');
@@ -141,16 +141,14 @@ function handlePositionUpdate(pos) {
             if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
-        // FIX: Home-Screen Logik - STRENGER ZOOM 14
         const isHome = document.getElementById('home-screen').classList.contains('active');
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
         
         if (isHome) {
-            // WICHTIG: setView statt panTo zwingt Zoom 14 bei JEDEM Update
-            map.setView(newLatLng, 14, { animate: false });
+            // FIX: Immer auf Zoom 15 halten
+            map.setView(newLatLng, 15, { animate: false });
         } 
         else if (!isExplore) {
-            // Nur Pan wenn wir sonstwo sind
             const dist = map.getCenter().distanceTo(newLatLng);
             if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
         }
@@ -164,7 +162,6 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
-    // Unlock Map
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.add('map-smooth-rotate');
 
@@ -187,21 +184,19 @@ function centerMapOnUser() {
 }
 
 function showHome() {
-    // Wenn schon Home, Abbrechen
     if(document.getElementById('home-screen').classList.contains('active')) return;
 
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
-    // --- FIX: ERST KARTE RESETTEN, DANN SCREEN WECHSELN ---
+    // FIX: ERST RESETTEN
     const mapEl = document.getElementById('background-map');
     mapEl.classList.remove('map-smooth-rotate');
-    mapEl.classList.add('map-locked'); // Lock interactions
+    mapEl.classList.add('map-locked'); 
 
     currentRotation = 0;
     mapEl.style.transform = `rotate(0deg)`;
     
-    // Disable everything first
     map.stop();
     map.dragging.disable();
     map.touchZoom.disable();
@@ -212,16 +207,14 @@ function showHome() {
     if (map.tap) map.tap.disable();
 
     if(userMarker) {
-        // Animation vom Marker kurz aus, damit er sofort springt
         if(userMarker.getElement()) userMarker.getElement().classList.remove('smooth');
         
-        // HARTES RESET AUF 14 - VOR DEM SCREEN SWITCH
-        map.setView(userMarker.getLatLng(), 14, { animate: false });
+        // FIX: ZOOM 15
+        map.setView(userMarker.getLatLng(), 15, { animate: false });
         
         setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
     }
 
-    // JETZT erst Screen wechseln
     switchScreen('home-screen');
     updateNav('home');
     isDriveMode = false;
