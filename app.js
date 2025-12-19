@@ -15,7 +15,6 @@ window.addEventListener('load', () => {
     initMap();
     initWeather();
     
-    // FIX: Fade SOFORT beim Start anzeigen
     const fade = document.getElementById('global-top-fade');
     if(fade) fade.classList.add('visible');
     
@@ -69,11 +68,10 @@ function initMap() {
         tap: false 
     }).setView([51.1657, 10.4515], 15);
 
-    // FIX: keepBuffer: 20 sorgt für massives Vorladen der Kacheln
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
         maxZoom: 20,
         keepBuffer: 20, 
-        updateWhenIdle: false // Lädt auch während der Bewegung
+        updateWhenIdle: false 
     }).addTo(map);
 
     if (navigator.geolocation) {
@@ -125,13 +123,12 @@ function handlePositionUpdate(pos) {
             while (diff < -180) diff += 360;
             while (diff > 180) diff -= 360;
             currentRotation += diff; 
-            // FIX: Rotation + Zentrierung in einem String für die Big Map
+            // FIX: Translate dazu!
             if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(${currentRotation}deg)`;
         }
     } else {
         if (currentRotation !== 0) {
             currentRotation = 0;
-            // FIX: Reset mit Zentrierung
             if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
         }
     }
@@ -207,7 +204,7 @@ function showHome() {
     mapEl.classList.add('map-locked'); 
 
     currentRotation = 0;
-    // FIX: Reset mit Zentrierung
+    // FIX: Translate dazu!
     mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
     
     map.stop();
@@ -253,7 +250,7 @@ function showExplore() {
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
-    // FIX: Reset Rotation in Explore mit Zentrierung
+    // FIX: Translate dazu!
     const mapEl = document.getElementById('background-map');
     if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
     
