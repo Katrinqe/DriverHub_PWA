@@ -21,17 +21,9 @@ window.addEventListener('load', () => {
     function bindNavBtn(id, actionFn) {
         const btn = document.getElementById(id);
         if(!btn) return;
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation(); 
-            actionFn();
-        });
-        btn.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-        btn.addEventListener('touchstart', (e) => {
-            e.stopPropagation();
-        }, {passive: false});
+        btn.addEventListener('click', (e) => { e.stopPropagation(); actionFn(); });
+        btn.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); });
+        btn.addEventListener('touchstart', (e) => { e.stopPropagation(); }, {passive: false});
     }
 
     bindNavBtn('nav-home', showHome);
@@ -195,9 +187,6 @@ function showHome() {
     currentRotation = 0;
     if(mapEl) mapEl.style.transform = `rotate(0deg)`;
     
-    // FIX: Map Stop & Animate False
-    map.stop(); // Laufende Animationen killen
-    
     map.dragging.disable();
     map.touchZoom.disable();
     map.doubleClickZoom.disable();
@@ -207,8 +196,14 @@ function showHome() {
     if (map.tap) map.tap.disable();
 
     if(userMarker) {
-        // FIX: Kein Animate, hart setzen
+        // FIX: Marker-Animation kurz killen
+        if(userMarker.getElement()) userMarker.getElement().classList.remove('smooth');
+        
+        map.stop(); // Laufende Animationen killen
         map.setView(userMarker.getLatLng(), 14, { animate: false });
+        
+        // Marker Animation wieder an
+        setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
     }
 }
 
