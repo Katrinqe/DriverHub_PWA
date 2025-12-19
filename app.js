@@ -15,6 +15,10 @@ window.addEventListener('load', () => {
     initMap();
     initWeather();
     
+    // FIX: Fade SOFORT beim Start anzeigen (weil wir auf Home starten)
+    const fade = document.getElementById('global-top-fade');
+    if(fade) fade.classList.add('visible');
+    
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
@@ -160,7 +164,6 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
-    // Fade AUS im Drive
     document.getElementById('global-top-fade').classList.remove('visible');
 
     document.getElementById('background-map').classList.remove('map-locked');
@@ -190,7 +193,6 @@ function showHome() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
-    // FIX: Fade AN in Home
     document.getElementById('global-top-fade').classList.add('visible');
 
     const mapEl = document.getElementById('background-map');
@@ -224,7 +226,6 @@ function showGarage() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
-    // FIX: Fade AUS in Garage
     document.getElementById('global-top-fade').classList.remove('visible');
 
     document.getElementById('background-map').classList.remove('map-locked');
@@ -239,7 +240,6 @@ function showExplore() {
     switchScreen('explore-screen');
     updateNav('explore');
     
-    // FIX: Fade AN in Explore
     document.getElementById('global-top-fade').classList.add('visible');
 
     document.getElementById('background-map').classList.remove('map-locked');
