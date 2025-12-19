@@ -1,129 +1,141 @@
-// drive.js - Free Drive Logic
-
 const DriverLogic = {
+    interval: null,
     startTime: 0,
-    timerInterval: null,
-    distance: 0,
-    lastPos: null,
-    path: [],
+    startDist: 0,
+    currentSpeed: 0,
+    maxSpeed: 0, // NEU: Max Speed Tracker
+    path: [], // Pfad speichern
 
-    
     start: function() {
-        console.log("Drive Started");
         this.startTime = Date.now();
-        this.distance = 0;
-        this.lastPos = null;
+        this.startDist = 0;
         this.path = [];
+        this.maxSpeed = 0; // Reset
         
         document.getElementById('hud-time').innerText = "00:00";
         document.getElementById('hud-dist').innerText = "0.00";
         document.getElementById('hud-speed').innerText = "0";
-        document.getElementById('speed-limit').classList.add('hidden');
 
-        if(this.timerInterval) clearInterval(this.timerInterval);
-        this.timerInterval = setInterval(() => {
-            const now = Date.now();
-            const diff = now - this.startTime;
-            const minutes = Math.floor(diff / 60000);
-            const seconds = Math.floor((diff % 60000) / 1000);
-            document.getElementById('hud-time').innerText = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        if(this.interval) clearInterval(this.interval);
+        this.interval = setInterval(() => {
+            this.updateTime();
         }, 1000);
     },
 
     update: function(pos) {
-        const speedKm = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
-        document.getElementById('hud-speed').innerText = speedKm;
-
-        const latLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+        if (!this.startTime) return;
         
-        if (this.lastPos) {
-            const d = this.lastPos.distanceTo(latLng);
-            if (d > 5) {
-                this.distance += d;
-                this.lastPos = latLng;
-                document.getElementById('hud-dist').innerText = (this.distance / 1000).toFixed(2);
-                this.path.push({lat: pos.coords.latitude, lng: pos.coords.longitude});
-            }
-        } else {
-            this.lastPos = latLng;
-            this.path.push({lat: pos.coords.latitude, lng: pos.coords.longitude});
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        // Speed in km/h
+        const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
+        this.currentSpeed = speed;
+
+        // NEU: Max Speed berechnen
+        if (speed > this.maxSpeed) {
+            this.maxSpeed = speed;
         }
 
-        if (!this.lastSpeedCheck || Date.now() - this.lastSpeedCheck > 5000) {
-            this.lastSpeedCheck = Date.now();
-            this.checkSpeedLimit(pos.coords.latitude, pos.coords.longitude);
+        // Pfad speichern (mit Speed)
+        this.path.push({
+            lat: lat,
+            lng: lng,
+            speed: speed,
+            time: Date.now()
+        });
+
+        // Distanz berechnen (einfach summieren aus Path)
+        if (this.path.length > 1) {
+            const last = this.path[this.path.length - 2];
+            const curr = this.path[this.path.length - 1];
+            const p1 = L.latLng(last.lat, last.lng);
+            const p2 = L.latLng(curr.lat, curr.lng);
+            this.startDist += p1.distanceTo(p2) / 1000; // in km
         }
+
+        // Update UI
+        document.getElementById('hud-speed').innerText = this.currentSpeed;
+        document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
+        
+        this.checkSpeedLimit(lat, lng);
+    },
+
+    updateTime: function() {
+        const diff = Date.now() - this.startTime;
+        const totalSec = Math.floor(diff / 1000);
+        const min = Math.floor(totalSec / 60);
+        const sec = totalSec % 60;
+        document.getElementById('hud-time').innerText = 
+            `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
     },
 
     checkSpeedLimit: function(lat, lng) {
-        const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-        fetch(url).then(r=>r.json()).then(data => {
-            const el = document.getElementById('speed-limit');
-            if(data.elements && data.elements.length > 0) {
-                let max = data.elements[0].tags.maxspeed;
-                if(max && !isNaN(parseInt(max))) {
-                    el.querySelector('span').innerText = max;
-                    el.classList.remove('hidden');
-                } else { el.classList.add('hidden'); }
-            } else { el.classList.add('hidden'); }
-        }).catch(e => {}); 
+        // Einfacher Check alle paar Sekunden via Overpass (optional, hier vereinfacht)
+        if (Math.random() > 0.95) { // Nicht zu oft aufrufen
+             // Hier könnte Logik stehen, aktuell Dummy oder via navi.js Logik
+        }
     },
 
     stop: function() {
-        console.log("Drive Stopped");
-        if(this.timerInterval) clearInterval(this.timerInterval);
-        
+        clearInterval(this.interval);
         const durationMs = Date.now() - this.startTime;
-        const avgSpeed = (durationMs > 0 && this.distance > 0) ? Math.round((this.distance/1000) / (durationMs/3600000)) : 0;
+        const durationMin = Math.floor(durationMs / 60000);
+        const durationSec = Math.floor((durationMs % 60000) / 1000);
+        const timeStr = `${durationMin.toString().padStart(2,'0')}:${durationSec.toString().padStart(2,'0')}`;
         
-        const minutes = Math.floor(durationMs / 60000);
-        const seconds = Math.floor((durationMs % 60000) / 1000);
-        const timeStr = `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+        // Avg Speed berechnen
+        const avgSpeed = (durationMs > 0 && this.startDist > 0) ? Math.round(this.startDist / (durationMs/3600000)) : 0;
 
+        // Summary anzeigen
+        NaviLogic.recordStats = {
+            dist: this.startDist,
+            startTime: this.startTime,
+            path: this.path,
+            maxSpeed: this.maxSpeed // NEU: MaxSpeed übergeben
+        };
+        
+        // UI für Summary setzen (wird eigentlich in navi.js showSummary gemacht, aber hier manuell füllen)
         document.getElementById('sum-avg').innerText = avgSpeed;
-        document.getElementById('sum-dist').innerText = (this.distance / 1000).toFixed(2);
+        document.getElementById('sum-dist').innerText = this.startDist.toFixed(2);
         document.getElementById('sum-time').innerText = timeStr;
+        document.getElementById('sum-comparison-row').classList.add('hidden'); // Kein Vergleich bei Free Drive
 
-        document.getElementById('sum-comparison-row').classList.add('hidden');
-
+        // Wechsel zu Summary
         switchScreen('summary-screen');
+        document.getElementById('global-nav').classList.remove('hidden'); // Nav wieder da
         
+        // Map Reset
+        const mapEl = document.getElementById('background-map');
+        mapEl.classList.remove('map-smooth-rotate');
+        mapEl.classList.add('map-locked'); // Lock für Summary
+        if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+
+        // Summary Map zeichnen
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
-            // FIX: Map Clean Reload für Drive
-            if (window.summaryMapInstance) {
-                window.summaryMapInstance.remove();
-                window.summaryMapInstance = null;
-            }
-
-            if(mapContainer) {
-                mapContainer.innerHTML = ""; 
-                window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.summaryMapInstance);
-                
-                if (this.path.length > 1) {
-                    const latLngs = this.path.map(p => [p.lat, p.lng]);
-                    const line = L.polyline(latLngs, {color: '#007aff', weight: 4}).addTo(window.summaryMapInstance);
-                    window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[40,40]});
-                }
-                window.summaryMapInstance.invalidateSize();
+            if (window.summaryMapInstance) { window.summaryMapInstance.remove(); window.summaryMapInstance = null; }
+            mapContainer.innerHTML = "";
+            window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.summaryMapInstance);
+            if (this.path.length > 1) {
+                const latLngs = this.path.map(p => [p.lat, p.lng]);
+                const line = L.polyline(latLngs, {color: '#bf5af2', weight: 4}).addTo(window.summaryMapInstance);
+                window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[40,40]});
             }
         }, 300);
 
+        // Save Logic update
         document.getElementById('btn-save').onclick = () => {
             GarageLogic.save({ 
                 date: Date.now(), 
-                dist: (this.distance / 1000), 
+                dist: this.startDist, 
                 time: timeStr, 
                 avg: avgSpeed, 
+                max: this.maxSpeed, // NEU
                 path: this.path 
             });
             showGarage();
         };
-        document.getElementById('btn-discard').onclick = () => {
-            showHome();
-        };
+        document.getElementById('btn-discard').onclick = showHome;
     }
 };
