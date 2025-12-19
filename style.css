@@ -1,4 +1,3 @@
-/* ... (Bisheriger Code wie oben bis zum Marker Bereich, hier nur die NEUEN/GEÄNDERTEN Teile) ... */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 
 :root {
@@ -16,7 +15,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
-/* MARKER & ICONS (unverändert) */
+/* MARKER */
 .user-marker-wrap { position: relative; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; transition: none; }
 .user-marker-wrap.smooth { transition: transform 1s linear; }
 .user-dot { width: 18px; height: 18px; background-color: #007aff; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 999; position: relative; }
@@ -66,56 +65,53 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* --- NAVI UI (NEU) --- */
+/* --- NAVI UI --- */
 .navi-top-hud {
     margin-top: calc(env(safe-area-inset-top) + 20px);
     margin-left: 20px; margin-right: 20px;
-    background: #111;
-    border-radius: 20px;
-    border: 1px solid #333;
-    padding: 15px;
-    display: flex; align-items: center; gap: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    pointer-events: auto;
+    background: #111; border-radius: 20px; border: 1px solid #333;
+    padding: 15px; display: flex; align-items: center; gap: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8); pointer-events: auto;
 }
-.nav-arrow-box {
-    width: 50px; height: 50px; background: #222; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem; color: #fff;
-}
+.nav-arrow-box { width: 50px; height: 50px; background: #222; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #fff; }
 .nav-instruction-box { flex: 1; }
 .nav-instruction-box h3 { margin: 0; font-size: 1rem; color: #fff; font-weight: 700; line-height: 1.2; }
 .nav-instruction-box span { font-size: 0.8rem; color: var(--primary); font-weight: 600; }
-.nav-eta-box {
-    text-align: right; display: flex; flex-direction: column; align-items: flex-end;
-}
+.nav-eta-box { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
 .nav-eta-box .label { font-size: 0.6rem; color: #666; font-weight: 800; }
 .nav-eta-box .val { font-size: 1.2rem; font-weight: 700; color: #fff; }
 
+/* FIX: Navi Bottom Layout */
 .navi-bottom-hud {
     position: fixed; bottom: 40px; left: 20px; right: 20px;
-    display: flex; justify-content: space-between; align-items: flex-end;
-    pointer-events: none; /* Klicke gehen durch die Lücken */
+    pointer-events: none; /* Container click-through */
+    display: flex; flex-direction: column; align-items: flex-end; /* Rechts ausrichten für Button */
 }
+
+/* FIX: Kleinerer Button, weiter oben */
+.btn-nav-cancel-circle {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: #111; border: 2px solid #ff3b30;
+    color: #ff3b30; font-size: 1.4rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; pointer-events: auto; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+    transition: transform 0.2s;
+    margin-bottom: 15px; /* Abstand zur Box */
+    margin-right: 5px;
+}
+.btn-nav-cancel-circle:active { transform: scale(0.9); background: rgba(255, 59, 48, 0.2); }
+
+/* FIX: Volle Breite */
 .nbh-stats {
+    width: 100%;
     background: #111; border: 1px solid #333; border-radius: 20px;
-    padding: 15px 25px; display: flex; gap: 20px; align-items: center;
+    padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;
     pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
-.nbh-item { display: flex; flex-direction: column; align-items: center; }
+.nbh-item { display: flex; flex-direction: column; align-items: center; flex: 1; }
 .nbh-item .val { font-size: 1.4rem; font-weight: 800; color: #fff; line-height: 1; }
 .nbh-item .unit { font-size: 0.7rem; color: #888; font-weight: 600; }
 .nbh-divider { width: 1px; height: 30px; background: #333; }
-
-.btn-nav-cancel-circle {
-    width: 65px; height: 65px; border-radius: 50%;
-    background: #111; border: 2px solid #ff3b30;
-    color: #ff3b30; font-size: 1.8rem;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    transition: transform 0.2s;
-}
-.btn-nav-cancel-circle:active { transform: scale(0.9); background: rgba(255, 59, 48, 0.2); }
 
 #nav-speed-limit {
     position: absolute; top: 120px; left: 20px;
@@ -127,7 +123,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 #nav-speed-limit.hidden { transform: scale(0); opacity: 0; }
 #nav-speed-limit span { color: #111; font-weight: 800; font-size: 1.3rem; }
 
-/* --- ROUTE PREVIEW MODAL (ZENTRIERT WIE GAS FILTER) --- */
+/* --- ROUTE PREVIEW MODAL --- */
 #route-preview-modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 5000; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
@@ -136,25 +132,43 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 }
 #route-preview-modal.active { opacity: 1; pointer-events: auto; }
 
+/* FIX: Map Container im Modal */
+#preview-map-container {
+    width: 100%; height: 150px; /* Kompakt */
+    background: #222; border-radius: 15px; border: 1px solid #333;
+    margin-bottom: 15px; overflow: hidden; position: relative;
+}
+#preview-map-obj { width: 100%; height: 100%; }
+
 .route-preview-stats { display: flex; justify-content: space-around; padding-bottom: 20px; border-bottom: 1px solid #2a2a2a; }
 .rps-item { display: flex; flex-direction: column; align-items: center; }
 .rps-label { font-size: 0.7rem; color: #666; font-weight: 800; }
 .rps-val { font-size: 1.5rem; color: #fff; font-weight: 800; }
-
-.route-preview-dest { padding: 20px 0; text-align: center; color: #ccc; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.route-preview-dest { padding: 15px 0; text-align: center; color: #ccc; font-size: 1rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .route-preview-dest i { color: var(--primary); }
-
 .route-preview-actions { display: flex; flex-direction: column; gap: 10px; }
 .btn-nav-start { width: 100%; height: 55px; background: var(--primary); border: none; border-radius: 18px; color: white; font-weight: 800; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .btn-nav-ghost { width: 100%; height: 50px; background: #222; border: 1px solid #333; border-radius: 18px; color: #aaa; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
-/* EXPLORE UI & REST (unverändert zur Kompatibilität) */
+/* EXPLORE UI & FIX für Linie */
 .explore-top-ui { width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); display: flex; flex-direction: column; gap: 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0) 100%); pointer-events: none; }
 .search-bar-glass { width: 100%; height: 50px; background: rgba(40, 40, 40, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; display: flex; align-items: center; padding: 0 15px; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .search-bar-glass i { color: #888; margin-right: 10px; }
 .search-bar-glass input { background: transparent; border: none; outline: none; color: white; font-size: 1rem; width: 100%; font-family: 'Inter', sans-serif; }
-.search-results-container { position: absolute; top: 75px; left: 20px; right: 20px; background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; max-height: 0; overflow-y: auto; transition: max-height 0.3s ease; z-index: 4000; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-.search-results-container.open { max-height: 300px; padding: 10px 0; }
+
+/* FIX: Linie weg (Border nur bei Open) */
+.search-results-container { 
+    position: absolute; top: 75px; left: 20px; right: 20px; 
+    background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(15px); 
+    border: none; /* Kein Border default */
+    border-radius: 15px; max-height: 0; overflow-y: auto; transition: max-height 0.3s ease; z-index: 4000; box-shadow: none;
+}
+.search-results-container.open { 
+    max-height: 300px; padding: 10px 0; 
+    border: 1px solid rgba(255,255,255,0.1); /* Border nur hier */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
 .search-result-item { padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #eee; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 10px; }
 .filter-row { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; pointer-events: auto; }
 .filter-chip { background: rgba(40, 40, 40, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 8px 16px; color: #ccc; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap; position: relative; overflow: hidden; }
