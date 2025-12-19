@@ -1,7 +1,7 @@
 // navi.js - Advanced Navigation Logic
 
 const NaviLogic = {
-    // ... (Variablen gleich)
+    // ... (Anfang bleibt gleich)
     routeLayer: null,
     previewMap: null,
     previewRouteLayer: null,
@@ -25,6 +25,7 @@ const NaviLogic = {
     lastSpeedCheck: 0,
     
     init: function() {
+        // ... (Code wie gehabt)
         console.log("Navi Init");
         const input = document.getElementById('nav-search-input');
         input.addEventListener('input', (e) => {
@@ -68,6 +69,7 @@ const NaviLogic = {
     },
 
     selectDestination: function(place, name) {
+        // ... (Code wie gehabt)
         if (!userMarker) { alert("No GPS Position yet!"); return; }
         const startLat = userMarker.getLatLng().lat;
         const startLng = userMarker.getLatLng().lng;
@@ -102,6 +104,7 @@ const NaviLogic = {
     },
 
     drawRoute: function(route) {
+        // ... (Code wie gehabt)
         if (this.routeLayer) { map.removeLayer(this.routeLayer); this.routeLayer = null; }
         if (this.destMarker) { map.removeLayer(this.destMarker); this.destMarker = null; }
 
@@ -133,6 +136,7 @@ const NaviLogic = {
     },
 
     renderPreviewMap: function(coordinates, startLatLng, endLatLng) {
+        // ... (Code wie gehabt)
         if(this.previewMap) { this.previewMap.remove(); this.previewMap = null; }
         const el = document.getElementById('preview-map-obj');
         if(!el) return;
@@ -156,6 +160,7 @@ const NaviLogic = {
     },
 
     showPreview: function(route, destName, startLatLng, endLatLng) {
+        // ... (Code wie gehabt)
         const durationMin = Math.round(route.duration / 60);
         const distKm = (route.distance / 1000).toFixed(1);
         this.routeDuration = route.duration; 
@@ -193,6 +198,8 @@ const NaviLogic = {
         this.isNavigating = false;
         if(this.navInterval) clearInterval(this.navInterval);
 
+        document.getElementById('global-top-fade').classList.remove('visible');
+
         if(userMarker && map) {
             map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
         }
@@ -203,7 +210,7 @@ const NaviLogic = {
         this.isNavigating = true;
         this.navStartTime = Date.now();
 
-        // FIX: Fade AUS im Navi
+        // Fade weg im Navi
         document.getElementById('global-top-fade').classList.remove('visible');
         document.getElementById('background-map').classList.add('map-smooth-rotate');
 
@@ -284,7 +291,8 @@ const NaviLogic = {
         const heading = pos.coords.heading;
         const mapEl = document.getElementById('background-map');
         if (heading && speedKm > 3) { 
-             mapEl.style.transform = `rotate(${-heading}deg)`;
+             // FIX: MIT TRANSLATE
+             mapEl.style.transform = `translate(-50%, -50%) rotate(${-heading}deg)`;
         }
 
         if(!this.lastSpeedCheck || Date.now() - this.lastSpeedCheck > 5000) {
@@ -356,7 +364,8 @@ const NaviLogic = {
         document.getElementById('background-map').classList.remove('map-smooth-rotate');
 
         const mapEl = document.getElementById('background-map');
-        if(mapEl) mapEl.style.transform = `rotate(0deg)`;
+        // FIX: RESET MIT TRANSLATE
+        if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
 
         if(userMarker) {
             const el = userMarker.getElement();
