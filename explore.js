@@ -93,7 +93,6 @@ const ExploreLogic = {
 
     enter: function() {
         if(map) {
-            // FIX: Interaktion im Explore Mode erlauben
             map.dragging.enable();
             map.touchZoom.enable();
             map.doubleClickZoom.enable();
@@ -112,7 +111,9 @@ const ExploreLogic = {
 
     leave: function() {
         if(map) {
-            // Beim Verlassen sicherheitshalber aus, showHome() macht es eh auch
+            // NUR Cleanup, KEIN Kamerabewegung mehr hier!
+            // Das übernimmt jetzt showHome() in app.js exklusiv.
+            
             map.dragging.disable();
             map.touchZoom.disable();
             map.scrollWheelZoom.disable();
@@ -122,10 +123,6 @@ const ExploreLogic = {
             if(exploreLayers.parking) exploreLayers.parking.remove();
             
             map.off('moveend', this.onMapMove);
-            
-            if(typeof userMarker !== 'undefined' && userMarker) {
-                map.panTo(userMarker.getLatLng(), { animate: true, duration: 1.0 });
-            }
         }
     },
 
