@@ -155,6 +155,9 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
+    // FIX: Animation an
+    document.getElementById('background-map').classList.add('map-smooth-rotate');
+
     map.dragging.enable();
     map.touchZoom.enable();
     map.doubleClickZoom.enable();
@@ -184,6 +187,8 @@ function showHome() {
     isDriveMode = false;
     
     const mapEl = document.getElementById('background-map');
+    // FIX: Animation aus, Rotate 0
+    mapEl.classList.remove('map-smooth-rotate');
     currentRotation = 0;
     if(mapEl) mapEl.style.transform = `rotate(0deg)`;
     
@@ -196,20 +201,17 @@ function showHome() {
     if (map.tap) map.tap.disable();
 
     if(userMarker) {
-        // FIX: Marker-Animation kurz killen
-        if(userMarker.getElement()) userMarker.getElement().classList.remove('smooth');
-        
-        map.stop(); // Laufende Animationen killen
-        map.setView(userMarker.getLatLng(), 14, { animate: false });
-        
-        // Marker Animation wieder an
-        setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
+        map.setView(userMarker.getLatLng(), 14, { animate: false }); // Hart setzen
     }
 }
 
 function showGarage() { 
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
+    
+    // FIX: Animation aus
+    document.getElementById('background-map').classList.remove('map-smooth-rotate');
+    
     switchScreen('garage-screen'); 
     updateNav('garage');
     GarageLogic.render(); 
@@ -218,6 +220,10 @@ function showGarage() {
 function showExplore() {
     switchScreen('explore-screen');
     updateNav('explore');
+    
+    // FIX: Animation aus
+    document.getElementById('background-map').classList.remove('map-smooth-rotate');
+    
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
 }
 
