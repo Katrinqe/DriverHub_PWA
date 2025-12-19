@@ -1,7 +1,6 @@
 // navi.js - Advanced Navigation Logic
 
 const NaviLogic = {
-    // ... Variablen (wie gehabt)
     routeLayer: null,
     previewMap: null,
     previewRouteLayer: null,
@@ -205,7 +204,6 @@ const NaviLogic = {
         this.isNavigating = true;
         this.navStartTime = Date.now();
 
-        // FIX: Button verstecken -> Auto Follow Aktiv
         document.getElementById('btn-nav-recenter').classList.add('hidden');
 
         document.getElementById('global-top-fade').classList.remove('visible');
@@ -225,6 +223,7 @@ const NaviLogic = {
         map.touchZoom.enable();
         
         if(userMarker) {
+            if(typeof isAutoPanning !== 'undefined') isAutoPanning = true; 
             map.setView(userMarker.getLatLng(), 18, { animate: false });
             const el = userMarker.getElement();
             if(el) {
@@ -349,8 +348,8 @@ const NaviLogic = {
 
     recenterNav: function() {
         if(userMarker) {
+            if(typeof isAutoPanning !== 'undefined') isAutoPanning = true; 
             map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
-            // FIX: Button verstecken -> Auto Follow Aktiv
             document.getElementById('btn-nav-recenter').classList.add('hidden');
         }
     },
@@ -415,6 +414,9 @@ const NaviLogic = {
 
         switchScreen('summary-screen');
         
+        // FIX: Auch hier sicherstellen, dass Nav Bar hidden ist
+        document.getElementById('global-nav').classList.add('hidden');
+
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
             if (window.summaryMapInstance) {
