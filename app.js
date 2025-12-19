@@ -18,7 +18,7 @@ window.addEventListener('load', () => {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
-    // Event Isolation Helper
+    // Helper für sichere Buttons
     function bindNavBtn(id, actionFn) {
         const btn = document.getElementById(id);
         if(!btn) return;
@@ -141,16 +141,16 @@ function handlePositionUpdate(pos) {
             if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
-        // FIX: Home-Screen Logik - Nur Panning, KEIN Zooming
+        // FIX: Home-Screen Logik - STRENGER ZOOM 14
         const isHome = document.getElementById('home-screen').classList.contains('active');
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
         
         if (isHome) {
-            // Nur zentrieren, Zoom ignorieren!
-            map.panTo(newLatLng, { animate: false });
+            // WICHTIG: setView statt panTo zwingt Zoom 14 bei JEDEM Update
+            map.setView(newLatLng, 14, { animate: false });
         } 
         else if (!isExplore) {
-            // Fallback
+            // Nur Pan wenn wir sonstwo sind
             const dist = map.getCenter().distanceTo(newLatLng);
             if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
         }
@@ -164,7 +164,7 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
-    // FIX: Map wieder freigeben
+    // Unlock Map
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.add('map-smooth-rotate');
 
@@ -187,25 +187,22 @@ function centerMapOnUser() {
 }
 
 function showHome() {
+    // Wenn schon Home, Abbrechen
     if(document.getElementById('home-screen').classList.contains('active')) return;
 
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
-    switchScreen('home-screen');
-    updateNav('home');
-    isDriveMode = false;
-    
+    // --- FIX: ERST KARTE RESETTEN, DANN SCREEN WECHSELN ---
     const mapEl = document.getElementById('background-map');
     mapEl.classList.remove('map-smooth-rotate');
-    
-    // FIX: Map sperren (Keine Touch Events!)
-    mapEl.classList.add('map-locked');
+    mapEl.classList.add('map-locked'); // Lock interactions
 
     currentRotation = 0;
-    if(mapEl) mapEl.style.transform = `rotate(0deg)`;
+    mapEl.style.transform = `rotate(0deg)`;
     
-    // Safety disable (falls CSS versagt)
+    // Disable everything first
+    map.stop();
     map.dragging.disable();
     map.touchZoom.disable();
     map.doubleClickZoom.disable();
@@ -215,16 +212,25 @@ function showHome() {
     if (map.tap) map.tap.disable();
 
     if(userMarker) {
-        // FIX: Hart setzen, keine Animation
+        // Animation vom Marker kurz aus, damit er sofort springt
+        if(userMarker.getElement()) userMarker.getElement().classList.remove('smooth');
+        
+        // HARTES RESET AUF 14 - VOR DEM SCREEN SWITCH
         map.setView(userMarker.getLatLng(), 14, { animate: false });
+        
+        setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
     }
+
+    // JETZT erst Screen wechseln
+    switchScreen('home-screen');
+    updateNav('home');
+    isDriveMode = false;
 }
 
 function showGarage() { 
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
-    // Map freigeben (für Details)
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
@@ -237,7 +243,6 @@ function showExplore() {
     switchScreen('explore-screen');
     updateNav('explore');
     
-    // Map freigeben
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
