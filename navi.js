@@ -2,6 +2,9 @@
 
 const NaviLogic = {
     routeLayer: null,
+    previewMap: null, // Neue Mini-Map Instanz
+    previewRouteLayer: null,
+    
     currentDestination: null,
     searchTimeout: null,
     isNavigating: false,
@@ -77,7 +80,6 @@ const NaviLogic = {
         const endLat = place.lat;
         const endLng = place.lon;
 
-        // CLEAN START
         if (typeof ExploreLogic !== 'undefined') {
             ExploreLogic.toggleLayer('gas', false);
             ExploreLogic.toggleLayer('cam', false);
@@ -102,15 +104,40 @@ const NaviLogic = {
     },
 
     drawRoute: function(route) {
-        // Sicherstellen, dass alte Route weg ist
-        if (this.routeLayer) {
-            map.removeLayer(this.routeLayer);
-            this.routeLayer = null;
-        }
-        
+        if (this.routeLayer) { map.removeLayer(this.routeLayer); this.routeLayer = null; }
         const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]); 
         this.routeLayer = L.polyline(coordinates, { color: '#007aff', weight: 6, opacity: 0.8, lineCap: 'round' }).addTo(map);
         map.fitBounds(this.routeLayer.getBounds(), { padding: [50, 50], maxZoom: 16 });
+    },
+
+    // NEU: Preview Map rendern
+    renderPreviewMap: function(coordinates) {
+        // Cleanup old map
+        if(this.previewMap) {
+            this.previewMap.remove();
+            this.previewMap = null;
+        }
+
+        // Init Map
+        const el = document.getElementById('preview-map-obj');
+        if(!el) return;
+        
+        this.previewMap = L.map('preview-map-obj', {
+            zoomControl: false, attributionControl: false, dragging: false,
+            touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.previewMap);
+
+        const line = L.polyline(coordinates, { color: '#007aff', weight: 4 }).addTo(this.previewMap);
+        
+        // Timeout wichtig für Layout Render
+        setTimeout(() => {
+            if(this.previewMap) {
+                this.previewMap.invalidateSize();
+                this.previewMap.fitBounds(line.getBounds(), {padding: [20,20]});
+            }
+        }, 300);
     },
 
     showPreview: function(route, destName) {
@@ -124,41 +151,37 @@ const NaviLogic = {
         document.getElementById('preview-dist').innerText = distKm + " km";
         document.getElementById('preview-dest-name').innerText = destName;
         
-        document.getElementById('route-preview-modal').classList.remove('hidden');
-        setTimeout(() => document.getElementById('route-preview-modal').classList.add('active'), 10);
+        // Modal öffnen
+        const modal = document.getElementById('route-preview-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.add('active'), 10);
+
+        // Preview Map starten
+        const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]);
+        this.renderPreviewMap(coordinates);
     },
 
-    // DIESE FUNKTION IST WICHTIG FÜR DEN FIX
     cancelRoute: function() {
-        // 1. Linie von Map entfernen
-        if (this.routeLayer && map) { 
-            map.removeLayer(this.routeLayer); 
-            this.routeLayer = null; 
-        }
+        if (this.routeLayer && map) { map.removeLayer(this.routeLayer); this.routeLayer = null; }
         
-        // 2. Modals verstecken
         const modal = document.getElementById('route-preview-modal');
         if(modal) {
             modal.classList.remove('active');
             setTimeout(() => modal.classList.add('hidden'), 300);
         }
         
-        // 3. Input leeren
         const input = document.getElementById('nav-search-input');
         if(input) input.value = "";
         
-        // 4. Reset Navigation State
         this.isNavigating = false;
         if(this.navInterval) clearInterval(this.navInterval);
     },
 
-    // --- NAVIGATION START ---
     startNavigation: function(mode) {
         this.navMode = mode;
         this.isNavigating = true;
         this.navStartTime = Date.now();
 
-        // UI Switch
         document.getElementById('route-preview-modal').classList.remove('active');
         setTimeout(() => document.getElementById('route-preview-modal').classList.add('hidden'), 300);
         
@@ -228,6 +251,7 @@ const NaviLogic = {
     recenterNav: function() {
         if(userMarker) {
             map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
+            document.getElementById('btn-nav-recenter').classList.add('hidden');
         }
     },
 
@@ -235,29 +259,28 @@ const NaviLogic = {
         this.isNavigating = false;
         clearInterval(this.navInterval);
 
-        // Reset Map Rotation
         const mapEl = document.getElementById('background-map');
         if(mapEl) mapEl.style.transform = `rotate(0deg)`;
 
-        // UI Switch
         const navScreen = document.getElementById('navi-screen');
         navScreen.classList.remove('active');
         setTimeout(() => navScreen.classList.add('hidden'), 300);
 
         if (this.navMode === 'ghost') {
-            // Ghost: Alles löschen, zurück zu Explore
+            // FIX: Zurück zu Explore & UI RESET
             this.cancelRoute(); 
             showExplore(); 
+            // Sicherstellen, dass Search Bar & Filter wieder da sind
+            document.getElementById('explore-screen').classList.remove('hidden');
+            if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
         } 
         else if (this.navMode === 'record') {
-            // Record: Route noch kurz lassen für Summary Map Screenshot (optional), aber hier löschen wir sie auch
             this.cancelRoute();
             this.showSummary();
         }
     },
 
     showSummary: function() {
-        // Berechne Stats
         if(!this.recordStats) return;
         
         const durationMs = Date.now() - this.recordStats.startTime;
@@ -279,7 +302,6 @@ const NaviLogic = {
         document.getElementById('sum-dist').innerText = totalDist.toFixed(2);
         document.getElementById('sum-time').innerText = timeStr;
 
-        // Est vs Real
         const estMin = Math.round(this.routeDuration / 60);
         document.getElementById('sum-comparison-row').classList.remove('hidden');
         document.getElementById('sum-est-time').innerText = estMin + " min";
@@ -287,7 +309,6 @@ const NaviLogic = {
 
         switchScreen('summary-screen');
         
-        // Summary Map
         setTimeout(() => {
             const latLngs = this.recordStats.path.map(p => [p.lat, p.lng]);
             const mapContainer = document.getElementById('summary-map');
@@ -295,7 +316,6 @@ const NaviLogic = {
                 mapContainer.innerHTML = ""; 
                 const sumMap = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(sumMap);
-                
                 if (latLngs.length > 1) {
                     const line = L.polyline(latLngs, {color: '#007aff', weight: 4}).addTo(sumMap);
                     sumMap.fitBounds(line.getBounds(), {padding:[40,40]});
