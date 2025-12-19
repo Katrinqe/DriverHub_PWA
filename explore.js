@@ -1,4 +1,4 @@
-const TANKERKOENIG_API_KEY = ''; 
+const TANKERKOENIG_API_KEY = '5b147d3e-972d-128a-669c-29774c100227'; 
 
 let exploreLayers = { gas: null, cam: null, parking: null };
 let exploreState = { gas: false, cam: false, parking: false };
@@ -14,9 +14,10 @@ const ExploreLogic = {
         console.log("Explore Init");
         if (typeof L === 'undefined') return;
 
-        exploreLayers.gas = L.layerGroup();
-        exploreLayers.cam = L.layerGroup();
-        exploreLayers.parking = L.layerGroup();
+        // Layer Groups initialisieren
+        if (!exploreLayers.gas) exploreLayers.gas = L.layerGroup();
+        if (!exploreLayers.cam) exploreLayers.cam = L.layerGroup();
+        if (!exploreLayers.parking) exploreLayers.parking = L.layerGroup();
 
         this.setupGasButton();
         this.setupButton('filter-cam', 'cam');
@@ -25,7 +26,10 @@ const ExploreLogic = {
         const btnRecenter = document.getElementById('btn-explore-recenter');
         if(btnRecenter) {
             btnRecenter.onclick = () => {
-                if(map && userMarker) map.panTo(userMarker.getLatLng(), { animate: true, duration: 1.0 });
+                if(map && userMarker) {
+                    // FIX: SetView statt PanTo setzt auch den Zoom zurück
+                    map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
+                }
             };
         }
     },
@@ -74,18 +78,44 @@ const ExploreLogic = {
         btn.addEventListener('touchend', end);
     },
 
+    // NEU: Harter Reset für Navi-Start
+    resetAll: function() {
+        // State resetten
+        exploreState.gas = false;
+        exploreState.cam = false;
+        exploreState.parking = false;
+
+        // UI Reset
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+
+        // Map Clean
+        if(exploreLayers.gas) exploreLayers.gas.clearLayers();
+        if(exploreLayers.cam) exploreLayers.cam.clearLayers();
+        if(exploreLayers.parking) exploreLayers.parking.clearLayers();
+        
+        // Remove from map if added
+        if(map) {
+            if(map.hasLayer(exploreLayers.gas)) map.removeLayer(exploreLayers.gas);
+            if(map.hasLayer(exploreLayers.cam)) map.removeLayer(exploreLayers.cam);
+            if(map.hasLayer(exploreLayers.parking)) map.removeLayer(exploreLayers.parking);
+        }
+    },
+
     enter: function() {
         if(map) {
             map.dragging.enable();
             map.touchZoom.enable();
             map.scrollWheelZoom.enable();
+            
             const mapEl = document.getElementById('background-map');
             if(mapEl) mapEl.style.transform = `rotate(0deg)`;
-            if(exploreLayers.gas) exploreLayers.gas.addTo(map);
-            if(exploreLayers.cam) exploreLayers.cam.addTo(map);
-            if(exploreLayers.parking) exploreLayers.parking.addTo(map);
+
+            // Layers wieder hinzufügen, falls sie im State "an" waren
+            if(exploreState.gas) { exploreLayers.gas.addTo(map); this.fetchData('gas'); }
+            if(exploreState.cam) { exploreLayers.cam.addTo(map); this.fetchData('cam'); }
+            if(exploreState.parking) { exploreLayers.parking.addTo(map); this.fetchData('parking'); }
+
             map.on('moveend', this.onMapMove);
-            this.onMapMove(); 
         }
     },
 
@@ -94,10 +124,13 @@ const ExploreLogic = {
             map.dragging.disable();
             map.touchZoom.disable();
             map.scrollWheelZoom.disable();
+
             if(exploreLayers.gas) exploreLayers.gas.remove();
             if(exploreLayers.cam) exploreLayers.cam.remove();
             if(exploreLayers.parking) exploreLayers.parking.remove();
+            
             map.off('moveend', this.onMapMove);
+            
             if(typeof userMarker !== 'undefined' && userMarker) {
                 map.panTo(userMarker.getLatLng(), { animate: true, duration: 1.0 });
             }
@@ -105,8 +138,17 @@ const ExploreLogic = {
     },
 
     toggleLayer: function(type, isActive) {
-        if (isActive) { this.fetchData(type); } 
-        else { if(exploreLayers[type]) exploreLayers[type].clearLayers(); }
+        if (isActive) { 
+            if(exploreLayers[type]) exploreLayers[type].addTo(map);
+            this.fetchData(type); 
+        } 
+        else { 
+            // FIX: Sofortiges Löschen
+            if(exploreLayers[type]) {
+                exploreLayers[type].clearLayers();
+                exploreLayers[type].remove();
+            }
+        }
     },
 
     onMapMove: function() {
@@ -121,10 +163,10 @@ const ExploreLogic = {
     fetchData: function(type) {
         if (!map) return;
         const center = map.getCenter();
+        let radius = 3000; 
         
-        let radius = 3000;
         if (type === 'gas') {
-            radius = currentRadiusFilter * 1000; // Radius vom Slider
+            radius = currentRadiusFilter * 1000;
         } else {
             if (map.getZoom() < 12) radius = 15000; 
             else if (map.getZoom() > 14) radius = 5000; 
@@ -147,6 +189,7 @@ const ExploreLogic = {
             .then(r => r.json())
             .then(data => {
                 if(loader) loader.classList.remove('visible');
+                
                 if (type === 'gas') {
                     cachedGasStations = data.elements || [];
                     this.redrawGasMarkers();
@@ -166,7 +209,9 @@ const ExploreLogic = {
     },
 
     redrawGasMarkers: function() {
+        if(!exploreState.gas) return; // Sicherheitscheck
         exploreLayers.gas.clearLayers();
+        
         cachedGasStations.forEach(el => {
             let lat = el.lat; let lon = el.lon;
             if (el.center) { lat = el.center.lat; lon = el.center.lon; }
@@ -174,6 +219,7 @@ const ExploreLogic = {
 
             const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
             const brandClass = this.getBrandClass(name);
+            
             let displayName = name.replace(/Tankstelle|Station/gi, "").trim();
             if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
             if (displayName === "") displayName = "TANK";
@@ -202,7 +248,14 @@ const ExploreLogic = {
                     </div>
                 </div>
             `;
-            const icon = L.divIcon({ className: 'custom-div-icon', html: html, iconSize: [60, 45], iconAnchor: [30, 45] });
+
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: html,
+                iconSize: [60, 45], 
+                iconAnchor: [30, 45] 
+            });
+
             const marker = L.marker([lat, lon], {icon: icon});
             marker.on('click', () => { this.openTotem(name, lat, lon, el); });
             exploreLayers.gas.addLayer(marker);
@@ -210,14 +263,22 @@ const ExploreLogic = {
     },
 
     renderGenericMarkers: function(type, elements) {
+        if(!exploreState[type]) return; // Sicherheitscheck
         elements.forEach(el => {
             let lat = el.lat; let lon = el.lon;
             if (el.center) { lat = el.center.lat; lon = el.center.lon; }
             if (!lat || !lon) return;
+
             let iconHtml = ''; let className = '';
             if (type === 'cam') { iconHtml = '<i class="fa-solid fa-camera"></i>'; className = 'icon-cam'; }
             else if (type === 'parking') { iconHtml = '<i class="fa-solid fa-square-parking"></i>'; className = 'icon-parking'; }
-            const icon = L.divIcon({ className: 'custom-div-icon', html: `<div class="custom-map-icon ${className}">${iconHtml}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+
+            const icon = L.divIcon({
+                className: 'custom-div-icon', 
+                html: `<div class="custom-map-icon ${className}">${iconHtml}</div>`,
+                iconSize: [30, 30], iconAnchor: [15, 15]
+            });
+
             const marker = L.marker([lat, lon], {icon: icon});
             if (el.tags && el.tags.name) marker.bindPopup(`<b>${el.tags.name}</b>`);
             exploreLayers[type].addLayer(marker);
@@ -239,6 +300,12 @@ const ExploreLogic = {
     openFilter: function() {
         document.getElementById('gas-filter-modal').classList.add('active'); 
         document.getElementById('gas-filter-modal').classList.remove('hidden');
+        
+        document.getElementById('btn-type-e10').classList.remove('active');
+        document.getElementById('btn-type-e5').classList.remove('active');
+        document.getElementById('btn-type-diesel').classList.remove('active');
+        document.getElementById('btn-type-' + currentFuelType).classList.add('active');
+
         this.filterGasStations();
     },
 
@@ -250,14 +317,13 @@ const ExploreLogic = {
     updateRadiusDisplay: function(val) {
         document.getElementById('rad-disp').innerText = val;
         currentRadiusFilter = parseInt(val);
-        // FIX: Neue Daten laden!
         this.fetchData('gas');
     },
 
     setBrandFilter: function(brand, btn) {
         currentBrandFilter = brand;
         document.querySelectorAll('.filter-grid .filter-btn').forEach(b => {
-            if(!b.id || b.id.includes('brand')) b.classList.remove('active'); 
+            if(!b.id) b.classList.remove('active'); 
         });
         btn.classList.add('active');
         this.filterGasStations();
@@ -283,10 +349,13 @@ const ExploreLogic = {
             let lat = el.lat; let lon = el.lon;
             if (el.center) { lat = el.center.lat; lon = el.center.lon; }
             if (!lat || !lon) return false;
+
             const stationLatLng = L.latLng(lat, lon);
             const distKm = userLatLng.distanceTo(stationLatLng) / 1000;
             el._tempDist = distKm;
+
             if (distKm > currentRadiusFilter) return false;
+
             if (currentBrandFilter !== 'all') {
                 const name = (el.tags && el.tags.name) ? el.tags.name.toLowerCase() : "";
                 if (!name.includes(currentBrandFilter)) return false;
@@ -294,10 +363,14 @@ const ExploreLogic = {
             return true;
         });
 
-        results.sort((a, b) => parseFloat(a.simPrices[currentFuelType]) - parseFloat(b.simPrices[currentFuelType]));
+        results.sort((a, b) => {
+            const priceA = parseFloat(a.simPrices[currentFuelType]);
+            const priceB = parseFloat(b.simPrices[currentFuelType]);
+            return priceA - priceB;
+        });
 
         if (results.length === 0) {
-            listContainer.innerHTML = '<div style="color:#666; text-align:center; padding:20px; font-size:0.8rem;">No stations found. Try increasing radius.</div>';
+            listContainer.innerHTML = '<div style="color:#666; text-align:center; padding:20px; font-size:0.8rem;">No stations found.</div>';
             return;
         }
 
@@ -313,15 +386,17 @@ const ExploreLogic = {
             div.innerHTML = `
                 <div class="fri-left">
                     <h4>${name}</h4>
-                    <p>${dist} km away</p>
+                    <p>${dist} km</p>
                 </div>
                 <div class="fri-price">${price}</div>
             `;
+            
             div.onclick = () => {
                 this.closeFilter();
                 map.setView([lat, lon], 16, {animate: true});
                 setTimeout(() => this.openTotem(name, lat, lon, el), 500);
             };
+
             listContainer.appendChild(div);
         });
     },
@@ -330,20 +405,48 @@ const ExploreLogic = {
         const overlay = document.getElementById('gas-totem-overlay');
         const brandHeader = document.getElementById('totem-brand-header');
         const brandTitle = document.getElementById('totem-brand');
+        
         brandHeader.className = 'totem-header ' + this.getBrandClass(name);
         brandTitle.innerText = name;
+        
         document.getElementById('totem-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
         overlay.classList.remove('hidden');
-        setTimeout(() => this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5), 300);
+
+        if (TANKERKOENIG_API_KEY && TANKERKOENIG_API_KEY.length > 10) {
+            const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${TANKERKOENIG_API_KEY}`;
+            fetch(url).then(r => r.json()).then(data => {
+                if (data.ok && data.stations && data.stations.length > 0) {
+                    const station = data.stations[0];
+                    if(elementRef) {
+                        elementRef.realData = station; 
+                        elementRef.simPrices.isOpen = station.isOpen; 
+                        if(station.diesel) elementRef.simPrices.diesel = station.diesel.toFixed(2);
+                        if(station.e10) elementRef.simPrices.e10 = station.e10.toFixed(2);
+                        if(station.e5) elementRef.simPrices.e5 = station.e5.toFixed(2);
+                    }
+                    this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
+                    this.redrawGasMarkers(); 
+                } else { this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5); }
+            }).catch(e => this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5));
+        } else {
+            setTimeout(() => {
+                this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
+            }, 300);
+        }
     },
 
     updateTotemUI: function(isOpen, diesel, e10, e5) {
         const statusEl = document.getElementById('totem-status');
-        statusEl.innerHTML = isOpen ? '<i class="fa-solid fa-circle-check"></i> OPEN' : '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
-        statusEl.style.color = isOpen ? '#30d158' : '#ff3b30';
-        document.getElementById('price-diesel').innerText = diesel;
-        document.getElementById('price-e10').innerText = e10;
-        document.getElementById('price-e5').innerText = e5;
+        if (isOpen) {
+            statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> OPEN';
+            statusEl.style.color = '#30d158';
+        } else {
+            statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
+            statusEl.style.color = '#ff3b30';
+        }
+        document.getElementById('price-diesel').innerText = diesel ? Number(diesel).toFixed(2) : "-.--";
+        document.getElementById('price-e10').innerText = e10 ? Number(e10).toFixed(2) : "-.--";
+        document.getElementById('price-e5').innerText = e5 ? Number(e5).toFixed(2) : "-.--";
         this.updateTotemSelectionUI();
     },
 
