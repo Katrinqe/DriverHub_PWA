@@ -4,7 +4,7 @@ const NaviLogic = {
     routeLayer: null,
     previewMap: null,
     previewRouteLayer: null,
-    previewBounds: null, // Speichert den Zoom der Route
+    previewBounds: null,
     
     currentDestination: null,
     searchTimeout: null,
@@ -93,7 +93,8 @@ const NaviLogic = {
     drawRoute: function(route) {
         if (this.routeLayer) { map.removeLayer(this.routeLayer); this.routeLayer = null; }
         const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]); 
-        this.routeLayer = L.polyline(coordinates, { color: '#007aff', weight: 6, opacity: 0.8, lineCap: 'round' }).addTo(map);
+        // GREEN LINE
+        this.routeLayer = L.polyline(coordinates, { color: '#30d158', weight: 6, opacity: 0.8, lineCap: 'round' }).addTo(map);
         map.fitBounds(this.routeLayer.getBounds(), { padding: [50, 50], maxZoom: 16 });
     },
 
@@ -105,13 +106,12 @@ const NaviLogic = {
         container.classList.toggle('expanded');
         content.classList.toggle('hidden-visually');
         
-        // Warte auf CSS Transition (400ms)
         setTimeout(() => { 
             if(this.previewMap) {
                 this.previewMap.invalidateSize();
-                if(!isExpanded && this.previewBounds) {
-                    // Wenn wir verkleinern (shrink), reset auf Route Bounds
-                    this.previewMap.fitBounds(this.previewBounds, {animate: true});
+                if(isExpanded && this.previewBounds) {
+                    // Zurück zu den ursprünglichen Bounds zoomen
+                    this.previewMap.fitBounds(this.previewBounds, {animate: true, padding: [20,20]});
                 }
             }
         }, 450);
@@ -128,10 +128,11 @@ const NaviLogic = {
         });
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.previewMap);
 
-        const line = L.polyline(coordinates, { color: '#007aff', weight: 4 }).addTo(this.previewMap);
-        this.previewBounds = line.getBounds(); // Speichern für Reset
+        // GREEN LINE PREVIEW
+        const line = L.polyline(coordinates, { color: '#30d158', weight: 4 }).addTo(this.previewMap);
+        this.previewBounds = line.getBounds();
 
-        const startIcon = L.divIcon({className: 'preview-start-icon', iconSize:[12,12]});
+        const startIcon = L.divIcon({className: 'preview-start-icon', iconSize:[14,14]});
         const endIcon = L.divIcon({className: 'preview-end-icon', html:'<i class="fa-solid fa-flag-checkered"></i>', iconSize:[20,20]});
         L.marker(startLatLng, {icon: startIcon}).addTo(this.previewMap);
         L.marker(endLatLng, {icon: endIcon}).addTo(this.previewMap);
@@ -200,14 +201,12 @@ const NaviLogic = {
         map.dragging.enable();
         map.touchZoom.enable();
         
-        // INSTANT JUMP, Kein Fly
         if(userMarker) {
             map.setView(userMarker.getLatLng(), 18, { animate: false });
-            // Icon wechseln zu Pfeil
             const el = userMarker.getElement();
             if(el) {
                 el.innerHTML = '<div class="user-arrow-icon"><i class="fa-solid fa-location-arrow"></i></div>';
-                el.className = 'user-marker-wrap'; // Reset Pulse Class
+                el.className = 'user-marker-wrap'; 
             }
         }
 
@@ -225,14 +224,13 @@ const NaviLogic = {
         this.navInterval = setInterval(() => {
             this.updateETA();
             const elapsedSec = (Date.now() - this.navStartTime) / 1000;
-            // Berechne verbleibende Distanz (Simuliert)
-            // In echt: Distanz zur Zielkoordinate
+            
             let distRemain = 0;
             if(userMarker && this.currentDestination) {
                 const destLatLng = L.latLng(this.currentDestination.lat, this.currentDestination.lng);
                 distRemain = (userMarker.getLatLng().distanceTo(destLatLng) / 1000).toFixed(1);
             }
-            document.getElementById('nav-remain-dist').innerText = distRemain + " km";
+            document.getElementById('nav-remain-dist').innerText = distRemain; // Unit steht im CSS/HTML
 
             let remainSec = Math.max(0, this.routeDuration - elapsedSec);
             let remainMin = Math.ceil(remainSec / 60);
@@ -263,11 +261,8 @@ const NaviLogic = {
 
         const heading = pos.coords.heading;
         const mapEl = document.getElementById('background-map');
-        if (heading && speedKm > 3) { // Schon bei kleiner Bewegung drehen
+        if (heading && speedKm > 3) { 
              mapEl.style.transform = `rotate(${-heading}deg)`;
-             // Pfeil drehen? Nein, Karte dreht sich, Pfeil zeigt nach oben.
-             // ODER: Pfeil drehen und Karte Norden?
-             // Wir drehen die Karte, also Pfeil statisch nach oben.
         }
 
         if(this.navMode === 'record' && this.recordStats) {
@@ -283,7 +278,8 @@ const NaviLogic = {
     recenterNav: function() {
         if(userMarker) {
             map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
-            document.getElementById('btn-nav-recenter').classList.add('hidden');
+            // Button soll NICHT verschwinden, also entfernen wir das add('hidden')
+            // document.getElementById('btn-nav-recenter').classList.add('hidden'); // Gelöscht
         }
     },
 
@@ -294,7 +290,6 @@ const NaviLogic = {
         const mapEl = document.getElementById('background-map');
         if(mapEl) mapEl.style.transform = `rotate(0deg)`;
 
-        // Reset Icon to Dot
         if(userMarker) {
             const el = userMarker.getElement();
             if(el) {
