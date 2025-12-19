@@ -15,7 +15,7 @@ window.addEventListener('load', () => {
     initMap();
     initWeather();
     
-    // FIX: Fade SOFORT beim Start anzeigen (weil wir auf Home starten)
+    // FIX: Fade SOFORT beim Start anzeigen
     const fade = document.getElementById('global-top-fade');
     if(fade) fade.classList.add('visible');
     
@@ -69,7 +69,12 @@ function initMap() {
         tap: false 
     }).setView([51.1657, 10.4515], 15);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }).addTo(map);
+    // FIX: keepBuffer: 20 sorgt für massives Vorladen der Kacheln
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
+        maxZoom: 20,
+        keepBuffer: 20, 
+        updateWhenIdle: false // Lädt auch während der Bewegung
+    }).addTo(map);
 
     if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(handlePositionUpdate, 
@@ -114,18 +119,20 @@ function handlePositionUpdate(pos) {
     const isNavi = (typeof NaviLogic !== 'undefined' && NaviLogic.isNavigating);
 
     if (isDriveMode || isNavi) {
-        if (heading !== null && !isNaN(heading) && speedKm > 5) {
+        if (heading !== null && !isNaN(heading) && speedKm > 3) {
             let targetRot = -heading; 
             let diff = targetRot - currentRotation;
             while (diff < -180) diff += 360;
             while (diff > 180) diff -= 360;
             currentRotation += diff; 
-            if(mapEl) mapEl.style.transform = `rotate(${currentRotation}deg)`;
+            // FIX: Rotation + Zentrierung in einem String für die Big Map
+            if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(${currentRotation}deg)`;
         }
     } else {
         if (currentRotation !== 0) {
             currentRotation = 0;
-            if(mapEl) mapEl.style.transform = `rotate(0deg)`;
+            // FIX: Reset mit Zentrierung
+            if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
         }
     }
 
@@ -200,7 +207,8 @@ function showHome() {
     mapEl.classList.add('map-locked'); 
 
     currentRotation = 0;
-    mapEl.style.transform = `rotate(0deg)`;
+    // FIX: Reset mit Zentrierung
+    mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
     
     map.stop();
     map.dragging.disable();
@@ -244,6 +252,10 @@ function showExplore() {
 
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.remove('map-smooth-rotate');
+    
+    // FIX: Reset Rotation in Explore mit Zentrierung
+    const mapEl = document.getElementById('background-map');
+    if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
     
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
 }
