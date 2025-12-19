@@ -1,6 +1,7 @@
 // navi.js - Advanced Navigation Logic
 
 const NaviLogic = {
+    // ... (Variablen gleich)
     routeLayer: null,
     previewMap: null,
     previewRouteLayer: null,
@@ -202,7 +203,8 @@ const NaviLogic = {
         this.isNavigating = true;
         this.navStartTime = Date.now();
 
-        // FIX: Fade ist jetzt global, keine Klasse mehr nötig
+        // FIX: Fade AUS im Navi
+        document.getElementById('global-top-fade').classList.remove('visible');
         document.getElementById('background-map').classList.add('map-smooth-rotate');
 
         document.getElementById('route-preview-modal').classList.remove('active');
