@@ -13,12 +13,12 @@ const NaviLogic = {
     navStartTime: 0,
     navInterval: null,
     
-    routeDistance: 0, // Road Distance in km
+    routeDistance: 0,
     routeDuration: 0,
     routeSteps: [],
     destMarker: null,
     
-    distanceFactor: 1.0, // Factor to correct Air Distance
+    distanceFactor: 1.0,
     
     recordStats: null,
     lastSpeedCheck: 0,
@@ -73,11 +73,9 @@ const NaviLogic = {
         const endLat = place.lat;
         const endLng = place.lon;
 
+        // FIX: CLEAN START (Harter Reset der Filter)
         if (typeof ExploreLogic !== 'undefined') {
-            ExploreLogic.toggleLayer('gas', false);
-            ExploreLogic.toggleLayer('cam', false);
-            ExploreLogic.toggleLayer('parking', false);
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            ExploreLogic.resetAll();
         }
 
         const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${endLng},${endLat}?overview=full&geometries=geojson&steps=true`;
@@ -90,8 +88,6 @@ const NaviLogic = {
                 this.routeSteps = data.routes[0].legs[0].steps;
                 this.drawRoute(data.routes[0]);
                 
-                // --- DISTANCE FACTOR CALCULATION ---
-                // We calculate Air Distance vs Road Distance to fix the display in Navi
                 const destLatLng = L.latLng(endLat, endLng);
                 const airDistKm = userMarker.getLatLng().distanceTo(destLatLng) / 1000;
                 const roadDistKm = data.routes[0].distance / 1000;
@@ -110,7 +106,6 @@ const NaviLogic = {
         if (this.destMarker) { map.removeLayer(this.destMarker); this.destMarker = null; }
 
         const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]); 
-        // LILA LINIE (#bf5af2)
         this.routeLayer = L.polyline(coordinates, { color: '#bf5af2', weight: 6, opacity: 0.8, lineCap: 'round' }).addTo(map);
         
         if(this.currentDestination) {
@@ -197,6 +192,11 @@ const NaviLogic = {
         if(input) input.value = "";
         this.isNavigating = false;
         if(this.navInterval) clearInterval(this.navInterval);
+
+        // FIX: Zurück zum User zoomen
+        if(userMarker && map) {
+            map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
+        }
     },
 
     startNavigation: function(mode) {
@@ -221,7 +221,6 @@ const NaviLogic = {
             map.setView(userMarker.getLatLng(), 18, { animate: false });
             const el = userMarker.getElement();
             if(el) {
-                // Nur noch Pfeil, kein Container-Hintergrund (in CSS geregelt)
                 el.innerHTML = '<div class="user-arrow-icon"><i class="fa-solid fa-location-arrow"></i></div>';
                 el.className = 'user-marker-wrap'; 
             }
@@ -242,12 +241,10 @@ const NaviLogic = {
             this.updateETA();
             const elapsedSec = (Date.now() - this.navStartTime) / 1000;
             
-            // Distanz Berechnung MIT FAKTOR für Genauigkeit
             let distRemain = 0;
             if(userMarker && this.currentDestination) {
                 const destLatLng = L.latLng(this.currentDestination.lat, this.currentDestination.lng);
                 const airDist = userMarker.getLatLng().distanceTo(destLatLng) / 1000;
-                // Korrektur: Air Distance * Factor = Approx Road Distance
                 distRemain = (airDist * this.distanceFactor).toFixed(1);
             }
             document.getElementById('nav-remain-dist').innerText = distRemain;
@@ -409,7 +406,6 @@ const NaviLogic = {
         
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
-            // FIX: Map Clean Reload
             if (window.summaryMapInstance) {
                 window.summaryMapInstance.remove();
                 window.summaryMapInstance = null;
@@ -425,7 +421,6 @@ const NaviLogic = {
                     const line = L.polyline(latLngs, {color: '#bf5af2', weight: 4}).addTo(window.summaryMapInstance);
                     window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[40,40]});
                 }
-                // Wichtig: Invalidate
                 window.summaryMapInstance.invalidateSize();
             }
         }, 300);
