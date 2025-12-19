@@ -84,7 +84,8 @@ function handlePositionUpdate(pos) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
         userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
         setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
-        map.setView(newLatLng, 14);
+        // FIX: Instant Jump beim ersten Mal
+        map.setView(newLatLng, 14, {animate: false});
     } else {
         userMarker.setLatLng(newLatLng);
         if(userMarker.getElement() && !isZooming) userMarker.getElement().classList.add('smooth');
@@ -140,9 +141,8 @@ function startDriveMode() {
     document.getElementById('global-nav').classList.add('hidden');
     map.dragging.enable();
     map.touchZoom.enable();
-    // Instant Zoom
     if(userMarker) {
-        map.setView(userMarker.getLatLng(), 18, { animate: false });
+        map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.5 });
     }
     DriverLogic.start();
 }
