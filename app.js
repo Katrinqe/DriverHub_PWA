@@ -22,7 +22,6 @@ window.addEventListener('load', () => {
     document.getElementById('nav-garage').onclick = showGarage;
     document.getElementById('nav-explore').onclick = showExplore;
 
-    // FIX: Doppeltippen auf Nav verhindern
     const nav = document.getElementById('global-nav');
     if(nav) {
         nav.addEventListener('dblclick', (e) => {
@@ -55,7 +54,7 @@ window.addEventListener('load', () => {
 function initMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
-        dragging: false, touchZoom: false, doubleClickZoom: false, // Default aus
+        dragging: false, touchZoom: false, doubleClickZoom: false, 
         zoomSnap: 0, zoomDelta: 0.5 
     }).setView([51.1657, 10.4515], 14);
 
@@ -168,7 +167,7 @@ function centerMapOnUser() {
 }
 
 function showHome() {
-    // FIX: Wenn schon auf Home, nichts tun (kein Zoom, kein Reset)
+    // FIX: Wenn wir schon auf Home sind -> Abbrechen (verhindert Re-Animierung)
     if(document.getElementById('home-screen').classList.contains('active')) return;
 
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
@@ -190,7 +189,8 @@ function showHome() {
     map.keyboard.disable();
 
     if(userMarker) {
-        map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
+        // FIX: Immer auf 14, egal wo wir herkommen
+        map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.0 });
     }
 }
 
