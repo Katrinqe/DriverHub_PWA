@@ -140,8 +140,9 @@ function startDriveMode() {
     document.getElementById('global-nav').classList.add('hidden');
     map.dragging.enable();
     map.touchZoom.enable();
+    // Instant Zoom
     if(userMarker) {
-        map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.5 });
+        map.setView(userMarker.getLatLng(), 18, { animate: false });
     }
     DriverLogic.start();
 }
