@@ -73,7 +73,6 @@ const NaviLogic = {
         const endLat = place.lat;
         const endLng = place.lon;
 
-        // FIX: CLEAN START (Harter Reset der Filter)
         if (typeof ExploreLogic !== 'undefined') {
             ExploreLogic.resetAll();
         }
@@ -193,7 +192,6 @@ const NaviLogic = {
         this.isNavigating = false;
         if(this.navInterval) clearInterval(this.navInterval);
 
-        // FIX: Zurück zum User zoomen
         if(userMarker && map) {
             map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
         }
@@ -203,6 +201,9 @@ const NaviLogic = {
         this.navMode = mode;
         this.isNavigating = true;
         this.navStartTime = Date.now();
+
+        // FIX: Animation EINschalten für Navi
+        document.getElementById('background-map').classList.add('map-smooth-rotate');
 
         document.getElementById('route-preview-modal').classList.remove('active');
         setTimeout(() => document.getElementById('route-preview-modal').classList.add('hidden'), 300);
@@ -349,6 +350,9 @@ const NaviLogic = {
     stopNavigation: function() {
         this.isNavigating = false;
         clearInterval(this.navInterval);
+
+        // FIX: Animation AUSschalten beim Stop
+        document.getElementById('background-map').classList.remove('map-smooth-rotate');
 
         const mapEl = document.getElementById('background-map');
         if(mapEl) mapEl.style.transform = `rotate(0deg)`;
