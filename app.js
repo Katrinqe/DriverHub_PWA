@@ -18,6 +18,7 @@ window.addEventListener('load', () => {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
+    // Event Isolation Helper
     function bindNavBtn(id, actionFn) {
         const btn = document.getElementById(id);
         if(!btn) return;
@@ -140,8 +141,16 @@ function handlePositionUpdate(pos) {
             if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
+        // FIX: Home-Screen Logik - Nur Panning, KEIN Zooming
+        const isHome = document.getElementById('home-screen').classList.contains('active');
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
-        if (!isExplore) {
+        
+        if (isHome) {
+            // Nur zentrieren, Zoom ignorieren!
+            map.panTo(newLatLng, { animate: false });
+        } 
+        else if (!isExplore) {
+            // Fallback
             const dist = map.getCenter().distanceTo(newLatLng);
             if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
         }
@@ -155,7 +164,8 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
-    // FIX: Animation an
+    // FIX: Map wieder freigeben
+    document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.add('map-smooth-rotate');
 
     map.dragging.enable();
@@ -187,11 +197,15 @@ function showHome() {
     isDriveMode = false;
     
     const mapEl = document.getElementById('background-map');
-    // FIX: Animation aus, Rotate 0
     mapEl.classList.remove('map-smooth-rotate');
+    
+    // FIX: Map sperren (Keine Touch Events!)
+    mapEl.classList.add('map-locked');
+
     currentRotation = 0;
     if(mapEl) mapEl.style.transform = `rotate(0deg)`;
     
+    // Safety disable (falls CSS versagt)
     map.dragging.disable();
     map.touchZoom.disable();
     map.doubleClickZoom.disable();
@@ -201,7 +215,8 @@ function showHome() {
     if (map.tap) map.tap.disable();
 
     if(userMarker) {
-        map.setView(userMarker.getLatLng(), 14, { animate: false }); // Hart setzen
+        // FIX: Hart setzen, keine Animation
+        map.setView(userMarker.getLatLng(), 14, { animate: false });
     }
 }
 
@@ -209,7 +224,8 @@ function showGarage() {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
-    // FIX: Animation aus
+    // Map freigeben (für Details)
+    document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
     switchScreen('garage-screen'); 
@@ -221,7 +237,8 @@ function showExplore() {
     switchScreen('explore-screen');
     updateNav('explore');
     
-    // FIX: Animation aus
+    // Map freigeben
+    document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
