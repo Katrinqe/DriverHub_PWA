@@ -22,7 +22,6 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
 }
 
-/* BETON-LÖSUNG: Map Interaktion sperren */
 .map-locked {
     pointer-events: none !important;
 }
@@ -30,20 +29,15 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
-/* FIX: GLOBAL FADE (Festgenagelt) */
-.nav-fade-top {
-    position: fixed; /* Global fixiert */
+/* --- FIX: GLOBALER FADE (Beton-Lösung) --- */
+#global-top-fade {
+    position: fixed; 
     top: 0; left: 0; width: 100%; 
-    height: 150px; 
-    background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
-    pointer-events: none; 
-    z-index: 5; /* Über Map, unter UI */
-    opacity: 0; /* Default aus */
-    transition: opacity 0.6s ease; /* Sanftes Einblenden */
-}
-/* Wenn diese Klasse da ist, wird er sichtbar */
-.nav-fade-top.visible {
-    opacity: 1;
+    height: 160px; /* Schön großzügig */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 100%);
+    pointer-events: none; /* Klicks gehen durch */
+    z-index: 50; /* ÜBER den Screens (die haben 20) */
+    /* Keine Animation, keine Transition, einfach Stein. */
 }
 
 /* MARKER */
@@ -90,7 +84,14 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .solid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; z-index: 50; pointer-events: auto; overflow-y: auto; }
 .spacer-flex { flex: 1; }
 
-.blur-zone-top { width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+/* FIX: Gradient entfernt, wird jetzt vom Global Fade erledigt */
+.blur-zone-top { 
+    width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); 
+    /* background: removed; */ 
+    display: flex; flex-direction: column; align-items: center; pointer-events: none; 
+    z-index: 60; /* Wichtig: Content über dem Global Fade (z=50) */
+}
+
 .blur-zone-bottom { width: 100%; padding-bottom: 120px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); display: flex; justify-content: center; pointer-events: none; }
 .weather-pill { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 18px; border-radius: 30px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; pointer-events: auto; min-width: 150px; justify-content: center; }
 .dh-logo { width: 120px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
@@ -103,7 +104,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
 /* NAVI UI */
-.navi-top-hud { position: absolute; top: calc(env(safe-area-inset-top) + 20px); left: 20px; right: 20px; background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); padding: 15px 20px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; z-index: 10; }
+.navi-top-hud { position: absolute; top: calc(env(safe-area-inset-top) + 20px); left: 20px; right: 20px; background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(15px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); padding: 15px 20px; display: flex; align-items: center; gap: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto; z-index: 60; /* Über Global Fade */ }
 .nav-arrow-box { width: 60px; height: 60px; background: #222; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #fff; }
 .nav-instruction-box { flex: 1; }
 .nav-instruction-box h3 { margin: 0; font-size: 1.4rem; color: #fff; font-weight: 800; line-height: 1.1; }
@@ -126,7 +127,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nbh-item .unit { font-size: 0.9rem; color: #888; font-weight: 700; }
 .nbh-divider { width: 1px; height: 35px; background: #333; }
 
-#nav-speed-limit { position: absolute; top: 180px; left: 20px; width: 55px; height: 55px; background: white; border-radius: 50%; border: 6px solid #cc0000; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 60; pointer-events: none; transform: scale(1); transition: transform 0.3s; }
+#nav-speed-limit { position: absolute; top: 180px; left: 20px; width: 55px; height: 55px; background: white; border-radius: 50%; border: 5px solid #cc0000; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.4); z-index: 60; pointer-events: none; transform: scale(1); transition: transform 0.3s; }
 #nav-speed-limit.hidden { transform: scale(0); opacity: 0; }
 #nav-speed-limit span { color: #111; font-weight: 800; font-size: 1.5rem; letter-spacing: -1px; }
 
@@ -150,7 +151,15 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .route-preview-actions { display: flex; flex-direction: column; gap: 10px; }
 .btn-nav-start { width: 100%; height: 55px; background: var(--primary); border: none; border-radius: 18px; color: white; font-weight: 800; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .btn-nav-ghost { width: 100%; height: 50px; background: #222; border: 1px solid #333; border-radius: 18px; color: #aaa; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.explore-top-ui { width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); display: flex; flex-direction: column; gap: 15px; background: linear-gradient(to bottom, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0) 100%); pointer-events: none; }
+
+/* FIX: Auch hier Gradient raus */
+.explore-top-ui { 
+    width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); 
+    display: flex; flex-direction: column; gap: 15px; 
+    /* background: removed; */ 
+    pointer-events: none; z-index: 60; 
+}
+
 .search-bar-glass { width: 100%; height: 50px; background: rgba(40, 40, 40, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px; display: flex; align-items: center; padding: 0 15px; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .search-bar-glass i { color: #888; margin-right: 10px; }
 .search-bar-glass input { background: transparent; border: none; outline: none; color: white; font-size: 1rem; width: 100%; font-family: 'Inter', sans-serif; }
