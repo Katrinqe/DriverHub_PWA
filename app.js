@@ -18,18 +18,17 @@ window.addEventListener('load', () => {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
+    // NAV LEISTE LOGIK
+    const navBar = document.getElementById('global-nav');
+    if(navBar) {
+        // FIX: Dies verhindert, dass Klicks auf die Leiste zur Karte durchdringen
+        L.DomEvent.disableClickPropagation(navBar);
+        L.DomEvent.disableScrollPropagation(navBar);
+    }
+
     document.getElementById('nav-home').onclick = showHome;
     document.getElementById('nav-garage').onclick = showGarage;
     document.getElementById('nav-explore').onclick = showExplore;
-
-    const nav = document.getElementById('global-nav');
-    if(nav) {
-        nav.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        });
-    }
 
     document.getElementById('btn-start').onclick = startDriveMode;
     document.getElementById('btn-recenter').onclick = () => centerMapOnUser(true);
@@ -54,7 +53,7 @@ window.addEventListener('load', () => {
 function initMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
-        dragging: false, touchZoom: false, doubleClickZoom: false, 
+        dragging: false, touchZoom: false, doubleClickZoom: false, // Default aus
         zoomSnap: 0, zoomDelta: 0.5 
     }).setView([51.1657, 10.4515], 14);
 
@@ -167,7 +166,6 @@ function centerMapOnUser() {
 }
 
 function showHome() {
-    // FIX: Wenn wir schon auf Home sind -> Abbrechen (verhindert Re-Animierung)
     if(document.getElementById('home-screen').classList.contains('active')) return;
 
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
@@ -181,6 +179,7 @@ function showHome() {
     currentRotation = 0;
     if(mapEl) mapEl.style.transform = `rotate(0deg)`;
     
+    // FIX: Komplett einfrieren
     map.dragging.disable();
     map.touchZoom.disable();
     map.doubleClickZoom.disable();
@@ -189,8 +188,8 @@ function showHome() {
     map.keyboard.disable();
 
     if(userMarker) {
-        // FIX: Immer auf 14, egal wo wir herkommen
-        map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.0 });
+        // Fix: Immer Zoom 14
+        map.setView(userMarker.getLatLng(), 14, { animate: true, duration: 1.5 });
     }
 }
 
