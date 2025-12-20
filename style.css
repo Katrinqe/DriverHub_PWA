@@ -11,11 +11,18 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
 body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #fff; overflow: hidden; width: 100vw; height: 100vh; }
 
-/* MAP (V74 Stand - NICHT ÄNDERN) */
+/* MAP (V74 Stand) */
 #background-map { 
-    position: fixed; top: 50%; left: 50%; width: 150vmax; height: 150vmax; 
-    z-index: 0; background-color: #000; transform-origin: center center;
-    transform: translate(-50%, -50%); transition: none; 
+    position: fixed; 
+    top: 50%; 
+    left: 50%; 
+    width: 150vmax; 
+    height: 150vmax; 
+    z-index: 0; 
+    background-color: #000; 
+    transform-origin: center center;
+    transform: translate(-50%, -50%); 
+    transition: none; 
 }
 .map-smooth-rotate { transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) !important; }
 .map-locked { pointer-events: none !important; }
@@ -23,10 +30,21 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
 /* GLOBAL FADE (V74 Stand) */
-#global-top-fade { position: fixed; top: 0; left: 0; width: 100%; height: 160px; background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 100%); pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.5s ease; }
+#global-top-fade { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 160px; 
+    background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 100%); 
+    pointer-events: none; 
+    z-index: 5; 
+    opacity: 0; 
+    transition: opacity 0.5s ease; 
+}
 #global-top-fade.visible { opacity: 1; }
 
-/* STANDARD ELEMENTS (Buttons, Icons...) */
+/* STANDARD ELEMENTS */
 .hidden { display: none !important; }
 .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; z-index: 10; opacity: 0; transform: scale(0.98); pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; }
 .screen.active { z-index: 20; opacity: 1; transform: scale(1); }
@@ -35,7 +53,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .solid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; z-index: 50; pointer-events: auto; overflow-y: auto; }
 .spacer-flex { flex: 1; }
 
-/* --- HOME & NAVI STYLE (Unverändert lassen) --- */
+/* --- HOME & NAVI STYLE --- */
 .blur-zone-top { width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); display: flex; flex-direction: column; align-items: center; pointer-events: none; }
 .blur-zone-bottom { width: 100%; padding-bottom: 120px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); display: flex; justify-content: center; pointer-events: none; }
 .weather-pill { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 18px; border-radius: 30px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; pointer-events: auto; min-width: 150px; justify-content: center; }
@@ -48,15 +66,32 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* --- GARAGE REDESIGN (NEU V81) --- */
+/* --- GARAGE REDESIGN (V83 FIX) --- */
 #garage-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #000; background-image: radial-gradient(circle at 50% 0%, rgba(191, 90, 242, 0.1), transparent 70%); }
 
+/* GARAGE 3D STAGE - THE HERO AREA */
+#garage-car-stage {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;       /* Volle Breite */
+    height: 45vh;      /* Obere 45% des Screens gehören dem Auto */
+    z-index: 5;        /* Über dem Hintergrund, unter dem Header-Text */
+    pointer-events: auto; /* Drehbar */
+    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 0%, transparent 60%); /* Leichter "Spotlight" Boden-Effekt */
+}
+
+/* WICHTIG: Inhalt nach unten schieben */
 .garage-content {
-    padding: 20px;
-    padding-top: calc(env(safe-area-inset-top) + 20px);
+    position: relative;
+    z-index: 10;
     width: 100%;
     height: 100%;
     overflow-y: auto;
+    padding: 20px;
+    
+    /* FIX: Platz für das Auto lassen! */
+    padding-top: 42vh; 
     padding-bottom: 120px;
 }
 
@@ -65,7 +100,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
 }
 
 .dash-card {
@@ -251,26 +286,8 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.8s ease-out; pointer-events: none;}
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
-/* ... [Vorheriges CSS bleibt gleich] ... */
 
-/* GARAGE 3D STAGE */
-#garage-car-stage {
-    position: absolute;
-    top: 50px; /* Unter der Statusbar */
-    right: 0;
-    width: 60%; /* Nimmt 60% der Breite rechts ein */
-    height: 35vh; /* 35% der Höhe */
-    z-index: 1; /* HINTER dem Content (der hat keinen z-index im Flow, aber Text ist höher) */
-    pointer-events: auto; /* Damit man das Auto drehen kann */
-    overflow: visible;
+/* Sicherstellen, dass Detail-Overlay IMMER über allem ist */
+#detail-overlay {
+    z-index: 5000 !important;
 }
-
-/* WICHTIG: Damit der Content über dem Auto liegt und klickbar bleibt */
-.garage-content {
-    position: relative;
-    z-index: 10;
-    /* Damit man durch den Content hindurch das Auto sehen kann, 
-       müssen wir sicherstellen, dass die Dash-Cards nicht alles verdecken */
-}
-
-/* ... [Rest wie Version 81] ... */
