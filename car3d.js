@@ -4,74 +4,93 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let scene, camera, renderer, carModel, placeholderMesh;
 let isInitialized = false; 
+let time = 0; // Für Animation
 
 function init3D() {
-    // WICHTIG: Wir suchen jetzt nach dem Container, den garage.js erstellt hat
-    // ID muss mit garage.js übereinstimmen!
-    const container = document.getElementById('hero-3d-stage');
-    
-    if (!container) {
-        // Falls garage.js noch nicht fertig gerendert hat, versuchen wir es kurz später nochmal
-        setTimeout(init3D, 100);
-        return;
-    }
+    if (isInitialized) return;
 
-    // Wenn der Container 0 Höhe hat (versteckt), abbrechen
+    const container = document.getElementById('hero-3d-stage');
+    if (!container) return;
+    
     if (container.clientWidth === 0 || container.clientHeight === 0) return;
 
-    // Reset Flag wenn wir neu starten (damit er neu lädt wenn man Tab wechselt)
     isInitialized = true;
 
-    // Aufräumen (falls alte Canvas da ist)
     while(container.firstChild) { container.removeChild(container.firstChild); }
 
     // 1. Scene
     scene = new THREE.Scene();
+    // Leichter Nebel für Tiefe (verschmilzt Boden mit Hintergrund)
+    scene.fog = new THREE.FogExp2(0x000000, 0.03);
     
-    // 2. Camera (Noch etwas näher ran für den "Fetten" Look)
+    // 2. Camera
     camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(3.5, 1.5, 4.0); 
+    camera.position.set(4.5, 1.8, 5.5); // Etwas weiter weg für cineastischen Look
     
     // 3. Renderer
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.0;
+    renderer.shadowMap.enabled = true; // Schatten an!
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    // 4. Licht (Studio)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); 
+    // 4. THE SHOWROOM LIGHTING (Dramatic)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); // Sehr dunkel
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.2); 
-    keyLight.position.set(5, 10, 7);
-    scene.add(keyLight);
-    
-    const fillLight = new THREE.DirectionalLight(0xffffff, 1.2); 
-    fillLight.position.set(-5, 2, -5);
-    scene.add(fillLight);
+    // Key Light (Von oben vorne links)
+    const spotLight = new THREE.SpotLight(0xffffff, 10.0);
+    spotLight.position.set(5, 8, 5);
+    spotLight.angle = Math.PI / 4;
+    spotLight.penumbra = 0.5;
+    spotLight.castShadow = true;
+    spotLight.shadow.mapSize.width = 1024;
+    spotLight.shadow.mapSize.height = 1024;
+    scene.add(spotLight);
 
-    const rimLight = new THREE.SpotLight(0x007aff, 4.0); 
-    rimLight.position.set(0, 5, -10);
+    // Rim Light (Von hinten rechts, Blau, betont Kanten)
+    const rimLight = new THREE.SpotLight(0x007aff, 15.0); 
+    rimLight.position.set(-5, 5, -5);
+    rimLight.lookAt(0,0,0);
     scene.add(rimLight);
+    
+    // Fill Light (Bodenreflexion simulieren)
+    const rectAreaLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    rectAreaLight.position.set(0, -5, 2);
+    scene.add(rectAreaLight);
 
-    // 5. Controls (Manuell drehbar!)
+    // 5. THE GLOSSY FLOOR (Black Glass)
+    const planeGeo = new THREE.CircleGeometry(10, 64);
+    const planeMat = new THREE.MeshStandardMaterial({ 
+        color: 0x050505, 
+        roughness: 0.1, 
+        metalness: 0.8,
+    });
+    const floor = new THREE.Mesh(planeGeo, planeMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.85; // Höhe anpassen
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    // 6. Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.enableZoom = false;
     controls.enablePan = false;
-    controls.autoRotate = false; // Manuell
-    controls.maxPolarAngle = Math.PI / 2 - 0.05; // Boden-Limit
+    controls.autoRotate = false; 
+    controls.maxPolarAngle = Math.PI / 2 - 0.1; // Nicht unter Boden
 
-    // --- Platzhalter (Kugel) ---
+    // --- Platzhalter ---
     const geometry = new THREE.IcosahedronGeometry(1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x444444, wireframe: true });
+    const material = new THREE.MeshBasicMaterial({ color: 0x333333, wireframe: true });
     placeholderMesh = new THREE.Mesh(geometry, material);
     scene.add(placeholderMesh);
 
-    // 6. Load Car
+    // 7. Load Car
     const loader = new GLTFLoader();
     
     loader.load('car.glb', 
@@ -85,19 +104,21 @@ function init3D() {
             const size = box.getSize(new THREE.Vector3());
             
             const maxDim = Math.max(size.x, size.y, size.z);
-            // SCALE UP: 4.5 damit es satt drin steht
-            const scale = 4.5 / maxDim; 
+            const scale = 4.2 / maxDim; 
             carModel.scale.set(scale, scale, scale);
             
-            // Positionierung im Container
             carModel.position.x = -center.x * scale;
-            carModel.position.y = -box.min.y * scale - 0.8; // Leicht tiefer
+            carModel.position.y = -box.min.y * scale - 0.85; // Auf Boden setzen
             carModel.position.z = -center.z * scale;
 
             carModel.traverse((child) => {
-                if (child.isMesh && child.material) {
-                    child.material.envMapIntensity = 1.0;
-                    child.material.needsUpdate = true;
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    if(child.material) {
+                        child.material.envMapIntensity = 1.2; // Mehr Glanz
+                        child.material.needsUpdate = true;
+                    }
                 }
             });
 
@@ -106,16 +127,20 @@ function init3D() {
         undefined, 
         function (error) {
             console.error('Error loading car:', error);
-            if(placeholderMesh) {
-                placeholderMesh.material.color.setHex(0xff0000); 
-            }
+            if(placeholderMesh) placeholderMesh.material.color.setHex(0xff0000); 
         }
     );
 
-    // 7. Animation Loop
+    // 8. Loop (mit Breathing Animation)
     function animate() {
         requestAnimationFrame(animate);
-        
+        time += 0.005;
+
+        // Camera Breathing (Subtile Bewegung wenn User nicht interagiert)
+        // Wir bewegen das Licht leicht, das sieht cool aus auf dem Lack
+        rimLight.position.x = Math.sin(time) * 5;
+        rimLight.position.z = Math.cos(time) * -5;
+
         if(placeholderMesh && !carModel) {
             placeholderMesh.rotation.y += 0.02;
         }
@@ -125,7 +150,6 @@ function init3D() {
     }
     animate();
 
-    // Resize
     const resizeObserver = new ResizeObserver(() => {
         if(container.clientWidth > 0 && container.clientHeight > 0) {
             camera.aspect = container.clientWidth / container.clientHeight;
@@ -136,7 +160,6 @@ function init3D() {
     resizeObserver.observe(container);
 }
 
-// Funktionen für Detail-Ansicht (Ausblenden)
 function hideCar() {
     const el = document.getElementById('hero-3d-stage');
     if(el) el.style.opacity = '0';
@@ -147,7 +170,6 @@ function showCar() {
     if(el) el.style.opacity = '1';
 }
 
-// Global verfügbar machen
 window.startGarage3D = init3D;
 window.hideGarage3D = hideCar;
 window.showGarage3D = showCar;
