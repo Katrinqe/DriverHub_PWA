@@ -260,8 +260,7 @@ function showGarage() {
     updateNav('garage');
     GarageLogic.render(); 
     
-    // FIX: 3D Auto starten, wenn Garage sichtbar wird!
-    // Wir warten 100ms, damit das DIV sicher "da" ist
+    // FIX: 3D Auto starten
     if(window.startGarage3D) {
         setTimeout(() => { window.startGarage3D(); }, 100);
     }
