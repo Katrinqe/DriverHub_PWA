@@ -84,89 +84,100 @@ const GarageLogic = {
             if(d.max > topSpeedEver) topSpeedEver = d.max;
         });
 
-        // --- NAME INPUT ---
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.className = 'garage-name-input';
-        nameInput.value = this.carName;
-        nameInput.oninput = (e) => { this.saveCarName(e.target.value); };
-        list.appendChild(nameInput);
+        // --- SHOWROOM CONTAINER ---
+        const showroom = document.createElement('div');
+        showroom.className = 'showroom-container';
 
-        // --- 3D AUTO CONTAINER (FIX: ID matched jetzt car3d.js) ---
+        // 1. Name Background (Hollow)
+        const nameBg = document.createElement('input');
+        nameBg.type = 'text';
+        nameBg.className = 'showroom-name-input';
+        nameBg.value = this.carName;
+        nameBg.oninput = (e) => { this.saveCarName(e.target.value); };
+        showroom.appendChild(nameBg);
+
+        // 2. 3D Stage
         const carStage = document.createElement('div');
-        carStage.id = 'hero-3d-stage'; // WICHTIG: Das ist die ID, die car3d.js sucht!
+        carStage.id = 'hero-3d-stage';
         carStage.className = 'hero-3d-stage';
-        list.appendChild(carStage);
+        showroom.appendChild(carStage);
 
-        // --- STATS ROW ---
-        const statsRow = document.createElement('div');
-        statsRow.className = 'stats-row-flat';
-        statsRow.innerHTML = `
-            <div class="stat-flat">
-                <span class="val">${topSpeedEver}</span>
-                <span class="label">TOP KM/H</span>
+        // 3. Floating Stats
+        const floatStats = document.createElement('div');
+        floatStats.className = 'floating-stats';
+        floatStats.innerHTML = `
+            <div class="fs-item">
+                <span class="fs-val">${topSpeedEver}</span>
+                <span class="fs-label">MAX</span>
             </div>
-            <div class="stat-flat">
-                <span class="val">${totalKm.toFixed(1)}</span>
-                <span class="label">TOTAL KM</span>
-            </div>
-            <div class="stat-flat">
-                <span class="val">--</span>
-                <span class="label">0-100</span>
+            <div class="fs-line"></div>
+            <div class="fs-item">
+                <span class="fs-val">${totalKm.toFixed(0)}</span>
+                <span class="fs-label">KM</span>
             </div>
         `;
-        list.appendChild(statsRow);
+        showroom.appendChild(floatStats);
 
-        // --- DRIVE LIST ---
+        list.appendChild(showroom);
+
+        // --- LOGBOOK (TIMELINE) ---
+        const logbook = document.createElement('div');
+        logbook.className = 'logbook-container';
+        
         const title = document.createElement('div');
-        title.className = 'ride-list-title';
-        title.innerText = 'RECENT DRIVES';
-        list.appendChild(title);
+        title.className = 'logbook-title';
+        title.innerText = 'DRIVE LOG';
+        logbook.appendChild(title);
 
         this.drives.forEach((d, index) => {
-            const card = document.createElement('div');
-            card.className = 'ride-card-v3';
+            const entry = document.createElement('div');
+            entry.className = 'logbook-entry';
             
             const dateObj = new Date(d.date);
-            const dateStr = dateObj.toLocaleDateString();
-            const timeStr = dateObj.toLocaleTimeString().slice(0,5);
+            const dateStr = dateObj.toLocaleDateString(undefined, {day:'2-digit', month:'2-digit'});
             
-            // Entweder Leaflet (siehe initMiniMaps) oder SVG (hier)
-            // Wir nutzen erst mal das SVG für Performance, später kann man Leaflet aktivieren
             const miniMap = this.generateRouteSVG(d.path);
             const mapId = 'mini-map-' + index;
 
-            card.innerHTML = `
-                <div class="mini-map-container" id="${mapId}">
-                    ${miniMap} 
+            entry.innerHTML = `
+                <div class="lb-line">
+                    <div class="lb-dot"></div>
+                    <div class="lb-vertical"></div>
                 </div>
-                <div class="rc3-info">
-                    <div class="rc3-left">
-                        <h4>${dateStr}</h4>
-                        <p>${timeStr}</p>
-                    </div>
-                    <div class="rc3-right">
-                        <div class="rc3-stat">
-                            <span>${d.max || 0}</span>
-                            <small>KM/H</small>
+                <div class="lb-content">
+                    <div class="lb-card" onclick="GarageLogic.openDetails(null, ${index})">
+                        <div class="lb-map-box" id="${mapId}">
+                            ${miniMap}
                         </div>
-                        <button class="btn-list-delete" onclick="GarageLogic.deleteDrive(${index}, event)">
-                            <i class="fa-solid fa-trash"></i>
+                        <div class="lb-info">
+                            <div class="lb-head">
+                                <span class="lb-date">${dateStr}</span>
+                                <span class="lb-speed">${d.max || 0} <small>km/h</small></span>
+                            </div>
+                            <div class="lb-sub">
+                                <span>${d.dist.toFixed(1)} km</span>
+                                <span>${d.time} min</span>
+                            </div>
+                        </div>
+                        <button class="lb-delete" onclick="GarageLogic.deleteDrive(${index}, event)">
+                            <i class="fa-solid fa-xmark"></i>
                         </button>
                     </div>
                 </div>
             `;
             
-            card.onclick = () => { this.openDetails(d, index); };
-            list.appendChild(card);
+            // Pass the drive object indirectly via index to openDetails
+            // (Quick fix for onclick quote issues)
+            entry.querySelector('.lb-card').onclick = () => { this.openDetails(d, index); };
+
+            logbook.appendChild(entry);
         });
 
-        // 3D Starten mit Verzögerung
+        list.appendChild(logbook);
+
+        // Init
         setTimeout(() => {
             if(window.startGarage3D) window.startGarage3D();
-            
-            // Optional: Wenn du echte Maps in der Liste willst, hier initMiniMaps() aufrufen.
-            // Aktuell SVG, weil stabiler. Wenn du echte Maps willst, sag bescheid.
             this.initMiniMaps(); 
         }, 150);
     },
@@ -175,10 +186,8 @@ const GarageLogic = {
         this.drives.forEach((d, index) => {
             const elId = 'mini-map-' + index;
             const el = document.getElementById(elId);
-            // Wenn SVG drin ist, überschreiben wir es mit Leaflet Map (wenn gewollt)
-            // Hier nutzen wir Leaflet:
             if(!el) return;
-            el.innerHTML = ""; // SVG weg
+            el.innerHTML = ""; 
 
             const m = L.map(elId, {
                 zoomControl: false, attributionControl: false,
@@ -191,7 +200,7 @@ const GarageLogic = {
             if(d.path && d.path.length > 1) {
                 const latLngs = d.path.map(p => [p.lat, p.lng]);
                 const line = L.polyline(latLngs, {color: '#30d158', weight: 3}).addTo(m);
-                m.fitBounds(line.getBounds(), {padding:[10,10]});
+                m.fitBounds(line.getBounds(), {padding:[5,5]});
             } else {
                 m.setView([51.1657, 10.4515], 10);
             }
