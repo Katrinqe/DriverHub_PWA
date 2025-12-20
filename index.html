@@ -9,11 +9,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="logo.png">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=88">
+    <link rel="stylesheet" href="style.css?v=89">
 
     <script type="importmap">
         {
@@ -270,11 +274,18 @@
     <div id="garage-screen" class="screen hidden">
         <div id="garage-bg"></div>
         
+        <div class="garage-aura"></div>
+
         <div id="garage-content" class="garage-content interactive-element"></div>
         
-        <div id="detail-overlay" class="hidden interactive-element">
-            <button class="btn-close-detail" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
+        <div id="detail-overlay" class="screen hidden interactive-element solid-bg">
+            <div class="detail-header">
+                <h2>Ride Details</h2>
+                <button class="btn-close-detail-text" onclick="GarageLogic.closeDetails()">CLOSE</button>
+            </div>
+            
             <div class="telemetry-map-wrap"><div id="detail-map"></div></div>
+            
             <div class="telemetry-content">
                 <div class="telemetry-grid">
                     <div class="t-box"><span class="t-label">MAX SPEED</span><span class="t-val" id="t-max">0</span></div>
@@ -295,12 +306,12 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="explore.js?v=88"></script>
-    <script src="garage.js?v=88"></script>
-    <script src="drive.js?v=88"></script>
-    <script src="navi.js?v=88"></script>
-    <script src="app.js?v=88"></script>
+    <script src="explore.js?v=89"></script>
+    <script src="garage.js?v=89"></script>
+    <script src="drive.js?v=89"></script>
+    <script src="navi.js?v=89"></script>
+    <script src="app.js?v=89"></script>
     
-    <script type="module" src="car3d.js?v=88"></script>
+    <script type="module" src="car3d.js?v=89"></script>
 </body>
 </html>
