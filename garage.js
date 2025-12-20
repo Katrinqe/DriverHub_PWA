@@ -1,20 +1,18 @@
 const GarageLogic = {
     drives: [],
-    carName: "My Car", // Default Name
+    carName: "MY CAR",
 
     init: function() {
         this.load();
     },
 
     load: function() {
-        // Fahrten laden
         const storedDrives = localStorage.getItem('driverhub_drives');
         if (storedDrives) {
             try { this.drives = JSON.parse(storedDrives); } 
             catch(e) { this.drives = []; }
         }
         
-        // Auto Name laden
         const storedName = localStorage.getItem('driverhub_car_name');
         if (storedName) {
             this.carName = storedName;
@@ -36,7 +34,8 @@ const GarageLogic = {
         this.render();
     },
 
-    deleteDrive: function(index) {
+    deleteDrive: function(index, e) {
+        if(e) e.stopPropagation();
         if(confirm("Delete this drive?")) {
             this.drives.splice(index, 1);
             this.saveToStorage();
@@ -44,47 +43,10 @@ const GarageLogic = {
         }
     },
 
-    // HELPER: Generiert einen SVG Pfad aus den GPS Daten für die Mini-Map
-    generateRouteSVG: function(path) {
-        if (!path || path.length < 2) return "";
-
-        // Bounds finden
-        let minLat = 999, maxLat = -999, minLng = 999, maxLng = -999;
-        path.forEach(p => {
-            if(p.lat < minLat) minLat = p.lat;
-            if(p.lat > maxLat) maxLat = p.lat;
-            if(p.lng < minLng) minLng = p.lng;
-            if(p.lng > maxLng) maxLng = p.lng;
-        });
-
-        // Koordinaten auf 0-100 Box normalisieren
-        const width = maxLng - minLng;
-        const height = maxLat - minLat;
-        // Schutz vor Division durch 0
-        if(width === 0 || height === 0) return "M0,50 L100,50";
-
-        let d = "";
-        path.forEach((p, i) => {
-            // Y muss invertiert werden für SVG
-            const x = ((p.lng - minLng) / width) * 100;
-            const y = 100 - ((p.lat - minLat) / height) * 100;
-            
-            if(i === 0) d += `M${x},${y}`;
-            else d += ` L${x},${y}`;
-        });
-        
-        return `<svg viewBox="-10 -10 120 120" class="mini-route-svg">
-                    <path d="${d}" fill="none" stroke="#30d158" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-                    <circle cx="${((path[0].lng - minLng)/width)*100}" cy="${100-((path[0].lat-minLat)/height)*100}" r="8" fill="#fff" />
-                    <circle cx="${((path[path.length-1].lng - minLng)/width)*100}" cy="${100-((path[path.length-1].lat-minLat)/height)*100}" r="8" fill="#bf5af2" />
-                </svg>`;
-    },
-
     render: function() {
         const list = document.getElementById('garage-content');
         list.innerHTML = '';
         
-        // --- CALC STATS ---
         let totalKm = 0;
         let topSpeedEver = 0;
         this.drives.forEach(d => {
@@ -92,73 +54,71 @@ const GarageLogic = {
             if(d.max > topSpeedEver) topSpeedEver = d.max;
         });
 
-        // --- 1. HERO WINDOW (Das "gemeinsame Fenster") ---
-        const hero = document.createElement('div');
-        hero.className = 'garage-hero-card';
-        
-        // Input für Name
+        // --- NAME INPUT (FREE FLOATING) ---
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
-        nameInput.className = 'car-name-input';
+        nameInput.className = 'garage-name-input';
         nameInput.value = this.carName;
         nameInput.oninput = (e) => { this.saveCarName(e.target.value); };
-        
-        // Stats Row
+        list.appendChild(nameInput);
+
+        // --- SPACER FÜR 3D AUTO ---
+        const spacer = document.createElement('div');
+        spacer.className = 'garage-car-spacer';
+        list.appendChild(spacer);
+
+        // --- STATS ROW (FLAT) ---
         const statsRow = document.createElement('div');
-        statsRow.className = 'hero-stats-row';
+        statsRow.className = 'stats-row-flat';
         statsRow.innerHTML = `
-            <div class="hs-item">
-                <span class="hs-val">${totalKm.toFixed(1)}</span>
-                <span class="hs-label">TOTAL KM</span>
+            <div class="stat-flat">
+                <span class="val">${topSpeedEver}</span>
+                <span class="label">TOP KM/H</span>
             </div>
-            <div class="hs-divider"></div>
-            <div class="hs-item">
-                <span class="hs-val">${topSpeedEver}</span>
-                <span class="hs-label">TOP KM/H</span>
+            <div class="stat-flat">
+                <span class="val">${totalKm.toFixed(1)}</span>
+                <span class="label">TOTAL KM</span>
+            </div>
+            <div class="stat-flat">
+                <span class="val">--</span>
+                <span class="label">0-100</span>
             </div>
         `;
+        list.appendChild(statsRow);
 
-        // 3D Container (Inside Hero)
-        const carStage = document.createElement('div');
-        carStage.id = 'car-canvas-container';
-        carStage.className = 'hero-3d-stage';
-
-        hero.appendChild(nameInput);
-        hero.appendChild(statsRow);
-        hero.appendChild(carStage);
-        
-        list.appendChild(hero);
-
-        // --- 2. DRIVE LIST ---
+        // --- DRIVE LIST TITLE ---
         const title = document.createElement('div');
         title.className = 'ride-list-title';
-        title.innerText = 'Drives Log';
+        title.innerText = 'RECENT DRIVES';
         list.appendChild(title);
 
+        // --- DRIVE LIST ITEMS ---
         this.drives.forEach((d, index) => {
             const card = document.createElement('div');
-            card.className = 'ride-card-v2';
+            card.className = 'ride-card-v3';
             
             const dateObj = new Date(d.date);
             const dateStr = dateObj.toLocaleDateString();
             const timeStr = dateObj.toLocaleTimeString().slice(0,5);
             
-            // Mini Map SVG generieren
-            const miniMap = this.generateRouteSVG(d.path);
+            // Container für echte Map
+            const mapId = 'mini-map-' + index;
 
             card.innerHTML = `
-                <div class="rc2-map-preview">
-                    ${miniMap}
-                </div>
-                <div class="rc2-details">
-                    <div class="rc2-header">
-                        <span class="rc2-date">${dateStr}</span>
-                        <span class="rc2-time">${timeStr}</span>
+                <div class="mini-map-container" id="${mapId}"></div>
+                <div class="rc3-info">
+                    <div class="rc3-left">
+                        <h4>${dateStr}</h4>
+                        <p>${timeStr}</p>
                     </div>
-                    <div class="rc2-stats-grid">
-                        <div><i class="fa-solid fa-gauge-high"></i> ${d.max || 0} km/h</div>
-                        <div><i class="fa-solid fa-route"></i> ${d.dist.toFixed(1)} km</div>
-                        <div><i class="fa-solid fa-stopwatch"></i> ${d.time}</div>
+                    <div class="rc3-right">
+                        <div class="rc3-stat">
+                            <span>${d.max || 0}</span>
+                            <small>KM/H</small>
+                        </div>
+                        <button class="btn-list-delete" onclick="GarageLogic.deleteDrive(${index}, event)">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </div>
                 </div>
             `;
@@ -167,16 +127,46 @@ const GarageLogic = {
             list.appendChild(card);
         });
 
-        // 3D Starten (da Container jetzt existiert)
+        // 3D & Maps initialisieren
         setTimeout(() => {
             if(window.startGarage3D) window.startGarage3D();
-        }, 100);
+            this.initMiniMaps();
+        }, 150);
+    },
+
+    initMiniMaps: function() {
+        this.drives.forEach((d, index) => {
+            const elId = 'mini-map-' + index;
+            const el = document.getElementById(elId);
+            if(!el) return;
+            
+            // Check if map already exists (Leaflet property)
+            if(el._leaflet_id) return; 
+
+            const m = L.map(elId, {
+                zoomControl: false, attributionControl: false,
+                dragging: false, touchZoom: false, doubleClickZoom: false, 
+                scrollWheelZoom: false, boxZoom: false, keyboard: false
+            });
+            
+            // Dark Layer
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(m);
+
+            if(d.path && d.path.length > 1) {
+                const latLngs = d.path.map(p => [p.lat, p.lng]);
+                const line = L.polyline(latLngs, {color: '#30d158', weight: 3}).addTo(m);
+                m.fitBounds(line.getBounds(), {padding:[10,10]});
+            } else {
+                m.setView([51.1657, 10.4515], 10);
+            }
+        });
     },
 
     openDetails: function(drive, index) {
+        if(window.hideGarage3D) window.hideGarage3D();
+        document.getElementById('global-nav').classList.add('hidden'); // Nav weg!
         document.getElementById('detail-overlay').classList.remove('hidden');
         
-        // Map Logic wie gehabt ...
         setTimeout(() => {
             const container = document.getElementById('detail-map');
             if(window.detailMapInstance) { window.detailMapInstance.remove(); window.detailMapInstance = null; }
@@ -204,8 +194,6 @@ const GarageLogic = {
                     bounds.extend([p1.lat, p1.lng]);
                 }
                 window.detailMapInstance.fitBounds(bounds, {padding:[30,30]});
-            } else {
-                window.detailMapInstance.setView([51.1657, 10.4515], 6);
             }
         }, 100);
 
@@ -271,5 +259,7 @@ const GarageLogic = {
 
     closeDetails: function() {
         document.getElementById('detail-overlay').classList.add('hidden');
+        document.getElementById('global-nav').classList.remove('hidden'); // Nav wieder da
+        if(window.showGarage3D) window.showGarage3D();
     }
 };
