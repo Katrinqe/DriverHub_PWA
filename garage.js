@@ -43,6 +43,36 @@ const GarageLogic = {
         }
     },
 
+    generateRouteSVG: function(path) {
+        if (!path || path.length < 2) return "";
+
+        let minLat = 999, maxLat = -999, minLng = 999, maxLng = -999;
+        path.forEach(p => {
+            if(p.lat < minLat) minLat = p.lat;
+            if(p.lat > maxLat) maxLat = p.lat;
+            if(p.lng < minLng) minLng = p.lng;
+            if(p.lng > maxLng) maxLng = p.lng;
+        });
+
+        const width = maxLng - minLng;
+        const height = maxLat - minLat;
+        if(width === 0 || height === 0) return "M0,50 L100,50";
+
+        let d = "";
+        path.forEach((p, i) => {
+            const x = ((p.lng - minLng) / width) * 100;
+            const y = 100 - ((p.lat - minLat) / height) * 100;
+            if(i === 0) d += `M${x},${y}`;
+            else d += ` L${x},${y}`;
+        });
+        
+        return `<svg viewBox="-10 -10 120 120" class="mini-route-svg">
+                    <path d="${d}" fill="none" stroke="#30d158" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="${((path[0].lng - minLng)/width)*100}" cy="${100-((path[0].lat-minLat)/height)*100}" r="8" fill="#fff" />
+                    <circle cx="${((path[path.length-1].lng - minLng)/width)*100}" cy="${100-((path[path.length-1].lat-minLat)/height)*100}" r="8" fill="#bf5af2" />
+                </svg>`;
+    },
+
     render: function() {
         const list = document.getElementById('garage-content');
         list.innerHTML = '';
@@ -54,7 +84,7 @@ const GarageLogic = {
             if(d.max > topSpeedEver) topSpeedEver = d.max;
         });
 
-        // --- NAME INPUT (FREE FLOATING) ---
+        // --- NAME INPUT ---
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
         nameInput.className = 'garage-name-input';
@@ -62,12 +92,13 @@ const GarageLogic = {
         nameInput.oninput = (e) => { this.saveCarName(e.target.value); };
         list.appendChild(nameInput);
 
-        // --- SPACER FÜR 3D AUTO ---
-        const spacer = document.createElement('div');
-        spacer.className = 'garage-car-spacer';
-        list.appendChild(spacer);
+        // --- 3D AUTO CONTAINER (FIX: ID matched jetzt car3d.js) ---
+        const carStage = document.createElement('div');
+        carStage.id = 'hero-3d-stage'; // WICHTIG: Das ist die ID, die car3d.js sucht!
+        carStage.className = 'hero-3d-stage';
+        list.appendChild(carStage);
 
-        // --- STATS ROW (FLAT) ---
+        // --- STATS ROW ---
         const statsRow = document.createElement('div');
         statsRow.className = 'stats-row-flat';
         statsRow.innerHTML = `
@@ -86,13 +117,12 @@ const GarageLogic = {
         `;
         list.appendChild(statsRow);
 
-        // --- DRIVE LIST TITLE ---
+        // --- DRIVE LIST ---
         const title = document.createElement('div');
         title.className = 'ride-list-title';
         title.innerText = 'RECENT DRIVES';
         list.appendChild(title);
 
-        // --- DRIVE LIST ITEMS ---
         this.drives.forEach((d, index) => {
             const card = document.createElement('div');
             card.className = 'ride-card-v3';
@@ -101,11 +131,15 @@ const GarageLogic = {
             const dateStr = dateObj.toLocaleDateString();
             const timeStr = dateObj.toLocaleTimeString().slice(0,5);
             
-            // Container für echte Map
+            // Entweder Leaflet (siehe initMiniMaps) oder SVG (hier)
+            // Wir nutzen erst mal das SVG für Performance, später kann man Leaflet aktivieren
+            const miniMap = this.generateRouteSVG(d.path);
             const mapId = 'mini-map-' + index;
 
             card.innerHTML = `
-                <div class="mini-map-container" id="${mapId}"></div>
+                <div class="mini-map-container" id="${mapId}">
+                    ${miniMap} 
+                </div>
                 <div class="rc3-info">
                     <div class="rc3-left">
                         <h4>${dateStr}</h4>
@@ -127,10 +161,13 @@ const GarageLogic = {
             list.appendChild(card);
         });
 
-        // 3D & Maps initialisieren
+        // 3D Starten mit Verzögerung
         setTimeout(() => {
             if(window.startGarage3D) window.startGarage3D();
-            this.initMiniMaps();
+            
+            // Optional: Wenn du echte Maps in der Liste willst, hier initMiniMaps() aufrufen.
+            // Aktuell SVG, weil stabiler. Wenn du echte Maps willst, sag bescheid.
+            this.initMiniMaps(); 
         }, 150);
     },
 
@@ -138,10 +175,10 @@ const GarageLogic = {
         this.drives.forEach((d, index) => {
             const elId = 'mini-map-' + index;
             const el = document.getElementById(elId);
+            // Wenn SVG drin ist, überschreiben wir es mit Leaflet Map (wenn gewollt)
+            // Hier nutzen wir Leaflet:
             if(!el) return;
-            
-            // Check if map already exists (Leaflet property)
-            if(el._leaflet_id) return; 
+            el.innerHTML = ""; // SVG weg
 
             const m = L.map(elId, {
                 zoomControl: false, attributionControl: false,
@@ -149,7 +186,6 @@ const GarageLogic = {
                 scrollWheelZoom: false, boxZoom: false, keyboard: false
             });
             
-            // Dark Layer
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(m);
 
             if(d.path && d.path.length > 1) {
@@ -164,7 +200,7 @@ const GarageLogic = {
 
     openDetails: function(drive, index) {
         if(window.hideGarage3D) window.hideGarage3D();
-        document.getElementById('global-nav').classList.add('hidden'); // Nav weg!
+        document.getElementById('global-nav').classList.add('hidden'); 
         document.getElementById('detail-overlay').classList.remove('hidden');
         
         setTimeout(() => {
@@ -259,7 +295,7 @@ const GarageLogic = {
 
     closeDetails: function() {
         document.getElementById('detail-overlay').classList.add('hidden');
-        document.getElementById('global-nav').classList.remove('hidden'); // Nav wieder da
+        document.getElementById('global-nav').classList.remove('hidden');
         if(window.showGarage3D) window.showGarage3D();
     }
 };
