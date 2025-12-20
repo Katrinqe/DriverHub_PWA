@@ -8,70 +8,100 @@ function init3D() {
     const container = document.getElementById('garage-car-stage');
     if (!container) return;
 
-    // 1. Scene Setup
+    // Aufräumen falls schon was da ist
+    while(container.firstChild) { container.removeChild(container.firstChild); }
+
+    // 1. Scene
     scene = new THREE.Scene();
     
-    // 2. Camera
-    // (FOV, Aspect, Near, Far)
-    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(3, 1.5, 4); // Schräg vorne oben
-
+    // 2. Camera (Bessere Perspektive: Tiefer und näher)
+    camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(4, 1.5, 5); 
+    
     // 3. Renderer
-    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); // Alpha true = Transparenter Hintergrund
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
     renderer.setSize(container.clientWidth, container.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Performance Limit
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.5; // Heller
     container.appendChild(renderer.domElement);
 
-    // 4. Licht (Wichtig für Glanz)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Grundhelligkeit
+    // 4. Licht (Studio Setup)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); 
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    dirLight.position.set(5, 10, 7);
-    scene.add(dirLight);
+    const keyLight = new THREE.DirectionalLight(0xffffff, 3.0);
+    keyLight.position.set(5, 10, 7);
+    scene.add(keyLight);
     
-    const spotLight = new THREE.SpotLight(0x007aff, 5); // Blaues Effektlicht von hinten
-    spotLight.position.set(-5, 5, -5);
-    scene.add(spotLight);
+    const fillLight = new THREE.DirectionalLight(0xbf5af2, 1.5); // Lila Garage-Glow von der Seite
+    fillLight.position.set(-5, 2, -5);
+    scene.add(fillLight);
 
-    // 5. Controls (Drehen mit Finger)
+    const rimLight = new THREE.SpotLight(0x007aff, 5.0); // Blaues Kantenlicht von hinten
+    rimLight.position.set(0, 5, -10);
+    scene.add(rimLight);
+
+    // 5. Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
-    controls.enableZoom = false; // Kein Reinzoomen
-    controls.enablePan = false;  // Kein Verschieben
-    controls.autoRotate = true;  // Langsames Drehen
-    controls.autoRotateSpeed = 2.0;
+    controls.enableZoom = false;
+    controls.enablePan = false;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 1.5;
+    controls.maxPolarAngle = Math.PI / 2; // Nicht unter den Boden gucken
 
     // 6. Load Car
     const loader = new GLTFLoader();
-    loader.load('car.glb', function (gltf) {
-        carModel = gltf.scene;
-        
-        // Auto zentrieren und skalieren
-        const box = new THREE.Box3().setFromObject(carModel);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        
-        // Skalierung anpassen, damit es ins Bild passt
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 3.5 / maxDim; // 3.5 ist ein guter Wert für die Stage
-        carModel.scale.set(scale, scale, scale);
-        
-        // Pivot korrigieren (damit es sich um die Mitte dreht)
-        carModel.position.x = -center.x * scale;
-        carModel.position.y = -center.y * scale - 0.5; // Leicht nach unten ziehen
-        carModel.position.z = -center.z * scale;
+    
+    // WICHTIG: Dateiname muss stimmen!
+    loader.load('car.glb', 
+        function (gltf) {
+            carModel = gltf.scene;
+            
+            // Auto Box berechnen
+            const box = new THREE.Box3().setFromObject(carModel);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            
+            // Skalierung: Fülle den Container gut aus
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const scale = 4.5 / maxDim; // Größer als vorher
+            carModel.scale.set(scale, scale, scale);
+            
+            // Zentrieren (Pivot unten mitte)
+            carModel.position.x = -center.x * scale;
+            carModel.position.y = -box.min.y * scale - 0.8; // Leicht absenken für "Bodenhaftung"
+            carModel.position.z = -center.z * scale;
 
-        scene.add(carModel);
+            // Materialien optimieren (Glanz)
+            carModel.traverse((child) => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    if(child.material) {
+                        child.material.envMapIntensity = 1.0;
+                        child.material.needsUpdate = true;
+                    }
+                }
+            });
 
-    }, undefined, function (error) {
-        console.error('An error happened loading the car:', error);
-    });
+            scene.add(carModel);
+            console.log("Car loaded successfully");
+        }, 
+        undefined, 
+        function (error) {
+            console.error('Error loading car:', error);
+            // FALLBACK: Roter Würfel, damit man sieht, dass 3D generell geht
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const cube = new THREE.Mesh(geometry, material);
+            scene.add(cube);
+        }
+    );
 
-    // 7. Animation Loop
+    // 7. Animation
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
@@ -79,7 +109,7 @@ function init3D() {
     }
     animate();
 
-    // Resize Handler
+    // Resize
     window.addEventListener('resize', () => {
         if(!container) return;
         camera.aspect = container.clientWidth / container.clientHeight;
@@ -88,8 +118,8 @@ function init3D() {
     });
 }
 
-// Starten, sobald das DOM da ist
+// Start
 document.addEventListener("DOMContentLoaded", () => {
-    // Kurze Verzögerung, damit Container sicher da ist
-    setTimeout(init3D, 100);
+    // Warten bis Screen sichtbar ist, sonst falsche Größe
+    setTimeout(init3D, 500);
 });
