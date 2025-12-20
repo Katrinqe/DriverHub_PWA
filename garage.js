@@ -88,7 +88,7 @@ const GarageLogic = {
         const showroom = document.createElement('div');
         showroom.className = 'showroom-container';
 
-        // 1. Name Background (Hollow)
+        // Name
         const nameBg = document.createElement('input');
         nameBg.type = 'text';
         nameBg.className = 'showroom-name-input';
@@ -96,13 +96,13 @@ const GarageLogic = {
         nameBg.oninput = (e) => { this.saveCarName(e.target.value); };
         showroom.appendChild(nameBg);
 
-        // 2. 3D Stage
+        // 3D Stage
         const carStage = document.createElement('div');
         carStage.id = 'hero-3d-stage';
         carStage.className = 'hero-3d-stage';
         showroom.appendChild(carStage);
 
-        // 3. Floating Stats
+        // FIX: Floating Stats (JETZT MIT 3 ITEMS: MAX, KM, 0-100)
         const floatStats = document.createElement('div');
         floatStats.className = 'floating-stats';
         floatStats.innerHTML = `
@@ -115,12 +115,17 @@ const GarageLogic = {
                 <span class="fs-val">${totalKm.toFixed(0)}</span>
                 <span class="fs-label">KM</span>
             </div>
+            <div class="fs-line"></div>
+            <div class="fs-item">
+                <span class="fs-val">--</span>
+                <span class="fs-label">0-100</span>
+            </div>
         `;
         showroom.appendChild(floatStats);
 
         list.appendChild(showroom);
 
-        // --- LOGBOOK (TIMELINE) ---
+        // --- LOGBOOK ---
         const logbook = document.createElement('div');
         logbook.className = 'logbook-container';
         
@@ -166,8 +171,6 @@ const GarageLogic = {
                 </div>
             `;
             
-            // Pass the drive object indirectly via index to openDetails
-            // (Quick fix for onclick quote issues)
             entry.querySelector('.lb-card').onclick = () => { this.openDetails(d, index); };
 
             logbook.appendChild(entry);
@@ -175,7 +178,6 @@ const GarageLogic = {
 
         list.appendChild(logbook);
 
-        // Init
         setTimeout(() => {
             if(window.startGarage3D) window.startGarage3D();
             this.initMiniMaps(); 
