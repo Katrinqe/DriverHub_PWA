@@ -1,13 +1,13 @@
 const DriverLogic = {
     interval: null,
-    saveInterval: null, // Für Crash Recovery
+    saveInterval: null, 
     startTime: 0,
     startDist: 0,
     currentSpeed: 0,
     maxSpeed: 0, 
     path: [], 
     lastSpeedCheck: 0,
-    lastRecordedPoint: null, // Für Smart Recording
+    lastRecordedPoint: null, 
 
     start: function() {
         this.startTime = Date.now();
@@ -27,7 +27,6 @@ const DriverLogic = {
             this.updateTime();
         }, 1000);
 
-        // FIX: CRASH PROTECTION (Alle 30sek speichern)
         if(this.saveInterval) clearInterval(this.saveInterval);
         this.saveInterval = setInterval(() => {
             this.saveCrashData();
@@ -46,16 +45,15 @@ const DriverLogic = {
             this.maxSpeed = speed;
         }
 
-        // FIX: SMART RECORDING
-        // Nur speichern, wenn > 15m bewegt ODER dies der erste Punkt ist
+        // SMART RECORDING (15m Threshold)
         let shouldRecord = false;
         const newLatLng = L.latLng(lat, lng);
 
         if (!this.lastRecordedPoint) {
             shouldRecord = true;
         } else {
-            const dist = this.lastRecordedPoint.distanceTo(newLatLng); // Meter
-            if (dist > 15) { // Nur alle 15m einen Punkt setzen!
+            const dist = this.lastRecordedPoint.distanceTo(newLatLng); 
+            if (dist > 15) { 
                 shouldRecord = true;
             }
         }
@@ -68,7 +66,6 @@ const DriverLogic = {
                 time: Date.now()
             });
             
-            // Distanz aufsummieren
             if (this.lastRecordedPoint) {
                 const distKm = this.lastRecordedPoint.distanceTo(newLatLng) / 1000;
                 this.startDist += distKm;
@@ -77,7 +74,6 @@ const DriverLogic = {
             this.lastRecordedPoint = newLatLng;
         }
 
-        // UI Update (immer, damit Tacho flüssig ist)
         document.getElementById('hud-speed').innerText = this.currentSpeed;
         document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
         
@@ -93,7 +89,7 @@ const DriverLogic = {
             startTime: this.startTime,
             startDist: this.startDist,
             maxSpeed: this.maxSpeed,
-            path: this.path // Kann groß werden, aber Smart Recording hilft
+            path: this.path
         };
         localStorage.setItem('driverhub_crash_save', JSON.stringify(data));
     },
@@ -128,15 +124,13 @@ const DriverLogic = {
             } else { 
                 el.classList.add('hidden'); 
             }
-        }).catch(e => { 
-            // Silent error
-        });
+        }).catch(e => { });
     },
 
     stop: function() {
         clearInterval(this.interval);
         clearInterval(this.saveInterval);
-        this.clearCrashData(); // Fahrt beendet, kein Crash-Restore nötig
+        this.clearCrashData(); 
 
         const durationMs = Date.now() - this.startTime;
         const durationMin = Math.floor(durationMs / 60000);
