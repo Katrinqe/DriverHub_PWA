@@ -12,98 +12,31 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
 body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #fff; overflow: hidden; width: 100vw; height: 100vh; }
 
-/* =========================================
-   PRIORITY 1: MAP & USER MARKER (BASICS)
-   ========================================= */
-
+/* MAP */
 #background-map { 
-    position: fixed; 
-    top: 50%; 
-    left: 50%; 
-    width: 150vmax; 
-    height: 150vmax; 
-    z-index: 0; 
-    background-color: #000; 
-    transform-origin: center center;
-    transform: translate(-50%, -50%); 
-    transition: none; 
+    position: fixed; top: 50%; left: 50%; width: 150vmax; height: 150vmax; z-index: 0; 
+    background-color: #000; transform-origin: center center;
+    transform: translate(-50%, -50%); transition: none; 
 }
 .map-smooth-rotate { transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) !important; }
 .map-locked { pointer-events: none !important; }
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
-/* USER MARKER (BLUE DOT) */
-.user-marker-wrap { 
-    position: relative; 
-    width: 40px; 
-    height: 40px; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    transition: none; 
-}
+/* USER MARKER */
+.user-marker-wrap { position: relative; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; transition: none; }
 .user-marker-wrap.smooth { transition: transform 1s linear; }
-
-.user-dot { 
-    width: 18px; 
-    height: 18px; 
-    background-color: #007aff; 
-    border: 3px solid white; 
-    border-radius: 50%; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5); 
-    z-index: 999; 
-    position: relative; 
-}
-
-.user-pulse { 
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    width: 40px; 
-    height: 40px; 
-    background-color: rgba(0, 122, 255, 0.5); 
-    border-radius: 50%; 
-    z-index: 998; 
-    animation: pulse-animation 2s infinite; 
-}
-
-.user-arrow-icon { 
-    width: 40px; 
-    height: 40px; 
-    background: transparent; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    z-index: 1000; 
-}
-.user-arrow-icon i { 
-    color: #007aff; 
-    font-size: 2rem; 
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); 
-}
-
-@keyframes pulse-animation { 
-    0% { transform: scale(0.5); opacity: 1; } 
-    100% { transform: scale(1.3); opacity: 0; } 
-}
+.user-dot { width: 18px; height: 18px; background-color: #007aff; border: 3px solid white; border-radius: 50%; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 999; position: relative; }
+.user-pulse { position: absolute; top: 0; left: 0; width: 40px; height: 40px; background-color: rgba(0, 122, 255, 0.5); border-radius: 50%; z-index: 998; animation: pulse-animation 2s infinite; }
+.user-arrow-icon { width: 40px; height: 40px; background: transparent; display: flex; justify-content: center; align-items: center; z-index: 1000; }
+.user-arrow-icon i { color: #007aff; font-size: 2rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+@keyframes pulse-animation { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.3); opacity: 0; } }
 
 /* GLOBAL FADE */
-#global-top-fade { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 160px; 
-    background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 100%); 
-    pointer-events: none; 
-    z-index: 5; 
-    opacity: 0; 
-    transition: opacity 0.5s ease; 
-}
+#global-top-fade { position: fixed; top: 0; left: 0; width: 100%; height: 160px; background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 100%); pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.5s ease; }
 #global-top-fade.visible { opacity: 1; }
 
-/* SCREEN LOGIC */
+/* SCREENS */
 .hidden { display: none !important; }
 .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; z-index: 10; opacity: 0; transform: scale(0.98); pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; overflow: hidden; }
 .screen.active { z-index: 20; opacity: 1; transform: scale(1); pointer-events: auto; }
@@ -125,97 +58,141 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* --- GARAGE LEGACY (V81-V88) --- */
-/* (Wir lassen das drin, falls wir zurück müssen) */
-.ride-card { background: rgba(30, 30, 30, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 18px; padding: 15px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.1s, background 0.2s; position: relative; overflow: hidden; }
-.rc-left { display: flex; align-items: center; gap: 15px; }
-.rc-icon-box { width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 1.1rem; }
-.rc-info { display: flex; flex-direction: column; }
-.rc-title { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 2px; }
-.rc-meta { font-size: 0.75rem; color: #777; font-weight: 500; }
-.rc-right { text-align: right; }
-.rc-score { font-family: monospace; font-weight: 700; font-size: 1.1rem; color: var(--garage-icon-color); }
-.rc-label { font-size: 0.6rem; color: #555; display: block; font-weight: 700; }
-.ride-card-v2 { background: #111; border: 1px solid #222; border-radius: 20px; overflow: hidden; display: flex; margin-bottom: 15px; cursor: pointer; transition: transform 0.1s; height: 100px; }
-.rc2-map-preview { width: 100px; background: #000; border-right: 1px solid #222; display: flex; align-items: center; justify-content: center; padding: 10px; }
-.mini-route-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 3px rgba(48, 209, 88, 0.4)); }
-.rc2-details { flex: 1; padding: 12px 15px; display: flex; flex-direction: column; justify-content: space-between; }
-.rc2-header { display: flex; justify-content: space-between; align-items: baseline; }
-.rc2-date { font-weight: 700; font-size: 0.9rem; color: #fff; }
-.rc2-time { font-size: 0.75rem; color: #666; }
-.rc2-stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 8px; }
-.rc2-stats-grid div { font-size: 0.7rem; color: #aaa; display: flex; align-items: center; gap: 5px; }
-.rc2-stats-grid i { color: #555; }
-
-/* --- GARAGE CURRENT (V89/V90) --- */
-#garage-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #000; }
-
-/* AURA */
-.garage-aura {
-    position: absolute;
-    top: 20%; left: -20%; width: 140%; height: 60%;
-    background: radial-gradient(circle, rgba(0, 122, 255, 0.15) 0%, transparent 60%);
-    z-index: 1; pointer-events: none; opacity: 0.8;
+/* --- GARAGE REDESIGN V92 (THE SHOWROOM) --- */
+#garage-bg { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; 
+    background: #000;
+    /* Ganz feiner Gradient von Oben */
+    background: linear-gradient(180deg, #050505 0%, #000 100%);
 }
 
-/* 3D STAGE CONTAINER */
-.hero-3d-stage {
-    width: 100%;
-    height: 250px; 
-    margin-top: 10px;
-    position: relative;
-    z-index: 5;
-    /* Falls car3d.js das Canvas einfügt, muss es sichtbar sein */
-    display: block; 
-}
-
-/* SCROLL LOCK */
 .garage-content {
     position: relative;
     z-index: 10;
     width: 100%;
     height: 100%;
     overflow-y: auto;
-    overscroll-behavior: contain; /* WICHTIG */
-    padding: 20px;
-    padding-top: calc(env(safe-area-inset-top) + 20px);
+    overscroll-behavior: contain;
+    padding: 0; /* Full Width */
     padding-bottom: 120px;
     display: flex;
     flex-direction: column;
 }
 
-/* HERO WINDOW ELEMENTS */
-.garage-name-input {
-    background: transparent; border: none; color: #fff; font-family: 'Rajdhani', sans-serif; font-size: 2.8rem; font-weight: 700; text-transform: uppercase; text-align: center; width: 100%; outline: none; text-shadow: 0 0 15px rgba(0, 122, 255, 0.6); margin-bottom: 0px; z-index: 20; letter-spacing: 2px;
+/* SHOWROOM CONTAINER (Fixed Height, sticky top ish) */
+.showroom-container {
+    width: 100%;
+    height: 60vh; /* 60% of Screen */
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
 }
-.garage-car-spacer { height: 10px; width: 100%; }
 
-.stats-row-flat { display: flex; justify-content: center; gap: 30px; margin-bottom: 30px; z-index: 20; }
-.stat-flat { display: flex; flex-direction: column; align-items: center; }
-.stat-flat .val { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1; }
-.stat-flat .label { font-size: 0.6rem; color: #888; font-weight: 700; letter-spacing: 1px; margin-top: 4px; text-transform: uppercase; }
-
-/* RIDE CARD V3 (ACTIVE) */
-.ride-list-title { font-size: 0.8rem; color: #666; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; margin-bottom: 15px; padding-left: 5px; }
-
-.ride-card-v3 {
-    background: #111; border: 1px solid #222; border-radius: 20px; overflow: hidden; margin-bottom: 15px; cursor: pointer; transition: transform 0.1s; display: flex; flex-direction: column;
+/* NAME (Behind Car, Hollow Text) */
+.showroom-name-input {
+    position: absolute;
+    top: 15%;
+    left: 0;
+    width: 100%;
+    background: transparent;
+    border: none;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 4.5rem; /* HUGE */
+    font-weight: 900;
+    text-transform: uppercase;
+    text-align: center;
+    outline: none;
+    z-index: 1; /* Behind Car */
+    
+    /* Hollow Text Effect */
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+    letter-spacing: 2px;
 }
-.ride-card-v3:active { transform: scale(0.98); border-color: #444; }
 
-.mini-map-container { width: 100%; height: 120px; background: #080808; position: relative; pointer-events: none; }
+/* 3D STAGE */
+.hero-3d-stage {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 5;
+}
 
-.rc3-info { padding: 15px; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(180deg, rgba(20,20,20,0.9), rgba(10,10,10,1)); }
-.rc3-left h4 { margin: 0; font-size: 1rem; font-weight: 700; color: #fff; }
-.rc3-left p { margin: 3px 0 0; font-size: 0.75rem; color: #666; }
-.rc3-right { display: flex; align-items: center; gap: 15px; }
-.rc3-stat { text-align: right; }
-.rc3-stat span { display: block; font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; line-height: 1; }
-.rc3-stat small { font-size: 0.6rem; color: #666; text-transform: uppercase; }
-.btn-list-delete { background: transparent; border: none; color: #444; font-size: 1rem; padding: 10px; cursor: pointer; transition: 0.2s; }
-.btn-list-delete:active { color: var(--danger); }
+/* FLOATING STATS (Foreground) */
+.floating-stats {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    z-index: 20;
+    padding: 10px 20px;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(5px);
+    border-radius: 30px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.fs-item { display: flex; flex-direction: column; align-items: center; }
+.fs-val { font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 700; color: #fff; line-height: 1; }
+.fs-label { font-size: 0.6rem; color: var(--primary); font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
+.fs-line { width: 1px; height: 25px; background: rgba(255,255,255,0.2); }
 
-/* DETAIL FULLSCREEN */
+/* LOGBOOK (Timeline List) */
+.logbook-container {
+    padding: 20px;
+    background: transparent;
+    position: relative;
+    flex: 1;
+}
+.logbook-title { font-size: 0.7rem; color: #555; font-weight: 700; letter-spacing: 2px; margin-bottom: 20px; text-align: center; }
+
+.logbook-entry {
+    display: flex;
+    height: 110px; /* Fixed height per entry */
+    margin-bottom: 10px;
+}
+
+.lb-line {
+    width: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.lb-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); margin-top: 15px; }
+.lb-vertical { width: 1px; flex: 1; background: rgba(255,255,255,0.1); margin-top: 5px; }
+
+.lb-content { flex: 1; padding-left: 10px; }
+
+.lb-card {
+    background: #0a0a0a;
+    border: 1px solid #1a1a1a;
+    border-radius: 15px;
+    height: 100%;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+.lb-card:active { border-color: #333; }
+
+.lb-map-box { width: 100px; background: #000; position: relative; pointer-events: none; }
+.mini-route-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 2px rgba(48, 209, 88, 0.3)); }
+
+.lb-info { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
+.lb-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.lb-date { color: #fff; font-weight: 700; font-size: 0.9rem; }
+.lb-speed { font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; font-weight: 700; color: #ccc; }
+.lb-speed small { font-size: 0.6rem; color: #666; }
+.lb-sub { display: flex; gap: 15px; font-size: 0.7rem; color: #666; font-weight: 600; }
+
+.lb-delete { 
+    position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; 
+    background: transparent; border: none; color: #333; font-size: 1rem; 
+    border-top-left-radius: 15px; cursor: pointer;
+}
+.lb-delete:active { background: var(--danger); color: white; }
+
+/* FULL SCREEN DETAIL VIEW */
 .detail-header {
     width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px);
     display: flex; justify-content: space-between; align-items: center;
@@ -225,7 +202,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .detail-header h2 { margin: 0; font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; text-transform: uppercase; }
 .btn-close-detail-text { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; }
 
-/* TELEMETRY CONTENT */
+/* Detail Telemetry View */
 .telemetry-map-wrap { width: 100%; height: 40vh; position: relative; border-bottom: 1px solid #333; margin-top: 80px; }
 .telemetry-content { padding: 20px; padding-bottom: 80px; background: #000; }
 .telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
@@ -265,28 +242,6 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .sum-item small { font-size: 0.8rem; color: var(--primary); font-weight: 600; margin-top: 5px; }
 .sum-divider { width: 100%; height: 1px; background: #333; margin: 5px 0; }
 .summary-actions { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px; padding-bottom: 50px; }
-
-/* NAVI TOP & BOTTOM HUD */
-.navi-top-hud { position: fixed; top: 0; left: 0; width: 100%; height: 160px; z-index: 100; pointer-events: none; background: linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.8) 60%, transparent 100%); display: flex; align-items: flex-start; padding-top: calc(env(safe-area-inset-top) + 20px); padding-left: 20px; padding-right: 20px; gap: 15px; }
-.nav-arrow-box { width: 50px; height: 50px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4); flex-shrink: 0; }
-.nav-arrow-box i { font-size: 1.8rem; color: white; }
-.nav-instruction-box { flex: 1; display: flex; flex-direction: column; justify-content: center; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-.nav-instruction-box h3 { margin: 0; font-size: 1.1rem; line-height: 1.2; font-weight: 800; }
-.nav-instruction-box span { font-size: 0.9rem; color: #ccc; font-weight: 600; margin-top: 4px; }
-.nav-eta-box { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 8px 12px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
-.nav-eta-box .label { font-size: 0.6rem; color: #aaa; font-weight: 700; }
-.nav-eta-box .val { font-size: 1.1rem; font-weight: 800; }
-.navi-bottom-hud { position: fixed; bottom: 0; left: 0; width: 100%; height: 140px; background: linear-gradient(to top, #000 0%, rgba(0,0,0,0.9) 60%, transparent 100%); z-index: 100; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 40px; pointer-events: none; }
-.nbh-stats { display: flex; align-items: center; background: rgba(20,20,20,0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 10px 20px; gap: 15px; pointer-events: auto; }
-.nbh-item { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
-.nbh-item .label { font-size: 0.6rem; color: #888; font-weight: 700; margin-bottom: 2px; }
-.nbh-value-group { display: flex; align-items: baseline; gap: 2px; }
-.nbh-value-group .val { font-size: 1.3rem; font-weight: 800; color: #fff; }
-.nbh-value-group .unit { font-size: 0.8rem; color: var(--primary); font-weight: 600; }
-.nbh-divider { width: 1px; height: 30px; background: rgba(255,255,255,0.15); }
-.btn-nav-floating { position: absolute; width: 50px; height: 50px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 101; pointer-events: auto; }
-.btn-nav-floating.cancel { bottom: 150px; right: 20px; background: #ff3b30; color: white; }
-.btn-nav-floating.recenter { bottom: 150px; left: 20px; background: #222; color: var(--primary); border: 1px solid #444; }
 
 /* EXPLORE & FILTER */
 .custom-map-icon { display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.5); font-size: 1.2rem; border: 2px solid white; width: 30px; height: 30px; transition: transform 0.2s; }
