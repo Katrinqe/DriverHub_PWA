@@ -3,12 +3,24 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let scene, camera, renderer, carModel, placeholderMesh;
+let isInitialized = false; // Schutz vor Doppel-Start
 
 function init3D() {
+    // Wenn schon geladen, breche ab (wir wollen nicht 2 Autos laden)
+    if (isInitialized) return;
+
     const container = document.getElementById('garage-car-stage');
     if (!container) return;
+    
+    // Sicherheitscheck: Hat der Container eine Größe?
+    if (container.clientWidth === 0 || container.clientHeight === 0) {
+        console.log("Container hidden, waiting...");
+        return; 
+    }
 
-    // Clean up
+    isInitialized = true; // Markieren als "läuft"
+
+    // Aufräumen
     while(container.firstChild) { container.removeChild(container.firstChild); }
 
     // 1. Scene
@@ -23,7 +35,7 @@ function init3D() {
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.5;
     container.appendChild(renderer.domElement);
 
     // 4. Licht
@@ -34,11 +46,11 @@ function init3D() {
     keyLight.position.set(5, 10, 7);
     scene.add(keyLight);
     
-    const fillLight = new THREE.DirectionalLight(0xbf5af2, 2.0); // Lila
+    const fillLight = new THREE.DirectionalLight(0xbf5af2, 2.0); 
     fillLight.position.set(-5, 0, -5);
     scene.add(fillLight);
 
-    const rimLight = new THREE.SpotLight(0x007aff, 5.0); // Blau
+    const rimLight = new THREE.SpotLight(0x007aff, 5.0);
     rimLight.position.set(0, 5, -10);
     scene.add(rimLight);
 
@@ -52,9 +64,9 @@ function init3D() {
     controls.autoRotateSpeed = 2.0;
     controls.maxPolarAngle = Math.PI / 2;
 
-    // --- PLATZHALTER (Damit man sofort was sieht) ---
+    // --- PLATZHALTER (Drahtgitter Kugel) ---
     const geometry = new THREE.IcosahedronGeometry(1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x555555, wireframe: true });
+    const material = new THREE.MeshBasicMaterial({ color: 0x888888, wireframe: true });
     placeholderMesh = new THREE.Mesh(geometry, material);
     scene.add(placeholderMesh);
 
@@ -63,7 +75,7 @@ function init3D() {
     
     loader.load('car.glb', 
         function (gltf) {
-            // SUCCESS: Platzhalter weg, Auto rein
+            // SUCCESS
             if(placeholderMesh) scene.remove(placeholderMesh);
 
             carModel = gltf.scene;
@@ -80,13 +92,10 @@ function init3D() {
             carModel.position.y = -box.min.y * scale - 1.0; 
             carModel.position.z = -center.z * scale;
 
-            // Materials aufhübschen
             carModel.traverse((child) => {
-                if (child.isMesh) {
-                    if(child.material) {
-                        child.material.envMapIntensity = 1.0;
-                        child.material.needsUpdate = true;
-                    }
+                if (child.isMesh && child.material) {
+                    child.material.envMapIntensity = 1.0;
+                    child.material.needsUpdate = true;
                 }
             });
 
@@ -95,10 +104,9 @@ function init3D() {
         undefined, 
         function (error) {
             console.error('Error loading car:', error);
-            // ERROR: Platzhalter wird ROT
+            // ERROR: Kugel wird rot
             if(placeholderMesh) {
                 placeholderMesh.material.color.setHex(0xff0000); 
-                // Schneller drehen bei Fehler
                 controls.autoRotateSpeed = 10.0; 
             }
         }
@@ -108,7 +116,6 @@ function init3D() {
     function animate() {
         requestAnimationFrame(animate);
         
-        // Platzhalter animieren solange er da ist
         if(placeholderMesh && !carModel) {
             placeholderMesh.rotation.y += 0.01;
             placeholderMesh.rotation.x += 0.005;
@@ -127,7 +134,5 @@ function init3D() {
     });
 }
 
-// Init wenn sichtbar
-document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(init3D, 200);
-});
+// WICHTIG: Funktion global verfügbar machen!
+window.startGarage3D = init3D;
