@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=70">
+    <link rel="stylesheet" href="style.css?v=81">
 </head>
 <body>
 
@@ -260,30 +260,20 @@
 
     <div id="garage-screen" class="screen hidden">
         <div id="garage-bg"></div>
-        <div class="garage-header"><h2>Garage</h2></div>
-        <div class="garage-total-card">
-            <div class="g-stat"><span id="total-drives">0</span><label>DRIVES</label></div>
-            <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
-        </div>
-        <div id="garage-list" class="garage-list interactive-element"></div>
+        <div id="garage-content" class="garage-content interactive-element"></div>
         
         <div id="detail-overlay" class="hidden interactive-element">
-            <div class="detail-header">
-                <h3 id="det-date">Date</h3>
-                <button class="close-detail-btn" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="detail-content">
-                <div id="detail-map-container"><div id="detail-map"></div></div>
-                <div class="detail-stats-row">
-                    <div class="d-stat-box"><span class="label">DIST</span><span class="val" id="det-dist">0 km</span></div>
-                    <div class="d-stat-box"><span class="label">AVG</span><span class="val" id="det-avg">0</span></div>
-                    <div class="d-stat-box"><span class="label">MAX</span><span class="val" id="det-max">0</span></div>
+            <button class="btn-close-detail" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="telemetry-map-wrap"><div id="detail-map"></div></div>
+            <div class="telemetry-content">
+                <div class="telemetry-grid">
+                    <div class="t-box"><span class="t-label">MAX SPEED</span><span class="t-val" id="t-max">0</span></div>
+                    <div class="t-box"><span class="t-label">AVG SPEED</span><span class="t-val" id="t-avg">0</span></div>
+                    <div class="t-box"><span class="t-label">DISTANCE</span><span class="t-val" id="t-dist">0 km</span></div>
+                    <div class="t-box"><span class="t-label">DURATION</span><span class="t-val" id="t-time">0:00</span></div>
                 </div>
-                <div style="text-align: center; margin: 10px 0; font-size: 0.9rem; color: #888;">
-                    Duration: <span id="det-time" style="color:white; font-weight:700;">00:00</span>
-                </div>
-                <div class="chart-container"><canvas id="speedChart"></canvas></div>
-                <div style="height: 50px;"></div>
+                <div class="t-chart-box"><canvas id="speedChart"></canvas></div>
+                <button id="btn-detail-delete" class="btn-danger-glass interactive-element" style="width:100%; margin-top:20px;">DELETE DATA</button>
             </div>
         </div>
     </div>
@@ -295,10 +285,10 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="explore.js?v=70"></script>
-    <script src="garage.js?v=70"></script>
-    <script src="drive.js?v=70"></script>
-    <script src="navi.js?v=70"></script>
-    <script src="app.js?v=70"></script>
+    <script src="explore.js?v=81"></script>
+    <script src="garage.js?v=81"></script>
+    <script src="drive.js?v=81"></script>
+    <script src="navi.js?v=81"></script>
+    <script src="app.js?v=81"></script>
 </body>
 </html>
