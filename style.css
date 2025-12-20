@@ -251,3 +251,26 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.8s ease-out; pointer-events: none;}
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+/* ... [Vorheriges CSS bleibt gleich] ... */
+
+/* GARAGE 3D STAGE */
+#garage-car-stage {
+    position: absolute;
+    top: 50px; /* Unter der Statusbar */
+    right: 0;
+    width: 60%; /* Nimmt 60% der Breite rechts ein */
+    height: 35vh; /* 35% der Höhe */
+    z-index: 1; /* HINTER dem Content (der hat keinen z-index im Flow, aber Text ist höher) */
+    pointer-events: auto; /* Damit man das Auto drehen kann */
+    overflow: visible;
+}
+
+/* WICHTIG: Damit der Content über dem Auto liegt und klickbar bleibt */
+.garage-content {
+    position: relative;
+    z-index: 10;
+    /* Damit man durch den Content hindurch das Auto sehen kann, 
+       müssen wir sicherstellen, dass die Dash-Cards nicht alles verdecken */
+}
+
+/* ... [Rest wie Version 81] ... */
