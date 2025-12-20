@@ -1,11 +1,13 @@
 const DriverLogic = {
     interval: null,
+    saveInterval: null, // Für Crash Recovery
     startTime: 0,
     startDist: 0,
     currentSpeed: 0,
     maxSpeed: 0, 
     path: [], 
-    lastSpeedCheck: 0, // NEU: Damit wir nicht spammen
+    lastSpeedCheck: 0,
+    lastRecordedPoint: null, // Für Smart Recording
 
     start: function() {
         this.startTime = Date.now();
@@ -13,16 +15,23 @@ const DriverLogic = {
         this.path = [];
         this.maxSpeed = 0; 
         this.lastSpeedCheck = 0;
+        this.lastRecordedPoint = null;
         
         document.getElementById('hud-time').innerText = "00:00";
         document.getElementById('hud-dist').innerText = "0.00";
         document.getElementById('hud-speed').innerText = "0";
-        document.getElementById('speed-limit').classList.add('hidden'); // Reset Schild
+        document.getElementById('speed-limit').classList.add('hidden'); 
 
         if(this.interval) clearInterval(this.interval);
         this.interval = setInterval(() => {
             this.updateTime();
         }, 1000);
+
+        // FIX: CRASH PROTECTION (Alle 30sek speichern)
+        if(this.saveInterval) clearInterval(this.saveInterval);
+        this.saveInterval = setInterval(() => {
+            this.saveCrashData();
+        }, 30000);
     },
 
     update: function(pos) {
@@ -37,29 +46,60 @@ const DriverLogic = {
             this.maxSpeed = speed;
         }
 
-        this.path.push({
-            lat: lat,
-            lng: lng,
-            speed: speed,
-            time: Date.now()
-        });
+        // FIX: SMART RECORDING
+        // Nur speichern, wenn > 15m bewegt ODER dies der erste Punkt ist
+        let shouldRecord = false;
+        const newLatLng = L.latLng(lat, lng);
 
-        if (this.path.length > 1) {
-            const last = this.path[this.path.length - 2];
-            const curr = this.path[this.path.length - 1];
-            const p1 = L.latLng(last.lat, last.lng);
-            const p2 = L.latLng(curr.lat, curr.lng);
-            this.startDist += p1.distanceTo(p2) / 1000; 
+        if (!this.lastRecordedPoint) {
+            shouldRecord = true;
+        } else {
+            const dist = this.lastRecordedPoint.distanceTo(newLatLng); // Meter
+            if (dist > 15) { // Nur alle 15m einen Punkt setzen!
+                shouldRecord = true;
+            }
         }
 
+        if (shouldRecord) {
+            this.path.push({
+                lat: lat,
+                lng: lng,
+                speed: speed,
+                time: Date.now()
+            });
+            
+            // Distanz aufsummieren
+            if (this.lastRecordedPoint) {
+                const distKm = this.lastRecordedPoint.distanceTo(newLatLng) / 1000;
+                this.startDist += distKm;
+            }
+            
+            this.lastRecordedPoint = newLatLng;
+        }
+
+        // UI Update (immer, damit Tacho flüssig ist)
         document.getElementById('hud-speed').innerText = this.currentSpeed;
         document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
         
-        // FIX: Nur alle 5 Sekunden abfragen
         if (Date.now() - this.lastSpeedCheck > 5000) {
             this.lastSpeedCheck = Date.now();
             this.checkSpeedLimit(lat, lng);
         }
+    },
+
+    saveCrashData: function() {
+        const data = {
+            active: true,
+            startTime: this.startTime,
+            startDist: this.startDist,
+            maxSpeed: this.maxSpeed,
+            path: this.path // Kann groß werden, aber Smart Recording hilft
+        };
+        localStorage.setItem('driverhub_crash_save', JSON.stringify(data));
+    },
+
+    clearCrashData: function() {
+        localStorage.removeItem('driverhub_crash_save');
     },
 
     updateTime: function() {
@@ -72,7 +112,6 @@ const DriverLogic = {
     },
 
     checkSpeedLimit: function(lat, lng) {
-        // FIX: Echte Abfrage wiederhergestellt
         const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
         const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
         
@@ -80,7 +119,6 @@ const DriverLogic = {
             const el = document.getElementById('speed-limit');
             if(data.elements && data.elements.length > 0) {
                 let max = data.elements[0].tags.maxspeed;
-                // Filtern von "none" oder komischen Werten
                 if(max && !isNaN(parseInt(max))) {
                     el.querySelector('span').innerText = max;
                     el.classList.remove('hidden');
@@ -91,14 +129,15 @@ const DriverLogic = {
                 el.classList.add('hidden'); 
             }
         }).catch(e => { 
-            console.log("Speed Limit Error", e);
-            // Bei Fehler einfach ausblenden
-            document.getElementById('speed-limit').classList.add('hidden');
+            // Silent error
         });
     },
 
     stop: function() {
         clearInterval(this.interval);
+        clearInterval(this.saveInterval);
+        this.clearCrashData(); // Fahrt beendet, kein Crash-Restore nötig
+
         const durationMs = Date.now() - this.startTime;
         const durationMin = Math.floor(durationMs / 60000);
         const durationSec = Math.floor((durationMs % 60000) / 1000);
@@ -119,7 +158,6 @@ const DriverLogic = {
         document.getElementById('sum-comparison-row').classList.add('hidden'); 
 
         switchScreen('summary-screen');
-        
         document.getElementById('global-nav').classList.add('hidden'); 
         
         const mapEl = document.getElementById('background-map');
