@@ -19,9 +19,7 @@ window.addEventListener('load', () => {
     const fade = document.getElementById('global-top-fade');
     if(fade) fade.classList.add('visible');
     
-    // FIX: Garage laden!
     if(typeof GarageLogic !== 'undefined') GarageLogic.init();
-    
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
@@ -261,6 +259,12 @@ function showGarage() {
     switchScreen('garage-screen'); 
     updateNav('garage');
     GarageLogic.render(); 
+    
+    // FIX: 3D Auto starten, wenn Garage sichtbar wird!
+    // Wir warten 100ms, damit das DIV sicher "da" ist
+    if(window.startGarage3D) {
+        setTimeout(() => { window.startGarage3D(); }, 100);
+    }
 }
 
 function showExplore() {
