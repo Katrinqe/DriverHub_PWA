@@ -39,7 +39,7 @@ const GarageLogic = {
         const list = document.getElementById('garage-content');
         list.innerHTML = '';
         
-        // --- 1. DASHBOARD (Bento Grid) ---
+        // --- 1. DASHBOARD ---
         let totalKm = 0;
         let topSpeedEver = 0;
         let totalMinutes = 0;
@@ -47,7 +47,6 @@ const GarageLogic = {
         this.drives.forEach(d => {
             totalKm += d.dist || 0;
             if(d.max > topSpeedEver) topSpeedEver = d.max;
-            // Zeit parsen "MM:SS"
             let parts = d.time.split(':');
             if(parts.length === 2) {
                 totalMinutes += parseInt(parts[0]) + (parseInt(parts[1])/60);
@@ -74,7 +73,7 @@ const GarageLogic = {
         `;
         list.appendChild(dashboard);
 
-        // --- 2. LISTEN (Cards) ---
+        // --- 2. LISTEN ---
         const title = document.createElement('div');
         title.className = 'ride-list-title';
         title.innerText = 'Recent Drives';
@@ -88,7 +87,6 @@ const GarageLogic = {
             const dateStr = dateObj.toLocaleDateString();
             const timeStr = dateObj.toLocaleTimeString().slice(0,5);
             
-            // Icon Logik (Nacht/Tag)
             const hour = dateObj.getHours();
             let icon = (hour > 19 || hour < 6) ? 'fa-moon' : 'fa-sun';
             
@@ -112,9 +110,12 @@ const GarageLogic = {
     },
 
     openDetails: function(drive, index) {
+        // FIX: 3D Auto verstecken
+        if(window.hideGarage3D) window.hideGarage3D();
+
         document.getElementById('detail-overlay').classList.remove('hidden');
         
-        // --- A: KARTE MIT BUNTEM PFAD ---
+        // --- MAP ---
         setTimeout(() => {
             const container = document.getElementById('detail-map');
             if(window.detailMapInstance) { window.detailMapInstance.remove(); window.detailMapInstance = null; }
@@ -126,18 +127,16 @@ const GarageLogic = {
             if(drive.path && drive.path.length > 1) {
                 const bounds = L.latLngBounds([]);
                 
-                // COLORED PATH LOOP
                 for(let i=0; i < drive.path.length - 1; i++) {
                     const p1 = drive.path[i];
                     const p2 = drive.path[i+1];
                     const speed = p1.speed || 0;
                     
-                    // Farbe berechnen
-                    let color = '#ff3b30'; // Rot (langsam < 30)
-                    if(speed > 80) color = '#30d158'; // Grün (schnell)
-                    else if(speed > 30) color = '#ffcc00'; // Gelb (mittel)
+                    let color = '#ff3b30'; 
+                    if(speed > 80) color = '#30d158'; 
+                    else if(speed > 30) color = '#ffcc00'; 
 
-                    const line = L.polyline([[p1.lat, p1.lng], [p2.lat, p2.lng]], {
+                    L.polyline([[p1.lat, p1.lng], [p2.lat, p2.lng]], {
                         color: color, 
                         weight: 4, 
                         opacity: 0.9 
@@ -145,23 +144,21 @@ const GarageLogic = {
                     
                     bounds.extend([p1.lat, p1.lng]);
                 }
-                
                 window.detailMapInstance.fitBounds(bounds, {padding:[30,30]});
             } else {
                 window.detailMapInstance.setView([51.1657, 10.4515], 6);
             }
         }, 100);
 
-        // --- B: TELEMETRIE DATEN ---
+        // --- DATEN ---
         document.getElementById('t-max').innerText = (drive.max || 0);
         document.getElementById('t-avg').innerText = drive.avg;
         document.getElementById('t-dist').innerText = drive.dist.toFixed(1) + " km";
         document.getElementById('t-time').innerText = drive.time;
 
-        // --- C: CHART ---
+        // --- CHART ---
         this.renderChart(drive.path);
         
-        // Delete Button im Detail Screen
         const delBtn = document.getElementById('btn-detail-delete');
         delBtn.onclick = () => {
             if(confirm("Delete this drive?")) {
@@ -181,7 +178,6 @@ const GarageLogic = {
         const labels = [];
         if(path) {
             path.forEach((p, i) => {
-                // Downsampling für Performance
                 if (path.length < 200 || i % 5 === 0) {
                     dataPoints.push(p.speed || 0);
                     labels.push("");
@@ -209,14 +205,16 @@ const GarageLogic = {
                 plugins: { legend: { display: false } },
                 scales: {
                     x: { display: false },
-                    y: { display: false, beginAtZero: true } // Clean look
+                    y: { display: false, beginAtZero: true } 
                 },
-                animation: { duration: 0 } // Performance
+                animation: { duration: 0 } 
             }
         });
     },
 
     closeDetails: function() {
         document.getElementById('detail-overlay').classList.add('hidden');
+        // FIX: 3D Auto wieder zeigen
+        if(window.showGarage3D) window.showGarage3D();
     }
 };
