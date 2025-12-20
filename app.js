@@ -260,7 +260,6 @@ function showGarage() {
     updateNav('garage');
     GarageLogic.render(); 
     
-    // FIX: 3D Auto starten
     if(window.startGarage3D) {
         setTimeout(() => { window.startGarage3D(); }, 100);
     }
