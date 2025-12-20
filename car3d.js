@@ -6,72 +6,58 @@ let scene, camera, renderer, carModel, placeholderMesh;
 let isInitialized = false; 
 
 function init3D() {
-    // Wir schauen, ob der neue Container im Hero-Bereich existiert
-    const container = document.getElementById('car-canvas-container');
-    if (!container) return; // Warten, bis Garage gerendert ist
+    if (isInitialized) return;
 
-    // Check, ob wir schon laufen (um Mehrfach-Init zu vermeiden)
-    // ABER: Wenn der Container leer ist (weil wir die Garage neu gebaut haben), müssen wir neu initen.
-    if (container.childNodes.length > 0) return;
+    const container = document.getElementById('garage-car-stage');
+    if (!container) return;
+    
+    if (container.clientWidth === 0 || container.clientHeight === 0) return;
 
     isInitialized = true;
+
+    while(container.firstChild) { container.removeChild(container.firstChild); }
 
     // 1. Scene
     scene = new THREE.Scene();
     
-    // 2. Camera (Winkel angepasst für den Hero-Blick)
-    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(3.5, 2.0, 4.5); 
+    // 2. Camera (Näher dran für "Bigger Car")
+    camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(3.0, 1.2, 3.5); 
     
     // 3. Renderer
     renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.3;
     container.appendChild(renderer.domElement);
 
-    // 4. Licht (Showroom Setup)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); 
+    // 4. Licht (Clean Studio)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
     scene.add(ambientLight);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0); 
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.5); 
     keyLight.position.set(5, 10, 7);
     scene.add(keyLight);
     
-    const fillLight = new THREE.DirectionalLight(0xffffff, 1.5); 
+    const fillLight = new THREE.DirectionalLight(0xffffff, 1.0); 
     fillLight.position.set(-5, 2, -5);
     scene.add(fillLight);
 
-    const rimLight = new THREE.SpotLight(0x007aff, 4.0); 
+    const rimLight = new THREE.SpotLight(0x007aff, 3.0); 
     rimLight.position.set(0, 5, -10);
     scene.add(rimLight);
 
-    // 5. PODEST (Grid Helper) - Damit es nicht schwebt
-    // Ein Gitter, 10x10 Einheiten, Farbe Grau/Dunkelgrau
-    const grid = new THREE.GridHelper(20, 20, 0x444444, 0x222222);
-    grid.position.y = -1.0; // Unter das Auto schieben
-    // Gitter leicht ausblenden (Transparenz Trick via Material Zugriff geht bei Helper schwer, daher Farbe dunkel)
-    scene.add(grid);
+    // 5. KEIN GRID MEHR - Nur weicher Schatten
+    // Wir nutzen einfach die Dunkelheit des Hintergrunds.
     
-    // Ein Schein (Glow) unter dem Auto
-    const geoFloor = new THREE.CircleGeometry(4, 32);
-    const matFloor = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.5 });
-    const floor = new THREE.Mesh(geoFloor, matFloor);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -1.01;
-    scene.add(floor);
-
-
-    // 6. Controls (MANUELL DREHBAR)
+    // 6. Controls (Manuell drehbar)
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.enableZoom = false;
     controls.enablePan = false;
-    controls.autoRotate = false; // Manuell!
-    
-    // Begrenzen, damit man nicht unter den Boden guckt
+    controls.autoRotate = false;
     controls.maxPolarAngle = Math.PI / 2 - 0.05;
 
     // --- Platzhalter ---
@@ -94,13 +80,12 @@ function init3D() {
             const size = box.getSize(new THREE.Vector3());
             
             const maxDim = Math.max(size.x, size.y, size.z);
-            // Skalierung anpassen für den neuen Container
-            const scale = 3.2 / maxDim; 
+            // SCALE UP!
+            const scale = 4.2 / maxDim; 
             carModel.scale.set(scale, scale, scale);
             
-            // Zentrieren
             carModel.position.x = -center.x * scale;
-            carModel.position.y = -box.min.y * scale - 1.0; // Auf das Grid setzen
+            carModel.position.y = -box.min.y * scale - 0.5; 
             carModel.position.z = -center.z * scale;
 
             carModel.traverse((child) => {
@@ -134,7 +119,6 @@ function init3D() {
     }
     animate();
 
-    // Resize Handler spezifisch für den Container
     const resizeObserver = new ResizeObserver(() => {
         if(container.clientWidth > 0 && container.clientHeight > 0) {
             camera.aspect = container.clientWidth / container.clientHeight;
@@ -145,5 +129,16 @@ function init3D() {
     resizeObserver.observe(container);
 }
 
-// Global verfügbar machen
+function hideCar() {
+    const el = document.getElementById('garage-car-stage');
+    if(el) el.style.opacity = '0';
+}
+
+function showCar() {
+    const el = document.getElementById('garage-car-stage');
+    if(el) el.style.opacity = '1';
+}
+
 window.startGarage3D = init3D;
+window.hideGarage3D = hideCar;
+window.showGarage3D = showCar;
