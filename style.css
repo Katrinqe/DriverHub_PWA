@@ -6,13 +6,14 @@
     --map-icon-color: #30d158; 
     --danger: #ff3b30;
     --bg-dark: #000;
+    --neon-blue: #007aff;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
 body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #fff; overflow: hidden; width: 100vw; height: 100vh; }
 
 /* =========================================
-   PRIORITY 1: MAP & USER MARKER (FIXED)
+   PRIORITY 1: MAP & USER MARKER
    ========================================= */
 
 #background-map { 
@@ -32,7 +33,6 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
-/* DER BLAUE PUNKT (USER MARKER) */
 .user-marker-wrap { 
     position: relative; 
     width: 40px; 
@@ -124,8 +124,37 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* --- GARAGE NEW LAYOUT (V87/88) --- */
-#garage-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #080808; background-image: radial-gradient(circle at 50% 10%, #1a1a1a, #000 60%); }
+/* --- GARAGE REDESIGN (V89 OVERHAUL) --- */
+#garage-bg { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; 
+    background: #000;
+}
+
+/* Blue Aura Effect */
+.garage-aura {
+    position: absolute;
+    top: 20%;
+    left: -20%;
+    width: 140%;
+    height: 60%;
+    background: radial-gradient(circle, rgba(0, 122, 255, 0.15) 0%, transparent 60%);
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+/* 3D Car floating below name */
+#garage-car-stage {
+    position: absolute;
+    top: 100px; /* Unter dem Namen */
+    left: 0;
+    width: 100%;       
+    height: 35vh;
+    z-index: 5;        
+    pointer-events: auto; 
+    background: transparent; 
+    transition: opacity 0.3s;
+}
 
 .garage-content {
     position: relative;
@@ -138,115 +167,103 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     padding-bottom: 120px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
 }
 
-/* THE HERO WINDOW */
-.garage-hero-card {
-    background: linear-gradient(180deg, rgba(30,30,30,0.8) 0%, rgba(10,10,10,0.9) 100%);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 24px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-}
-
-.car-name-input {
+/* NEW: Top Name Input (Neon Style) */
+.garage-name-input {
     background: transparent;
     border: none;
     color: #fff;
-    font-size: 1.5rem;
-    font-weight: 800;
+    font-family: 'Rajdhani', sans-serif; /* Special Font */
+    font-size: 2.8rem;
+    font-weight: 700;
     text-transform: uppercase;
     text-align: center;
     width: 100%;
-    font-family: 'Inter', sans-serif;
     outline: none;
-    border-bottom: 1px solid transparent;
-    transition: border 0.3s;
-    margin-bottom: 15px;
-    letter-spacing: 1px;
+    text-shadow: 0 0 15px rgba(0, 122, 255, 0.6);
+    margin-bottom: 0px;
+    z-index: 20;
+    letter-spacing: 2px;
 }
-.car-name-input:focus { border-bottom-color: var(--primary); }
 
-.hero-stats-row {
+/* Spacer for Car */
+.garage-car-spacer {
+    height: 35vh; /* Platzhalter für das 3D Auto */
+    width: 100%;
+}
+
+/* Stats Row (Below Car) */
+.stats-row-flat {
     display: flex;
     justify-content: center;
-    align-items: center;
     gap: 30px;
-    margin-bottom: 10px;
+    margin-bottom: 30px;
     z-index: 20;
 }
-.hs-item { display: flex; flex-direction: column; align-items: center; }
-.hs-val { font-size: 1.2rem; font-weight: 700; color: #fff; }
-.hs-label { font-size: 0.6rem; color: #888; font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
-.hs-divider { width: 1px; height: 30px; background: #333; }
+.stat-flat { display: flex; flex-direction: column; align-items: center; }
+.stat-flat .val { font-family: 'Rajdhani', sans-serif; font-size: 1.8rem; font-weight: 700; color: #fff; line-height: 1; }
+.stat-flat .label { font-size: 0.6rem; color: #888; font-weight: 700; letter-spacing: 1px; margin-top: 4px; text-transform: uppercase; }
 
-/* 3D Stage INSIDE Hero */
-.hero-3d-stage {
-    width: 100%;
-    height: 250px; 
-    margin-top: 10px;
-    position: relative;
-    z-index: 10;
-}
+/* Ride Cards V3 (With Real Mini Map) */
+.ride-list-title { font-size: 0.8rem; color: #666; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; margin-bottom: 15px; padding-left: 5px; }
 
-/* DRIVE LIST V2 */
-.ride-list-title { font-size: 0.8rem; color: #666; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; margin-bottom: 10px; padding-left: 5px; }
-
-.ride-card-v2 {
+.ride-card-v3 {
     background: #111;
     border: 1px solid #222;
     border-radius: 20px;
     overflow: hidden;
-    display: flex;
     margin-bottom: 15px;
     cursor: pointer;
     transition: transform 0.1s;
-    height: 100px;
-}
-.ride-card-v2:active { transform: scale(0.98); border-color: #444; }
-
-.rc2-map-preview {
-    width: 100px;
-    background: #000;
-    border-right: 1px solid #222;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
-}
-.mini-route-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 3px rgba(48, 209, 88, 0.4)); }
-
-.rc2-details {
-    flex: 1;
-    padding: 12px 15px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
 }
-.rc2-header { display: flex; justify-content: space-between; align-items: baseline; }
-.rc2-date { font-weight: 700; font-size: 0.9rem; color: #fff; }
-.rc2-time { font-size: 0.75rem; color: #666; }
-.rc2-stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; margin-top: 8px; }
-.rc2-stats-grid div { font-size: 0.7rem; color: #aaa; display: flex; align-items: center; gap: 5px; }
-.rc2-stats-grid i { color: #555; }
+.ride-card-v3:active { transform: scale(0.98); border-color: #444; }
+
+.mini-map-container {
+    width: 100%;
+    height: 120px;
+    background: #080808;
+    position: relative;
+    pointer-events: none; /* Keine Map Interaktion in der Liste! */
+}
+
+.rc3-info {
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(180deg, rgba(20,20,20,0.9), rgba(10,10,10,1));
+}
+.rc3-left h4 { margin: 0; font-size: 1rem; font-weight: 700; color: #fff; }
+.rc3-left p { margin: 3px 0 0; font-size: 0.75rem; color: #666; }
+.rc3-right { display: flex; align-items: center; gap: 15px; }
+.rc3-stat { text-align: right; }
+.rc3-stat span { display: block; font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; line-height: 1; }
+.rc3-stat small { font-size: 0.6rem; color: #666; text-transform: uppercase; }
+.btn-list-delete { background: transparent; border: none; color: #444; font-size: 1rem; padding: 10px; cursor: pointer; transition: 0.2s; }
+.btn-list-delete:active { color: var(--danger); }
+
+/* FULL SCREEN DETAIL VIEW (Covering Nav) */
+.detail-header {
+    width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px);
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+    position: absolute; top: 0; left: 0; z-index: 20;
+}
+.detail-header h2 { margin: 0; font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; text-transform: uppercase; }
+.btn-close-detail-text { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; }
 
 /* Detail Telemetry View */
-.telemetry-map-wrap { width: 100%; height: 35vh; position: relative; border-bottom: 1px solid #333; }
+.telemetry-map-wrap { width: 100%; height: 40vh; position: relative; border-bottom: 1px solid #333; margin-top: 80px; }
 .telemetry-content { padding: 20px; padding-bottom: 80px; background: #000; }
 .telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
 .t-box { background: #111; border: 1px solid #222; border-radius: 15px; padding: 15px; display: flex; flex-direction: column; align-items: center; }
 .t-label { font-size: 0.65rem; color: #666; font-weight: 700; margin-bottom: 5px; }
 .t-val { font-size: 1.4rem; font-weight: 700; color: #fff; }
 .t-chart-box { margin-top: 20px; background: #111; border: 1px solid #222; border-radius: 20px; padding: 15px; height: 180px; }
-.btn-close-detail { position: absolute; top: 50px; right: 20px; width: 35px; height: 35px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; z-index: 2010; cursor: pointer; }
-#detail-overlay { z-index: 5000 !important; }
+#detail-overlay { z-index: 6000 !important; }
 
 /* --- BUTTONS & HUD --- */
 .btn-super-glass { width: 100%; max-width: 240px; height: 52px; border-radius: 50px; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.5px; color: white; border: none; cursor: pointer; background: linear-gradient(135deg, rgba(0, 122, 255, 0.5), rgba(0, 210, 255, 0.3)); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.4); border-bottom: 1px solid rgba(0, 80, 255, 0.3); border-left: 1px solid rgba(255, 255, 255, 0.15); border-right: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 10px 30px rgba(0, 122, 255, 0.25), inset 0 2px 5px rgba(255, 255, 255, 0.2); transition: all 0.2s; pointer-events: auto; }
