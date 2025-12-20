@@ -2,7 +2,7 @@ let map, userMarker;
 let isDriveMode = false;
 let watchId = null;
 let isZooming = false; 
-let isAutoPanning = false; // WICHTIG: Schützt vor ungewolltem Stop
+let isAutoPanning = false; 
 let currentRotation = 0; 
 let pressTimer = null;
 const LONG_PRESS_DURATION = 1500; 
@@ -18,6 +18,9 @@ window.addEventListener('load', () => {
     
     const fade = document.getElementById('global-top-fade');
     if(fade) fade.classList.add('visible');
+    
+    // FIX: Garage laden!
+    if(typeof GarageLogic !== 'undefined') GarageLogic.init();
     
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
@@ -82,12 +85,10 @@ function initMap() {
         );
     }
 
-    // Wenn der User zieht -> Buttons zeigen
     map.on('dragstart', () => {
         if(!isAutoPanning) showRecenterButtons();
     });
 
-    // FIX: Wenn der User zoomt -> Buttons zeigen. ABER NICHT wenn der Code zoomt (isAutoPanning)
     map.on('zoomstart', () => {
         if(!isAutoPanning) {
             showRecenterButtons();
@@ -98,7 +99,6 @@ function initMap() {
     });
 
     map.on('zoomend moveend', () => {
-        // Flag nach jeder Bewegung sicherheitshalber resetten (verzögert)
         setTimeout(() => { isAutoPanning = false; }, 500); 
         
         if(userMarker && userMarker.getElement()) {
@@ -185,7 +185,6 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
-    // FIX: Button verstecken
     document.getElementById('btn-recenter').classList.add('hidden');
 
     document.getElementById('global-top-fade').classList.remove('visible');
@@ -198,7 +197,7 @@ function startDriveMode() {
     map.scrollWheelZoom.enable();
 
     if(userMarker) {
-        isAutoPanning = true; // FIX: Wichtig für den Start-Zoom
+        isAutoPanning = true;
         map.setView(userMarker.getLatLng(), 18, { animate: false });
     }
     DriverLogic.start();
@@ -206,7 +205,7 @@ function startDriveMode() {
 
 function centerMapOnUser() {
     if(userMarker) {
-        isAutoPanning = true; // FIX
+        isAutoPanning = true;
         map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
         
         document.getElementById('btn-recenter').classList.add('hidden');
