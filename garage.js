@@ -1,24 +1,33 @@
 const GarageLogic = {
     drives: [],
+    carName: "My Car", // Default Name
 
     init: function() {
         this.load();
     },
 
     load: function() {
-        const stored = localStorage.getItem('driverhub_drives');
-        if (stored) {
-            try {
-                this.drives = JSON.parse(stored);
-            } catch(e) {
-                console.error("Savegame corrupt", e);
-                this.drives = [];
-            }
+        // Fahrten laden
+        const storedDrives = localStorage.getItem('driverhub_drives');
+        if (storedDrives) {
+            try { this.drives = JSON.parse(storedDrives); } 
+            catch(e) { this.drives = []; }
+        }
+        
+        // Auto Name laden
+        const storedName = localStorage.getItem('driverhub_car_name');
+        if (storedName) {
+            this.carName = storedName;
         }
     },
 
     saveToStorage: function() {
         localStorage.setItem('driverhub_drives', JSON.stringify(this.drives));
+    },
+
+    saveCarName: function(newName) {
+        this.carName = newName;
+        localStorage.setItem('driverhub_car_name', newName);
     },
 
     save: function(driveData) {
@@ -35,87 +44,139 @@ const GarageLogic = {
         }
     },
 
+    // HELPER: Generiert einen SVG Pfad aus den GPS Daten für die Mini-Map
+    generateRouteSVG: function(path) {
+        if (!path || path.length < 2) return "";
+
+        // Bounds finden
+        let minLat = 999, maxLat = -999, minLng = 999, maxLng = -999;
+        path.forEach(p => {
+            if(p.lat < minLat) minLat = p.lat;
+            if(p.lat > maxLat) maxLat = p.lat;
+            if(p.lng < minLng) minLng = p.lng;
+            if(p.lng > maxLng) maxLng = p.lng;
+        });
+
+        // Koordinaten auf 0-100 Box normalisieren
+        const width = maxLng - minLng;
+        const height = maxLat - minLat;
+        // Schutz vor Division durch 0
+        if(width === 0 || height === 0) return "M0,50 L100,50";
+
+        let d = "";
+        path.forEach((p, i) => {
+            // Y muss invertiert werden für SVG
+            const x = ((p.lng - minLng) / width) * 100;
+            const y = 100 - ((p.lat - minLat) / height) * 100;
+            
+            if(i === 0) d += `M${x},${y}`;
+            else d += ` L${x},${y}`;
+        });
+        
+        return `<svg viewBox="-10 -10 120 120" class="mini-route-svg">
+                    <path d="${d}" fill="none" stroke="#30d158" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="${((path[0].lng - minLng)/width)*100}" cy="${100-((path[0].lat-minLat)/height)*100}" r="8" fill="#fff" />
+                    <circle cx="${((path[path.length-1].lng - minLng)/width)*100}" cy="${100-((path[path.length-1].lat-minLat)/height)*100}" r="8" fill="#bf5af2" />
+                </svg>`;
+    },
+
     render: function() {
         const list = document.getElementById('garage-content');
         list.innerHTML = '';
         
-        // --- 1. DASHBOARD ---
+        // --- CALC STATS ---
         let totalKm = 0;
         let topSpeedEver = 0;
-        let totalMinutes = 0;
-
         this.drives.forEach(d => {
             totalKm += d.dist || 0;
             if(d.max > topSpeedEver) topSpeedEver = d.max;
-            let parts = d.time.split(':');
-            if(parts.length === 2) {
-                totalMinutes += parseInt(parts[0]) + (parseInt(parts[1])/60);
-            }
         });
 
-        const totalHours = Math.floor(totalMinutes / 60);
+        // --- 1. HERO WINDOW (Das "gemeinsame Fenster") ---
+        const hero = document.createElement('div');
+        hero.className = 'garage-hero-card';
         
-        const dashboard = document.createElement('div');
-        dashboard.className = 'dashboard-grid';
-        dashboard.innerHTML = `
-            <div class="dash-card wide">
-                <span class="dash-label">CAREER DISTANCE</span>
-                <div><span class="dash-val">${totalKm.toFixed(1)}</span><span class="dash-unit">km</span></div>
+        // Input für Name
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'car-name-input';
+        nameInput.value = this.carName;
+        nameInput.oninput = (e) => { this.saveCarName(e.target.value); };
+        
+        // Stats Row
+        const statsRow = document.createElement('div');
+        statsRow.className = 'hero-stats-row';
+        statsRow.innerHTML = `
+            <div class="hs-item">
+                <span class="hs-val">${totalKm.toFixed(1)}</span>
+                <span class="hs-label">TOTAL KM</span>
             </div>
-            <div class="dash-card">
-                <span class="dash-label">TOP SPEED</span>
-                <div><span class="dash-val">${topSpeedEver}</span><span class="dash-unit">km/h</span></div>
-            </div>
-            <div class="dash-card">
-                <span class="dash-label">TIME ON ROAD</span>
-                <div><span class="dash-val">${totalHours}</span><span class="dash-unit">h</span></div>
+            <div class="hs-divider"></div>
+            <div class="hs-item">
+                <span class="hs-val">${topSpeedEver}</span>
+                <span class="hs-label">TOP KM/H</span>
             </div>
         `;
-        list.appendChild(dashboard);
 
-        // --- 2. LISTEN ---
+        // 3D Container (Inside Hero)
+        const carStage = document.createElement('div');
+        carStage.id = 'car-canvas-container';
+        carStage.className = 'hero-3d-stage';
+
+        hero.appendChild(nameInput);
+        hero.appendChild(statsRow);
+        hero.appendChild(carStage);
+        
+        list.appendChild(hero);
+
+        // --- 2. DRIVE LIST ---
         const title = document.createElement('div');
         title.className = 'ride-list-title';
-        title.innerText = 'Recent Drives';
+        title.innerText = 'Drives Log';
         list.appendChild(title);
 
         this.drives.forEach((d, index) => {
             const card = document.createElement('div');
-            card.className = 'ride-card';
+            card.className = 'ride-card-v2';
             
             const dateObj = new Date(d.date);
             const dateStr = dateObj.toLocaleDateString();
             const timeStr = dateObj.toLocaleTimeString().slice(0,5);
             
-            const hour = dateObj.getHours();
-            let icon = (hour > 19 || hour < 6) ? 'fa-moon' : 'fa-sun';
-            
+            // Mini Map SVG generieren
+            const miniMap = this.generateRouteSVG(d.path);
+
             card.innerHTML = `
-                <div class="rc-left">
-                    <div class="rc-icon-box"><i class="fa-solid ${icon}"></i></div>
-                    <div class="rc-info">
-                        <div class="rc-title">${dateStr}</div>
-                        <div class="rc-meta">${timeStr} • ${d.dist.toFixed(1)} km</div>
-                    </div>
+                <div class="rc2-map-preview">
+                    ${miniMap}
                 </div>
-                <div class="rc-right">
-                    <span class="rc-score">${d.avg}</span>
-                    <span class="rc-label">AVG KM/H</span>
+                <div class="rc2-details">
+                    <div class="rc2-header">
+                        <span class="rc2-date">${dateStr}</span>
+                        <span class="rc2-time">${timeStr}</span>
+                    </div>
+                    <div class="rc2-stats-grid">
+                        <div><i class="fa-solid fa-gauge-high"></i> ${d.max || 0} km/h</div>
+                        <div><i class="fa-solid fa-route"></i> ${d.dist.toFixed(1)} km</div>
+                        <div><i class="fa-solid fa-stopwatch"></i> ${d.time}</div>
+                    </div>
                 </div>
             `;
             
             card.onclick = () => { this.openDetails(d, index); };
             list.appendChild(card);
         });
+
+        // 3D Starten (da Container jetzt existiert)
+        setTimeout(() => {
+            if(window.startGarage3D) window.startGarage3D();
+        }, 100);
     },
 
     openDetails: function(drive, index) {
-        // FIX: 3D Auto verstecken
-        if(window.hideGarage3D) window.hideGarage3D();
-
         document.getElementById('detail-overlay').classList.remove('hidden');
         
-        // --- MAP ---
+        // Map Logic wie gehabt ...
         setTimeout(() => {
             const container = document.getElementById('detail-map');
             if(window.detailMapInstance) { window.detailMapInstance.remove(); window.detailMapInstance = null; }
@@ -126,7 +187,6 @@ const GarageLogic = {
 
             if(drive.path && drive.path.length > 1) {
                 const bounds = L.latLngBounds([]);
-                
                 for(let i=0; i < drive.path.length - 1; i++) {
                     const p1 = drive.path[i];
                     const p2 = drive.path[i+1];
@@ -141,7 +201,6 @@ const GarageLogic = {
                         weight: 4, 
                         opacity: 0.9 
                     }).addTo(window.detailMapInstance);
-                    
                     bounds.extend([p1.lat, p1.lng]);
                 }
                 window.detailMapInstance.fitBounds(bounds, {padding:[30,30]});
@@ -150,13 +209,11 @@ const GarageLogic = {
             }
         }, 100);
 
-        // --- DATEN ---
         document.getElementById('t-max').innerText = (drive.max || 0);
         document.getElementById('t-avg').innerText = drive.avg;
         document.getElementById('t-dist').innerText = drive.dist.toFixed(1) + " km";
         document.getElementById('t-time').innerText = drive.time;
 
-        // --- CHART ---
         this.renderChart(drive.path);
         
         const delBtn = document.getElementById('btn-detail-delete');
@@ -214,7 +271,5 @@ const GarageLogic = {
 
     closeDetails: function() {
         document.getElementById('detail-overlay').classList.add('hidden');
-        // FIX: 3D Auto wieder zeigen
-        if(window.showGarage3D) window.showGarage3D();
     }
 };
