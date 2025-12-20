@@ -11,7 +11,7 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
 body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #fff; overflow: hidden; width: 100vw; height: 100vh; }
 
-/* MAP (V74 Stand) */
+/* MAP */
 #background-map { 
     position: fixed; 
     top: 50%; 
@@ -29,7 +29,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .leaflet-tile-pane { filter: none !important; }
 .leaflet-div-icon { background: transparent !important; border: none !important; }
 
-/* GLOBAL FADE (V74 Stand) */
+/* GLOBAL FADE */
 #global-top-fade { 
     position: fixed; 
     top: 0; 
@@ -66,22 +66,32 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* --- GARAGE REDESIGN (V83 FIX) --- */
-#garage-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #000; background-image: radial-gradient(circle at 50% 0%, rgba(191, 90, 242, 0.1), transparent 70%); }
+/* --- GARAGE REDESIGN (V86 COMPLETE) --- */
+#garage-bg { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    z-index: -1; 
+    background: #000; 
+    background-image: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05), transparent 60%); 
+}
 
 /* GARAGE 3D STAGE - THE HERO AREA */
 #garage-car-stage {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;       /* Volle Breite */
-    height: 45vh;      /* Obere 45% des Screens gehören dem Auto */
-    z-index: 5;        /* Über dem Hintergrund, unter dem Header-Text */
-    pointer-events: auto; /* Drehbar */
-    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 0%, transparent 60%); /* Leichter "Spotlight" Boden-Effekt */
+    width: 100%;       
+    height: 40vh;      /* Etwas weniger hoch, damit Content besser passt */
+    z-index: 5;        
+    pointer-events: auto; 
+    background: transparent; /* Cleaner Look */
+    transition: opacity 0.3s; /* Fürs Ausblenden bei Details */
 }
 
-/* WICHTIG: Inhalt nach unten schieben */
+/* Content Container */
 .garage-content {
     position: relative;
     z-index: 10;
@@ -89,9 +99,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     height: 100%;
     overflow-y: auto;
     padding: 20px;
-    
-    /* FIX: Platz für das Auto lassen! */
-    padding-top: 42vh; 
+    padding-top: 38vh; /* Platz für das Auto lassen */
     padding-bottom: 120px;
 }
 
@@ -115,7 +123,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     align-items: flex-start;
 }
 
-.dash-card.wide { grid-column: span 2; align-items: center; text-align: center; background: linear-gradient(135deg, rgba(191, 90, 242, 0.15), rgba(20,20,20,0.8)); border-color: rgba(191, 90, 242, 0.3); }
+.dash-card.wide { grid-column: span 2; align-items: center; text-align: center; background: linear-gradient(135deg, rgba(20,20,20,0.8), rgba(20,20,20,0.9)); border-color: rgba(255,255,255,0.15); }
 
 .dash-label { font-size: 0.65rem; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
 .dash-val { font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1; }
@@ -162,6 +170,11 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .t-chart-box { margin-top: 20px; background: #111; border: 1px solid #222; border-radius: 20px; padding: 15px; height: 180px; }
 
 .btn-close-detail { position: absolute; top: 50px; right: 20px; width: 35px; height: 35px; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; z-index: 2010; cursor: pointer; }
+
+/* Sicherstellen, dass Detail-Overlay IMMER über allem ist */
+#detail-overlay {
+    z-index: 5000 !important;
+}
 
 /* --- BUTTONS & HUD (Drive/Navi) --- */
 .btn-super-glass { width: 100%; max-width: 240px; height: 52px; border-radius: 50px; font-size: 1.05rem; font-weight: 800; letter-spacing: 0.5px; color: white; border: none; cursor: pointer; background: linear-gradient(135deg, rgba(0, 122, 255, 0.5), rgba(0, 210, 255, 0.3)); backdrop-filter: blur(20px); border-top: 1px solid rgba(255, 255, 255, 0.4); border-bottom: 1px solid rgba(0, 80, 255, 0.3); border-left: 1px solid rgba(255, 255, 255, 0.15); border-right: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 10px 30px rgba(0, 122, 255, 0.25), inset 0 2px 5px rgba(255, 255, 255, 0.2); transition: all 0.2s; pointer-events: auto; }
@@ -270,6 +283,8 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .totem-header.esso { background: linear-gradient(to right, #e21d38, #0033a0); }
 .totem-header.total { background: linear-gradient(to right, #ed0000, #004c99); }
 .totem-header.jet { background: linear-gradient(to right, #ffcc00, #004c99); color: black; }
+.totem-header.hem { background: #009640; }
+.totem-header.avanti { background: #ff5000; }
 .totem-header h2 { margin: 0; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
 .totem-close { background: rgba(0,0,0,0.2); border: none; color: inherit; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
 .totem-body { padding: 20px; background: #0a0a0a; display: flex; flex-direction: column; gap: 15px; }
@@ -283,11 +298,30 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .totem-footer { padding: 15px 20px; background: #111; border-top: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
 #totem-status { color: #30d158; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 5px; }
 .btn-navigate { background: var(--primary); color: white; border: none; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+
+/* NAVI TOP & BOTTOM HUD */
+.navi-top-hud { position: fixed; top: 0; left: 0; width: 100%; height: 160px; z-index: 100; pointer-events: none; background: linear-gradient(to bottom, #000 0%, rgba(0,0,0,0.8) 60%, transparent 100%); display: flex; align-items: flex-start; padding-top: calc(env(safe-area-inset-top) + 20px); padding-left: 20px; padding-right: 20px; gap: 15px; }
+.nav-arrow-box { width: 50px; height: 50px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.4); flex-shrink: 0; }
+.nav-arrow-box i { font-size: 1.8rem; color: white; }
+.nav-instruction-box { flex: 1; display: flex; flex-direction: column; justify-content: center; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+.nav-instruction-box h3 { margin: 0; font-size: 1.1rem; line-height: 1.2; font-weight: 800; }
+.nav-instruction-box span { font-size: 0.9rem; color: #ccc; font-weight: 600; margin-top: 4px; }
+.nav-eta-box { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 8px 12px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; border: 1px solid rgba(255,255,255,0.1); }
+.nav-eta-box .label { font-size: 0.6rem; color: #aaa; font-weight: 700; }
+.nav-eta-box .val { font-size: 1.1rem; font-weight: 800; }
+.navi-bottom-hud { position: fixed; bottom: 0; left: 0; width: 100%; height: 140px; background: linear-gradient(to top, #000 0%, rgba(0,0,0,0.9) 60%, transparent 100%); z-index: 100; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 40px; pointer-events: none; }
+.nbh-stats { display: flex; align-items: center; background: rgba(20,20,20,0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 10px 20px; gap: 15px; pointer-events: auto; }
+.nbh-item { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+.nbh-item .label { font-size: 0.6rem; color: #888; font-weight: 700; margin-bottom: 2px; }
+.nbh-value-group { display: flex; align-items: baseline; gap: 2px; }
+.nbh-value-group .val { font-size: 1.3rem; font-weight: 800; color: #fff; }
+.nbh-value-group .unit { font-size: 0.8rem; color: var(--primary); font-weight: 600; }
+.nbh-divider { width: 1px; height: 30px; background: rgba(255,255,255,0.15); }
+.btn-nav-floating { position: absolute; width: 50px; height: 50px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 101; pointer-events: auto; }
+.btn-nav-floating.cancel { bottom: 150px; right: 20px; background: #ff3b30; color: white; }
+.btn-nav-floating.recenter { bottom: 150px; left: 20px; background: #222; color: var(--primary); border: 1px solid #444; }
+
+/* SPLASH */
 #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.8s ease-out; pointer-events: none;}
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
-
-/* Sicherstellen, dass Detail-Overlay IMMER über allem ist */
-#detail-overlay {
-    z-index: 5000 !important;
-}
