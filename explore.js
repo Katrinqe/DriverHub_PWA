@@ -1,183 +1,468 @@
-window.ExploreLogic = {
-    // --- STATE ---
-    activeFilter: null, // 'gas', 'cam', 'parking'
-    mapInstance: null,
-    markers: [],
-    
-    // Gas Filter State
-    gasType: 'e10', // default
-    gasRadius: 10,
-    gasBrand: 'all',
+// FIX: Dein echter API Key
+const TANKERKOENIG_API_KEY = '448a2db3-bf39-415e-a763-8f889d8b31dd'; 
+
+let exploreLayers = { gas: null, cam: null, parking: null };
+let exploreState = { gas: false, cam: false, parking: false };
+
+let cachedGasStations = []; 
+let currentFuelType = 'e10'; 
+let gasPressTimer = null;
+let currentBrandFilter = 'all';
+let currentRadiusFilter = 10;
+
+const ExploreLogic = {
+    moveTimeout: null,
 
     init: function() {
-        console.log("Explore Logic Init");
-        // Bind Filter Chips manually if needed
-        const btnGas = document.getElementById('filter-gas');
-        if(btnGas) btnGas.onclick = () => this.toggleGasFilter();
-        
-        const btnCam = document.getElementById('filter-cam');
-        if(btnCam) btnCam.onclick = () => this.toggleCams();
-        
-        const btnPark = document.getElementById('filter-parking');
-        if(btnPark) btnPark.onclick = () => this.toggleParking();
+        console.log("Explore Init");
+        if (typeof L === 'undefined') return;
+
+        if (!exploreLayers.gas) exploreLayers.gas = L.layerGroup();
+        if (!exploreLayers.cam) exploreLayers.cam = L.layerGroup();
+        if (!exploreLayers.parking) exploreLayers.parking = L.layerGroup();
+
+        this.setupGasButton();
+        this.setupButton('filter-cam', 'cam');
+        this.setupButton('filter-parking', 'parking');
+
+        const btnRecenter = document.getElementById('btn-explore-recenter');
+        if(btnRecenter) {
+            btnRecenter.onclick = () => {
+                if(map && userMarker) {
+                    map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
+                }
+            };
+        }
     },
 
-    // --- GAS FILTER MODAL ---
-    toggleGasFilter: function() {
-        const modal = document.getElementById('gas-filter-modal');
-        if(!modal) return;
-        
-        if (modal.classList.contains('hidden')) {
-            modal.classList.remove('hidden');
-            modal.classList.add('active'); // For CSS transitions
-            this.activeFilter = 'gas';
-            // Highlight chip
-            document.getElementById('filter-gas').classList.add('active');
-            // Refresh results immediately
-            this.updateGasResults();
-        } else {
-            this.closeFilter();
+    setupButton: function(id, type) {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.onclick = () => {
+                btn.classList.toggle('active');
+                exploreState[type] = !exploreState[type];
+                this.toggleLayer(type, exploreState[type]);
+            };
         }
+    },
+
+    setupGasButton: function() {
+        const btn = document.getElementById('filter-gas');
+        if(!btn) return;
+
+        const start = (e) => {
+            if(e.type === 'touchstart') e.preventDefault();
+            btn.classList.add('holding');
+            gasPressTimer = setTimeout(() => {
+                btn.classList.remove('holding');
+                this.openFilter();
+            }, 800); 
+        };
+
+        const end = () => {
+            if (gasPressTimer) {
+                clearTimeout(gasPressTimer);
+                gasPressTimer = null;
+                if(btn.classList.contains('holding')) {
+                    btn.classList.remove('holding');
+                    btn.classList.toggle('active');
+                    exploreState.gas = !exploreState.gas;
+                    this.toggleLayer('gas', exploreState.gas);
+                }
+            }
+        };
+
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('touchstart', start);
+        btn.addEventListener('mouseup', end);
+        btn.addEventListener('mouseleave', end);
+        btn.addEventListener('touchend', end);
+    },
+
+    resetAll: function() {
+        exploreState.gas = false;
+        exploreState.cam = false;
+        exploreState.parking = false;
+        document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        if(exploreLayers.gas) exploreLayers.gas.clearLayers();
+        if(exploreLayers.cam) exploreLayers.cam.clearLayers();
+        if(exploreLayers.parking) exploreLayers.parking.clearLayers();
+        if(map) {
+            if(map.hasLayer(exploreLayers.gas)) map.removeLayer(exploreLayers.gas);
+            if(map.hasLayer(exploreLayers.cam)) map.removeLayer(exploreLayers.cam);
+            if(map.hasLayer(exploreLayers.parking)) map.removeLayer(exploreLayers.parking);
+        }
+    },
+
+    enter: function() {
+        if(map) {
+            map.dragging.enable();
+            map.touchZoom.enable();
+            map.doubleClickZoom.enable();
+            map.scrollWheelZoom.enable();
+            
+            const mapEl = document.getElementById('background-map');
+            if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+
+            if(exploreState.gas) { exploreLayers.gas.addTo(map); this.fetchData('gas'); }
+            if(exploreState.cam) { exploreLayers.cam.addTo(map); this.fetchData('cam'); }
+            if(exploreState.parking) { exploreLayers.parking.addTo(map); this.fetchData('parking'); }
+
+            map.on('moveend', this.onMapMove);
+        }
+    },
+
+    leave: function() {
+        if (this.moveTimeout) {
+            clearTimeout(this.moveTimeout);
+            this.moveTimeout = null;
+        }
+
+        if(map) {
+            map.dragging.disable();
+            map.touchZoom.disable();
+            map.scrollWheelZoom.disable();
+
+            if(exploreLayers.gas) exploreLayers.gas.remove();
+            if(exploreLayers.cam) exploreLayers.cam.remove();
+            if(exploreLayers.parking) exploreLayers.parking.remove();
+            
+            map.off('moveend', this.onMapMove);
+        }
+    },
+
+    toggleLayer: function(type, isActive) {
+        if (isActive) { 
+            if(exploreLayers[type]) exploreLayers[type].addTo(map);
+            this.fetchData(type); 
+        } 
+        else { 
+            if(exploreLayers[type]) {
+                exploreLayers[type].clearLayers();
+                exploreLayers[type].remove();
+            }
+        }
+    },
+
+    onMapMove: function() {
+        if (this.moveTimeout) clearTimeout(this.moveTimeout);
+        this.moveTimeout = setTimeout(() => {
+            if (exploreState.gas) ExploreLogic.fetchData('gas');
+            if (exploreState.cam) ExploreLogic.fetchData('cam');
+            if (exploreState.parking) ExploreLogic.fetchData('parking');
+        }, 500);
+    },
+
+    fetchData: function(type) {
+        if (!map) return;
+        const center = map.getCenter();
+        let radius = 3000; 
+        
+        if (type === 'gas') {
+            radius = currentRadiusFilter * 1000;
+        } else {
+            if (map.getZoom() < 12) radius = 15000; 
+            else if (map.getZoom() > 14) radius = 5000; 
+            else radius = 8000;
+        }
+
+        const loader = document.getElementById('map-loading');
+        if(loader) loader.classList.add('visible');
+
+        let query = "";
+        let endTag = "out center;"; 
+
+        if (type === 'gas') query = `[out:json][timeout:25];nwr["amenity"="fuel"](around:${radius},${center.lat},${center.lng});${endTag}`;
+        else if (type === 'cam') query = `[out:json][timeout:25];node["highway"="speed_camera"](around:${radius},${center.lat},${center.lng});out;`;
+        else if (type === 'parking') query = `[out:json][timeout:25];nwr["amenity"="parking"](around:${radius},${center.lat},${center.lng});${endTag}`;
+
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if(loader) loader.classList.remove('visible');
+                
+                if (type === 'gas') {
+                    cachedGasStations = data.elements || [];
+                    this.redrawGasMarkers();
+                    if(!document.getElementById('gas-filter-modal').classList.contains('hidden')) {
+                        this.filterGasStations(); 
+                    }
+                } else {
+                    if(exploreLayers[type]) exploreLayers[type].clearLayers();
+                    if (!data.elements) return;
+                    this.renderGenericMarkers(type, data.elements);
+                }
+            })
+            .catch(err => {
+                if(loader) loader.classList.remove('visible');
+                console.log("API Error:", err);
+            });
+    },
+
+    redrawGasMarkers: function() {
+        if(!exploreState.gas) return; 
+        exploreLayers.gas.clearLayers();
+        
+        cachedGasStations.forEach(el => {
+            let lat = el.lat; let lon = el.lon;
+            if (el.center) { lat = el.center.lat; lon = el.center.lon; }
+            if (!lat || !lon) return; 
+
+            const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
+            const brandClass = this.getBrandClass(name);
+            
+            let displayName = name.replace(/Tankstelle|Station/gi, "").trim();
+            if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
+            if (displayName === "") displayName = "TANK";
+
+            if (!el.simPrices) {
+                // Dummy-Werte als Platzhalter, falls noch nicht geklickt
+                const baseE10 = 1.70 + (Math.random() * 0.14 - 0.07);
+                el.simPrices = {
+                    e10: baseE10.toFixed(2),
+                    diesel: (1.60 + (Math.random() * 0.14 - 0.07)).toFixed(2),
+                    e5: (baseE10 + 0.06).toFixed(2),
+                    isOpen: true 
+                };
+            }
+
+            if (el.realData) el.simPrices.isOpen = el.realData.isOpen;
+
+            let displayPrice = el.simPrices[currentFuelType];
+            const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
+
+            const html = `
+                <div class="price-marker-wrap ${closedClass}">
+                    <div class="pm-brand-bar ${brandClass}">${displayName}</div>
+                    <div class="pm-content">
+                        <div class="pm-price">${displayPrice}</div>
+                        <div class="pm-fuel-label">${currentFuelType.toUpperCase()}</div>
+                    </div>
+                </div>
+            `;
+
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: html,
+                iconSize: [60, 45], 
+                iconAnchor: [30, 45] 
+            });
+
+            const marker = L.marker([lat, lon], {icon: icon});
+            marker.on('click', () => { this.openTotem(name, lat, lon, el); });
+            exploreLayers.gas.addLayer(marker);
+        });
+    },
+
+    renderGenericMarkers: function(type, elements) {
+        if(!exploreState[type]) return; 
+        elements.forEach(el => {
+            let lat = el.lat; let lon = el.lon;
+            if (el.center) { lat = el.center.lat; lon = el.center.lon; }
+            if (!lat || !lon) return;
+
+            let iconHtml = ''; let className = '';
+            if (type === 'cam') { iconHtml = '<i class="fa-solid fa-camera"></i>'; className = 'icon-cam'; }
+            else if (type === 'parking') { iconHtml = '<i class="fa-solid fa-square-parking"></i>'; className = 'icon-parking'; }
+
+            const icon = L.divIcon({
+                className: 'custom-div-icon', 
+                html: `<div class="custom-map-icon ${className}">${iconHtml}</div>`,
+                iconSize: [30, 30], iconAnchor: [15, 15]
+            });
+
+            const marker = L.marker([lat, lon], {icon: icon});
+            if (el.tags && el.tags.name) marker.bindPopup(`<b>${el.tags.name}</b>`);
+            exploreLayers[type].addLayer(marker);
+        });
+    },
+
+    getBrandClass: function(name) {
+        const n = name.toLowerCase();
+        if(n.includes('aral')) return 'aral';
+        if(n.includes('shell')) return 'shell';
+        if(n.includes('esso')) return 'esso';
+        if(n.includes('total')) return 'total';
+        if(n.includes('jet')) return 'jet';
+        if(n.includes('hem')) return 'hem';
+        if(n.includes('avanti')) return 'avanti';
+        return ''; 
+    },
+
+    openFilter: function() {
+        document.getElementById('gas-filter-modal').classList.add('active'); 
+        document.getElementById('gas-filter-modal').classList.remove('hidden');
+        
+        document.getElementById('btn-type-e10').classList.remove('active');
+        document.getElementById('btn-type-e5').classList.remove('active');
+        document.getElementById('btn-type-diesel').classList.remove('active');
+        document.getElementById('btn-type-' + currentFuelType).classList.add('active');
+
+        this.filterGasStations();
     },
 
     closeFilter: function() {
-        const modal = document.getElementById('gas-filter-modal');
-        if(modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('active');
-        }
-        document.getElementById('filter-gas').classList.remove('active');
-        this.activeFilter = null;
-    },
-
-    // --- FILTER SETTINGS ---
-    setFuelFilter: function(type) {
-        this.gasType = type;
-        // Update Buttons UI
-        ['e10','e5','diesel'].forEach(t => {
-            const btn = document.getElementById('btn-type-'+t);
-            if(btn) {
-                if(t === type) btn.classList.add('active');
-                else btn.classList.remove('active');
-            }
-        });
-        this.updateGasResults();
+        document.getElementById('gas-filter-modal').classList.remove('active');
+        setTimeout(() => document.getElementById('gas-filter-modal').classList.add('hidden'), 300);
     },
 
     updateRadiusDisplay: function(val) {
-        this.gasRadius = val;
-        const disp = document.getElementById('rad-disp');
-        if(disp) disp.innerText = val;
-        // Debounce actual search? For now just update on let go or every change
-        this.updateGasResults(); 
+        document.getElementById('rad-disp').innerText = val;
+        currentRadiusFilter = parseInt(val);
+        this.fetchData('gas');
     },
 
-    setBrandFilter: function(brand, btnElement) {
-        this.gasBrand = brand;
-        // Reset all active classes in that row
-        const parent = btnElement.parentNode;
-        const btns = parent.getElementsByClassName('filter-btn');
-        for(let btn of btns) btn.classList.remove('active');
-        btnElement.classList.add('active');
-        this.updateGasResults();
+    setBrandFilter: function(brand, btn) {
+        currentBrandFilter = brand;
+        document.querySelectorAll('.filter-grid .filter-btn').forEach(b => {
+            if(!b.id) b.classList.remove('active'); 
+        });
+        btn.classList.add('active');
+        this.filterGasStations();
     },
 
-    // --- RESULTS LOGIC (FAKE DATA) ---
-    updateGasResults: function() {
-        const list = document.getElementById('filter-results'); // ID CHECK: In HTML V121 it was filter-results (NOT gas-results-list)
-        if(!list) return; // Silent fail if ID mismatch in HTML
-        
-        list.innerHTML = ''; // Clear
+    setFuelFilter: function(type) {
+        currentFuelType = type;
+        document.getElementById('btn-type-e10').classList.remove('active');
+        document.getElementById('btn-type-e5').classList.remove('active');
+        document.getElementById('btn-type-diesel').classList.remove('active');
+        document.getElementById('btn-type-' + type).classList.add('active');
+        this.redrawGasMarkers(); 
+        this.filterGasStations();
+    },
 
-        // Mock Data Generator
-        const brands = ['Aral', 'Shell', 'Esso', 'Total', 'Jet', 'Hem', 'Avanti'];
-        const count = 5;
+    filterGasStations: function() {
+        if(!map || !userMarker) return;
+        const userLatLng = userMarker.getLatLng();
+        const listContainer = document.getElementById('filter-results');
+        listContainer.innerHTML = '';
 
-        for(let i=0; i<count; i++) {
-            // Random filtering
-            let brand = brands[Math.floor(Math.random() * brands.length)];
-            if(this.gasBrand !== 'all' && this.gasBrand.toLowerCase() !== brand.toLowerCase()) continue;
+        let results = cachedGasStations.filter(el => {
+            let lat = el.lat; let lon = el.lon;
+            if (el.center) { lat = el.center.lat; lon = el.center.lon; }
+            if (!lat || !lon) return false;
 
-            let price = (1.60 + Math.random() * 0.20).toFixed(2);
-            let dist = (Math.random() * this.gasRadius).toFixed(1);
-            
-            // Create Item
-            const item = document.createElement('div');
-            item.className = 'filter-res-item';
-            item.innerHTML = `
+            const stationLatLng = L.latLng(lat, lon);
+            const distKm = userLatLng.distanceTo(stationLatLng) / 1000;
+            el._tempDist = distKm;
+
+            if (distKm > currentRadiusFilter) return false;
+
+            if (currentBrandFilter !== 'all') {
+                const name = (el.tags && el.tags.name) ? el.tags.name.toLowerCase() : "";
+                if (!name.includes(currentBrandFilter)) return false;
+            }
+            return true;
+        });
+
+        results.sort((a, b) => {
+            const priceA = parseFloat(a.simPrices[currentFuelType]);
+            const priceB = parseFloat(b.simPrices[currentFuelType]);
+            return priceA - priceB;
+        });
+
+        if (results.length === 0) {
+            listContainer.innerHTML = '<div style="color:#666; text-align:center; padding:20px; font-size:0.8rem;">No stations found.</div>';
+            return;
+        }
+
+        results.forEach(el => {
+            const name = (el.tags && el.tags.name) ? el.tags.name : "Station";
+            const price = el.simPrices[currentFuelType];
+            const dist = el._tempDist.toFixed(1);
+            let lat = el.lat; let lon = el.lon;
+            if (el.center) { lat = el.center.lat; lon = el.center.lon; }
+
+            const div = document.createElement('div');
+            div.className = 'filter-res-item';
+            div.innerHTML = `
                 <div class="fri-left">
-                    <h4>${brand}</h4>
-                    <p>${dist} km away</p>
+                    <h4>${name}</h4>
+                    <p>${dist} km</p>
                 </div>
-                <div class="fri-right">
-                    <span class="fri-price">${price}</span>
-                </div>
+                <div class="fri-price">${price}</div>
             `;
-            // CLICK HANDLER -> TOTEM
-            item.onclick = () => {
-                this.openTotem(brand, price, dist);
+            
+            div.onclick = () => {
+                this.closeFilter();
+                map.setView([lat, lon], 16, {animate: true});
+                setTimeout(() => this.openTotem(name, lat, lon, el), 500);
             };
-            list.appendChild(item);
-        }
+
+            listContainer.appendChild(div);
+        });
     },
 
-    // --- TOTEM OVERLAY ---
-    openTotem: function(brand, basePrice, dist) {
+    openTotem: function(name, lat, lng, elementRef) {
         const overlay = document.getElementById('gas-totem-overlay');
-        if(!overlay) return;
-
-        // Set Content
-        const h2 = document.getElementById('totem-brand');
-        if(h2) h2.innerText = brand;
+        const brandHeader = document.getElementById('totem-brand-header');
+        const brandTitle = document.getElementById('totem-brand');
         
-        // Header Color Logic
-        const header = document.getElementById('totem-brand-header');
-        if(header) {
-            header.className = 'totem-header'; // reset
-            header.classList.add(brand.toLowerCase()); // e.g. .aral
-        }
-
-        // Set Prices (Fake variation)
-        const pE10 = parseFloat(basePrice);
-        const pE5 = pE10 + 0.06;
-        const pDiesel = pE10 - 0.15;
-
-        document.getElementById('price-e10').innerText = pE10.toFixed(2);
-        document.getElementById('price-e5').innerText = pE5.toFixed(2);
-        document.getElementById('price-diesel').innerText = pDiesel.toFixed(2);
-
-        // Show
+        brandHeader.className = 'totem-header ' + this.getBrandClass(name);
+        brandTitle.innerText = name;
+        
+        document.getElementById('totem-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
         overlay.classList.remove('hidden');
+
+        if (TANKERKOENIG_API_KEY && TANKERKOENIG_API_KEY.length > 10) {
+            // FIX: LIVE API CALL
+            const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${TANKERKOENIG_API_KEY}`;
+            fetch(url).then(r => r.json()).then(data => {
+                if (data.ok && data.stations && data.stations.length > 0) {
+                    const station = data.stations[0];
+                    if(elementRef) {
+                        elementRef.realData = station; 
+                        elementRef.simPrices.isOpen = station.isOpen; 
+                        if(station.diesel) elementRef.simPrices.diesel = station.diesel.toFixed(2);
+                        if(station.e10) elementRef.simPrices.e10 = station.e10.toFixed(2);
+                        if(station.e5) elementRef.simPrices.e5 = station.e5.toFixed(2);
+                    }
+                    this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
+                    this.redrawGasMarkers(); 
+                } else { 
+                    // Fallback
+                    this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5); 
+                }
+            }).catch(e => {
+                console.log("Tankerkoenig Error", e);
+                this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
+            });
+        } else {
+            setTimeout(() => {
+                this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
+            }, 300);
+        }
     },
 
-    closeTotem: function() {
-        const overlay = document.getElementById('gas-totem-overlay');
-        if(overlay) overlay.classList.add('hidden');
+    updateTotemUI: function(isOpen, diesel, e10, e5) {
+        const statusEl = document.getElementById('totem-status');
+        if (isOpen) {
+            statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> OPEN';
+            statusEl.style.color = '#30d158';
+        } else {
+            statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
+            statusEl.style.color = '#ff3b30';
+        }
+        document.getElementById('price-diesel').innerText = diesel ? Number(diesel).toFixed(2) : "-.--";
+        document.getElementById('price-e10').innerText = e10 ? Number(e10).toFixed(2) : "-.--";
+        document.getElementById('price-e5').innerText = e5 ? Number(e5).toFixed(2) : "-.--";
+        this.updateTotemSelectionUI();
     },
 
     selectFuel: function(type) {
-        // Just visual selection in totem
-        ['e10','e5','diesel'].forEach(t => {
-            document.getElementById('row-'+t).classList.remove('selected');
-        });
-        document.getElementById('row-'+type).classList.add('selected');
+        currentFuelType = type;
+        this.updateTotemSelectionUI();
+        this.redrawGasMarkers(); 
     },
 
-    // --- OTHER FILTERS ---
-    toggleCams: function() {
-        // Toggle Filter Chip Visual
-        const btn = document.getElementById('filter-cam');
-        btn.classList.toggle('active');
-        // Logic to show/hide markers on map would go here
+    updateTotemSelectionUI: function() {
+        document.querySelectorAll('.price-row').forEach(r => r.classList.remove('selected'));
+        document.getElementById('row-' + currentFuelType).classList.add('selected');
     },
 
-    toggleParking: function() {
-        const btn = document.getElementById('filter-parking');
-        btn.classList.toggle('active');
+    closeTotem: function() {
+        document.getElementById('gas-totem-overlay').classList.add('hidden');
     }
 };
-
-// Global Init Trigger
-document.addEventListener('DOMContentLoaded', () => {
-    if(window.ExploreLogic) window.ExploreLogic.init();
-});
