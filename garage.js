@@ -1,22 +1,24 @@
 const GarageLogic = {
     drives: [],
-    carName: "NISSAN GT", // Beispiel Name
+    carName: "MY CAR",
 
     init: function() {
         this.load();
+        // Event Listener für den Name-Input
+        const input = document.getElementById('fixed-car-name');
+        if(input) {
+            input.value = this.carName;
+            input.oninput = (e) => this.saveCarName(e.target.value);
+        }
     },
 
     load: function() {
         const storedDrives = localStorage.getItem('driverhub_drives');
         if (storedDrives) {
-            try { this.drives = JSON.parse(storedDrives); } 
-            catch(e) { this.drives = []; }
+            try { this.drives = JSON.parse(storedDrives); } catch(e) { this.drives = []; }
         }
-        
         const storedName = localStorage.getItem('driverhub_car_name');
-        if (storedName) {
-            this.carName = storedName;
-        }
+        if (storedName) this.carName = storedName;
     },
 
     saveToStorage: function() {
@@ -31,24 +33,45 @@ const GarageLogic = {
     save: function(driveData) {
         this.drives.unshift(driveData);
         this.saveToStorage();
-        // Wenn History offen ist, neu rendern, sonst Garage Hero lassen
         if(document.getElementById('history-overlay').classList.contains('active')) {
             this.renderHistory();
         }
+        this.updateHeroStats();
     },
 
     deleteDrive: function(index, e) {
         if(e) e.stopPropagation();
-        if(confirm("Delete this drive?")) {
+        if(confirm("Delete?")) {
             this.drives.splice(index, 1);
             this.saveToStorage();
-            this.renderHistory(); // Refresh List
+            this.renderHistory();
+            this.updateHeroStats();
         }
+    },
+
+    // Nur Daten updaten, HTML ist ja schon da
+    render: function() {
+        this.updateHeroStats();
+        // 3D Kickstart sicherheitshalber
+        if(window.startGarage3D) window.startGarage3D();
+    },
+
+    updateHeroStats: function() {
+        let totalKm = 0;
+        let topSpeedEver = 0;
+        this.drives.forEach(d => {
+            totalKm += d.dist || 0;
+            if(d.max > topSpeedEver) topSpeedEver = d.max;
+        });
+
+        const elMax = document.getElementById('hero-max');
+        const elKm = document.getElementById('hero-km');
+        if(elMax) elMax.innerText = topSpeedEver;
+        if(elKm) elKm.innerText = totalKm.toFixed(0);
     },
 
     generateRouteSVG: function(path) {
         if (!path || path.length < 2) return "";
-        // ... (SVG Code bleibt gleich wie V94)
         let minLat = 999, maxLat = -999, minLng = 999, maxLng = -999;
         path.forEach(p => {
             if(p.lat < minLat) minLat = p.lat;
@@ -68,73 +91,9 @@ const GarageLogic = {
         return `<svg viewBox="-10 -10 120 120" class="mini-route-svg"><path d="${d}" fill="none" stroke="#30d158" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" /><circle cx="${((path[0].lng - minLng)/width)*100}" cy="${100-((path[0].lat-minLat)/height)*100}" r="8" fill="#fff" /><circle cx="${((path[path.length-1].lng - minLng)/width)*100}" cy="${100-((path[path.length-1].lat-minLat)/height)*100}" r="8" fill="#bf5af2" /></svg>`;
     },
 
-    // --- MAIN RENDER (HERO ONLY) ---
-    render: function() {
-        const list = document.getElementById('garage-content');
-        list.innerHTML = '';
-        
-        let totalKm = 0;
-        let topSpeedEver = 0;
-        this.drives.forEach(d => {
-            totalKm += d.dist || 0;
-            if(d.max > topSpeedEver) topSpeedEver = d.max;
-        });
-
-        // 1. Studio Wrap
-        const studioWrap = document.createElement('div');
-        studioWrap.className = 'studio-stage-wrap';
-        
-        // 3D Container
-        const carStage = document.createElement('div');
-        carStage.id = 'hero-3d-stage';
-        carStage.className = 'hero-3d-stage'; // CSS V95
-        studioWrap.appendChild(carStage);
-        
-        // UI Overlay (Name, Stats, Button)
-        const uiOverlay = document.createElement('div');
-        uiOverlay.className = 'studio-ui-overlay';
-        
-        // Name Input
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.className = 'studio-car-name';
-        nameInput.value = this.carName;
-        nameInput.oninput = (e) => { this.saveCarName(e.target.value); };
-        
-        // Stats
-        const statsBox = document.createElement('div');
-        statsBox.className = 'studio-stats';
-        statsBox.innerHTML = `
-            <div class="ss-item"><span class="ss-val">${topSpeedEver}</span><span class="ss-label">MAX</span></div>
-            <div class="ss-item"><span class="ss-val">${totalKm.toFixed(0)}</span><span class="ss-label">KM</span></div>
-            <div class="ss-item"><span class="ss-val">--</span><span class="ss-label">0-100</span></div>
-        `;
-
-        // History Button
-        const btnHist = document.createElement('div');
-        btnHist.className = 'btn-view-history';
-        btnHist.innerHTML = `VIEW DRIVE HISTORY <i class="fa-solid fa-chevron-up"></i>`;
-        btnHist.onclick = () => { this.openHistory(); };
-
-        uiOverlay.appendChild(nameInput);
-        uiOverlay.appendChild(document.createElement('div')); // Spacer
-        uiOverlay.appendChild(statsBox);
-        uiOverlay.appendChild(btnHist);
-
-        studioWrap.appendChild(uiOverlay);
-        list.appendChild(studioWrap);
-
-        // 3D Init
-        setTimeout(() => {
-            if(window.startGarage3D) window.startGarage3D();
-        }, 150);
-    },
-
-    // --- HISTORY OVERLAY LOGIC ---
     openHistory: function() {
         this.renderHistory();
         document.getElementById('history-overlay').classList.add('active');
-        // Hide Car to save performance? Optional.
     },
 
     closeHistory: function() {
@@ -143,6 +102,7 @@ const GarageLogic = {
 
     renderHistory: function() {
         const list = document.getElementById('history-list');
+        if(!list) return;
         list.innerHTML = '';
 
         this.drives.forEach((d, index) => {
@@ -166,18 +126,14 @@ const GarageLogic = {
                 </div>
             `;
             card.onclick = () => { 
-                this.closeHistory(); // Overlay zu
-                this.openDetails(d, index); // Details auf
+                this.closeHistory(); 
+                this.openDetails(d, index); 
             };
             list.appendChild(card);
         });
-        
-        // Maps init (Optional, SVG is faster)
-        // this.initHistoryMaps(); 
     },
 
     openDetails: function(drive, index) {
-        if(window.hideGarage3D) window.hideGarage3D();
         document.getElementById('global-nav').classList.add('hidden'); 
         document.getElementById('detail-overlay').classList.remove('hidden');
         
@@ -212,7 +168,7 @@ const GarageLogic = {
                 this.drives.splice(index, 1);
                 this.saveToStorage();
                 this.closeDetails();
-                this.openHistory(); // Zurück zur Liste
+                this.openHistory(); 
             }
         };
     },
@@ -243,6 +199,5 @@ const GarageLogic = {
     closeDetails: function() {
         document.getElementById('detail-overlay').classList.add('hidden');
         document.getElementById('global-nav').classList.remove('hidden');
-        if(window.showGarage3D) window.showGarage3D();
     }
 };
