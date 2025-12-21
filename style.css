@@ -10,10 +10,24 @@
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
-body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-dark); color: #fff; overflow: hidden; width: 100vw; height: 100vh; }
+
+/* --- CRITICAL SCROLL FIX (V112) --- */
+html, body { 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Inter', sans-serif; 
+    background-color: var(--bg-dark); 
+    color: #fff; 
+    /* Zwingt den Browser, nicht zu scrollen */
+    overflow: hidden; 
+    width: 100%; 
+    height: 100%; 
+    position: fixed; /* WICHTIG: Nagelt die Seite fest */
+    overscroll-behavior: none;
+}
 
 /* =========================================
-   PRIORITY 1: MAP & USER MARKER (DO NOT TOUCH)
+   PRIORITY 1: MAP & USER MARKER
    ========================================= */
 
 #background-map { 
@@ -77,7 +91,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* --- GARAGE LEGACY STYLES (KEEPING THEM!) --- */
+/* --- GARAGE LEGACY (V81-V88) --- */
 .ride-card { background: rgba(30, 30, 30, 0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 18px; padding: 15px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.1s, background 0.2s; position: relative; overflow: hidden; }
 .rc-left { display: flex; align-items: center; gap: 15px; }
 .rc-icon-box { width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 1.1rem; }
@@ -98,14 +112,17 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .rc2-stats-grid div { font-size: 0.7rem; color: #aaa; display: flex; align-items: center; gap: 5px; }
 .rc2-stats-grid i { color: #555; }
 
-/* --- GARAGE V104 (STUDIO & HISTORY) --- */
+/* --- GARAGE V112 (SOLID STUDIO & NO SCROLL) --- */
 #garage-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #000; }
 
 .garage-content {
-    position: relative; z-index: 10; width: 100%; height: 100%;
+    position: fixed; /* WICHTIG: FIXED DAMIT NICHTS WACKELT */
+    top: 0; left: 0;
+    z-index: 10; width: 100%; height: 100%;
     overflow: hidden; 
     padding: 0; display: flex; flex-direction: column;
     pointer-events: auto;
+    touch-action: none; /* Blockiert Wischen auf dem Container */
 }
 
 /* 1. HERO SHOWROOM CONTAINER */
@@ -121,14 +138,15 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     background: #000; 
 }
 
-/* 2. 3D STAGE (Background) */
+/* 2. 3D STAGE */
 .hero-3d-stage {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 1; /* Ganz hinten */
+    z-index: 1; 
     background: #000;
+    touch-action: none;
 }
 
-/* 3. NAME INPUT (Hollow Text Effect, Background Layer) */
+/* 3. NAME INPUT */
 .showroom-name-input {
     position: absolute;
     top: 12%; 
@@ -143,21 +161,21 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     -webkit-text-stroke: 1px rgba(255,255,255,0.4);
     text-align: center; 
     outline: none;
-    z-index: 2; /* Hinter dem Auto aber vor dem Tunnel */
+    z-index: 2; 
     letter-spacing: 4px;
     pointer-events: auto;
 }
 
-/* 4. FLOATING STATS (Foreground) */
+/* 4. FLOATING STATS */
 .floating-stats {
     position: absolute;
-    bottom: 25%; /* Platz für den Button */
+    bottom: 25%;
     width: 100%;
     display: flex; 
     justify-content: center; 
     align-items: center;
     gap: 30px; 
-    z-index: 10; /* Über dem Auto */
+    z-index: 10; 
     pointer-events: none;
 }
 .fs-item { 
@@ -172,7 +190,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 /* 5. HISTORY BUTTON */
 .btn-view-history {
     position: absolute;
-    bottom: 120px; /* Über der Nav Bar */
+    bottom: 120px; 
     width: 85%; max-width: 340px; height: 55px;
     background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.2); border-radius: 30px;
@@ -185,10 +203,10 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 }
 .btn-view-history:active { transform: scale(0.98); background: rgba(40,40,40,0.9); }
 
-/* HISTORY OVERLAY */
+/* 2. HISTORY OVERLAY (NEW PAGE) */
 #history-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #050505; z-index: 200; 
+    background: #050505; z-index: 200; /* ÜBER NAV BAR */
     display: flex; flex-direction: column;
     transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -202,9 +220,11 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .history-header h2 { margin: 0; font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; text-transform: uppercase; }
 .btn-close-history { background: transparent; border: none; color: #fff; font-size: 1.5rem; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
-.history-list { flex: 1; overflow-y: auto; padding: 20px; }
+.history-list {
+    flex: 1; overflow-y: auto; padding: 20px;
+}
 
-/* RIDE CARD V3 */
+/* RIDE CARD V3 (Used in History) */
 .ride-card-v3 {
     background: #111; border: 1px solid #222; border-radius: 20px; overflow: hidden; margin-bottom: 15px; cursor: pointer; transition: transform 0.1s; display: flex; flex-direction: column;
 }
