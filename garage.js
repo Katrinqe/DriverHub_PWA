@@ -64,13 +64,10 @@ const GarageLogic = {
 
         const elMax = document.getElementById('hero-max');
         const elKm = document.getElementById('hero-km');
-        if(elMax) elMax.innerText = Math.round(topSpeedEver); // Keine Dezimalstellen
+        if(elMax) elMax.innerText = Math.round(topSpeedEver); 
         if(elKm) elKm.innerText = totalKm.toFixed(0);
     },
 
-    // ... [Rest: generateRouteSVG, openHistory, renderHistory, openDetails, renderChart, closeDetails bleibt gleich wie V101] ...
-    // Bitte den restlichen Code von V101 hier behalten!
-    
     generateRouteSVG: function(path) {
         if (!path || path.length < 2) return "";
         let minLat = 999, maxLat = -999, minLng = 999, maxLng = -999;
