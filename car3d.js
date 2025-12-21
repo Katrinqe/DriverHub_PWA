@@ -8,32 +8,20 @@ let previousMousePosition = { x: 0, y: 0 };
 
 function init3D() {
     const container = document.getElementById('hero-3d-stage');
-    
-    if (!container || container.clientWidth === 0) { 
-        requestAnimationFrame(init3D); 
-        return; 
-    }
-
+    if (!container || container.clientWidth === 0) { requestAnimationFrame(init3D); return; }
     if (isInitialized) return;
     isInitialized = true;
-
     while(container.firstChild) { container.removeChild(container.firstChild); }
 
-    // 1. SCENE (Deep Black)
+    // 1. SCENE
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000); 
-    // Nebel, damit der Tunnel hinten "ins Nichts" läuft (wie im Screenshot)
-    scene.fog = new THREE.FogExp2(0x000000, 0.05);
+    scene.background = new THREE.Color(0x111111); // Dunkelgrau für Tiefe
 
-    // 2. CAMERA
+    // 2. CAMERA (Responsive)
     const aspect = container.clientWidth / container.clientHeight;
     camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
-    
-    // Check Mobile vs Desktop für Zoom
     const isMobile = aspect < 1.0;
-    const camZ = isMobile ? 10.5 : 7.0; 
-    
-    camera.position.set(0, 1.3, camZ); 
+    camera.position.set(0, 1.4, isMobile ? 10.0 : 7.5); 
     camera.lookAt(0, 0.5, 0);
 
     // 3. RENDERER
@@ -41,83 +29,76 @@ function init3D() {
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.8; // Helles Neon-Licht
+    renderer.toneMappingExposure = 1.0;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(renderer.domElement);
 
-    // 4. LIGHTING
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); 
+    // 4. LIGHTING (Neutral Studio)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
     scene.add(ambientLight);
 
-    // Top Light (Sonne)
-    const topLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    topLight.position.set(0, 10, 0);
-    scene.add(topLight);
+    // Hauptlicht (Weiss, Schatten)
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    mainLight.position.set(5, 10, 5);
+    mainLight.castShadow = true;
+    scene.add(mainLight);
 
-    // Front Fill
-    const frontLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    frontLight.position.set(0, 0.5, 10);
-    scene.add(frontLight);
+    // Fill von vorne
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    fillLight.position.set(0, 1, 10);
+    scene.add(fillLight);
 
-    // Rim Light (Weiß/Bläulich für Kanten)
-    const rimLight = new THREE.SpotLight(0xaaddff, 10.0);
-    rimLight.position.set(0, 5, -5);
-    rimLight.lookAt(0, 0, 0);
-    scene.add(rimLight);
+    // Rim Light (Weiss, nicht Blau!)
+    const backLight = new THREE.SpotLight(0xffffff, 3.0);
+    backLight.position.set(0, 5, -5);
+    backLight.lookAt(0, 0, 0);
+    scene.add(backLight);
 
-    // 5. STUDIO ARCHITECTURE (Nachbau des Screenshots)
-    
-    // A. Boden (Spiegel)
-    const floorGeo = new THREE.PlaneGeometry(40, 100);
-    const floorMat = new THREE.MeshStandardMaterial({ 
-        color: 0x020202, // Fast Schwarz
-        roughness: 0.1,  // Stark spiegelnd
-        metalness: 0.8
-    });
+    // 5. SOLID STUDIO
+    const roomWidth = 10;
+    const roomHeight = 5;
+    const roomLength = 25;
+
+    // Materials
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9, metalness: 0.1, side: THREE.BackSide });
+    const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.5, metalness: 0.2 });
+    const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    // Raum-Box
+    const roomGeo = new THREE.BoxGeometry(roomWidth, roomHeight, roomLength);
+    const room = new THREE.Mesh(roomGeo, wallMat);
+    room.position.set(0, roomHeight / 2, -roomLength / 2 + 5);
+    room.receiveShadow = true;
+    scene.add(room);
+
+    // Boden (Extra Mesh für Look)
+    const floorGeo = new THREE.PlaneGeometry(roomWidth, roomLength);
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.01;
+    floor.position.y = 0.01;
+    floor.receiveShadow = true;
     scene.add(floor);
 
-    // B. Das Gitter (Die "Tiles" aus dem Bild)
-    // 60x60 Grid, Farbe Dunkelgrau
-    const grid = new THREE.GridHelper(80, 80, 0x444444, 0x222222);
-    grid.position.y = 0.0;
-    grid.material.transparent = true;
-    grid.material.opacity = 0.4; // Sichtbar aber nicht dominant
-    scene.add(grid);
-
-    // C. Die Neon-Rahmen (High Density)
-    const neonMat = new THREE.MeshBasicMaterial({ color: 0xffffff }); 
-    
-    const tunnelWidth = 4.2;  
-    const tunnelHeight = 3.5; 
-    const numFrames = 25; // VIEL MEHR RAHMEN (Dichte!)
-    const spacing = 1.5;  // Enger zusammen
-
-    for (let i = 0; i < numFrames; i++) {
-        // Startet hinter der Kamera und geht weit rein
-        const z = 6 - (i * spacing); 
-
-        // Rahmen Geometrie (Sehr dünn, wie Laser)
-        const thickness = 0.05;
-
-        // 1. Säule Links
-        const leftPillar = new THREE.Mesh(new THREE.BoxGeometry(thickness, tunnelHeight, thickness), neonMat);
-        leftPillar.position.set(-tunnelWidth, tunnelHeight / 2, z);
-        scene.add(leftPillar);
-
-        // 2. Säule Rechts
-        const rightPillar = new THREE.Mesh(new THREE.BoxGeometry(thickness, tunnelHeight, thickness), neonMat);
-        rightPillar.position.set(tunnelWidth, tunnelHeight / 2, z);
-        scene.add(rightPillar);
-
-        // 3. Deckenbalken
-        const topBeam = new THREE.Mesh(new THREE.BoxGeometry(tunnelWidth * 2, thickness, thickness), neonMat);
-        topBeam.position.set(0, tunnelHeight, z);
-        scene.add(topBeam);
+    // Lichter (5 Streifen)
+    const numLights = 5;
+    const spacing = 4;
+    for (let i = 0; i < numLights; i++) {
+        const z = 2 - (i * spacing);
+        const strip = new THREE.Mesh(new THREE.BoxGeometry(roomWidth - 1, 0.1, 0.4), lightMat);
+        strip.position.set(0, roomHeight - 0.1, z);
+        scene.add(strip);
+        
+        const vLeft = new THREE.Mesh(new THREE.BoxGeometry(0.1, roomHeight, 0.4), lightMat);
+        vLeft.position.set(-roomWidth / 2 + 0.1, roomHeight / 2, z);
+        scene.add(vLeft);
+        
+        const vRight = new THREE.Mesh(new THREE.BoxGeometry(0.1, roomHeight, 0.4), lightMat);
+        vRight.position.set(roomWidth / 2 - 0.1, roomHeight / 2, z);
+        scene.add(vRight);
     }
 
-    // 6. INTERACTION
+    // 6. INTERACTION & SCROLL BLOCK
     const onMouseDown = (e) => { isDragging = true; previousMousePosition = { x: e.offsetX, y: e.offsetY }; };
     const onMouseMove = (e) => {
         if(isDragging && carModel) {
@@ -128,57 +109,57 @@ function init3D() {
     };
     const onMouseUp = () => { isDragging = false; };
 
-    const onTouchStart = (e) => { isDragging = true; previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+    const onTouchStart = (e) => { 
+        e.preventDefault(); 
+        isDragging = true; 
+        previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
+    };
     const onTouchMove = (e) => {
+        e.preventDefault(); 
         if(isDragging && carModel) {
             const deltaMove = { x: e.touches[0].clientX - previousMousePosition.x };
             carModel.rotation.y += deltaMove.x * 0.01;
             previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         }
     };
-    const onTouchEnd = () => { isDragging = false; };
+    const onTouchEnd = (e) => { e.preventDefault(); isDragging = false; };
 
-    container.addEventListener('mousedown', onMouseDown);
-    container.addEventListener('mousemove', onMouseMove);
-    container.addEventListener('mouseup', onMouseUp);
-    container.addEventListener('touchstart', onTouchStart, {passive: false});
-    container.addEventListener('touchmove', onTouchMove, {passive: false});
-    container.addEventListener('touchend', onTouchEnd);
+    renderer.domElement.addEventListener('mousedown', onMouseDown);
+    renderer.domElement.addEventListener('mousemove', onMouseMove);
+    renderer.domElement.addEventListener('mouseup', onMouseUp);
+    renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: false});
+    renderer.domElement.addEventListener('touchmove', onTouchMove, {passive: false});
+    renderer.domElement.addEventListener('touchend', onTouchEnd, {passive: false});
 
     // 7. CAR LOAD
     const loader = new GLTFLoader();
     loader.load('car.glb', (gltf) => {
         carModel = gltf.scene;
-        
         const box = new THREE.Box3().setFromObject(carModel);
         const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        
-        // Scale
-        const scale = 3.6 / maxDim; 
+        const maxDim = Math.max(box.getSize(new THREE.Vector3()).x, box.getSize(new THREE.Vector3()).y, box.getSize(new THREE.Vector3()).z);
+        const scale = 3.8 / maxDim; 
         carModel.scale.set(scale, scale, scale);
-        
         carModel.position.x = -center.x * scale;
-        carModel.position.y = -box.min.y * scale; 
+        carModel.position.y = -box.min.y * scale + 0.02; 
         carModel.position.z = -center.z * scale;
 
-        // REFLEXIONEN MAXIMIEREN
         carModel.traverse((child) => {
-            if (child.isMesh && child.material) {
-                child.material.envMapIntensity = 3.5; // Lack saugt das Neonlicht auf
-                child.material.roughness = 0.1; 
-                child.material.metalness = 0.8;
-                child.material.needsUpdate = true;
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+                if(child.material) {
+                    child.material.envMapIntensity = 1.0;
+                    child.material.roughness = 0.4;
+                    child.material.metalness = 0.5;
+                    child.material.needsUpdate = true;
+                }
             }
         });
         scene.add(carModel);
     });
 
-    function animate() {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-    }
+    function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
     animate();
 
     const resizeObserver = new ResizeObserver(() => {
@@ -187,13 +168,7 @@ function init3D() {
             camera.aspect = newAspect;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
-            
-            // Zoom Logic
-            if(newAspect < 1.0) {
-                camera.position.z = 10.5; // Mobile: Weiter weg
-            } else {
-                camera.position.z = 7.0; // Desktop: Nah
-            }
+            camera.position.z = (newAspect < 1.0) ? 9.5 : 7.0;
         }
     });
     resizeObserver.observe(container);
