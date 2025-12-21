@@ -9,7 +9,7 @@ const GarageLogic = {
             input.value = this.carName;
             input.oninput = (e) => this.saveCarName(e.target.value);
         }
-        this.updateHeroStats(); // Initial laden
+        this.updateHeroStats(); 
     },
 
     load: function() {
@@ -49,10 +49,9 @@ const GarageLogic = {
         }
     },
 
-    // Keine Render-Funktion mehr nötig, HTML ist fix! Nur Update.
+    // WICHTIG: Render fasst den 3D Container NICHT mehr an!
     render: function() {
         this.updateHeroStats();
-        if(window.startGarage3D) window.startGarage3D();
     },
 
     updateHeroStats: function() {
