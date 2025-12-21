@@ -9,6 +9,41 @@ const DriverLogic = {
     lastSpeedCheck: 0,
     lastRecordedPoint: null, 
 
+    // WICHTIG: Diese Funktion verbindet den Button beim Start
+    init: function() {
+        const btnStop = document.getElementById('btn-stop');
+        if (!btnStop) return;
+
+        let pressTimer;
+
+        // Start Drücken (Maus & Touch)
+        const startPress = (e) => {
+            e.preventDefault(); // Verhindert Geister-Klicks
+            btnStop.classList.add('holding');
+            
+            // Nach 1.5 Sekunden auslösen
+            pressTimer = setTimeout(() => {
+                this.stop();
+                btnStop.classList.remove('holding');
+            }, 1500); 
+        };
+
+        // Loslassen / Abbrechen
+        const cancelPress = (e) => {
+            if (e.type === 'mouseup' || e.type === 'touchend') e.preventDefault();
+            clearTimeout(pressTimer);
+            btnStop.classList.remove('holding');
+        };
+
+        // Event Listener hinzufügen
+        btnStop.addEventListener('mousedown', startPress);
+        btnStop.addEventListener('touchstart', startPress, {passive: false});
+        
+        btnStop.addEventListener('mouseup', cancelPress);
+        btnStop.addEventListener('mouseleave', cancelPress);
+        btnStop.addEventListener('touchend', cancelPress);
+    },
+
     start: function() {
         this.startTime = Date.now();
         this.startDist = 0;
@@ -128,6 +163,7 @@ const DriverLogic = {
     },
 
     stop: function() {
+        console.log("Stopping drive...");
         clearInterval(this.interval);
         clearInterval(this.saveInterval);
         this.clearCrashData(); 
@@ -139,32 +175,18 @@ const DriverLogic = {
         const timeStr = `${durationMin.toString().padStart(2,'0')}:${durationSec.toString().padStart(2,'0')}`;
         const avgSpeed = (durationMs > 0 && this.startDist > 0) ? Math.round(this.startDist / (durationMs/3600000)) : 0;
 
-        if (window.NaviLogic) {
-            window.NaviLogic.recordStats = {
-                dist: this.startDist,
-                startTime: this.startTime,
-                path: this.path,
-                maxSpeed: this.maxSpeed 
-            };
-        }
-        
-        // UI Update
+        // UI Update (Summary Screen füllen)
         document.getElementById('sum-avg').innerText = avgSpeed;
         document.getElementById('sum-dist').innerText = this.startDist.toFixed(2);
         document.getElementById('sum-time').innerText = timeStr;
-        document.getElementById('sum-max').innerText = this.maxSpeed; // Zeigt Top Speed im Summary an
+        document.getElementById('sum-max').innerText = this.maxSpeed; 
         
-        // Falls das Vergleichs-Element existiert, verstecken
-        const compRow = document.getElementById('sum-comparison-row');
-        if(compRow) compRow.classList.add('hidden'); 
+        // Screens umschalten
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById('summary-screen').classList.remove('hidden');
+        document.getElementById('summary-screen').classList.add('active');
 
-        // Screen Switch (Sicherheitscheck)
-        if(typeof switchScreen === 'function') {
-            switchScreen('summary-screen');
-        } else if(window.App && window.App.switchScreen) {
-            window.App.switchScreen('summary-screen');
-        }
-
+        // Global Nav ausblenden
         const globalNav = document.getElementById('global-nav');
         if(globalNav) globalNav.classList.add('hidden'); 
         
@@ -176,14 +198,15 @@ const DriverLogic = {
             mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
         }
 
-        // Summary Mini-Map
+        // Summary Mini-Map laden
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
             if(mapContainer) {
                 if (window.summaryMapInstance) { window.summaryMapInstance.remove(); window.summaryMapInstance = null; }
                 mapContainer.innerHTML = "";
                 window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
-                // Dark Mode Tiles fix
+                
+                // Dark Mode Tiles
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
                     subdomains: 'abcd', maxZoom: 19
                 }).addTo(window.summaryMapInstance);
@@ -196,9 +219,13 @@ const DriverLogic = {
             }
         }, 300);
 
-        // --- DER FIX FÜR DEN SAVE BUTTON ---
-        document.getElementById('btn-save').onclick = () => {
-            // 1. Daten direkt erstellen
+        // SAVE LOGIK BINDEN
+        const btnSave = document.getElementById('btn-save');
+        // Klone Button um alte Listener zu entfernen
+        const newBtnSave = btnSave.cloneNode(true);
+        btnSave.parentNode.replaceChild(newBtnSave, btnSave);
+
+        newBtnSave.onclick = () => {
             const driveData = {
                 id: Date.now(),
                 date: new Date().toLocaleDateString('de-DE'),
@@ -210,37 +237,38 @@ const DriverLogic = {
                 path: this.path
             };
 
-            // 2. Direkt in LocalStorage speichern (keine Abhängigkeit von GarageLogic)
             let history = [];
-            try {
-                history = JSON.parse(localStorage.getItem('driverhub_drives') || "[]");
-            } catch(e) {}
+            try { history = JSON.parse(localStorage.getItem('driverhub_drives') || "[]"); } catch(e) {}
             history.unshift(driveData);
             localStorage.setItem('driverhub_drives', JSON.stringify(history));
 
-            console.log("Drive saved manually:", driveData);
-
-            // 3. Garage Liste aktualisieren (falls GarageLogic da ist)
+            // Zur Garage wechseln
+            if(typeof App !== 'undefined' && App.switchScreen) {
+                App.switchScreen('garage');
+            } else {
+                // Fallback Switch
+                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+                document.getElementById('garage-screen').classList.remove('hidden');
+                document.getElementById('garage-screen').classList.add('active');
+                if(globalNav) globalNav.classList.remove('hidden');
+            }
+            
+            // Liste neu laden falls möglich
             if(window.GarageLogic && typeof window.GarageLogic.loadList === 'function') {
                 window.GarageLogic.loadList();
             }
-
-            // 4. Zur Garage wechseln
-            if(typeof switchScreen === 'function') {
-                switchScreen('garage-screen');
-                // Nav Icons updaten
-                document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active-home', 'active-map', 'active-garage'));
-                const navG = document.getElementById('nav-garage');
-                if(navG) navG.classList.add('active-garage');
-                // Bottom Nav wieder zeigen
-                if(globalNav) globalNav.classList.remove('hidden');
-            }
         };
 
-        // Discard Button
-        document.getElementById('btn-discard').onclick = () => {
-            if(typeof switchScreen === 'function') switchScreen('home-screen');
-            if(globalNav) globalNav.classList.remove('hidden');
+        // DISCARD LOGIK
+        const btnDiscard = document.getElementById('btn-discard');
+        btnDiscard.onclick = () => {
+            if(typeof App !== 'undefined') App.switchScreen('home');
+            else location.reload();
         }; 
     }
 };
+
+// Initialisierung sofort beim Laden
+document.addEventListener('DOMContentLoaded', () => {
+    DriverLogic.init();
+});
