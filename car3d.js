@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-let scene, camera, renderer, carModel, parkingModel;
-let isInitialized = false; 
-let isDragging = false;
-let previousMousePosition = { x: 0, y: 0 };
+let scene, camera, renderer, carModel, controls;
+let isInitialized = false;
 
 function init3D() {
     const container = document.getElementById('hero-3d-stage');
     
+    // Warten bis Container da ist
     if (!container || container.clientWidth === 0) { 
         requestAnimationFrame(init3D); 
         return; 
@@ -22,187 +22,152 @@ function init3D() {
 
     // 1. SCENE
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000); 
-    // Dunkler Nebel für Atmosphäre
-    scene.fog = new THREE.FogExp2(0x000000, 0.02);
+    // Transparent, damit der CSS-Gradient (blaue Aura) durchscheint!
+    scene.background = null; 
 
     // 2. CAMERA
     const aspect = container.clientWidth / container.clientHeight;
-    camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
-    
-    // Position: Etwas tiefer für den "Garage"-Look
-    const isMobile = aspect < 1.0;
-    camera.position.set(0, 1.4, isMobile ? 12.0 : 8.0); 
-    camera.lookAt(0, 0.8, 0);
+    camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
+    camera.position.set(3.5, 1.5, 3.5); // Schöner schräger Winkel am Start
 
     // 3. RENDERER
-    renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true, powerPreference: "high-performance" });
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true }); // Alpha true für Transparenz
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    
-    // Wichtig für realistische Materialien
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMappingExposure = 1.2;
     container.appendChild(renderer.domElement);
 
-    // 4. LIGHTING (Mischung aus Umgebungslicht und Spots)
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
+    // 4. CONTROLS (Der "Drehteller")
+    controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // Weiches Nachlaufen
+    controls.dampingFactor = 0.05;
+    controls.enableZoom = false; // Kein Zoomen, feste Größe
+    controls.enablePan = false;  // Kein Verschieben
+    
+    // LIMITS: Damit man nicht aufs Dach gucken kann
+    // 90 Grad = Pi/2. Wir lassen nur ganz leichten Spielraum um die Horizontale.
+    controls.minPolarAngle = Math.PI / 2 - 0.1; 
+    controls.maxPolarAngle = Math.PI / 2 + 0.1; 
+    
+    controls.autoRotate = true; // Dreht sich leicht von selbst
+    controls.autoRotateSpeed = 0.5;
+
+    // 5. LIGHTING (Showroom Setup)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); 
     scene.add(ambientLight);
 
-    // Hauptlicht von Oben (Sonne/Deckenleuchte)
-    const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    dirLight.position.set(5, 10, 5);
-    dirLight.castShadow = true;
-    // Schatten-Auflösung hochdrehen
-    dirLight.shadow.mapSize.width = 2048;
-    dirLight.shadow.mapSize.height = 2048;
-    scene.add(dirLight);
+    // Hauptlicht von vorne-oben-rechts
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    keyLight.position.set(5, 10, 7);
+    scene.add(keyLight);
 
-    // Fill Light von vorne
-    const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    fillLight.position.set(0, 2, 10);
-    scene.add(fillLight);
+    // Blaues Rim-Light von hinten (passend zur Aura)
+    const rimLight = new THREE.SpotLight(0x007aff, 5.0);
+    rimLight.position.set(-5, 2, -5);
+    rimLight.lookAt(0, 0, 0);
+    scene.add(rimLight);
 
-    // 5. INTERACTION
-    const onMouseDown = (e) => { isDragging = true; previousMousePosition = { x: e.offsetX, y: e.offsetY }; };
-    const onMouseMove = (e) => {
-        if(isDragging && carModel) {
-            const deltaMove = { x: e.offsetX - previousMousePosition.x };
-            carModel.rotation.y += deltaMove.x * 0.01; 
-            previousMousePosition = { x: e.offsetX, y: e.offsetY };
-        }
-    };
-    const onMouseUp = () => { isDragging = false; };
-
-    const onTouchStart = (e) => { 
-        e.preventDefault(); isDragging = true; 
-        previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; 
-    };
-    const onTouchMove = (e) => {
-        e.preventDefault();
-        if(isDragging && carModel) {
-            const deltaMove = { x: e.touches[0].clientX - previousMousePosition.x };
-            carModel.rotation.y += deltaMove.x * 0.01;
-            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        }
-    };
-    const onTouchEnd = (e) => { e.preventDefault(); isDragging = false; };
-
-    container.addEventListener('mousedown', onMouseDown);
-    container.addEventListener('mousemove', onMouseMove);
-    container.addEventListener('mouseup', onMouseUp);
-    container.addEventListener('touchstart', onTouchStart, {passive: false});
-    container.addEventListener('touchmove', onTouchMove, {passive: false});
-    container.addEventListener('touchend', onTouchEnd, {passive: false});
-
-    // 6. LOADER
+    // 6. CAR LOAD
     const loader = new GLTFLoader();
-
-    // A. PARKING GARAGE LADEN
-    loader.load('parking.glb', (gltf) => {
-        parkingModel = gltf.scene;
+    loader.load('car.glb', (gltf) => {
+        carModel = gltf.scene;
         
-        // --- AUTO-SCALING LOGIC ---
-        // Wir messen die Garage aus
-        const box = new THREE.Box3().setFromObject(parkingModel);
-        const size = box.getSize(new THREE.Vector3());
+        // Auto-Scale Logic
+        const box = new THREE.Box3().setFromObject(carModel);
         const center = box.getCenter(new THREE.Vector3());
-
-        // Zielbreite: Wir wollen, dass die Szene etwa 25 Einheiten breit ist
-        // (Damit genug Platz für das Auto ist)
-        let scaleFactor = 25.0 / size.x;
-        if(!isFinite(scaleFactor) || scaleFactor === 0) scaleFactor = 1.0;
-
-        parkingModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+        const size = box.getSize(new THREE.Vector3());
         
-        // Zentrieren: Boden auf 0
-        parkingModel.position.x = -center.x * scaleFactor;
-        parkingModel.position.y = -box.min.y * scaleFactor; 
-        parkingModel.position.z = -center.z * scaleFactor;
+        // Skaliere das Auto so, dass es ca. 4 Einheiten breit ist
+        const maxDim = Math.max(size.x, size.z);
+        const scale = 4.0 / maxDim; 
+        
+        carModel.scale.set(scale, scale, scale);
+        
+        // Zentrieren (Boden auf 0)
+        carModel.position.x = -center.x * scale;
+        carModel.position.y = -box.min.y * scale; 
+        carModel.position.z = -center.z * scale;
 
-        // Materialien aktivieren (Schatten empfangen)
-        parkingModel.traverse((child) => {
-            if (child.isMesh) {
-                child.receiveShadow = true;
-                if(child.material) {
-                    // Beton-Look verstärken falls nötig
-                    child.material.side = THREE.DoubleSide;
-                    // Falls die Textur zu dunkel ist:
-                    // child.material.emissiveIntensity = 0.2; 
-                }
+        // Material Boost für Glanz
+        carModel.traverse((child) => {
+            if (child.isMesh && child.material) {
+                child.material.envMapIntensity = 1.5;
             }
         });
 
-        scene.add(parkingModel);
-        console.log("Parking loaded. Scaled by:", scaleFactor);
+        scene.add(carModel);
 
-        // B. AUTO LADEN (Erst wenn Garage da ist)
-        loader.load('car.glb', (carGltf) => {
-            carModel = carGltf.scene;
-            
-            const carBox = new THREE.Box3().setFromObject(carModel);
-            const carCenter = carBox.getCenter(new THREE.Vector3());
-            const carSize = carBox.getSize(new THREE.Vector3());
-            
-            // Auto Größe anpassen (ca. 4.5 Einheiten lang, passt gut in die 25er Garage)
-            const maxDim = Math.max(carSize.x, carSize.y, carSize.z);
-            const carScale = 4.5 / maxDim; 
-            
-            carModel.scale.set(carScale, carScale, carScale);
-            
-            // Auto auf den Boden stellen
-            carModel.position.x = -carCenter.x * carScale;
-            carModel.position.y = -carBox.min.y * carScale + 0.05; // Leicht über Boden
-            carModel.position.z = -carCenter.z * carScale;
+    }, undefined, (e) => console.error(e));
 
-            carModel.traverse((child) => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
-                    if(child.material) {
-                        // Starker Glanz, damit es im Betonraum gut aussieht
-                        child.material.envMapIntensity = 1.5; 
-                        child.material.needsUpdate = true;
-                    }
-                }
-            });
-            scene.add(carModel);
-        });
-
-    }, undefined, (error) => {
-        console.error("Parking Error:", error);
-        // Falls Garage nicht lädt, fügen wir zur Sicherheit einen Boden ein
-        const grid = new THREE.GridHelper(20, 20, 0x555555, 0x222222);
-        scene.add(grid);
-    });
-
-    // Loop
+    // Animation Loop
     function animate() {
         requestAnimationFrame(animate);
+        controls.update(); // Wichtig für Damping & AutoRotate
         renderer.render(scene, camera);
     }
     animate();
 
-    // Resize
+    // Resize Handler
     const resizeObserver = new ResizeObserver(() => {
         if(container.clientWidth > 0 && container.clientHeight > 0) {
-            const newAspect = container.clientWidth / container.clientHeight;
-            camera.aspect = newAspect;
+            camera.aspect = container.clientWidth / container.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
-            
-            if(newAspect < 1.0) camera.position.z = 12.0; 
-            else camera.position.z = 8.0;
         }
     });
     resizeObserver.observe(container);
 }
 
-window.startGarage3D = init3D;
-window.hideGarage3D = function() {}; 
-window.showGarage3D = function() {};
+// Logic für Namen speichern & Stats laden
+window.GarageLogic = {
+    init: function() {
+        // Name laden
+        const savedName = localStorage.getItem('my_ride_name');
+        const input = document.getElementById('custom-car-name');
+        if(savedName && input) input.value = savedName;
+        
+        // Input Listener
+        if(input) {
+            input.addEventListener('input', (e) => {
+                localStorage.setItem('my_ride_name', e.target.value);
+            });
+        }
 
-setTimeout(init3D, 200);
+        // Stats berechnen (Fake oder aus echten Daten wenn vorhanden)
+        this.updateStats();
+        
+        // 3D Starten
+        init3D();
+    },
+
+    updateStats: function() {
+        // Hier greifen wir auf die gespeicherten Fahrten zu (falls vorhanden)
+        const storedDrives = localStorage.getItem('driverhub_drives');
+        let drives = [];
+        if(storedDrives) {
+            try { drives = JSON.parse(storedDrives); } catch(e){}
+        }
+
+        let maxSpeed = 0;
+        let totalDist = 0;
+
+        drives.forEach(d => {
+            if(d.max > maxSpeed) maxSpeed = d.max;
+            totalDist += (d.dist || 0);
+        });
+
+        document.getElementById('stat-max-speed').innerText = Math.round(maxSpeed);
+        document.getElementById('stat-total-km').innerText = totalDist.toFixed(0);
+        // 0-100 bleibt erstmal Platzhalter, da schwer zu messen ohne GPS-Logik
+    },
+
+    toggleHistory: function() {
+        alert("History Coming Soon"); // Platzhalter für jetzt
+    }
+};
+
+// Start trigger
+setTimeout(() => {
+    if(window.GarageLogic) window.GarageLogic.init();
+}, 500);
