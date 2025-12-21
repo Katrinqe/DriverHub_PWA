@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=89">
+    <link rel="stylesheet" href="style.css?v=95">
 
     <script type="importmap">
         {
@@ -274,18 +274,22 @@
     <div id="garage-screen" class="screen hidden">
         <div id="garage-bg"></div>
         
-        <div class="garage-aura"></div>
-
         <div id="garage-content" class="garage-content interactive-element"></div>
         
+        <div id="history-overlay">
+            <div class="history-header">
+                <h2>Drive History</h2>
+                <button class="btn-close-history" onclick="GarageLogic.closeHistory()"><i class="fa-solid fa-chevron-down"></i></button>
+            </div>
+            <div id="history-list" class="history-list"></div>
+        </div>
+
         <div id="detail-overlay" class="screen hidden interactive-element solid-bg">
             <div class="detail-header">
                 <h2>Ride Details</h2>
                 <button class="btn-close-detail-text" onclick="GarageLogic.closeDetails()">CLOSE</button>
             </div>
-            
             <div class="telemetry-map-wrap"><div id="detail-map"></div></div>
-            
             <div class="telemetry-content">
                 <div class="telemetry-grid">
                     <div class="t-box"><span class="t-label">MAX SPEED</span><span class="t-val" id="t-max">0</span></div>
@@ -306,12 +310,12 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="explore.js?v=89"></script>
-    <script src="garage.js?v=89"></script>
-    <script src="drive.js?v=89"></script>
-    <script src="navi.js?v=89"></script>
-    <script src="app.js?v=89"></script>
+    <script src="explore.js?v=95"></script>
+    <script src="garage.js?v=95"></script>
+    <script src="drive.js?v=95"></script>
+    <script src="navi.js?v=95"></script>
+    <script src="app.js?v=95"></script>
     
-    <script type="module" src="car3d.js?v=89"></script>
+    <script type="module" src="car3d.js?v=95"></script>
 </body>
 </html>
