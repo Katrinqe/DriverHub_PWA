@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-let scene, camera, renderer, carModel, studioModel;
+let scene, camera, renderer, carModel;
 let isInitialized = false; 
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
@@ -9,7 +9,7 @@ let previousMousePosition = { x: 0, y: 0 };
 function init3D() {
     const container = document.getElementById('hero-3d-stage');
     
-    // Safety check: Nur laden wenn sichtbar
+    // Safety check
     if (!container || container.clientWidth === 0) { 
         requestAnimationFrame(init3D); 
         return; 
@@ -21,54 +21,109 @@ function init3D() {
     // Clean up
     while(container.firstChild) { container.removeChild(container.firstChild); }
 
-    // 1. Scene
+    // 1. SCENE
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000); 
+    // Nebel etwas dichter, damit das Ende des Tunnels weicher ist
+    scene.fog = new THREE.FogExp2(0x000000, 0.08);
 
-    // 2. Camera - Festgenagelt!
-    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    // Position IM Tunnel
-    camera.position.set(2.5, 1.2, 4.5); 
+    // 2. CAMERA - ZENTRIERT (X=0)!
+    camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+    // X=0 für Symmetrie, Y=1.4 für Augenhöhe, Z=7.5 für Abstand
+    camera.position.set(0, 1.4, 7.5); 
     camera.lookAt(0, 0.5, 0);
 
-    // 3. Renderer
-    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+    // 3. RENDERER
+    renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true, powerPreference: "high-performance" });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0; 
+    renderer.toneMappingExposure = 1.2; 
     container.appendChild(renderer.domElement);
 
-    // 4. Custom Lighting (Kein Ambient, nur Spots für Drama)
-    // Deckenlichter simulieren
-    const topLight1 = new THREE.RectAreaLight(0xffffff, 5.0, 10, 0.2);
-    topLight1.position.set(0, 4, 0);
-    topLight1.lookAt(0, 0, 0);
-    scene.add(topLight1);
+    // 4. LIGHTING (Optimiert für Sichtbarkeit)
+    
+    // Ambient (Grundhelligkeit gegen schwarze Löcher)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); 
+    scene.add(ambientLight);
 
-    const topLight2 = new THREE.RectAreaLight(0xffffff, 5.0, 10, 0.2);
-    topLight2.position.set(0, 4, -5);
-    topLight2.lookAt(0, 0, -5);
-    scene.add(topLight2);
+    // Top Light (Sonne von oben)
+    const topSpot = new THREE.SpotLight(0xffffff, 8.0);
+    topSpot.position.set(0, 10, 0);
+    topSpot.angle = Math.PI / 3;
+    topSpot.penumbra = 0.5;
+    scene.add(topSpot);
 
-    // Rim Light (Blau von hinten)
-    const rimLight = new THREE.SpotLight(0x007aff, 50.0);
-    rimLight.position.set(-5, 2, -5);
+    // FRONT FILL (Damit man die Front sieht!)
+    const frontLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    frontLight.position.set(0, 1, 10); // Direkt von der Kamera aus
+    scene.add(frontLight);
+
+    // Rim Light (Blau von hinten für Kontur - Symmetrisch)
+    const rimLight = new THREE.SpotLight(0x007aff, 20.0);
+    rimLight.position.set(0, 5, -10); // Mittig hinten
     rimLight.lookAt(0, 0, 0);
     scene.add(rimLight);
 
-    // 5. Interaction (Auto drehen, NICHT Kamera)
+    // 5. TUNNEL GEOMETRY (SYMMETRISCH)
+    
+    // Boden (Matter, dunkler Asphalt-Look)
+    const floorGeo = new THREE.PlaneGeometry(30, 60);
+    const floorMat = new THREE.MeshStandardMaterial({ 
+        color: 0x050505, 
+        roughness: 0.3, // Weniger Spiegelung (war 0.1)
+        metalness: 0.5  // Weniger Metall (war 0.8)
+    });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.01;
+    scene.add(floor);
+
+    // Lichtstreifen Material (Weiß Leuchtend)
+    const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    
+    // Streifen an der Decke (Länger und breiter)
+    const stripGeo = new THREE.BoxGeometry(0.15, 0.05, 8); // 8m lang
+    
+    // Loop für Tiefe
+    for (let i = 0; i < 5; i++) {
+        const z = (i * 5) - 10; // -10, -5, 0, 5, 10
+        
+        // Links Oben
+        const l1 = new THREE.Mesh(stripGeo, lightMat);
+        l1.position.set(-3.5, 3.0, z); // Breiterer Tunnel (3.5m)
+        l1.rotation.x = Math.PI / 2;
+        scene.add(l1);
+
+        // Rechts Oben
+        const l2 = new THREE.Mesh(stripGeo, lightMat);
+        l2.position.set(3.5, 3.0, z);
+        l2.rotation.x = Math.PI / 2;
+        scene.add(l2);
+        
+        // Vertikale Säulen (Neon Style)
+        const colGeo = new THREE.BoxGeometry(0.1, 4, 0.1);
+        
+        const v1 = new THREE.Mesh(colGeo, lightMat);
+        v1.position.set(-3.5, 2.0, z);
+        scene.add(v1);
+        
+        const v2 = new THREE.Mesh(colGeo, lightMat);
+        v2.position.set(3.5, 2.0, z);
+        scene.add(v2);
+    }
+
+    // 6. INTERACTION (Nur Auto drehen)
     const onMouseDown = (e) => { isDragging = true; previousMousePosition = { x: e.offsetX, y: e.offsetY }; };
     const onMouseMove = (e) => {
         if(isDragging && carModel) {
             const deltaMove = { x: e.offsetX - previousMousePosition.x };
-            carModel.rotation.y += deltaMove.x * 0.01; // Dreht das Auto
+            carModel.rotation.y += deltaMove.x * 0.01; 
             previousMousePosition = { x: e.offsetX, y: e.offsetY };
         }
     };
     const onMouseUp = () => { isDragging = false; };
 
-    // Touch Support
     const onTouchStart = (e) => { isDragging = true; previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
     const onTouchMove = (e) => {
         if(isDragging && carModel) {
@@ -79,27 +134,15 @@ function init3D() {
     };
     const onTouchEnd = () => { isDragging = false; };
 
-    renderer.domElement.addEventListener('mousedown', onMouseDown);
-    renderer.domElement.addEventListener('mousemove', onMouseMove);
-    renderer.domElement.addEventListener('mouseup', onMouseUp);
-    renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: false});
-    renderer.domElement.addEventListener('touchmove', onTouchMove, {passive: false});
-    renderer.domElement.addEventListener('touchend', onTouchEnd);
+    container.addEventListener('mousedown', onMouseDown);
+    container.addEventListener('mousemove', onMouseMove);
+    container.addEventListener('mouseup', onMouseUp);
+    container.addEventListener('touchstart', onTouchStart, {passive: false});
+    container.addEventListener('touchmove', onTouchMove, {passive: false});
+    container.addEventListener('touchend', onTouchEnd);
 
-
-    // 6. Loader
+    // 7. LOAD CAR
     const loader = new GLTFLoader();
-
-    // STUDIO LADEN (Deine Datei!)
-    loader.load('studio.glb', (gltf) => {
-        studioModel = gltf.scene;
-        // Skalierung anpassen falls nötig (meist ist es zu groß oder zu klein)
-        studioModel.scale.set(1, 1, 1);
-        studioModel.position.set(0, -0.5, 0);
-        scene.add(studioModel);
-    });
-
-    // AUTO LADEN
     loader.load('car.glb', (gltf) => {
         carModel = gltf.scene;
         
@@ -108,22 +151,26 @@ function init3D() {
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
         
-        const scale = 3.5 / maxDim; 
+        // Auto Skalierung
+        const scale = 3.8 / maxDim; 
         carModel.scale.set(scale, scale, scale);
         
+        // Auto Position (Mitte)
         carModel.position.x = -center.x * scale;
-        carModel.position.y = -box.min.y * scale - 0.5; // Bodenhöhe
+        carModel.position.y = -box.min.y * scale; 
         carModel.position.z = -center.z * scale;
 
+        // Auto Material Boost
         carModel.traverse((child) => {
             if (child.isMesh && child.material) {
                 child.material.envMapIntensity = 2.0; 
+                child.material.needsUpdate = true;
             }
         });
         scene.add(carModel);
     });
 
-    // Loop
+    // Animation Loop
     function animate() {
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
@@ -140,11 +187,8 @@ function init3D() {
     resizeObserver.observe(container);
 }
 
-// Global Hook
 window.startGarage3D = init3D;
-// Fix: UI-Funktionen leer lassen, damit GarageLogic nicht abstürzt
 window.hideGarage3D = function() {}; 
 window.showGarage3D = function() {};
 
-// Starte sofort
 setTimeout(init3D, 200);
