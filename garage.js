@@ -102,7 +102,7 @@ const GarageLogic = {
         carStage.className = 'hero-3d-stage';
         showroom.appendChild(carStage);
 
-        // FIX: Floating Stats (JETZT MIT 3 ITEMS: MAX, KM, 0-100)
+        // Floating Stats
         const floatStats = document.createElement('div');
         floatStats.className = 'floating-stats';
         floatStats.innerHTML = `
