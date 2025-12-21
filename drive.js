@@ -10,7 +10,6 @@ const DriverLogic = {
     lastRecordedPoint: null, 
 
     start: function() {
-        console.log("Drive started");
         this.startTime = Date.now();
         this.startDist = 0;
         this.path = [];
@@ -18,19 +17,16 @@ const DriverLogic = {
         this.lastSpeedCheck = 0;
         this.lastRecordedPoint = null;
         
-        // UI Reset
         document.getElementById('hud-time').innerText = "00:00";
         document.getElementById('hud-dist').innerText = "0.00";
         document.getElementById('hud-speed').innerText = "0";
         document.getElementById('speed-limit').classList.add('hidden'); 
 
-        // Timer starten
         if(this.interval) clearInterval(this.interval);
         this.interval = setInterval(() => {
             this.updateTime();
         }, 1000);
 
-        // Auto-Save starten
         if(this.saveInterval) clearInterval(this.saveInterval);
         this.saveInterval = setInterval(() => {
             this.saveCrashData();
@@ -45,9 +41,11 @@ const DriverLogic = {
         const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
         this.currentSpeed = speed;
 
-        if (speed > this.maxSpeed) this.maxSpeed = speed;
+        if (speed > this.maxSpeed) {
+            this.maxSpeed = speed;
+        }
 
-        // Recording Logic
+        // SMART RECORDING (15m Threshold)
         let shouldRecord = false;
         const newLatLng = L.latLng(lat, lng);
 
@@ -55,24 +53,30 @@ const DriverLogic = {
             shouldRecord = true;
         } else {
             const dist = this.lastRecordedPoint.distanceTo(newLatLng); 
-            if (dist > 15) shouldRecord = true;
+            if (dist > 15) { 
+                shouldRecord = true;
+            }
         }
 
         if (shouldRecord) {
-            this.path.push({ lat: lat, lng: lng, speed: speed, time: Date.now() });
+            this.path.push({
+                lat: lat,
+                lng: lng,
+                speed: speed,
+                time: Date.now()
+            });
             
             if (this.lastRecordedPoint) {
                 const distKm = this.lastRecordedPoint.distanceTo(newLatLng) / 1000;
                 this.startDist += distKm;
             }
+            
             this.lastRecordedPoint = newLatLng;
         }
 
-        // HUD Update
         document.getElementById('hud-speed').innerText = this.currentSpeed;
         document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
         
-        // Speed Limit Check (alle 5 sek)
         if (Date.now() - this.lastSpeedCheck > 5000) {
             this.lastSpeedCheck = Date.now();
             this.checkSpeedLimit(lat, lng);
@@ -81,8 +85,11 @@ const DriverLogic = {
 
     saveCrashData: function() {
         const data = {
-            active: true, startTime: this.startTime, startDist: this.startDist,
-            maxSpeed: this.maxSpeed, path: this.path
+            active: true,
+            startTime: this.startTime,
+            startDist: this.startDist,
+            maxSpeed: this.maxSpeed,
+            path: this.path
         };
         localStorage.setItem('driverhub_crash_save', JSON.stringify(data));
     },
@@ -101,156 +108,141 @@ const DriverLogic = {
     },
 
     checkSpeedLimit: function(lat, lng) {
-        // Nur Simple Fetch, kein komplexer Logic-Block der crashen kann
         const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
-        fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`)
-            .then(r => r.json())
-            .then(data => {
-                const el = document.getElementById('speed-limit');
-                if(data.elements && data.elements.length > 0 && data.elements[0].tags.maxspeed) {
-                    let max = parseInt(data.elements[0].tags.maxspeed);
-                    if(!isNaN(max)) {
-                        el.querySelector('span').innerText = max;
-                        el.classList.remove('hidden');
-                        return;
-                    }
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+        
+        fetch(url).then(r => r.json()).then(data => {
+            const el = document.getElementById('speed-limit');
+            if(data.elements && data.elements.length > 0) {
+                let max = data.elements[0].tags.maxspeed;
+                if(max && !isNaN(parseInt(max))) {
+                    el.querySelector('span').innerText = max;
+                    el.classList.remove('hidden');
+                } else { 
+                    el.classList.add('hidden'); 
                 }
-                el.classList.add('hidden');
-            }).catch(() => {});
+            } else { 
+                el.classList.add('hidden'); 
+            }
+        }).catch(e => { });
     },
 
-    // --- STOP & SUMMARY LOGIC ---
     stop: function() {
-        console.log("STOPPING DRIVE...");
-        
-        // 1. Alles stoppen
         clearInterval(this.interval);
         clearInterval(this.saveInterval);
         this.clearCrashData(); 
 
-        // 2. Werte berechnen
         const durationMs = Date.now() - this.startTime;
         const durationMin = Math.floor(durationMs / 60000);
         const durationSec = Math.floor((durationMs % 60000) / 1000);
         const timeStr = `${durationMin.toString().padStart(2,'0')}:${durationSec.toString().padStart(2,'0')}`;
+        
         const avgSpeed = (durationMs > 0 && this.startDist > 0) ? Math.round(this.startDist / (durationMs/3600000)) : 0;
 
-        // 3. UI Update (Summary Card füllen)
+        // Daten für NaviLogic (falls vorhanden)
+        if(window.NaviLogic) {
+            window.NaviLogic.recordStats = {
+                dist: this.startDist,
+                startTime: this.startTime,
+                path: this.path,
+                maxSpeed: this.maxSpeed 
+            };
+        }
+        
+        // UI Update
         document.getElementById('sum-avg').innerText = avgSpeed;
         document.getElementById('sum-dist').innerText = this.startDist.toFixed(2);
         document.getElementById('sum-time').innerText = timeStr;
-        document.getElementById('sum-max').innerText = this.maxSpeed; 
+        // Top Speed im Summary anzeigen (falls Element existiert)
+        const sumMax = document.getElementById('sum-max');
+        if(sumMax) sumMax.innerText = this.maxSpeed;
 
-        // 4. SCREEN WECHSEL (Hart codiert, damit es funktioniert)
-        // Alle Screens ausblenden
-        document.querySelectorAll('.screen').forEach(s => {
-            s.classList.add('hidden');
-            s.classList.remove('active');
-        });
-        
-        // Summary Screen einblenden
-        const summaryScreen = document.getElementById('summary-screen');
-        summaryScreen.classList.remove('hidden');
-        summaryScreen.classList.add('active'); // Für CSS opacity transition
-        
-        // Bottom Nav weg
-        document.getElementById('global-nav').classList.add('hidden');
+        if(document.getElementById('sum-comparison-row')) {
+            document.getElementById('sum-comparison-row').classList.add('hidden'); 
+        }
 
-        // 5. Map Fixieren & Mini-Map bauen
+        // Screen Wechsel
+        // Wir nutzen den simplen Weg über Klassen, falls switchScreen() fehlt
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.getElementById('summary-screen').classList.remove('hidden');
+        document.getElementById('summary-screen').classList.add('active'); // für Animation
+
+        document.getElementById('global-nav').classList.add('hidden'); 
+        
         const mapEl = document.getElementById('background-map');
         if(mapEl) {
             mapEl.classList.remove('map-smooth-rotate');
-            mapEl.classList.add('map-locked');
-            mapEl.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+            mapEl.classList.add('map-locked'); 
+            mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
         }
 
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
-            if(mapContainer) {
-                // Alte Map killen falls vorhanden
-                if (window.summaryMapInstance) { 
-                    window.summaryMapInstance.remove(); 
-                    window.summaryMapInstance = null; 
-                }
-                mapContainer.innerHTML = "";
-                
-                // Neue Map erstellen
-                window.summaryMapInstance = L.map('summary-map', { 
-                    zoomControl: false, 
-                    attributionControl: false,
-                    dragging: false,
-                    scrollWheelZoom: false 
-                });
-                
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    maxZoom: 19
-                }).addTo(window.summaryMapInstance);
-
-                if (this.path.length > 0) {
-                    const latLngs = this.path.map(p => [p.lat, p.lng]);
-                    const line = L.polyline(latLngs, {color: '#bf5af2', weight: 4}).addTo(window.summaryMapInstance);
-                    window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[20,20]});
-                } else {
-                    // Fallback Location falls keine GPS Punkte
-                    window.summaryMapInstance.setView([51.1657, 10.4515], 6);
-                }
+            if (window.summaryMapInstance) { window.summaryMapInstance.remove(); window.summaryMapInstance = null; }
+            mapContainer.innerHTML = "";
+            window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.summaryMapInstance);
+            if (this.path.length > 1) {
+                const latLngs = this.path.map(p => [p.lat, p.lng]);
+                const line = L.polyline(latLngs, {color: '#bf5af2', weight: 4}).addTo(window.summaryMapInstance);
+                window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[40,40]});
             }
-        }, 100);
+        }, 300);
 
-        // 6. SAVE BUTTON LOGIK (Hier direkt definiert)
-        const btnSave = document.getElementById('btn-save');
-        // Klonen um alte Event Listener zu löschen
-        const newBtnSave = btnSave.cloneNode(true);
-        btnSave.parentNode.replaceChild(newBtnSave, btnSave);
+        // --- DER FIX FÜR SAVE BUTTON ---
+        // Wir klonen den Button, um alte Listener zu löschen
+        const oldBtn = document.getElementById('btn-save');
+        const newBtn = oldBtn.cloneNode(true);
+        oldBtn.parentNode.replaceChild(newBtn, oldBtn);
 
-        newBtnSave.onclick = () => {
-            // Daten speichern
-            const driveData = {
+        newBtn.onclick = () => {
+            // 1. Daten erstellen
+            const driveData = { 
                 id: Date.now(),
                 date: new Date().toLocaleDateString('de-DE'),
-                timestamp: new Date().toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'}),
+                timestamp: new Date().toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'}),
                 dist: parseFloat(this.startDist.toFixed(2)),
-                duration: timeStr,
+                time: timeStr,
                 avg: avgSpeed,
                 max: this.maxSpeed,
-                path: this.path
+                path: this.path 
             };
 
+            // 2. Direkt speichern
             let history = JSON.parse(localStorage.getItem('driverhub_drives') || "[]");
             history.unshift(driveData);
             localStorage.setItem('driverhub_drives', JSON.stringify(history));
 
-            // Zur Garage wechseln
+            console.log("Saved Drive manually", driveData);
+
+            // 3. Zur Garage wechseln
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById('garage-screen').classList.remove('hidden');
+            document.getElementById('garage-screen').classList.add('active');
+            
+            // Navi Leiste zeigen
             document.getElementById('global-nav').classList.remove('hidden');
             
-            // Garage Tab aktiv setzen
+            // Icons updaten
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active-home', 'active-map', 'active-garage'));
-            document.getElementById('nav-garage').classList.add('active-garage');
+            const navG = document.getElementById('nav-garage');
+            if(navG) navG.classList.add('active-garage');
 
-            // Garage Liste neu laden
-            if(window.GarageLogic) window.GarageLogic.loadList();
+            // 4. Liste neu laden (falls GarageLogic da ist)
+            if(window.GarageLogic && window.GarageLogic.loadList) {
+                window.GarageLogic.loadList();
+            }
         };
 
-        // 7. DISCARD BUTTON LOGIK
-        const btnDiscard = document.getElementById('btn-discard');
-        const newBtnDiscard = btnDiscard.cloneNode(true);
-        btnDiscard.parentNode.replaceChild(newBtnDiscard, btnDiscard);
-        
-        newBtnDiscard.onclick = () => {
-            location.reload(); // Einfachste Methode um alles zu resetten
-        };
+        // --- FIX FÜR DISCARD BUTTON ---
+        const oldDisc = document.getElementById('btn-discard');
+        const newDisc = oldDisc.cloneNode(true);
+        oldDisc.parentNode.replaceChild(newDisc, oldDisc);
+
+        newDisc.onclick = () => {
+            // Einfach neuladen oder Home zeigen
+            if(typeof App !== 'undefined' && App.switchScreen) App.switchScreen('home');
+            else location.reload();
+        }; 
     }
 };
-
-// Initialisierung: CLICK BINDING (Das hat gefehlt!)
-document.addEventListener('DOMContentLoaded', () => {
-    const btnStop = document.getElementById('btn-stop');
-    if(btnStop) {
-        // Harter Klick-Listener, keine Animation, keine Spielereien.
-        btnStop.onclick = () => {
-            DriverLogic.stop();
-        };
-    }
-});
