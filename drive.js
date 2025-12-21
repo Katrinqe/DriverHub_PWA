@@ -9,42 +9,8 @@ const DriverLogic = {
     lastSpeedCheck: 0,
     lastRecordedPoint: null, 
 
-    // WICHTIG: Diese Funktion verbindet den Button beim Start
-    init: function() {
-        const btnStop = document.getElementById('btn-stop');
-        if (!btnStop) return;
-
-        let pressTimer;
-
-        // Start Drücken (Maus & Touch)
-        const startPress = (e) => {
-            e.preventDefault(); // Verhindert Geister-Klicks
-            btnStop.classList.add('holding');
-            
-            // Nach 1.5 Sekunden auslösen
-            pressTimer = setTimeout(() => {
-                this.stop();
-                btnStop.classList.remove('holding');
-            }, 1500); 
-        };
-
-        // Loslassen / Abbrechen
-        const cancelPress = (e) => {
-            if (e.type === 'mouseup' || e.type === 'touchend') e.preventDefault();
-            clearTimeout(pressTimer);
-            btnStop.classList.remove('holding');
-        };
-
-        // Event Listener hinzufügen
-        btnStop.addEventListener('mousedown', startPress);
-        btnStop.addEventListener('touchstart', startPress, {passive: false});
-        
-        btnStop.addEventListener('mouseup', cancelPress);
-        btnStop.addEventListener('mouseleave', cancelPress);
-        btnStop.addEventListener('touchend', cancelPress);
-    },
-
     start: function() {
+        console.log("Drive started");
         this.startTime = Date.now();
         this.startDist = 0;
         this.path = [];
@@ -52,16 +18,19 @@ const DriverLogic = {
         this.lastSpeedCheck = 0;
         this.lastRecordedPoint = null;
         
+        // UI Reset
         document.getElementById('hud-time').innerText = "00:00";
         document.getElementById('hud-dist').innerText = "0.00";
         document.getElementById('hud-speed').innerText = "0";
         document.getElementById('speed-limit').classList.add('hidden'); 
 
+        // Timer starten
         if(this.interval) clearInterval(this.interval);
         this.interval = setInterval(() => {
             this.updateTime();
         }, 1000);
 
+        // Auto-Save starten
         if(this.saveInterval) clearInterval(this.saveInterval);
         this.saveInterval = setInterval(() => {
             this.saveCrashData();
@@ -76,11 +45,9 @@ const DriverLogic = {
         const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
         this.currentSpeed = speed;
 
-        if (speed > this.maxSpeed) {
-            this.maxSpeed = speed;
-        }
+        if (speed > this.maxSpeed) this.maxSpeed = speed;
 
-        // SMART RECORDING (15m Threshold)
+        // Recording Logic
         let shouldRecord = false;
         const newLatLng = L.latLng(lat, lng);
 
@@ -88,30 +55,24 @@ const DriverLogic = {
             shouldRecord = true;
         } else {
             const dist = this.lastRecordedPoint.distanceTo(newLatLng); 
-            if (dist > 15) { 
-                shouldRecord = true;
-            }
+            if (dist > 15) shouldRecord = true;
         }
 
         if (shouldRecord) {
-            this.path.push({
-                lat: lat,
-                lng: lng,
-                speed: speed,
-                time: Date.now()
-            });
+            this.path.push({ lat: lat, lng: lng, speed: speed, time: Date.now() });
             
             if (this.lastRecordedPoint) {
                 const distKm = this.lastRecordedPoint.distanceTo(newLatLng) / 1000;
                 this.startDist += distKm;
             }
-            
             this.lastRecordedPoint = newLatLng;
         }
 
+        // HUD Update
         document.getElementById('hud-speed').innerText = this.currentSpeed;
         document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
         
+        // Speed Limit Check (alle 5 sek)
         if (Date.now() - this.lastSpeedCheck > 5000) {
             this.lastSpeedCheck = Date.now();
             this.checkSpeedLimit(lat, lng);
@@ -120,11 +81,8 @@ const DriverLogic = {
 
     saveCrashData: function() {
         const data = {
-            active: true,
-            startTime: this.startTime,
-            startDist: this.startDist,
-            maxSpeed: this.maxSpeed,
-            path: this.path
+            active: true, startTime: this.startTime, startDist: this.startDist,
+            maxSpeed: this.maxSpeed, path: this.path
         };
         localStorage.setItem('driverhub_crash_save', JSON.stringify(data));
     },
@@ -143,89 +101,110 @@ const DriverLogic = {
     },
 
     checkSpeedLimit: function(lat, lng) {
+        // Nur Simple Fetch, kein komplexer Logic-Block der crashen kann
         const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-        
-        fetch(url).then(r => r.json()).then(data => {
-            const el = document.getElementById('speed-limit');
-            if(data.elements && data.elements.length > 0) {
-                let max = data.elements[0].tags.maxspeed;
-                if(max && !isNaN(parseInt(max))) {
-                    el.querySelector('span').innerText = max;
-                    el.classList.remove('hidden');
-                } else { 
-                    el.classList.add('hidden'); 
+        fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`)
+            .then(r => r.json())
+            .then(data => {
+                const el = document.getElementById('speed-limit');
+                if(data.elements && data.elements.length > 0 && data.elements[0].tags.maxspeed) {
+                    let max = parseInt(data.elements[0].tags.maxspeed);
+                    if(!isNaN(max)) {
+                        el.querySelector('span').innerText = max;
+                        el.classList.remove('hidden');
+                        return;
+                    }
                 }
-            } else { 
-                el.classList.add('hidden'); 
-            }
-        }).catch(e => { });
+                el.classList.add('hidden');
+            }).catch(() => {});
     },
 
+    // --- STOP & SUMMARY LOGIC ---
     stop: function() {
-        console.log("Stopping drive...");
+        console.log("STOPPING DRIVE...");
+        
+        // 1. Alles stoppen
         clearInterval(this.interval);
         clearInterval(this.saveInterval);
         this.clearCrashData(); 
 
-        // Berechnung
+        // 2. Werte berechnen
         const durationMs = Date.now() - this.startTime;
         const durationMin = Math.floor(durationMs / 60000);
         const durationSec = Math.floor((durationMs % 60000) / 1000);
         const timeStr = `${durationMin.toString().padStart(2,'0')}:${durationSec.toString().padStart(2,'0')}`;
         const avgSpeed = (durationMs > 0 && this.startDist > 0) ? Math.round(this.startDist / (durationMs/3600000)) : 0;
 
-        // UI Update (Summary Screen füllen)
+        // 3. UI Update (Summary Card füllen)
         document.getElementById('sum-avg').innerText = avgSpeed;
         document.getElementById('sum-dist').innerText = this.startDist.toFixed(2);
         document.getElementById('sum-time').innerText = timeStr;
         document.getElementById('sum-max').innerText = this.maxSpeed; 
-        
-        // Screens umschalten
-        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-        document.getElementById('summary-screen').classList.remove('hidden');
-        document.getElementById('summary-screen').classList.add('active');
 
-        // Global Nav ausblenden
-        const globalNav = document.getElementById('global-nav');
-        if(globalNav) globalNav.classList.add('hidden'); 
+        // 4. SCREEN WECHSEL (Hart codiert, damit es funktioniert)
+        // Alle Screens ausblenden
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.add('hidden');
+            s.classList.remove('active');
+        });
         
-        // Karte sperren
+        // Summary Screen einblenden
+        const summaryScreen = document.getElementById('summary-screen');
+        summaryScreen.classList.remove('hidden');
+        summaryScreen.classList.add('active'); // Für CSS opacity transition
+        
+        // Bottom Nav weg
+        document.getElementById('global-nav').classList.add('hidden');
+
+        // 5. Map Fixieren & Mini-Map bauen
         const mapEl = document.getElementById('background-map');
         if(mapEl) {
             mapEl.classList.remove('map-smooth-rotate');
-            mapEl.classList.add('map-locked'); 
-            mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+            mapEl.classList.add('map-locked');
+            mapEl.style.transform = 'translate(-50%, -50%) rotate(0deg)';
         }
 
-        // Summary Mini-Map laden
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
             if(mapContainer) {
-                if (window.summaryMapInstance) { window.summaryMapInstance.remove(); window.summaryMapInstance = null; }
+                // Alte Map killen falls vorhanden
+                if (window.summaryMapInstance) { 
+                    window.summaryMapInstance.remove(); 
+                    window.summaryMapInstance = null; 
+                }
                 mapContainer.innerHTML = "";
-                window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
                 
-                // Dark Mode Tiles
+                // Neue Map erstellen
+                window.summaryMapInstance = L.map('summary-map', { 
+                    zoomControl: false, 
+                    attributionControl: false,
+                    dragging: false,
+                    scrollWheelZoom: false 
+                });
+                
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    subdomains: 'abcd', maxZoom: 19
+                    maxZoom: 19
                 }).addTo(window.summaryMapInstance);
-                
-                if (this.path.length > 1) {
+
+                if (this.path.length > 0) {
                     const latLngs = this.path.map(p => [p.lat, p.lng]);
                     const line = L.polyline(latLngs, {color: '#bf5af2', weight: 4}).addTo(window.summaryMapInstance);
-                    window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[40,40]});
+                    window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[20,20]});
+                } else {
+                    // Fallback Location falls keine GPS Punkte
+                    window.summaryMapInstance.setView([51.1657, 10.4515], 6);
                 }
             }
-        }, 300);
+        }, 100);
 
-        // SAVE LOGIK BINDEN
+        // 6. SAVE BUTTON LOGIK (Hier direkt definiert)
         const btnSave = document.getElementById('btn-save');
-        // Klone Button um alte Listener zu entfernen
+        // Klonen um alte Event Listener zu löschen
         const newBtnSave = btnSave.cloneNode(true);
         btnSave.parentNode.replaceChild(newBtnSave, btnSave);
 
         newBtnSave.onclick = () => {
+            // Daten speichern
             const driveData = {
                 id: Date.now(),
                 date: new Date().toLocaleDateString('de-DE'),
@@ -237,38 +216,41 @@ const DriverLogic = {
                 path: this.path
             };
 
-            let history = [];
-            try { history = JSON.parse(localStorage.getItem('driverhub_drives') || "[]"); } catch(e) {}
+            let history = JSON.parse(localStorage.getItem('driverhub_drives') || "[]");
             history.unshift(driveData);
             localStorage.setItem('driverhub_drives', JSON.stringify(history));
 
             // Zur Garage wechseln
-            if(typeof App !== 'undefined' && App.switchScreen) {
-                App.switchScreen('garage');
-            } else {
-                // Fallback Switch
-                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-                document.getElementById('garage-screen').classList.remove('hidden');
-                document.getElementById('garage-screen').classList.add('active');
-                if(globalNav) globalNav.classList.remove('hidden');
-            }
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('garage-screen').classList.remove('hidden');
+            document.getElementById('global-nav').classList.remove('hidden');
             
-            // Liste neu laden falls möglich
-            if(window.GarageLogic && typeof window.GarageLogic.loadList === 'function') {
-                window.GarageLogic.loadList();
-            }
+            // Garage Tab aktiv setzen
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active-home', 'active-map', 'active-garage'));
+            document.getElementById('nav-garage').classList.add('active-garage');
+
+            // Garage Liste neu laden
+            if(window.GarageLogic) window.GarageLogic.loadList();
         };
 
-        // DISCARD LOGIK
+        // 7. DISCARD BUTTON LOGIK
         const btnDiscard = document.getElementById('btn-discard');
-        btnDiscard.onclick = () => {
-            if(typeof App !== 'undefined') App.switchScreen('home');
-            else location.reload();
-        }; 
+        const newBtnDiscard = btnDiscard.cloneNode(true);
+        btnDiscard.parentNode.replaceChild(newBtnDiscard, btnDiscard);
+        
+        newBtnDiscard.onclick = () => {
+            location.reload(); // Einfachste Methode um alles zu resetten
+        };
     }
 };
 
-// Initialisierung sofort beim Laden
+// Initialisierung: CLICK BINDING (Das hat gefehlt!)
 document.addEventListener('DOMContentLoaded', () => {
-    DriverLogic.init();
+    const btnStop = document.getElementById('btn-stop');
+    if(btnStop) {
+        // Harter Klick-Listener, keine Animation, keine Spielereien.
+        btnStop.onclick = () => {
+            DriverLogic.stop();
+        };
+    }
 });
