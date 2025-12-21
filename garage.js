@@ -4,12 +4,12 @@ const GarageLogic = {
 
     init: function() {
         this.load();
-        // Event Listener für den Name-Input
         const input = document.getElementById('fixed-car-name');
         if(input) {
             input.value = this.carName;
             input.oninput = (e) => this.saveCarName(e.target.value);
         }
+        this.updateHeroStats(); // Initial laden
     },
 
     load: function() {
@@ -49,10 +49,9 @@ const GarageLogic = {
         }
     },
 
-    // Nur Daten updaten, HTML ist ja schon da
+    // Keine Render-Funktion mehr nötig, HTML ist fix! Nur Update.
     render: function() {
         this.updateHeroStats();
-        // 3D Kickstart sicherheitshalber
         if(window.startGarage3D) window.startGarage3D();
     },
 
