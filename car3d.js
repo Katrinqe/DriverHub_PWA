@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-let scene, camera, renderer, carModel;
+let scene, camera, renderer, carModel, studioModel;
 let isInitialized = false; 
 let isDragging = false;
 let previousMousePosition = { x: 0, y: 0 };
@@ -9,6 +9,7 @@ let previousMousePosition = { x: 0, y: 0 };
 function init3D() {
     const container = document.getElementById('hero-3d-stage');
     
+    // Safety check: Nur laden wenn sichtbar
     if (!container || container.clientWidth === 0) { 
         requestAnimationFrame(init3D); 
         return; 
@@ -17,88 +18,57 @@ function init3D() {
     if (isInitialized) return;
     isInitialized = true;
 
+    // Clean up
     while(container.firstChild) { container.removeChild(container.firstChild); }
 
-    // 1. SCENE
+    // 1. Scene
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000); 
-    scene.fog = new THREE.FogExp2(0x000000, 0.05);
 
-    // 2. CAMERA
-    camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(3.5, 1.2, 4.5); 
+    // 2. Camera - Festgenagelt!
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    // Position IM Tunnel
+    camera.position.set(2.5, 1.2, 4.5); 
     camera.lookAt(0, 0.5, 0);
 
-    // 3. RENDERER
-    renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true, powerPreference: "high-performance" });
+    // 3. Renderer
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.5; 
+    renderer.toneMappingExposure = 1.0; 
     container.appendChild(renderer.domElement);
 
-    // 4. LIGHTS
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.2); 
-    scene.add(ambientLight);
+    // 4. Custom Lighting (Kein Ambient, nur Spots für Drama)
+    // Deckenlichter simulieren
+    const topLight1 = new THREE.RectAreaLight(0xffffff, 5.0, 10, 0.2);
+    topLight1.position.set(0, 4, 0);
+    topLight1.lookAt(0, 0, 0);
+    scene.add(topLight1);
 
-    const spotLight = new THREE.SpotLight(0xffffff, 10.0);
-    spotLight.position.set(5, 8, 5);
-    spotLight.angle = Math.PI / 4;
-    spotLight.penumbra = 0.5;
-    scene.add(spotLight);
+    const topLight2 = new THREE.RectAreaLight(0xffffff, 5.0, 10, 0.2);
+    topLight2.position.set(0, 4, -5);
+    topLight2.lookAt(0, 0, -5);
+    scene.add(topLight2);
 
-    const rimLight = new THREE.SpotLight(0x007aff, 15.0);
+    // Rim Light (Blau von hinten)
+    const rimLight = new THREE.SpotLight(0x007aff, 50.0);
     rimLight.position.set(-5, 2, -5);
     rimLight.lookAt(0, 0, 0);
     scene.add(rimLight);
 
-    // 5. TUNNEL GEOMETRY (CODE GENERATED)
-    const floorGeo = new THREE.PlaneGeometry(20, 40);
-    const floorMat = new THREE.MeshStandardMaterial({ 
-        color: 0x050505, roughness: 0.1, metalness: 0.8 
-    });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -0.01;
-    scene.add(floor);
-
-    const lightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const stripGeo = new THREE.BoxGeometry(0.1, 0.1, 6);
-    
-    for (let i = 0; i < 6; i++) {
-        const z = (i * 3) - 8;
-        const l1 = new THREE.Mesh(stripGeo, lightMat);
-        l1.position.set(-3, 2.5, z);
-        l1.rotation.x = Math.PI / 2;
-        scene.add(l1);
-
-        const l2 = new THREE.Mesh(stripGeo, lightMat);
-        l2.position.set(3, 2.5, z);
-        l2.rotation.x = Math.PI / 2;
-        scene.add(l2);
-        
-        // Vertical Strips
-        const vGeo = new THREE.BoxGeometry(0.1, 3, 0.1);
-        const v1 = new THREE.Mesh(vGeo, lightMat);
-        v1.position.set(-3, 1.5, z);
-        scene.add(v1);
-        
-        const v2 = new THREE.Mesh(vGeo, lightMat);
-        v2.position.set(3, 1.5, z);
-        scene.add(v2);
-    }
-
-    // 6. INTERACTION
+    // 5. Interaction (Auto drehen, NICHT Kamera)
     const onMouseDown = (e) => { isDragging = true; previousMousePosition = { x: e.offsetX, y: e.offsetY }; };
     const onMouseMove = (e) => {
         if(isDragging && carModel) {
             const deltaMove = { x: e.offsetX - previousMousePosition.x };
-            carModel.rotation.y += deltaMove.x * 0.01; 
+            carModel.rotation.y += deltaMove.x * 0.01; // Dreht das Auto
             previousMousePosition = { x: e.offsetX, y: e.offsetY };
         }
     };
     const onMouseUp = () => { isDragging = false; };
 
+    // Touch Support
     const onTouchStart = (e) => { isDragging = true; previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
     const onTouchMove = (e) => {
         if(isDragging && carModel) {
@@ -109,15 +79,27 @@ function init3D() {
     };
     const onTouchEnd = () => { isDragging = false; };
 
-    container.addEventListener('mousedown', onMouseDown);
-    container.addEventListener('mousemove', onMouseMove);
-    container.addEventListener('mouseup', onMouseUp);
-    container.addEventListener('touchstart', onTouchStart, {passive: false});
-    container.addEventListener('touchmove', onTouchMove, {passive: false});
-    container.addEventListener('touchend', onTouchEnd);
+    renderer.domElement.addEventListener('mousedown', onMouseDown);
+    renderer.domElement.addEventListener('mousemove', onMouseMove);
+    renderer.domElement.addEventListener('mouseup', onMouseUp);
+    renderer.domElement.addEventListener('touchstart', onTouchStart, {passive: false});
+    renderer.domElement.addEventListener('touchmove', onTouchMove, {passive: false});
+    renderer.domElement.addEventListener('touchend', onTouchEnd);
 
-    // 7. LOAD CAR
+
+    // 6. Loader
     const loader = new GLTFLoader();
+
+    // STUDIO LADEN (Deine Datei!)
+    loader.load('studio.glb', (gltf) => {
+        studioModel = gltf.scene;
+        // Skalierung anpassen falls nötig (meist ist es zu groß oder zu klein)
+        studioModel.scale.set(1, 1, 1);
+        studioModel.position.set(0, -0.5, 0);
+        scene.add(studioModel);
+    });
+
+    // AUTO LADEN
     loader.load('car.glb', (gltf) => {
         carModel = gltf.scene;
         
@@ -126,22 +108,22 @@ function init3D() {
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
         
-        const scale = 3.8 / maxDim; 
+        const scale = 3.5 / maxDim; 
         carModel.scale.set(scale, scale, scale);
         
         carModel.position.x = -center.x * scale;
-        carModel.position.y = -box.min.y * scale; 
+        carModel.position.y = -box.min.y * scale - 0.5; // Bodenhöhe
         carModel.position.z = -center.z * scale;
 
         carModel.traverse((child) => {
             if (child.isMesh && child.material) {
-                child.material.envMapIntensity = 2.5; 
-                child.material.needsUpdate = true;
+                child.material.envMapIntensity = 2.0; 
             }
         });
         scene.add(carModel);
     });
 
+    // Loop
     function animate() {
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
@@ -158,8 +140,11 @@ function init3D() {
     resizeObserver.observe(container);
 }
 
+// Global Hook
 window.startGarage3D = init3D;
+// Fix: UI-Funktionen leer lassen, damit GarageLogic nicht abstürzt
 window.hideGarage3D = function() {}; 
 window.showGarage3D = function() {};
 
+// Starte sofort
 setTimeout(init3D, 200);
