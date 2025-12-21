@@ -2,139 +2,142 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-let scene, camera, renderer, carModel, studioModel;
+let scene, camera, renderer, carModel, studioModel, debugCube;
 let isInitialized = false; 
 
 function init3D() {
     const container = document.getElementById('hero-3d-stage');
-    
-    // Retry Logik, falls DOM noch nicht bereit
     if (!container) { requestAnimationFrame(init3D); return; }
-    
-    // Check ob Container sichtbar ist
-    if (container.clientWidth === 0 || container.clientHeight === 0) return;
-
-    // Reset bei neuem Aufruf
     if (container.childElementCount === 0) isInitialized = false;
     if (isInitialized) return;
+    if (container.clientWidth === 0 || container.clientHeight === 0) return;
 
     isInitialized = true;
     while(container.firstChild) { container.removeChild(container.firstChild); }
 
-    // 1. Scene Setup
+    // 1. Scene
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000); // Sicherstellen, dass Hintergrund schwarz ist
+    // DEBUG: Hintergrund Grau statt Schwarz, damit wir den Container sehen!
+    scene.background = new THREE.Color(0x1a1a1a); 
     
-    // 2. Camera - WICHTIG: Näher ran, damit wir IM Tunnel sind, nicht dahinter!
-    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
-    camera.position.set(2.5, 1.0, 3.5); // Viel näher dran als vorher
+    // 2. Camera
+    camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(3.0, 1.5, 4.0); // Standard Position
     
     // 3. Renderer
-    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+    renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
     renderer.setSize(container.clientWidth, container.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    
-    // ToneMapping anpassen für helleres Bild
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 2.0; // Sehr hell eingestellt
+    renderer.toneMappingExposure = 1.5; 
     container.appendChild(renderer.domElement);
 
-    // 4. LICHT (Sicherheits-Setup)
-    // Hemisphere Light: Macht ALLES hell, keine Schatten, nur Sichtbarkeit
+    // 4. Licht (Massiv hell)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); 
+    scene.add(ambientLight);
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2.0);
-    hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
-
-    // Spotlights für Glanz
-    const spotLight = new THREE.SpotLight(0xffffff, 10.0);
-    spotLight.position.set(5, 10, 5);
-    scene.add(spotLight);
-
-    const blueRim = new THREE.SpotLight(0x007aff, 20.0);
-    blueRim.position.set(-5, 2, -5);
-    scene.add(blueRim);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 3.0);
+    dirLight.position.set(5, 10, 7);
+    scene.add(dirLight);
 
     // 5. Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enableZoom = false;
-    controls.enablePan = false;
-    // Eingeschränkte Rotation, damit man nicht unter den Boden guckt
-    controls.maxPolarAngle = Math.PI / 2 - 0.05; 
+    controls.enableZoom = true; // Zoom erlaubt zum Testen!
+    controls.autoRotate = false;
 
-    // 6. LOADER SYSTEM (Entkoppelt!)
+    // --- DEBUG WÜRFEL (ROT) ---
+    // Wenn du diesen Würfel siehst, läuft Three.js korrekt!
+    const geo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
+    debugCube = new THREE.Mesh(geo, mat);
+    debugCube.position.set(0, 0, 0);
+    scene.add(debugCube);
+
+    // 6. Loader
     const loader = new GLTFLoader();
     
-    // A: STUDIO LADEN
+    // A: STUDIO LADEN & SKALIEREN
     loader.load('studio.glb', 
         (gltf) => {
-            console.log("Studio geladen");
             studioModel = gltf.scene;
-            // Skalierung und Position anpassen
-            studioModel.scale.set(1, 1, 1);
-            studioModel.position.set(0, -0.5, 0); // Leicht absenken
+            
+            // AUTO-SCALE LOGIC FÜR STUDIO
+            const box = new THREE.Box3().setFromObject(studioModel);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+
+            // Wir wollen, dass das Studio etwa 20 Einheiten breit ist
+            const maxDim = Math.max(size.x, size.y, size.z);
+            let scaleFactor = 1.0;
+            if (maxDim > 0) {
+                scaleFactor = 20.0 / maxDim;
+            }
+            
+            studioModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            
+            // Zentrieren
+            studioModel.position.x = -center.x * scaleFactor;
+            studioModel.position.y = -box.min.y * scaleFactor - 1.0; // Bodenlevel
+            studioModel.position.z = -center.z * scaleFactor;
+
             scene.add(studioModel);
+            console.log("Studio loaded and scaled:", scaleFactor);
         },
         undefined,
-        (error) => {
-            console.error("Studio Fehler:", error);
-            // Falls Studio fehlschlägt, fügen wir einen simplen Boden hinzu, damit das Auto nicht schwebt
-            const grid = new THREE.GridHelper(20, 20, 0x555555, 0x222222);
-            grid.position.y = -0.5;
-            scene.add(grid);
-        }
+        (err) => { console.error("Studio Fail", err); }
     );
 
-    // B: AUTO LADEN (Unabhängig vom Studio!)
+    // B: AUTO LADEN
     loader.load('car.glb', 
         (gltf) => {
-            console.log("Auto geladen");
             carModel = gltf.scene;
             
             const box = new THREE.Box3().setFromObject(carModel);
             const center = box.getCenter(new THREE.Vector3());
             const size = box.getSize(new THREE.Vector3());
-            
             const maxDim = Math.max(size.x, size.y, size.z);
-            const scale = 3.8 / maxDim; // Gute Größe
+            
+            const scale = 4.0 / maxDim; 
             carModel.scale.set(scale, scale, scale);
             
-            // Auto auf den Boden stellen (wichtig!)
             carModel.position.x = -center.x * scale;
-            carModel.position.y = -box.min.y * scale - 0.5; // Selbe Höhe wie Studio-Boden
+            carModel.position.y = -box.min.y * scale - 1.0; 
             carModel.position.z = -center.z * scale;
 
-            // Material-Boost für Glanz
+            // Materialien boosten
             carModel.traverse((child) => {
-                if (child.isMesh && child.material) {
-                    child.material.envMapIntensity = 2.0; 
+                if(child.isMesh && child.material) {
+                    child.material.envMapIntensity = 2.0;
                     child.material.needsUpdate = true;
                 }
             });
 
             scene.add(carModel);
+            
+            // Debug Cube weg, wenn Auto da ist
+            if(debugCube) debugCube.visible = false;
         },
         undefined,
-        (error) => {
-            console.error("Auto Fehler:", error);
-            // Roter Würfel als Fehler-Indikator
-            const geometry = new THREE.BoxGeometry(1, 1, 1);
-            const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-            const cube = new THREE.Mesh(geometry, material);
-            scene.add(cube);
-        }
+        (err) => { console.error("Car Fail", err); }
     );
 
-    // 7. Loop
     function animate() {
-        animationId = requestAnimationFrame(animate);
+        requestAnimationFrame(animate);
+        
+        // Debug Cube drehen
+        if(debugCube && debugCube.visible) {
+            debugCube.rotation.x += 0.02;
+            debugCube.rotation.y += 0.02;
+        }
+
         controls.update();
         renderer.render(scene, camera);
     }
     animate();
 
-    // Resize
+    // Resize Handler
     const resizeObserver = new ResizeObserver(() => {
         if(container.clientWidth > 0 && container.clientHeight > 0) {
             camera.aspect = container.clientWidth / container.clientHeight;
@@ -145,20 +148,17 @@ function init3D() {
     resizeObserver.observe(container);
 }
 
-// Funktionen für UI
+// Global UI Helper
 function hideCar() {
     const el = document.getElementById('hero-3d-stage');
     if(el) el.style.opacity = '0';
 }
-
 function showCar() {
     const el = document.getElementById('hero-3d-stage');
     if(el) el.style.opacity = '1';
-    // Eventuell neu rendern falls Kontext verloren ging
     init3D();
 }
 
-// Global verfügbar machen
 window.startGarage3D = init3D;
 window.hideGarage3D = hideCar;
 window.showGarage3D = showCar;
