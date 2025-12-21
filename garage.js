@@ -7,6 +7,7 @@ const GarageLogic = {
         this.loadList();
         this.updateGlobalStats();
     },
+    
 
     // 1. LISTE LADEN & ANZEIGEN
     loadList: function() {
