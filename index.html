@@ -2,348 +2,349 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>DriverHub 4.0</title>
     
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="logo.png">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Rajdhani:wght@500;700;900&display=swap" rel="stylesheet">
-
+    <link rel="stylesheet" href="style.css">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <link rel="stylesheet" href="style.css?v=98">
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
-    <div id="splash-screen"><img src="logo.png" class="splash-logo"></div>
-    
-    <div id="global-top-fade"></div>
-    
     <div id="background-map"></div>
+
+    <div id="global-top-fade"></div>
 
     <div id="home-screen" class="screen active">
         <div class="blur-zone-top">
-            <div class="weather-pill interactive-element">
-                <i class="fa-solid fa-location-arrow loc-icon"></i>
-                <span id="loc-text">Suche...</span>
-                <span class="divider">|</span>
-                <i id="weather-icon" class="fa-solid fa-cloud"></i>
+            <div class="weather-pill">
+                <i class="fa-solid fa-cloud-sun"></i>
                 <span id="weather-temp">--°</span>
+                <span id="weather-city">Locating...</span>
             </div>
-            <div class="logo-container"><img src="logo.png" alt="DriverHub" class="dh-logo"></div>
+            <h1 style="font-family:'Rajdhani', sans-serif; font-weight:900; font-style:italic; font-size:2rem; margin-top:10px;">DRIVERHUB</h1>
         </div>
+
         <div class="spacer-flex"></div>
+
         <div class="blur-zone-bottom">
-            <button id="btn-start" class="btn-super-glass interactive-element">
-                <i class="fa-solid fa-road"></i> START DRIVE
-            </button>
+            <nav class="bottom-nav">
+                <div class="nav-item active-home" onclick="App.switchScreen('home')">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </div>
+                <div class="nav-item" onclick="App.switchScreen('map')">
+                    <i class="fa-solid fa-map"></i>
+                    <span>Map</span>
+                </div>
+                <div class="nav-item" onclick="App.switchScreen('garage')">
+                    <i class="fa-solid fa-warehouse"></i>
+                    <span>Garage</span>
+                </div>
+            </nav>
         </div>
     </div>
 
-    <div id="explore-screen" class="screen hidden">
-        <div class="explore-top-ui interactive-element">
+    <div id="map-screen" class="screen hidden">
+        <div class="explore-top-ui">
             <div class="search-bar-glass">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="nav-search-input" placeholder="Where to go?">
+                <input type="text" id="map-search-input" placeholder="Where to go?">
             </div>
-            <div id="nav-search-results" class="search-results-container interactive-element"></div>
+            <div id="search-results" class="search-results-container"></div>
 
             <div class="filter-row">
-                <button class="filter-chip" id="filter-gas"><i class="fa-solid fa-gas-pump"></i> Gas</button>
-                <button class="filter-chip" id="filter-cam"><i class="fa-solid fa-camera"></i> Cams</button>
-                <button class="filter-chip" id="filter-parking"><i class="fa-solid fa-square-parking"></i> Park</button>
+                <div class="filter-chip" id="filter-gas" onclick="Explore.toggleGasFilter()">
+                    <i class="fa-solid fa-gas-pump"></i> <span>Gas</span>
+                </div>
+                <div class="filter-chip" onclick="Explore.toggleCams()">
+                    <i class="fa-solid fa-camera"></i> <span>Cams</span>
+                </div>
+                <div class="filter-chip" onclick="Explore.toggleParking()">
+                    <i class="fa-square-parking fa-solid"></i> <span>Park</span>
+                </div>
             </div>
         </div>
 
-        <div id="map-loading" class="loading-indicator">
-            <i class="fa-solid fa-spinner fa-spin"></i>
-        </div>
-        
-        <button id="btn-explore-recenter" class="icon-btn-floating interactive-element" style="top: auto; bottom: 120px;">
-            <i class="fa-solid fa-location-crosshairs"></i>
+        <button class="btn-nav-floating recenter" style="bottom: 110px; left: 20px; z-index: 60;" onclick="App.switchScreen('home')">
+            <i class="fa-solid fa-arrow-left"></i>
         </button>
-
-        <div id="route-preview-modal" class="hidden interactive-element">
-            <div class="filter-card">
-                <div class="filter-title-row">
-                    <h3>Route Preview</h3>
-                    <button class="btn-close-filter" onclick="NaviLogic.cancelRoute()"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                
-                <div id="preview-map-container">
-                    <button class="map-expand-btn" onclick="NaviLogic.togglePreviewMap()"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
-                    <button class="map-shrink-btn" onclick="NaviLogic.togglePreviewMap()"><i class="fa-solid fa-arrow-left"></i></button>
-                    <div id="preview-map-obj"></div>
-                </div>
-
-                <div class="preview-content-wrapper">
-                    <div class="route-preview-stats">
-                        <div class="rps-item">
-                            <span class="rps-label">DURATION</span>
-                            <span class="rps-val" id="preview-time">0 min</span>
-                        </div>
-                        <div class="rps-item">
-                            <span class="rps-label">DISTANCE</span>
-                            <span class="rps-val" id="preview-dist">0 km</span>
-                        </div>
-                    </div>
-                    <div class="route-preview-dest">
-                        <i class="fa-solid fa-flag-checkered"></i> <span id="preview-dest-name">Destination</span>
-                    </div>
-                    <div class="route-preview-actions">
-                        <button class="btn-nav-start" onclick="NaviLogic.startNavigation('record')">
-                            <i class="fa-solid fa-play"></i> START & RECORD
-                        </button>
-                        <button class="btn-nav-ghost" onclick="NaviLogic.startNavigation('ghost')">
-                            <i class="fa-solid fa-ghost"></i> GHOST RIDE
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="gas-filter-modal" class="hidden interactive-element">
-            <div class="filter-card">
-                <div class="filter-title-row">
-                    <h3>Gas Filter</h3>
-                    <button class="btn-close-filter" onclick="ExploreLogic.closeFilter()"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="filter-section">
-                    <label>Fuel Type</label>
-                    <div class="filter-grid">
-                        <button class="filter-btn active" id="btn-type-e10" onclick="ExploreLogic.setFuelFilter('e10')">E10</button>
-                        <button class="filter-btn" id="btn-type-e5" onclick="ExploreLogic.setFuelFilter('e5')">E5</button>
-                        <button class="filter-btn" id="btn-type-diesel" onclick="ExploreLogic.setFuelFilter('diesel')">Diesel</button>
-                    </div>
-                </div>
-                <div class="filter-section">
-                    <label>Radius</label>
-                    <div class="radius-control">
-                        <input type="range" id="filter-radius" min="1" max="50" value="10" oninput="ExploreLogic.updateRadiusDisplay(this.value)">
-                        <span class="radius-val"><span id="rad-disp">10</span> km</span>
-                    </div>
-                </div>
-                <div class="filter-section">
-                    <label>Brand</label>
-                    <div class="filter-grid">
-                        <button class="filter-btn active" id="btn-brand-all" onclick="ExploreLogic.setBrandFilter('all', this)">ALL BRANDS</button>
-                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('aral', this)">ARAL</button>
-                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('shell', this)">SHELL</button>
-                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('total', this)">TOTAL</button>
-                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('esso', this)">ESSO</button>
-                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('jet', this)">JET</button>
-                    </div>
-                </div>
-                <div class="filter-section">
-                    <label>Best Deals Nearby</label>
-                    <div id="filter-results" class="filter-results-list"></div>
-                </div>
-            </div>
-        </div>
-
-        <div id="gas-totem-overlay" class="hidden interactive-element">
-            <div class="gas-totem-card">
-                <div class="totem-header" id="totem-brand-header">
-                    <h2 id="totem-brand">BRAND</h2>
-                    <button class="totem-close" onclick="ExploreLogic.closeTotem()"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-                <div class="totem-body">
-                    <div class="price-row" id="row-diesel" onclick="ExploreLogic.selectFuel('diesel')">
-                        <span class="fuel-type">DIESEL</span>
-                        <div class="led-price-box"><span id="price-diesel">0.00</span><small>9</small></div>
-                    </div>
-                    <div class="price-row selected" id="row-e10" onclick="ExploreLogic.selectFuel('e10')">
-                        <span class="fuel-type">SUPER E10</span>
-                        <div class="led-price-box"><span id="price-e10">0.00</span><small>9</small></div>
-                    </div>
-                    <div class="price-row" id="row-e5" onclick="ExploreLogic.selectFuel('e5')">
-                        <span class="fuel-type">SUPER E5</span>
-                        <div class="led-price-box"><span id="price-e5">0.00</span><small>9</small></div>
-                    </div>
-                </div>
-                <div class="totem-footer">
-                    <span id="totem-status"><i class="fa-solid fa-circle-check"></i> OPEN 24/7</span>
-                    <button class="btn-navigate">GO</button>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <div id="navi-screen" class="screen hidden">
-        <div class="navi-top-hud interactive-element">
-            <div class="nav-arrow-box"><i id="nav-arrow-icon" class="fa-solid fa-arrow-up"></i></div>
-            <div class="nav-instruction-box">
-                <h3 id="nav-instruction">Folgen Sie der Route</h3>
-                <span id="nav-next-dist">in 0 m</span>
+    <div id="garage-screen" class="screen hidden garage-content-v1">
+        <div class="garage-top-fade"></div>
+
+        <div class="garage-header-editable">
+            <input type="text" id="custom-car-name" value="MY RIDE" spellcheck="false">
+        </div>
+
+        <div id="hero-3d-stage"></div>
+
+        <div class="garage-stats-container">
+            <div class="g-stat-box">
+                <span class="g-val" id="stat-max-speed">0</span>
+                <span class="g-label">MAX KM/H</span>
             </div>
-            <div class="nav-eta-box">
-                <span class="label">ANKUNFT</span>
-                <span id="nav-eta-time" class="val">--:--</span>
+            <div class="g-stat-divider"></div>
+            <div class="g-stat-box">
+                <span class="g-val" id="stat-total-km">0</span>
+                <span class="g-label">TOTAL KM</span>
+            </div>
+            <div class="g-stat-divider"></div>
+            <div class="g-stat-box">
+                <span class="g-val" id="stat-accel">--</span>
+                <span class="g-label">0 - 100</span>
             </div>
         </div>
 
-        <div id="nav-speed-limit" class="hidden"><span>50</span></div>
-
-        <button class="btn-nav-floating recenter interactive-element" id="btn-nav-recenter" onclick="NaviLogic.recenterNav()"><i class="fa-solid fa-location-arrow"></i></button>
-        <button class="btn-nav-floating cancel interactive-element" id="btn-nav-cancel" onclick="NaviLogic.stopNavigation()"><i class="fa-solid fa-xmark"></i></button>
-
-        <div class="navi-bottom-hud interactive-element">
-            <div class="nbh-stats">
-                <div class="nbh-item">
-                    <span class="label">SPEED</span>
-                    <div class="nbh-value-group">
-                        <span class="val" id="nav-speed">0</span>
-                        <span class="unit">km/h</span>
-                    </div>
-                </div>
-                <div class="nbh-divider"></div>
-                <div class="nbh-item">
-                    <span class="label">REMAIN</span>
-                    <div class="nbh-value-group">
-                        <span class="val" id="nav-remain-time">0 min</span>
-                    </div>
-                </div>
-                <div class="nbh-divider"></div>
-                <div class="nbh-item">
-                    <span class="label">DIST</span>
-                    <div class="nbh-value-group">
-                        <span class="val" id="nav-remain-dist">0</span>
-                        <span class="unit">km</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <button class="btn-history-toggle" onclick="GarageLogic.toggleHistory()">
+            <i class="fa-solid fa-list"></i> HISTORY
+        </button>
+        
+        <button class="btn-nav-floating recenter" style="bottom: 30px; left: 20px; z-index: 60;" onclick="App.switchScreen('home')">
+            <i class="fa-solid fa-arrow-left"></i>
+        </button>
     </div>
 
     <div id="drive-screen" class="screen hidden">
-        <div id="speed-limit" class="hidden"><span>--</span></div>
-        <div class="drive-hud-top interactive-element">
-            <div class="hud-row">
-                <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="hud-time">00:00</span></div>
-                <div class="hud-item main"><span class="hud-unit">km/h</span><span class="hud-value big" id="hud-speed">0</span></div>
-                <div class="hud-item"><span class="hud-label">DIST</span><span class="hud-value" id="hud-dist">0.00</span></div>
+        <div class="navi-top-hud">
+            <div class="nav-instruction-unified">
+                <div class="niu-arrow" id="nav-turn-icon"><i class="fa-solid fa-arrow-up"></i></div>
+                <div class="niu-text">
+                    <h3 id="nav-instruction-text">Start Navigation</h3>
+                    <span id="nav-distance-text">Calculating...</span>
+                </div>
+                <div class="niu-meta">
+                    <span class="val" id="nav-eta-val">--</span>
+                    <span class="label">MIN</span>
+                </div>
             </div>
         </div>
-        <button id="btn-recenter" class="icon-btn-floating hidden interactive-element"><i class="fa-solid fa-crosshairs"></i></button>
-        <div class="spacer-flex"></div>
-        <div class="blur-zone-bottom">
-            <button id="btn-stop" class="btn-stop-glass interactive-element"><i class="fa-solid fa-stop"></i> END DRIVE</button>
+
+        <div id="nav-speed-limit" class="hidden">
+            <span id="limit-val">50</span>
+        </div>
+
+        <button id="btn-nav-recenter" class="btn-nav-floating recenter" onclick="Navi.recenter()">
+            <i class="fa-solid fa-location-crosshairs"></i>
+        </button>
+        <button id="btn-nav-cancel" class="btn-nav-floating cancel" onclick="Navi.stopNavigation()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="navi-bottom-hud">
+            <div class="nbh-item">
+                <span class="label">SPEED</span>
+                <div class="nbh-value-group">
+                    <span class="val" id="hud-speed">0</span>
+                    <span class="unit">KM/H</span>
+                </div>
+            </div>
+            <div class="nbh-divider"></div>
+            <div class="nbh-item">
+                <span class="label">DISTANCE</span>
+                <div class="nbh-value-group">
+                    <span class="val" id="hud-dist">0.0</span>
+                    <span class="unit">KM</span>
+                </div>
+            </div>
+            <div class="nbh-divider"></div>
+            <div class="nbh-item">
+                <span class="label">TIME</span>
+                <div class="nbh-value-group">
+                    <span class="val" id="hud-time">00:00</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="summary-screen" class="screen hidden">
-        <div class="solid-bg">
-            <h2 style="margin-top: 50px; margin-bottom: 20px;">Drive Summary</h2>
-            <div id="summary-map" class="interactive-element"></div>
-            <div class="summary-card interactive-element">
-                <div class="sum-row">
-                    <div class="sum-item"><label>AVG SPEED</label><h3 id="sum-avg">0</h3><small>km/h</small></div>
-                    <div class="sum-item"><label>DISTANCE</label><h3 id="sum-dist">0.0</h3><small>km</small></div>
+    <div id="route-preview-modal" class="hidden">
+        <div class="filter-card">
+            <div class="filter-title-row">
+                <h3>Route Preview</h3>
+                <button class="btn-close-filter" onclick="Navi.closePreview()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div id="preview-map-container">
+                <div id="preview-map-obj"></div> <div class="map-expand-btn" onclick="Navi.togglePreviewMapSize()"><i class="fa-solid fa-expand"></i></div>
+                <div class="map-shrink-btn" onclick="Navi.togglePreviewMapSize()"><i class="fa-solid fa-compress"></i></div>
+            </div>
+
+            <div class="route-preview-stats">
+                <div class="rps-item">
+                    <span class="rps-label">DURATION</span>
+                    <span class="rps-val" id="prev-dur">--</span>
                 </div>
-                <div class="sum-divider"></div>
-                <div class="sum-row">
-                    <div class="sum-item"><label>DURATION</label><h3 id="sum-time">00:00</h3></div>
-                </div>
-                <div id="sum-comparison-row" class="sum-row hidden" style="margin-top:10px; border-top:1px solid #333; padding-top:10px;">
-                     <div class="sum-item"><label>ESTIMATED</label><h4 id="sum-est-time" style="color:#888; margin:0;">-- min</h4></div>
-                     <div class="sum-item"><label>REALITY</label><h4 id="sum-real-time" style="color:#fff; margin:0;">-- min</h4></div>
+                <div class="rps-item">
+                    <span class="rps-label">DISTANCE</span>
+                    <span class="rps-val" id="prev-dist">--</span>
                 </div>
             </div>
+
+            <div class="route-preview-dest">
+                <i class="fa-solid fa-flag-checkered"></i>
+                <span id="prev-dest-name">Selected Location</span>
+            </div>
+
+            <div class="route-preview-actions">
+                <button class="btn-nav-start" onclick="Navi.startNavigation()">
+                    <i class="fa-solid fa-location-arrow"></i> START
+                </button>
+                <button class="btn-nav-ghost" onclick="Navi.startFreeRide()">
+                    JUST RIDE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="gas-filter-modal" class="hidden">
+        <div class="filter-card">
+            <div class="filter-title-row">
+                <h3>Fuel Filter</h3>
+                <button class="btn-close-filter" onclick="Explore.closeGasFilter()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="filter-section">
+                <label>Radius: <span id="radius-val" class="radius-val">3 km</span></label>
+                <div class="radius-control">
+                    <input type="range" id="radius-slider" min="1" max="20" value="3" oninput="Explore.updateRadius(this.value)">
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label>Brand</label>
+                <div class="filter-grid">
+                    <div class="filter-btn active" id="btn-brand-all" onclick="Explore.filterBrand('all')">ALL</div>
+                    <div class="filter-btn" onclick="Explore.filterBrand('Aral')">ARAL</div>
+                    <div class="filter-btn" onclick="Explore.filterBrand('Shell')">SHELL</div>
+                    <div class="filter-btn" onclick="Explore.filterBrand('Esso')">ESSO</div>
+                    <div class="filter-btn" onclick="Explore.filterBrand('Total')">TOTAL</div>
+                    <div class="filter-btn" onclick="Explore.filterBrand('Jet')">JET</div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label>Cheapest Nearby</label>
+                <div id="gas-results-list" class="filter-results-list">
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="gas-totem-overlay" class="hidden" onclick="if(event.target===this) Explore.closeTotem()">
+        <div class="gas-totem-card">
+            <div class="totem-header" id="totem-header">
+                <h2 id="totem-brand">BRAND</h2>
+                <button class="totem-close" onclick="Explore.closeTotem()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="totem-body" id="totem-prices">
+                </div>
+            <div class="totem-footer">
+                <span id="totem-status">OPEN</span>
+                <button class="btn-navigate" id="btn-totem-go">GO <i class="fa-solid fa-location-arrow"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="drive-summary-overlay" class="screen hidden solid-bg" style="z-index: 6000;">
+        <div class="blur-zone-top">
+            <h2>Drive Summary</h2>
+        </div>
+        <div class="summary-card">
+            <div class="sum-row">
+                <div class="sum-item">
+                    <label>AVG SPEED</label>
+                    <h3 id="sum-avg">0</h3>
+                    <small>km/h</small>
+                </div>
+                <div class="sum-item">
+                    <label>DISTANCE</label>
+                    <h3 id="sum-dist">0.0</h3>
+                    <small>km</small>
+                </div>
+            </div>
+            <div class="sum-divider"></div>
+            <div class="sum-row">
+                <div class="sum-item">
+                    <label>DURATION</label>
+                    <h3 id="sum-time">00:00</h3>
+                </div>
+                <div class="sum-item">
+                    <label>TOP SPEED</label>
+                    <h3 id="sum-max">0</h3>
+                    <small>km/h</small>
+                </div>
+            </div>
+            <div id="summary-map" style="height: 150px; width:100%; border-radius:15px; margin-top:10px;"></div>
+            
             <div class="summary-actions">
-                <button id="btn-save" class="btn-super-glass small interactive-element">SAVE TO GARAGE</button>
-                <button id="btn-discard" class="btn-danger-glass interactive-element">DISCARD</button>
+                <button class="btn-super-glass" onclick="Drive.saveDrive()">SAVE TO GARAGE</button>
+                <button class="btn-danger-glass" onclick="Drive.discardDrive()">DISCARD</button>
             </div>
         </div>
     </div>
 
-    <div id="garage-screen" class="screen hidden">
-        <div id="garage-bg"></div>
-        <div class="garage-aura"></div>
-
-        <div id="garage-content" class="garage-content interactive-element">
-            <div class="showroom-container">
-                <input type="text" class="showroom-name-input" id="fixed-car-name" value="MY CAR">
-                
-                <div id="hero-3d-stage" class="hero-3d-stage"></div>
-                
-                <div class="floating-stats">
-                    <div class="fs-item">
-                        <span class="fs-val" id="hero-max">0</span>
-                        <span class="fs-label">MAX</span>
-                    </div>
-                    <div class="fs-line"></div>
-                    <div class="fs-item">
-                        <span class="fs-val" id="hero-km">0</span>
-                        <span class="fs-label">KM</span>
-                    </div>
-                    <div class="fs-line"></div>
-                    <div class="fs-item">
-                        <span class="fs-val">--</span>
-                        <span class="fs-label">0-100</span>
-                    </div>
-                </div>
-                
-                <div class="btn-view-history" onclick="GarageLogic.openHistory()">
-                    VIEW DRIVE HISTORY <i class="fa-solid fa-chevron-up"></i>
-                </div>
-            </div>
+    <div id="history-overlay">
+        <div class="history-header">
+            <h2>Drive History</h2>
+            <button class="btn-close-history" onclick="GarageLogic.toggleHistory()"><i class="fa-solid fa-chevron-down"></i></button>
         </div>
-        
-        <div id="history-overlay">
-            <div class="history-header">
-                <h2>Drive History</h2>
-                <button class="btn-close-history" onclick="GarageLogic.closeHistory()"><i class="fa-solid fa-chevron-down"></i></button>
+        <div class="history-list" id="history-list">
             </div>
-            <div id="history-list" class="history-list"></div>
-        </div>
+    </div>
 
-        <div id="detail-overlay" class="screen hidden interactive-element solid-bg">
-            <div class="detail-header">
-                <h2>Ride Details</h2>
-                <button class="btn-close-detail-text" onclick="GarageLogic.closeDetails()">CLOSE</button>
-            </div>
-            <div class="telemetry-map-wrap"><div id="detail-map"></div></div>
-            <div class="telemetry-content">
-                <div class="telemetry-grid">
-                    <div class="t-box"><span class="t-label">MAX SPEED</span><span class="t-val" id="t-max">0</span></div>
-                    <div class="t-box"><span class="t-label">AVG SPEED</span><span class="t-val" id="t-avg">0</span></div>
-                    <div class="t-box"><span class="t-label">DISTANCE</span><span class="t-val" id="t-dist">0 km</span></div>
-                    <div class="t-box"><span class="t-label">DURATION</span><span class="t-val" id="t-time">0:00</span></div>
+    <div id="detail-overlay" class="hidden">
+        <div class="detail-header">
+            <h2>Telemetry</h2>
+            <button class="btn-close-detail-text" onclick="GarageLogic.closeDetails()">CLOSE</button>
+        </div>
+        <div class="telemetry-map-wrap" id="detail-map"></div>
+        <div class="telemetry-content">
+            <div class="telemetry-grid">
+                <div class="t-box">
+                    <span class="t-label">MAX SPEED</span>
+                    <span class="t-val" id="t-max">0</span>
                 </div>
-                <div class="t-chart-box"><canvas id="speedChart"></canvas></div>
-                <button id="btn-detail-delete" class="btn-danger-glass interactive-element" style="width:100%; margin-top:20px;">DELETE DATA</button>
+                <div class="t-box">
+                    <span class="t-label">AVG SPEED</span>
+                    <span class="t-val" id="t-avg">0</span>
+                </div>
+                <div class="t-box">
+                    <span class="t-label">DISTANCE</span>
+                    <span class="t-val" id="t-dist">0</span>
+                </div>
+                <div class="t-box">
+                    <span class="t-label">DURATION</span>
+                    <span class="t-val" id="t-time">00:00</span>
+                </div>
             </div>
+            <div class="t-chart-box">
+                <canvas id="speedChart"></canvas>
+            </div>
+            <button id="btn-detail-delete" class="btn-danger-glass" style="width:100%; margin-top:20px;">DELETE DRIVE</button>
         </div>
     </div>
 
-    <div id="global-nav" class="bottom-nav interactive-element">
-        <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
-        <div class="nav-item" id="nav-explore"><i class="fa-solid fa-map"></i><span>Map</span></div>
-        <div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
+    <div id="splash-screen">
+        <div class="splash-logo">
+            <h1 style="font-family:'Rajdhani'; font-weight:900; font-size:3rem; color:white; font-style:italic;">DRIVERHUB</h1>
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="explore.js?v=99"></script>
-    <script src="garage.js?v=99"></script>
-    <script src="drive.js?v=99"></script>
-    <script src="navi.js?v=99"></script>
-    <script src="app.js?v=99"></script>
     
-    <script type="module" src="car3d.js?v=99"></script>
+    <script src="explore.js"></script>
+    <script src="garage.js"></script>
+    <script src="drive.js"></script>
+    <script src="navi.js"></script>
+    <script src="app.js"></script>
+    
+    <script type="module" src="car3d.js"></script>
+
 </body>
 </html>
