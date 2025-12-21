@@ -36,13 +36,31 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 #global-top-fade { position: fixed; top: 0; left: 0; width: 100%; height: 160px; background: linear-gradient(to bottom, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 40%, transparent 100%); pointer-events: none; z-index: 5; opacity: 0; transition: opacity 0.5s ease; }
 #global-top-fade.visible { opacity: 1; }
 
-/* SCREENS */
+/* SCREENS - FIX FOR MAP INTERACTION */
 .hidden { display: none !important; }
-.screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; z-index: 10; opacity: 0; transform: scale(0.98); pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; overflow: hidden; }
-.screen.active { z-index: 20; opacity: 1; transform: scale(1); pointer-events: auto; }
+.screen { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+    display: flex; flex-direction: column; 
+    z-index: 10; opacity: 0; transform: scale(0.98); 
+    pointer-events: none; /* STANDARD: Klicks gehen durch */
+    transition: opacity 0.3s ease, transform 0.3s ease; 
+    overflow: hidden; 
+}
+.screen.active { 
+    z-index: 20; opacity: 1; transform: scale(1); 
+    pointer-events: none; /* WICHTIG: Auch active lässt Klicks durch zur Map! */
+}
 .screen.fading-out { opacity: 0; transform: scale(1.02); z-index: 15; }
+
+/* Elemente, die klickbar sein MÜSSEN (Buttons, Listen, Inputs) */
 .interactive-element { pointer-events: auto !important; }
-.solid-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; display: flex; flex-direction: column; align-items: center; z-index: 50; pointer-events: auto; overflow-y: auto; }
+
+/* Screens mit solidem Hintergrund (Garage, Summary) müssen alles blocken */
+.solid-bg { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+    background: #000; display: flex; flex-direction: column; align-items: center; 
+    z-index: 50; pointer-events: auto; overflow-y: auto; 
+}
 .spacer-flex { flex: 1; }
 
 /* --- HOME & NAVI STYLE --- */
@@ -58,13 +76,8 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
 
-/* --- GARAGE REDESIGN V92 (THE SHOWROOM) --- */
-#garage-bg { 
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; 
-    background: #000;
-    /* Ganz feiner Gradient von Oben */
-    background: linear-gradient(180deg, #050505 0%, #000 100%);
-}
+/* --- GARAGE REDESIGN (V94 FIX) --- */
+#garage-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #000; background: linear-gradient(180deg, #050505 0%, #000 100%); }
 
 .garage-content {
     position: relative;
@@ -73,40 +86,44 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     height: 100%;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 0; /* Full Width */
+    padding: 0;
     padding-bottom: 120px;
     display: flex;
     flex-direction: column;
+    pointer-events: auto; /* Garage muss scrollbar sein! */
 }
 
-/* SHOWROOM CONTAINER (Fixed Height, sticky top ish) */
+/* SHOWROOM CONTAINER */
 .showroom-container {
     width: 100%;
-    height: 60vh; /* 60% of Screen */
+    height: 60vh; 
     position: relative;
     overflow: hidden;
     flex-shrink: 0;
 }
 
-/* NAME (Behind Car, Hollow Text) */
+/* NAME INPUT - FIX: Z-Index höher damit klickbar! */
 .showroom-name-input {
     position: absolute;
     top: 15%;
-    left: 0;
-    width: 100%;
+    left: 5%;
+    width: 90%;
     background: transparent;
     border: none;
     font-family: 'Rajdhani', sans-serif;
-    font-size: 4.5rem; /* HUGE */
+    
+    /* FIX: Kleinere Schrift damit es reinpasst */
+    font-size: 3.5rem; 
+    
     font-weight: 900;
     text-transform: uppercase;
     text-align: center;
     outline: none;
-    z-index: 1; /* Behind Car */
     
-    /* Hollow Text Effect */
-    color: transparent;
-    -webkit-text-stroke: 1px rgba(255,255,255,0.3);
+    z-index: 20; /* VOR DEM AUTO DAMIT BEARBEITBAR */
+    color: rgba(255,255,255,0.8); /* Sichtbar */
+    text-shadow: 0 0 20px rgba(0,0,0,0.8); /* Schatten für Lesbarkeit */
+    
     letter-spacing: 2px;
 }
 
@@ -117,7 +134,7 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     z-index: 5;
 }
 
-/* FLOATING STATS (Foreground) */
+/* FLOATING STATS */
 .floating-stats {
     position: absolute;
     bottom: 20px;
@@ -125,84 +142,49 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 30px;
+    justify-content: center;
+    gap: 20px;
     z-index: 20;
     padding: 10px 20px;
-    background: rgba(0,0,0,0.3);
-    backdrop-filter: blur(5px);
+    background: rgba(0,0,0,0.6); /* Dunkler für Kontrast */
+    backdrop-filter: blur(10px);
     border-radius: 30px;
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    min-width: 280px; /* Breite erzwingen */
 }
-.fs-item { display: flex; flex-direction: column; align-items: center; }
-.fs-val { font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 700; color: #fff; line-height: 1; }
+.fs-item { 
+    display: flex; flex-direction: column; align-items: center; 
+    min-width: 60px; /* Platz schaffen */
+}
+.fs-val { font-family: 'Rajdhani', sans-serif; font-size: 1.6rem; font-weight: 700; color: #fff; line-height: 1; white-space: nowrap; }
 .fs-label { font-size: 0.6rem; color: var(--primary); font-weight: 700; letter-spacing: 1px; margin-top: 2px; }
 .fs-line { width: 1px; height: 25px; background: rgba(255,255,255,0.2); }
 
-/* LOGBOOK (Timeline List) */
-.logbook-container {
-    padding: 20px;
-    background: transparent;
-    position: relative;
-    flex: 1;
-}
+/* LOGBOOK */
+.logbook-container { padding: 20px; background: transparent; position: relative; flex: 1; }
 .logbook-title { font-size: 0.7rem; color: #555; font-weight: 700; letter-spacing: 2px; margin-bottom: 20px; text-align: center; }
-
-.logbook-entry {
-    display: flex;
-    height: 110px; /* Fixed height per entry */
-    margin-bottom: 10px;
-}
-
-.lb-line {
-    width: 30px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
+.logbook-entry { display: flex; height: 110px; margin-bottom: 10px; }
+.lb-line { width: 30px; display: flex; flex-direction: column; align-items: center; }
 .lb-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; box-shadow: 0 0 10px var(--primary); margin-top: 15px; }
 .lb-vertical { width: 1px; flex: 1; background: rgba(255,255,255,0.1); margin-top: 5px; }
-
 .lb-content { flex: 1; padding-left: 10px; }
-
-.lb-card {
-    background: #0a0a0a;
-    border: 1px solid #1a1a1a;
-    border-radius: 15px;
-    height: 100%;
-    display: flex;
-    overflow: hidden;
-    position: relative;
-}
+.lb-card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 15px; height: 100%; display: flex; overflow: hidden; position: relative; }
 .lb-card:active { border-color: #333; }
-
 .lb-map-box { width: 100px; background: #000; position: relative; pointer-events: none; }
 .mini-route-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 2px rgba(48, 209, 88, 0.3)); }
-
 .lb-info { flex: 1; padding: 12px; display: flex; flex-direction: column; justify-content: center; }
 .lb-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
 .lb-date { color: #fff; font-weight: 700; font-size: 0.9rem; }
 .lb-speed { font-family: 'Rajdhani', sans-serif; font-size: 1.2rem; font-weight: 700; color: #ccc; }
 .lb-speed small { font-size: 0.6rem; color: #666; }
 .lb-sub { display: flex; gap: 15px; font-size: 0.7rem; color: #666; font-weight: 600; }
-
-.lb-delete { 
-    position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; 
-    background: transparent; border: none; color: #333; font-size: 1rem; 
-    border-top-left-radius: 15px; cursor: pointer;
-}
+.lb-delete { position: absolute; bottom: 0; right: 0; width: 40px; height: 40px; background: transparent; border: none; color: #333; font-size: 1rem; border-top-left-radius: 15px; cursor: pointer; }
 .lb-delete:active { background: var(--danger); color: white; }
 
-/* FULL SCREEN DETAIL VIEW */
-.detail-header {
-    width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px);
-    display: flex; justify-content: space-between; align-items: center;
-    background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-    position: absolute; top: 0; left: 0; z-index: 20;
-}
+/* DETAIL FULLSCREEN */
+.detail-header { width: 100%; padding: 20px; padding-top: calc(env(safe-area-inset-top) + 20px); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: absolute; top: 0; left: 0; z-index: 20; }
 .detail-header h2 { margin: 0; font-family: 'Rajdhani', sans-serif; font-size: 1.5rem; text-transform: uppercase; }
 .btn-close-detail-text { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: #fff; padding: 5px 15px; border-radius: 20px; font-weight: 700; font-size: 0.8rem; }
-
-/* Detail Telemetry View */
 .telemetry-map-wrap { width: 100%; height: 40vh; position: relative; border-bottom: 1px solid #333; margin-top: 80px; }
 .telemetry-content { padding: 20px; padding-bottom: 80px; background: #000; }
 .telemetry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
