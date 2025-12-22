@@ -204,6 +204,8 @@ const NaviLogic = {
         this.isNavigating = true;
         this.navStartTime = Date.now();
 
+        document.getElementById('btn-nav-recenter').classList.add('hidden');
+
         document.getElementById('global-top-fade').classList.remove('visible');
         document.getElementById('background-map').classList.add('map-smooth-rotate');
 
@@ -221,6 +223,7 @@ const NaviLogic = {
         map.touchZoom.enable();
         
         if(userMarker) {
+            if(typeof isAutoPanning !== 'undefined') isAutoPanning = true; 
             map.setView(userMarker.getLatLng(), 18, { animate: false });
             const el = userMarker.getElement();
             if(el) {
@@ -345,7 +348,9 @@ const NaviLogic = {
 
     recenterNav: function() {
         if(userMarker) {
+            if(typeof isAutoPanning !== 'undefined') isAutoPanning = true; 
             map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
+            document.getElementById('btn-nav-recenter').classList.add('hidden');
         }
     },
 
@@ -409,6 +414,9 @@ const NaviLogic = {
 
         switchScreen('summary-screen');
         
+        // FIX: Auch hier sicherstellen, dass Nav Bar hidden ist
+        document.getElementById('global-nav').classList.add('hidden');
+
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
             if (window.summaryMapInstance) {
