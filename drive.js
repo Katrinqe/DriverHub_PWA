@@ -1,5 +1,5 @@
 /* =========================================
-   DRIVE LOGIC (VERSION 9.0 - END BUTTON FIX)
+   DRIVE LOGIC (FINAL FIX - NO CLONING)
    ========================================= */
 
 const DriverLogic = {
@@ -11,7 +11,7 @@ const DriverLogic = {
     path: [], 
     lastSpeedCheck: 0, 
     watchId: null, 
-    holdTimer: null, // Für den Button
+    holdTimer: null,
 
     start: function() {
         console.log("Drive Started");
@@ -21,26 +21,26 @@ const DriverLogic = {
         this.maxSpeed = 0; 
         this.lastSpeedCheck = 0;
         
-        // UI RESET (IDs aus HTML)
+        // UI Reset
         if(document.getElementById('hud-time')) document.getElementById('hud-time').innerText = "00:00";
         if(document.getElementById('hud-dist')) document.getElementById('hud-dist').innerText = "0.00";
         if(document.getElementById('hud-speed')) document.getElementById('hud-speed').innerText = "0";
         if(document.getElementById('speed-limit')) document.getElementById('speed-limit').classList.add('hidden');
 
-        // Map Rotation an
+        // Map Rotation
         const mapEl = document.getElementById('background-map');
         if(mapEl) mapEl.classList.add('map-smooth-rotate');
 
-        // Button Logik starten (DAS FEHLTE!)
-        this.initStopButton();
+        // BUTTON SCHARF SCHALTEN
+        this.activateStopButton();
 
-        // Timer starten
+        // Timer
         if(this.interval) clearInterval(this.interval);
         this.interval = setInterval(() => {
             this.updateTime();
         }, 1000);
 
-        // GPS starten
+        // GPS
         if (navigator.geolocation) {
             if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
             this.watchId = navigator.geolocation.watchPosition(
@@ -51,45 +51,53 @@ const DriverLogic = {
         }
     },
 
-    // --- HIER IST DER FIX FÜR DEN BUTTON ---
-    initStopButton: function() {
-        const btn = document.getElementById('btn-stop'); // ID aus deiner HTML
+    // --- BUTTON FIX: KEIN KLONEN MEHR, DIREKTES BINDING ---
+    activateStopButton: function() {
+        const btn = document.getElementById('btn-stop');
         if(!btn) return;
 
-        // Alten Button ersetzen um Events zu resetten
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
+        // Alte Events löschen (Quick & Dirty aber sicher)
+        btn.onpointerdown = null;
+        btn.onpointerup = null;
+        btn.onpointercancel = null;
+        btn.onpointerleave = null;
+        btn.ontouchstart = null;
+        btn.ontouchend = null;
 
         const startHold = (e) => {
-            e.preventDefault(); 
-            // Verhindert Scrollen auf Handy
-            if(e.target.setPointerCapture && e.pointerId) e.target.setPointerCapture(e.pointerId);
+            // Wichtig: Verhindert Zoom/Scroll
+            if(e.cancelable) e.preventDefault();
             
-            newBtn.classList.add('holding'); // Startet CSS Animation (falls vorhanden)
+            // Pointer Capture für Touch (damit man nicht abrutscht)
+            if(e.target.setPointerCapture && e.pointerId) {
+                e.target.setPointerCapture(e.pointerId);
+            }
             
-            // Nach 1.5 Sekunden stoppen
+            btn.classList.add('holding'); // Start Animation
+            
+            // Timer starten
             this.holdTimer = setTimeout(() => {
-                newBtn.classList.remove('holding');
+                btn.classList.remove('holding');
                 this.stop(); // STOPPT DIE FAHRT
             }, 1500);
         };
 
         const endHold = (e) => {
-            e.preventDefault();
+            if(e.cancelable) e.preventDefault();
             clearTimeout(this.holdTimer);
-            newBtn.classList.remove('holding');
+            btn.classList.remove('holding');
         };
 
-        // Pointer Events decken Touch und Maus ab
-        newBtn.onpointerdown = startHold;
-        newBtn.onpointerup = endHold;
-        newBtn.onpointerleave = endHold;
-        newBtn.onpointercancel = endHold;
+        // Events binden
+        btn.onpointerdown = startHold;
+        btn.onpointerup = endHold;
+        btn.onpointercancel = endHold;
+        btn.onpointerleave = endHold;
         
-        // Fallback für reine Touch-Geräte ohne Pointer-Support
-        newBtn.ontouchstart = startHold;
-        newBtn.ontouchend = endHold;
-        newBtn.ontouchcancel = endHold;
+        // Touch Backup (falls Pointer Events versagen)
+        btn.ontouchstart = startHold;
+        btn.ontouchend = endHold;
+        btn.ontouchcancel = endHold;
     },
 
     update: function(pos) {
@@ -109,7 +117,6 @@ const DriverLogic = {
             time: Date.now()
         });
 
-        // Distanz & Rotation
         if (this.path.length > 1) {
             const last = this.path[this.path.length - 2];
             const curr = this.path[this.path.length - 1];
@@ -136,7 +143,6 @@ const DriverLogic = {
         if(document.getElementById('hud-speed')) document.getElementById('hud-speed').innerText = this.currentSpeed;
         if(document.getElementById('hud-dist')) document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
         
-        // Speed Limit
         if (Date.now() - this.lastSpeedCheck > 5000) {
             this.lastSpeedCheck = Date.now();
             this.checkSpeedLimit(lat, lng);
@@ -190,7 +196,7 @@ const DriverLogic = {
         if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
         if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
-        // Snapshot
+        // Snapshot erstellen
         const durationMs = Date.now() - this.startTime;
         const durationMin = Math.floor(durationMs / 60000);
         const durationSec = Math.floor((durationMs % 60000) / 1000);
@@ -201,14 +207,14 @@ const DriverLogic = {
         const finalPath = [...this.path];
         const avgSpeed = (durationMs > 0 && finalDist > 0) ? Math.round(finalDist / (durationMs/3600000)) : 0;
 
-        // Reset Map Rotation
+        // Reset Map
         const mapEl = document.getElementById('background-map');
         if(mapEl) {
             mapEl.classList.remove('map-smooth-rotate');
             mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
         }
 
-        // Summary Screen IDs (aus HTML)
+        // Summary füllen
         if(document.getElementById('sum-avg')) document.getElementById('sum-avg').innerText = avgSpeed;
         if(document.getElementById('sum-dist')) document.getElementById('sum-dist').innerText = finalDist.toFixed(2);
         if(document.getElementById('sum-time')) document.getElementById('sum-time').innerText = finalTimeStr;
@@ -233,9 +239,10 @@ const DriverLogic = {
 
         if(typeof App !== 'undefined') App.switchScreen('summary-screen');
 
-        // SAVE BUTTON (ID aus HTML: btn-save)
+        // SAVE BUTTON (Der muss funktionieren)
         const saveBtn = document.getElementById('btn-save');
         if(saveBtn) {
+            // Alten Event Listener überschreiben
             saveBtn.onclick = () => {
                 const rideData = { 
                     date: Date.now(), 
@@ -255,7 +262,7 @@ const DriverLogic = {
             };
         }
         
-        // DISCARD BUTTON (ID aus HTML: btn-discard)
+        // DISCARD
         const discardBtn = document.getElementById('btn-discard');
         if(discardBtn && typeof App !== 'undefined') discardBtn.onclick = () => App.switchScreen('home-screen'); 
     }
