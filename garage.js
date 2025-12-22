@@ -1,203 +1,133 @@
 const GarageLogic = {
-    detailMap: null,
-    speedChart: null,
+    drives: [],
 
-    init: function() {
-        console.log("Garage Logic Initialized");
-        this.loadList();
-        this.updateGlobalStats();
-    },
-    
-
-    // 1. LISTE LADEN & ANZEIGEN
-    loadList: function() {
-        const listContainer = document.getElementById('history-list');
-        if (!listContainer) return;
-
-        listContainer.innerHTML = ''; // Leeren
-
-        // Daten aus Speicher holen
-        let drives = [];
-        try {
-            drives = JSON.parse(localStorage.getItem('driverhub_drives') || "[]");
-        } catch (e) {
-            console.error("Corrupt Data", e);
-            drives = [];
-        }
-
-        if (drives.length === 0) {
-            listContainer.innerHTML = '<div style="text-align:center; color:#555; margin-top:30px;">NO DRIVES YET</div>';
-            return;
-        }
-
-        // Karten für jede Fahrt erstellen
-        drives.forEach(drive => {
+    render: function() {
+        const list = document.getElementById('garage-list');
+        list.innerHTML = '';
+        
+        let totalKm = 0;
+        this.drives.forEach((d, index) => {
+            totalKm += d.dist;
             const card = document.createElement('div');
-            card.className = 'ride-card-v3';
+            card.className = 'drive-card';
             
-            // Formatierung
-            const dist = (drive.dist || 0).toFixed(1);
-            const max = Math.round(drive.max || 0);
-            
+            const dateObj = new Date(d.date);
+            const dateStr = dateObj.toLocaleDateString() + ", " + dateObj.toLocaleTimeString().slice(0,5);
+
             card.innerHTML = `
-                <div class="rc3-info" onclick="GarageLogic.openDetail(${drive.id})">
-                    <div class="rc3-left">
-                        <h4>${drive.date}</h4>
-                        <p>${drive.timestamp || ''}</p>
-                    </div>
-                    <div class="rc3-right">
-                        <div class="rc3-stat">
-                            <span>${dist}</span>
-                            <small>KM</small>
-                        </div>
-                        <div class="rc3-stat">
-                            <span>${max}</span>
-                            <small>KM/H</small>
-                        </div>
-                    </div>
+                <div class="dc-info">
+                    <h4>${dateStr}</h4>
+                    <p>${d.time} min | Avg: ${d.avg} km/h</p>
                 </div>
-                <button class="btn-list-delete" onclick="GarageLogic.deleteDrive(${drive.id}, event)">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="dc-km">${d.dist.toFixed(2)} km</div>
+                    <button class="btn-delete-drive" data-idx="${index}"><i class="fa-solid fa-trash"></i></button>
+                </div>
             `;
-            listContainer.appendChild(card);
-        });
-
-        this.updateGlobalStats(drives);
-    },
-
-    // 2. GLOBALE STATS BERECHNEN (Für den Garage Screen)
-    updateGlobalStats: function(drives) {
-        if (!drives) {
-            try { drives = JSON.parse(localStorage.getItem('driverhub_drives') || "[]"); } catch(e) {}
-        }
-
-        let totalDist = 0;
-        let globalMax = 0;
-
-        drives.forEach(d => {
-            totalDist += (d.dist || 0);
-            if (d.max > globalMax) globalMax = d.max;
-        });
-
-        // Werte in die HTML Stats Boxen schreiben
-        const elMax = document.getElementById('stat-max-speed');
-        const elTotal = document.getElementById('stat-total-km');
-        
-        if (elMax) elMax.innerText = Math.round(globalMax);
-        if (elTotal) elTotal.innerText = totalDist.toFixed(0);
-    },
-
-    // 3. HISTORY TOGGLE (Overlay öffnen/schließen)
-    toggleHistory: function() {
-        const overlay = document.getElementById('history-overlay');
-        const list = document.getElementById('history-list');
-        
-        if (overlay.classList.contains('active')) {
-            overlay.classList.remove('active');
-        } else {
-            // Liste vor dem Öffnen aktualisieren
-            this.loadList();
-            overlay.classList.add('active');
-        }
-    },
-
-    // 4. DETAIL ANSICHT ÖFFNEN
-    openDetail: function(id) {
-        let drives = JSON.parse(localStorage.getItem('driverhub_drives') || "[]");
-        const drive = drives.find(d => d.id === id);
-        
-        if (!drive) return;
-
-        // Overlay öffnen
-        document.getElementById('detail-overlay').classList.remove('hidden');
-
-        // Texte setzen
-        document.getElementById('det-date').innerText = drive.date + ' - ' + (drive.timestamp || '');
-        document.getElementById('det-dist').innerText = (drive.dist || 0).toFixed(2) + ' km';
-        document.getElementById('det-max').innerText = (drive.max || 0) + ' km/h';
-        document.getElementById('det-avg').innerText = (drive.avg || 0) + ' km/h';
-        document.getElementById('det-time').innerText = drive.duration || '00:00';
-
-        // Delete Button ID setzen
-        const btnDel = document.getElementById('btn-detail-delete');
-        if(btnDel) {
-            btnDel.onclick = () => {
-                this.deleteDrive(id);
-                this.closeDetails();
+            
+            card.onclick = (e) => {
+                if(!e.target.closest('.btn-delete-drive')) this.openDetails(d);
             };
+            
+            // Delete Handler
+            const delBtn = card.querySelector('.btn-delete-drive');
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.deleteDrive(index);
+            };
+
+            list.appendChild(card);
+        });
+
+        document.getElementById('total-drives').innerText = this.drives.length;
+        document.getElementById('total-km').innerText = totalKm.toFixed(1);
+    },
+
+    save: function(driveData) {
+        // driveData enthält jetzt { date, dist, time, avg, max, path }
+        this.drives.unshift(driveData);
+        this.render();
+    },
+
+    deleteDrive: function(index) {
+        if(confirm("Delete this drive?")) {
+            this.drives.splice(index, 1);
+            this.render();
         }
+    },
 
-        // MAP RENDERN
+    openDetails: function(drive) {
+        document.getElementById('detail-overlay').classList.remove('hidden');
+        
+        const dateObj = new Date(drive.date);
+        document.getElementById('det-date').innerText = dateObj.toLocaleDateString() + ", " + dateObj.toLocaleTimeString();
+        
+        document.getElementById('det-dist').innerText = drive.dist.toFixed(2) + " km";
+        document.getElementById('det-avg').innerText = drive.avg + " km/h";
+        
+        // FIX: Max Speed anzeigen (Fallback wenn nicht vorhanden)
+        const maxSpd = drive.max || 0;
+        document.getElementById('det-max').innerText = maxSpd + " km/h";
+        
+        document.getElementById('det-time').innerText = drive.time;
+
+        // Map
         setTimeout(() => {
-            if (!this.detailMap) {
-                this.detailMap = L.map('detail-map', { zoomControl: false }).setView([51.16, 10.45], 6);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.detailMap);
-            }
-            this.detailMap.invalidateSize();
+            const container = document.getElementById('detail-map');
+            if(window.detailMapInstance) { window.detailMapInstance.remove(); window.detailMapInstance = null; }
+            
+            container.innerHTML = "";
+            window.detailMapInstance = L.map('detail-map', { zoomControl: false, attributionControl: false });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.detailMapInstance);
 
-            // Linie zeichnen
-            // Alte Layer entfernen (simplifiziert)
-            this.detailMap.eachLayer((layer) => {
-                if (!!layer.toGeoJSON) {
-                    this.detailMap.removeLayer(layer);
-                }
-            });
-            // Tiles wieder hinzufügen (da sie oben entfernt wurden)
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.detailMap);
-
-            if (drive.path && drive.path.length > 0) {
+            if(drive.path && drive.path.length > 0) {
                 const latLngs = drive.path.map(p => [p.lat, p.lng]);
-                const poly = L.polyline(latLngs, { color: '#007aff', weight: 4 }).addTo(this.detailMap);
-                this.detailMap.fitBounds(poly.getBounds(), { padding: [50, 50] });
+                const line = L.polyline(latLngs, {color: '#30d158', weight: 4}).addTo(window.detailMapInstance);
+                window.detailMapInstance.fitBounds(line.getBounds(), {padding:[20,20]});
+            } else {
+                window.detailMapInstance.setView([51.1657, 10.4515], 6);
             }
         }, 100);
 
-        // CHART RENDERN
+        // CHART FIX
         this.renderChart(drive.path);
     },
 
-    closeDetails: function() {
-        document.getElementById('detail-overlay').classList.add('hidden');
-    },
-
-    deleteDrive: function(id, event) {
-        if (event) event.stopPropagation(); // Damit sich Detail nicht öffnet
+    renderChart: function(path) {
+        const ctx = document.getElementById('speedChart').getContext('2d');
         
-        if (!confirm("Delete this drive?")) return;
+        if (window.speedChartInstance) {
+            window.speedChartInstance.destroy();
+        }
 
-        let drives = JSON.parse(localStorage.getItem('driverhub_drives') || "[]");
-        drives = drives.filter(d => d.id !== id);
-        localStorage.setItem('driverhub_drives', JSON.stringify(drives));
+        // Daten vorbereiten
+        // Wir nehmen jeden n-ten Punkt, damit der Graph nicht überladen ist, falls Path sehr lang ist
+        const dataPoints = [];
+        const labels = [];
         
-        this.loadList(); // Refresh UI
-    },
+        if(path && path.length > 0) {
+            path.forEach((p, i) => {
+                // Nur jeden 5. Punkt nehmen wenn sehr viele Daten, sonst alle
+                if (path.length < 100 || i % 5 === 0) {
+                    dataPoints.push(p.speed || 0); // Speed nutzen
+                    labels.push(""); // Leere Labels für sauberen Look
+                }
+            });
+        }
 
-    renderChart: function(pathData) {
-        const ctx = document.getElementById('speedChart');
-        if (!ctx) return;
-
-        if (this.speedChart) this.speedChart.destroy();
-
-        if (!pathData || pathData.length === 0) return;
-
-        // Daten reduzieren für Performance (jeder 5. Punkt)
-        const speeds = pathData.filter((_, i) => i % 5 === 0).map(p => p.speed);
-        const labels = speeds.map((_, i) => i);
-
-        this.speedChart = new Chart(ctx, {
+        window.speedChartInstance = new Chart(ctx, {
             type: 'line',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Speed',
-                    data: speeds,
-                    borderColor: '#007aff',
-                    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+                    label: 'Speed (km/h)',
+                    data: dataPoints,
+                    borderColor: '#30d158',
+                    backgroundColor: 'rgba(48, 209, 88, 0.1)',
                     borderWidth: 2,
                     pointRadius: 0,
-                    fill: true,
-                    tension: 0.4
+                    tension: 0.4,
+                    fill: true
                 }]
             },
             options: {
@@ -207,16 +137,16 @@ const GarageLogic = {
                 scales: {
                     x: { display: false },
                     y: { 
+                        beginAtZero: true,
                         grid: { color: '#333' },
                         ticks: { color: '#888' }
                     }
                 }
             }
         });
+    },
+
+    closeDetails: function() {
+        document.getElementById('detail-overlay').classList.add('hidden');
     }
 };
-
-// Auto Init
-document.addEventListener('DOMContentLoaded', () => {
-    GarageLogic.init();
-});
