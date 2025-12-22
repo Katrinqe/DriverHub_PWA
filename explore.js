@@ -1,5 +1,4 @@
-// FIX: Dein echter API Key
-const TANKERKOENIG_API_KEY = '448a2db3-bf39-415e-a763-8f889d8b31dd'; 
+const TANKERKOENIG_API_KEY = '5b147d3e-972d-128a-669c-29774c100227'; 
 
 let exploreLayers = { gas: null, cam: null, parking: null };
 let exploreState = { gas: false, cam: false, parking: false };
@@ -29,6 +28,7 @@ const ExploreLogic = {
         if(btnRecenter) {
             btnRecenter.onclick = () => {
                 if(map && userMarker) {
+                    // Zoom 15 passend zur Home Page
                     map.setView(userMarker.getLatLng(), 15, { animate: true, duration: 1.0 });
                 }
             };
@@ -102,6 +102,7 @@ const ExploreLogic = {
             map.scrollWheelZoom.enable();
             
             const mapEl = document.getElementById('background-map');
+            // FIX: Reset Rotation mit TRANSLATE für Big Map
             if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
 
             if(exploreState.gas) { exploreLayers.gas.addTo(map); this.fetchData('gas'); }
@@ -113,6 +114,7 @@ const ExploreLogic = {
     },
 
     leave: function() {
+        // Timer sofort töten
         if (this.moveTimeout) {
             clearTimeout(this.moveTimeout);
             this.moveTimeout = null;
@@ -218,7 +220,6 @@ const ExploreLogic = {
             if (displayName === "") displayName = "TANK";
 
             if (!el.simPrices) {
-                // Dummy-Werte als Platzhalter, falls noch nicht geklickt
                 const baseE10 = 1.70 + (Math.random() * 0.14 - 0.07);
                 el.simPrices = {
                     e10: baseE10.toFixed(2),
@@ -407,7 +408,6 @@ const ExploreLogic = {
         overlay.classList.remove('hidden');
 
         if (TANKERKOENIG_API_KEY && TANKERKOENIG_API_KEY.length > 10) {
-            // FIX: LIVE API CALL
             const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${TANKERKOENIG_API_KEY}`;
             fetch(url).then(r => r.json()).then(data => {
                 if (data.ok && data.stations && data.stations.length > 0) {
@@ -421,14 +421,8 @@ const ExploreLogic = {
                     }
                     this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
                     this.redrawGasMarkers(); 
-                } else { 
-                    // Fallback
-                    this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5); 
-                }
-            }).catch(e => {
-                console.log("Tankerkoenig Error", e);
-                this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
-            });
+                } else { this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5); }
+            }).catch(e => this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5));
         } else {
             setTimeout(() => {
                 this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
