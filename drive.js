@@ -1,5 +1,5 @@
 /* =========================================
-   DRIVE LOGIC (MATCHING YOUR HTML IDs)
+   DRIVE LOGIC (VERSION 9.0 - END BUTTON FIX)
    ========================================= */
 
 const DriverLogic = {
@@ -11,6 +11,7 @@ const DriverLogic = {
     path: [], 
     lastSpeedCheck: 0, 
     watchId: null, 
+    holdTimer: null, // Für den Button
 
     start: function() {
         console.log("Drive Started");
@@ -20,15 +21,18 @@ const DriverLogic = {
         this.maxSpeed = 0; 
         this.lastSpeedCheck = 0;
         
-        // 1. UI RESET (IDs exakt aus deiner HTML)
+        // UI RESET (IDs aus HTML)
         if(document.getElementById('hud-time')) document.getElementById('hud-time').innerText = "00:00";
         if(document.getElementById('hud-dist')) document.getElementById('hud-dist').innerText = "0.00";
         if(document.getElementById('hud-speed')) document.getElementById('hud-speed').innerText = "0";
         if(document.getElementById('speed-limit')) document.getElementById('speed-limit').classList.add('hidden');
 
-        // Map Rotation aktivieren
+        // Map Rotation an
         const mapEl = document.getElementById('background-map');
         if(mapEl) mapEl.classList.add('map-smooth-rotate');
+
+        // Button Logik starten (DAS FEHLTE!)
+        this.initStopButton();
 
         // Timer starten
         if(this.interval) clearInterval(this.interval);
@@ -45,6 +49,47 @@ const DriverLogic = {
                 { enableHighAccuracy: true, maximumAge: 0 }
             );
         }
+    },
+
+    // --- HIER IST DER FIX FÜR DEN BUTTON ---
+    initStopButton: function() {
+        const btn = document.getElementById('btn-stop'); // ID aus deiner HTML
+        if(!btn) return;
+
+        // Alten Button ersetzen um Events zu resetten
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+
+        const startHold = (e) => {
+            e.preventDefault(); 
+            // Verhindert Scrollen auf Handy
+            if(e.target.setPointerCapture && e.pointerId) e.target.setPointerCapture(e.pointerId);
+            
+            newBtn.classList.add('holding'); // Startet CSS Animation (falls vorhanden)
+            
+            // Nach 1.5 Sekunden stoppen
+            this.holdTimer = setTimeout(() => {
+                newBtn.classList.remove('holding');
+                this.stop(); // STOPPT DIE FAHRT
+            }, 1500);
+        };
+
+        const endHold = (e) => {
+            e.preventDefault();
+            clearTimeout(this.holdTimer);
+            newBtn.classList.remove('holding');
+        };
+
+        // Pointer Events decken Touch und Maus ab
+        newBtn.onpointerdown = startHold;
+        newBtn.onpointerup = endHold;
+        newBtn.onpointerleave = endHold;
+        newBtn.onpointercancel = endHold;
+        
+        // Fallback für reine Touch-Geräte ohne Pointer-Support
+        newBtn.ontouchstart = startHold;
+        newBtn.ontouchend = endHold;
+        newBtn.ontouchcancel = endHold;
     },
 
     update: function(pos) {
@@ -64,37 +109,34 @@ const DriverLogic = {
             time: Date.now()
         });
 
-        // Distanz & Rotation berechnen
+        // Distanz & Rotation
         if (this.path.length > 1) {
             const last = this.path[this.path.length - 2];
             const curr = this.path[this.path.length - 1];
             
-            // Distanz
             const p1 = L.latLng(last.lat, last.lng);
             const p2 = L.latLng(curr.lat, curr.lng);
             this.startDist += p1.distanceTo(p2) / 1000; 
 
-            // Rotation (Karte drehen)
+            // Rotation
             const angle = this.getBearing(last.lat, last.lng, curr.lat, curr.lng);
             const mapEl = document.getElementById('background-map');
-            // Nur drehen wenn wir uns bewegen (> 3 km/h), gegen Zittern
             if(mapEl && speed > 3) { 
                 mapEl.style.transform = `translate(-50%, -50%) rotate(${-angle}deg)`;
             }
         }
 
-        // --- MAP FOLLOW (Hier wird die Map zentriert!) ---
-        // Wir prüfen global ob "App.map" existiert (das kommt aus deiner app.js)
+        // Map Follow
         if(typeof App !== 'undefined' && App.map) {
             App.map.panTo([lat, lng]);
             if(App.userMarker) App.userMarker.setLatLng([lat, lng]);
         }
 
-        // HUD Update (IDs aus HTML: hud-speed, hud-dist)
+        // HUD Update
         if(document.getElementById('hud-speed')) document.getElementById('hud-speed').innerText = this.currentSpeed;
         if(document.getElementById('hud-dist')) document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
         
-        // Speed Limit Check
+        // Speed Limit
         if (Date.now() - this.lastSpeedCheck > 5000) {
             this.lastSpeedCheck = Date.now();
             this.checkSpeedLimit(lat, lng);
@@ -106,11 +148,10 @@ const DriverLogic = {
         const totalSec = Math.floor(diff / 1000);
         const mins = Math.floor(totalSec / 60);
         const secs = totalSec % 60;
-        const el = document.getElementById('hud-time'); // ID aus HTML
+        const el = document.getElementById('hud-time');
         if(el) el.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     },
 
-    // Helfer für Winkel
     getBearing: function(startLat, startLng, destLat, destLng) {
         startLat = startLat * (Math.PI/180); startLng = startLng * (Math.PI/180);
         destLat = destLat * (Math.PI/180); destLng = destLng * (Math.PI/180);
@@ -125,11 +166,10 @@ const DriverLogic = {
         const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
         
         fetch(url).then(r => r.json()).then(data => {
-            const el = document.getElementById('speed-limit'); // ID aus HTML
+            const el = document.getElementById('speed-limit');
             if(data.elements && data.elements.length > 0) {
                 let max = data.elements[0].tags.maxspeed;
                 if(max && !isNaN(parseInt(max))) {
-                    // HTML Struktur ist <div id="speed-limit"><span>--</span></div>
                     const span = el.querySelector('span');
                     if(span) span.innerText = max;
                     el.classList.remove('hidden');
@@ -148,8 +188,9 @@ const DriverLogic = {
     stop: function() {
         clearInterval(this.interval);
         if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
+        if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
-        // SNAPSHOT ERSTELLEN (Werte einfrieren)
+        // Snapshot
         const durationMs = Date.now() - this.startTime;
         const durationMin = Math.floor(durationMs / 60000);
         const durationSec = Math.floor((durationMs % 60000) / 1000);
@@ -157,22 +198,22 @@ const DriverLogic = {
         
         const finalDist = parseFloat(this.startDist.toFixed(2));
         const finalMax = this.maxSpeed;
-        const finalPath = [...this.path]; // Kopie
+        const finalPath = [...this.path];
         const avgSpeed = (durationMs > 0 && finalDist > 0) ? Math.round(finalDist / (durationMs/3600000)) : 0;
 
-        // Map Rotation zurücksetzen
+        // Reset Map Rotation
         const mapEl = document.getElementById('background-map');
         if(mapEl) {
             mapEl.classList.remove('map-smooth-rotate');
             mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
         }
 
-        // Summary Screen füllen (IDs aus HTML)
+        // Summary Screen IDs (aus HTML)
         if(document.getElementById('sum-avg')) document.getElementById('sum-avg').innerText = avgSpeed;
         if(document.getElementById('sum-dist')) document.getElementById('sum-dist').innerText = finalDist.toFixed(2);
         if(document.getElementById('sum-time')) document.getElementById('sum-time').innerText = finalTimeStr;
 
-        // Mini Map rendern
+        // Mini Map
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
             if(mapContainer) {
@@ -190,11 +231,10 @@ const DriverLogic = {
             }
         }, 300);
 
-        // Screen wechseln
         if(typeof App !== 'undefined') App.switchScreen('summary-screen');
 
-        // SAVE BUTTON (Hier ist der Speicher-Fix)
-        const saveBtn = document.getElementById('btn-save'); // ID aus HTML
+        // SAVE BUTTON (ID aus HTML: btn-save)
+        const saveBtn = document.getElementById('btn-save');
         if(saveBtn) {
             saveBtn.onclick = () => {
                 const rideData = { 
@@ -206,19 +246,16 @@ const DriverLogic = {
                     path: finalPath 
                 };
                 
-                // Speichern
                 let rides = JSON.parse(localStorage.getItem('driverhub_rides')) || [];
                 rides.unshift(rideData);
                 localStorage.setItem('driverhub_rides', JSON.stringify(rides));
                 
-                // Garage aktualisieren
                 if(typeof GarageLogic !== 'undefined') GarageLogic.renderList();
-                
-                // Nach Hause
                 if(typeof App !== 'undefined') App.switchScreen('home-screen'); 
             };
         }
         
+        // DISCARD BUTTON (ID aus HTML: btn-discard)
         const discardBtn = document.getElementById('btn-discard');
         if(discardBtn && typeof App !== 'undefined') discardBtn.onclick = () => App.switchScreen('home-screen'); 
     }
