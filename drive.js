@@ -5,16 +5,19 @@ const DriverLogic = {
     currentSpeed: 0,
     maxSpeed: 0, 
     path: [], 
+    lastSpeedCheck: 0, // NEU: Damit wir nicht spammen
 
     start: function() {
         this.startTime = Date.now();
         this.startDist = 0;
         this.path = [];
         this.maxSpeed = 0; 
+        this.lastSpeedCheck = 0;
         
         document.getElementById('hud-time').innerText = "00:00";
         document.getElementById('hud-dist').innerText = "0.00";
         document.getElementById('hud-speed').innerText = "0";
+        document.getElementById('speed-limit').classList.add('hidden'); // Reset Schild
 
         if(this.interval) clearInterval(this.interval);
         this.interval = setInterval(() => {
@@ -52,7 +55,11 @@ const DriverLogic = {
         document.getElementById('hud-speed').innerText = this.currentSpeed;
         document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
         
-        this.checkSpeedLimit(lat, lng);
+        // FIX: Nur alle 5 Sekunden abfragen
+        if (Date.now() - this.lastSpeedCheck > 5000) {
+            this.lastSpeedCheck = Date.now();
+            this.checkSpeedLimit(lat, lng);
+        }
     },
 
     updateTime: function() {
@@ -65,9 +72,29 @@ const DriverLogic = {
     },
 
     checkSpeedLimit: function(lat, lng) {
-        if (Math.random() > 0.95) { 
-             // Speed limit check logic
-        }
+        // FIX: Echte Abfrage wiederhergestellt
+        const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+        
+        fetch(url).then(r => r.json()).then(data => {
+            const el = document.getElementById('speed-limit');
+            if(data.elements && data.elements.length > 0) {
+                let max = data.elements[0].tags.maxspeed;
+                // Filtern von "none" oder komischen Werten
+                if(max && !isNaN(parseInt(max))) {
+                    el.querySelector('span').innerText = max;
+                    el.classList.remove('hidden');
+                } else { 
+                    el.classList.add('hidden'); 
+                }
+            } else { 
+                el.classList.add('hidden'); 
+            }
+        }).catch(e => { 
+            console.log("Speed Limit Error", e);
+            // Bei Fehler einfach ausblenden
+            document.getElementById('speed-limit').classList.add('hidden');
+        });
     },
 
     stop: function() {
@@ -93,7 +120,6 @@ const DriverLogic = {
 
         switchScreen('summary-screen');
         
-        // FIX: Nav Bar MUSS hidden bleiben im Summary Screen!
         document.getElementById('global-nav').classList.add('hidden'); 
         
         const mapEl = document.getElementById('background-map');
@@ -123,8 +149,8 @@ const DriverLogic = {
                 max: this.maxSpeed, 
                 path: this.path 
             });
-            showGarage(); // Hier wird Nav Bar automatisch durch updateNav wieder angezeigt
+            showGarage(); 
         };
-        document.getElementById('btn-discard').onclick = showHome; // Hier auch
+        document.getElementById('btn-discard').onclick = showHome; 
     }
 };
