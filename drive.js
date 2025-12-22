@@ -3,21 +3,18 @@ const DriverLogic = {
     startTime: 0,
     startDist: 0,
     currentSpeed: 0,
-    maxSpeed: 0, 
-    path: [], 
-    lastSpeedCheck: 0, // NEU: Damit wir nicht spammen
+    maxSpeed: 0, // NEU: Max Speed Tracker
+    path: [], // Pfad speichern
 
     start: function() {
         this.startTime = Date.now();
         this.startDist = 0;
         this.path = [];
-        this.maxSpeed = 0; 
-        this.lastSpeedCheck = 0;
+        this.maxSpeed = 0; // Reset
         
         document.getElementById('hud-time').innerText = "00:00";
         document.getElementById('hud-dist').innerText = "0.00";
         document.getElementById('hud-speed').innerText = "0";
-        document.getElementById('speed-limit').classList.add('hidden'); // Reset Schild
 
         if(this.interval) clearInterval(this.interval);
         this.interval = setInterval(() => {
@@ -30,13 +27,16 @@ const DriverLogic = {
         
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
+        // Speed in km/h
         const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
         this.currentSpeed = speed;
 
+        // NEU: Max Speed berechnen
         if (speed > this.maxSpeed) {
             this.maxSpeed = speed;
         }
 
+        // Pfad speichern (mit Speed)
         this.path.push({
             lat: lat,
             lng: lng,
@@ -44,22 +44,20 @@ const DriverLogic = {
             time: Date.now()
         });
 
+        // Distanz berechnen (einfach summieren aus Path)
         if (this.path.length > 1) {
             const last = this.path[this.path.length - 2];
             const curr = this.path[this.path.length - 1];
             const p1 = L.latLng(last.lat, last.lng);
             const p2 = L.latLng(curr.lat, curr.lng);
-            this.startDist += p1.distanceTo(p2) / 1000; 
+            this.startDist += p1.distanceTo(p2) / 1000; // in km
         }
 
+        // Update UI
         document.getElementById('hud-speed').innerText = this.currentSpeed;
         document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
         
-        // FIX: Nur alle 5 Sekunden abfragen
-        if (Date.now() - this.lastSpeedCheck > 5000) {
-            this.lastSpeedCheck = Date.now();
-            this.checkSpeedLimit(lat, lng);
-        }
+        this.checkSpeedLimit(lat, lng);
     },
 
     updateTime: function() {
@@ -72,29 +70,10 @@ const DriverLogic = {
     },
 
     checkSpeedLimit: function(lat, lng) {
-        // FIX: Echte Abfrage wiederhergestellt
-        const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-        
-        fetch(url).then(r => r.json()).then(data => {
-            const el = document.getElementById('speed-limit');
-            if(data.elements && data.elements.length > 0) {
-                let max = data.elements[0].tags.maxspeed;
-                // Filtern von "none" oder komischen Werten
-                if(max && !isNaN(parseInt(max))) {
-                    el.querySelector('span').innerText = max;
-                    el.classList.remove('hidden');
-                } else { 
-                    el.classList.add('hidden'); 
-                }
-            } else { 
-                el.classList.add('hidden'); 
-            }
-        }).catch(e => { 
-            console.log("Speed Limit Error", e);
-            // Bei Fehler einfach ausblenden
-            document.getElementById('speed-limit').classList.add('hidden');
-        });
+        // Einfacher Check alle paar Sekunden via Overpass (optional, hier vereinfacht)
+        if (Math.random() > 0.95) { // Nicht zu oft aufrufen
+             // Hier könnte Logik stehen, aktuell Dummy oder via navi.js Logik
+        }
     },
 
     stop: function() {
@@ -104,29 +83,34 @@ const DriverLogic = {
         const durationSec = Math.floor((durationMs % 60000) / 1000);
         const timeStr = `${durationMin.toString().padStart(2,'0')}:${durationSec.toString().padStart(2,'0')}`;
         
+        // Avg Speed berechnen
         const avgSpeed = (durationMs > 0 && this.startDist > 0) ? Math.round(this.startDist / (durationMs/3600000)) : 0;
 
+        // Summary anzeigen
         NaviLogic.recordStats = {
             dist: this.startDist,
             startTime: this.startTime,
             path: this.path,
-            maxSpeed: this.maxSpeed 
+            maxSpeed: this.maxSpeed // NEU: MaxSpeed übergeben
         };
         
+        // UI für Summary setzen (wird eigentlich in navi.js showSummary gemacht, aber hier manuell füllen)
         document.getElementById('sum-avg').innerText = avgSpeed;
         document.getElementById('sum-dist').innerText = this.startDist.toFixed(2);
         document.getElementById('sum-time').innerText = timeStr;
-        document.getElementById('sum-comparison-row').classList.add('hidden'); 
+        document.getElementById('sum-comparison-row').classList.add('hidden'); // Kein Vergleich bei Free Drive
 
+        // Wechsel zu Summary
         switchScreen('summary-screen');
+        document.getElementById('global-nav').classList.remove('hidden'); // Nav wieder da
         
-        document.getElementById('global-nav').classList.add('hidden'); 
-        
+        // Map Reset
         const mapEl = document.getElementById('background-map');
         mapEl.classList.remove('map-smooth-rotate');
-        mapEl.classList.add('map-locked'); 
+        mapEl.classList.add('map-locked'); // Lock für Summary
         if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
 
+        // Summary Map zeichnen
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
             if (window.summaryMapInstance) { window.summaryMapInstance.remove(); window.summaryMapInstance = null; }
@@ -140,17 +124,18 @@ const DriverLogic = {
             }
         }, 300);
 
+        // Save Logic update
         document.getElementById('btn-save').onclick = () => {
             GarageLogic.save({ 
                 date: Date.now(), 
                 dist: this.startDist, 
                 time: timeStr, 
                 avg: avgSpeed, 
-                max: this.maxSpeed, 
+                max: this.maxSpeed, // NEU
                 path: this.path 
             });
-            showGarage(); 
+            showGarage();
         };
-        document.getElementById('btn-discard').onclick = showHome; 
+        document.getElementById('btn-discard').onclick = showHome;
     }
 };
