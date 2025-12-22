@@ -1,311 +1,152 @@
-const DriverLogic = {
+const GarageLogic = {
+    drives: [],
 
-    interval: null,
-
-    startTime: 0,
-
-    startDist: 0,
-
-    currentSpeed: 0,
-
-    maxSpeed: 0, 
-
-    path: [], 
-
-    lastSpeedCheck: 0, // NEU: Damit wir nicht spammen
-
-
-
-    start: function() {
-
-        this.startTime = Date.now();
-
-        this.startDist = 0;
-
-        this.path = [];
-
-        this.maxSpeed = 0; 
-
-        this.lastSpeedCheck = 0;
-
+    render: function() {
+        const list = document.getElementById('garage-list');
+        list.innerHTML = '';
         
+        let totalKm = 0;
+        this.drives.forEach((d, index) => {
+            totalKm += d.dist;
+            const card = document.createElement('div');
+            card.className = 'drive-card';
+            
+            const dateObj = new Date(d.date);
+            const dateStr = dateObj.toLocaleDateString() + ", " + dateObj.toLocaleTimeString().slice(0,5);
 
-        document.getElementById('hud-time').innerText = "00:00";
+            card.innerHTML = `
+                <div class="dc-info">
+                    <h4>${dateStr}</h4>
+                    <p>${d.time} min | Avg: ${d.avg} km/h</p>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="dc-km">${d.dist.toFixed(2)} km</div>
+                    <button class="btn-delete-drive" data-idx="${index}"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+            
+            card.onclick = (e) => {
+                if(!e.target.closest('.btn-delete-drive')) this.openDetails(d);
+            };
+            
+            // Delete Handler
+            const delBtn = card.querySelector('.btn-delete-drive');
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                this.deleteDrive(index);
+            };
 
-        document.getElementById('hud-dist').innerText = "0.00";
-
-        document.getElementById('hud-speed').innerText = "0";
-
-        document.getElementById('speed-limit').classList.add('hidden'); // Reset Schild
-
-
-
-        if(this.interval) clearInterval(this.interval);
-
-        this.interval = setInterval(() => {
-
-            this.updateTime();
-
-        }, 1000);
-
-    },
-
-
-
-    update: function(pos) {
-
-        if (!this.startTime) return;
-
-        
-
-        const lat = pos.coords.latitude;
-
-        const lng = pos.coords.longitude;
-
-        const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
-
-        this.currentSpeed = speed;
-
-
-
-        if (speed > this.maxSpeed) {
-
-            this.maxSpeed = speed;
-
-        }
-
-
-
-        this.path.push({
-
-            lat: lat,
-
-            lng: lng,
-
-            speed: speed,
-
-            time: Date.now()
-
+            list.appendChild(card);
         });
 
+        document.getElementById('total-drives').innerText = this.drives.length;
+        document.getElementById('total-km').innerText = totalKm.toFixed(1);
+    },
 
+    save: function(driveData) {
+        // driveData enthält jetzt { date, dist, time, avg, max, path }
+        this.drives.unshift(driveData);
+        this.render();
+    },
 
-        if (this.path.length > 1) {
-
-            const last = this.path[this.path.length - 2];
-
-            const curr = this.path[this.path.length - 1];
-
-            const p1 = L.latLng(last.lat, last.lng);
-
-            const p2 = L.latLng(curr.lat, curr.lng);
-
-            this.startDist += p1.distanceTo(p2) / 1000; 
-
+    deleteDrive: function(index) {
+        if(confirm("Delete this drive?")) {
+            this.drives.splice(index, 1);
+            this.render();
         }
-
-
-
-        document.getElementById('hud-speed').innerText = this.currentSpeed;
-
-        document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
-
-        
-
-        // FIX: Nur alle 5 Sekunden abfragen
-
-        if (Date.now() - this.lastSpeedCheck > 5000) {
-
-            this.lastSpeedCheck = Date.now();
-
-            this.checkSpeedLimit(lat, lng);
-
-        }
-
     },
 
-
-
-    updateTime: function() {
-
-        const diff = Date.now() - this.startTime;
-
-        const totalSec = Math.floor(diff / 1000);
-
-        const min = Math.floor(totalSec / 60);
-
-        const sec = totalSec % 60;
-
-        document.getElementById('hud-time').innerText = 
-
-            `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-
-    },
-
-
-
-    checkSpeedLimit: function(lat, lng) {
-
-        // FIX: Echte Abfrage wiederhergestellt
-
-        const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
-
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-
+    openDetails: function(drive) {
+        document.getElementById('detail-overlay').classList.remove('hidden');
         
-
-        fetch(url).then(r => r.json()).then(data => {
-
-            const el = document.getElementById('speed-limit');
-
-            if(data.elements && data.elements.length > 0) {
-
-                let max = data.elements[0].tags.maxspeed;
-
-                // Filtern von "none" oder komischen Werten
-
-                if(max && !isNaN(parseInt(max))) {
-
-                    el.querySelector('span').innerText = max;
-
-                    el.classList.remove('hidden');
-
-                } else { 
-
-                    el.classList.add('hidden'); 
-
-                }
-
-            } else { 
-
-                el.classList.add('hidden'); 
-
-            }
-
-        }).catch(e => { 
-
-            console.log("Speed Limit Error", e);
-
-            // Bei Fehler einfach ausblenden
-
-            document.getElementById('speed-limit').classList.add('hidden');
-
-        });
-
-    },
-
-
-
-    stop: function() {
-
-        clearInterval(this.interval);
-
-        const durationMs = Date.now() - this.startTime;
-
-        const durationMin = Math.floor(durationMs / 60000);
-
-        const durationSec = Math.floor((durationMs % 60000) / 1000);
-
-        const timeStr = `${durationMin.toString().padStart(2,'0')}:${durationSec.toString().padStart(2,'0')}`;
-
+        const dateObj = new Date(drive.date);
+        document.getElementById('det-date').innerText = dateObj.toLocaleDateString() + ", " + dateObj.toLocaleTimeString();
         
-
-        const avgSpeed = (durationMs > 0 && this.startDist > 0) ? Math.round(this.startDist / (durationMs/3600000)) : 0;
-
-
-
-        NaviLogic.recordStats = {
-
-            dist: this.startDist,
-
-            startTime: this.startTime,
-
-            path: this.path,
-
-            maxSpeed: this.maxSpeed 
-
-        };
-
+        document.getElementById('det-dist').innerText = drive.dist.toFixed(2) + " km";
+        document.getElementById('det-avg').innerText = drive.avg + " km/h";
         
-
-        document.getElementById('sum-avg').innerText = avgSpeed;
-
-        document.getElementById('sum-dist').innerText = this.startDist.toFixed(2);
-
-        document.getElementById('sum-time').innerText = timeStr;
-
-        document.getElementById('sum-comparison-row').classList.add('hidden'); 
-
-
-
-        switchScreen('summary-screen');
-
+        // FIX: Max Speed anzeigen (Fallback wenn nicht vorhanden)
+        const maxSpd = drive.max || 0;
+        document.getElementById('det-max').innerText = maxSpd + " km/h";
         
+        document.getElementById('det-time').innerText = drive.time;
 
-        document.getElementById('global-nav').classList.add('hidden'); 
-
-        
-
-        const mapEl = document.getElementById('background-map');
-
-        mapEl.classList.remove('map-smooth-rotate');
-
-        mapEl.classList.add('map-locked'); 
-
-        if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
-
-
-
+        // Map
         setTimeout(() => {
+            const container = document.getElementById('detail-map');
+            if(window.detailMapInstance) { window.detailMapInstance.remove(); window.detailMapInstance = null; }
+            
+            container.innerHTML = "";
+            window.detailMapInstance = L.map('detail-map', { zoomControl: false, attributionControl: false });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.detailMapInstance);
 
-            const mapContainer = document.getElementById('summary-map');
-
-            if (window.summaryMapInstance) { window.summaryMapInstance.remove(); window.summaryMapInstance = null; }
-
-            mapContainer.innerHTML = "";
-
-            window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
-
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.summaryMapInstance);
-
-            if (this.path.length > 1) {
-
-                const latLngs = this.path.map(p => [p.lat, p.lng]);
-
-                const line = L.polyline(latLngs, {color: '#bf5af2', weight: 4}).addTo(window.summaryMapInstance);
-
-                window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[40,40]});
-
+            if(drive.path && drive.path.length > 0) {
+                const latLngs = drive.path.map(p => [p.lat, p.lng]);
+                const line = L.polyline(latLngs, {color: '#30d158', weight: 4}).addTo(window.detailMapInstance);
+                window.detailMapInstance.fitBounds(line.getBounds(), {padding:[20,20]});
+            } else {
+                window.detailMapInstance.setView([51.1657, 10.4515], 6);
             }
+        }, 100);
 
-        }, 300);
+        // CHART FIX
+        this.renderChart(drive.path);
+    },
 
+    renderChart: function(path) {
+        const ctx = document.getElementById('speedChart').getContext('2d');
+        
+        if (window.speedChartInstance) {
+            window.speedChartInstance.destroy();
+        }
 
-
-        document.getElementById('btn-save').onclick = () => {
-
-            GarageLogic.save({ 
-
-                date: Date.now(), 
-
-                dist: this.startDist, 
-
-                time: timeStr, 
-
-                avg: avgSpeed, 
-
-                max: this.maxSpeed, 
-
-                path: this.path 
-
+        // Daten vorbereiten
+        // Wir nehmen jeden n-ten Punkt, damit der Graph nicht überladen ist, falls Path sehr lang ist
+        const dataPoints = [];
+        const labels = [];
+        
+        if(path && path.length > 0) {
+            path.forEach((p, i) => {
+                // Nur jeden 5. Punkt nehmen wenn sehr viele Daten, sonst alle
+                if (path.length < 100 || i % 5 === 0) {
+                    dataPoints.push(p.speed || 0); // Speed nutzen
+                    labels.push(""); // Leere Labels für sauberen Look
+                }
             });
+        }
 
-            showGarage(); 
+        window.speedChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Speed (km/h)',
+                    data: dataPoints,
+                    borderColor: '#30d158',
+                    backgroundColor: 'rgba(48, 209, 88, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { display: false },
+                    y: { 
+                        beginAtZero: true,
+                        grid: { color: '#333' },
+                        ticks: { color: '#888' }
+                    }
+                }
+            }
+        });
+    },
 
-        };
-
-        document.getElementById('btn-discard').onclick = showHome; 
-
+    closeDetails: function() {
+        document.getElementById('detail-overlay').classList.add('hidden');
     }
-
 };
