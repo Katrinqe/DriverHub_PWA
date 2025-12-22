@@ -1,191 +1,311 @@
-/* =========================================
-   GARAGE LOGIC (MATCHING HTML DETAIL IDs)
-   ========================================= */
+const DriverLogic = {
 
-const GarageLogic = {
-    detailMap: null, 
+    interval: null,
 
-    // LISTE BAUEN
-    renderList: function() {
-        const listContainer = document.getElementById('garage-list');
-        if (!listContainer) return;
+    startTime: 0,
 
-        listContainer.innerHTML = "";
-        const rides = JSON.parse(localStorage.getItem('driverhub_rides')) || [];
+    startDist: 0,
+
+    currentSpeed: 0,
+
+    maxSpeed: 0, 
+
+    path: [], 
+
+    lastSpeedCheck: 0, // NEU: Damit wir nicht spammen
+
+
+
+    start: function() {
+
+        this.startTime = Date.now();
+
+        this.startDist = 0;
+
+        this.path = [];
+
+        this.maxSpeed = 0; 
+
+        this.lastSpeedCheck = 0;
+
         
-        this.updateHeaderStats(rides);
 
-        if (rides.length === 0) {
-            listContainer.innerHTML = `<div style="text-align:center; padding:50px; color:#555;">Keine Fahrten gespeichert.</div>`;
-            return;
+        document.getElementById('hud-time').innerText = "00:00";
+
+        document.getElementById('hud-dist').innerText = "0.00";
+
+        document.getElementById('hud-speed').innerText = "0";
+
+        document.getElementById('speed-limit').classList.add('hidden'); // Reset Schild
+
+
+
+        if(this.interval) clearInterval(this.interval);
+
+        this.interval = setInterval(() => {
+
+            this.updateTime();
+
+        }, 1000);
+
+    },
+
+
+
+    update: function(pos) {
+
+        if (!this.startTime) return;
+
+        
+
+        const lat = pos.coords.latitude;
+
+        const lng = pos.coords.longitude;
+
+        const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
+
+        this.currentSpeed = speed;
+
+
+
+        if (speed > this.maxSpeed) {
+
+            this.maxSpeed = speed;
+
         }
 
-        rides.forEach((ride, index) => {
-            const dateObj = new Date(ride.date);
-            const dateStr = dateObj.toLocaleDateString('de-DE', {day: '2-digit', month: '2-digit'});
-            const timeStr = dateObj.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
 
-            const item = document.createElement('div');
-            item.className = "drive-card"; // Dein Style aus CSS
-            item.innerHTML = `
-                <div class="dc-info">
-                    <h4>${dateStr} • ${timeStr}</h4>
-                    <p>Dauer: ${ride.time} min</p>
-                </div>
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <div class="dc-km">${ride.dist.toFixed(1)} km</div>
-                    <button class="btn-delete-drive" data-index="${index}">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
-                </div>
-            `;
 
-            // Klick Event
-            item.onclick = (e) => {
-                if(e.target.closest('.btn-delete-drive')) return;
-                this.openDetailView(ride);
-            };
+        this.path.push({
 
-            // Delete Event
-            item.querySelector('.btn-delete-drive').onclick = (e) => {
-                e.stopPropagation();
-                this.deleteRide(index);
-            };
+            lat: lat,
 
-            listContainer.appendChild(item);
+            lng: lng,
+
+            speed: speed,
+
+            time: Date.now()
+
         });
-    },
 
-    updateHeaderStats: function(rides) {
-        let totalDist = 0;
-        rides.forEach(r => totalDist += r.dist);
-        
-        // IDs aus HTML: total-drives, total-km
-        if(document.getElementById('total-drives')) document.getElementById('total-drives').innerText = rides.length;
-        if(document.getElementById('total-km')) document.getElementById('total-km').innerText = totalDist.toFixed(1);
-    },
 
-    // DETAILS ÖFFNEN
-    openDetailView: function(ride) {
-        const overlay = document.getElementById('detail-overlay');
-        if(!overlay) return;
 
-        overlay.classList.remove('hidden'); 
-        overlay.style.display = 'flex'; 
+        if (this.path.length > 1) {
 
-        // Datum ID aus HTML: det-date
-        const d = new Date(ride.date);
-        if(document.getElementById('det-date')) {
-            document.getElementById('det-date').innerText = d.toLocaleDateString() + " " + d.toLocaleTimeString();
+            const last = this.path[this.path.length - 2];
+
+            const curr = this.path[this.path.length - 1];
+
+            const p1 = L.latLng(last.lat, last.lng);
+
+            const p2 = L.latLng(curr.lat, curr.lng);
+
+            this.startDist += p1.distanceTo(p2) / 1000; 
+
         }
 
-        // Stats IDs aus HTML: det-dist, det-avg, det-max, det-time
-        if(document.getElementById('det-dist')) document.getElementById('det-dist').innerText = ride.dist.toFixed(2) + " km";
-        if(document.getElementById('det-avg')) document.getElementById('det-avg').innerText = ride.avg + " km/h";
-        if(document.getElementById('det-max')) document.getElementById('det-max').innerText = ride.max + " km/h";
-        if(document.getElementById('det-time')) document.getElementById('det-time').innerText = ride.time;
 
-        // Map & Chart initialisieren
+
+        document.getElementById('hud-speed').innerText = this.currentSpeed;
+
+        document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
+
+        
+
+        // FIX: Nur alle 5 Sekunden abfragen
+
+        if (Date.now() - this.lastSpeedCheck > 5000) {
+
+            this.lastSpeedCheck = Date.now();
+
+            this.checkSpeedLimit(lat, lng);
+
+        }
+
+    },
+
+
+
+    updateTime: function() {
+
+        const diff = Date.now() - this.startTime;
+
+        const totalSec = Math.floor(diff / 1000);
+
+        const min = Math.floor(totalSec / 60);
+
+        const sec = totalSec % 60;
+
+        document.getElementById('hud-time').innerText = 
+
+            `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+
+    },
+
+
+
+    checkSpeedLimit: function(lat, lng) {
+
+        // FIX: Echte Abfrage wiederhergestellt
+
+        const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
+
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+        
+
+        fetch(url).then(r => r.json()).then(data => {
+
+            const el = document.getElementById('speed-limit');
+
+            if(data.elements && data.elements.length > 0) {
+
+                let max = data.elements[0].tags.maxspeed;
+
+                // Filtern von "none" oder komischen Werten
+
+                if(max && !isNaN(parseInt(max))) {
+
+                    el.querySelector('span').innerText = max;
+
+                    el.classList.remove('hidden');
+
+                } else { 
+
+                    el.classList.add('hidden'); 
+
+                }
+
+            } else { 
+
+                el.classList.add('hidden'); 
+
+            }
+
+        }).catch(e => { 
+
+            console.log("Speed Limit Error", e);
+
+            // Bei Fehler einfach ausblenden
+
+            document.getElementById('speed-limit').classList.add('hidden');
+
+        });
+
+    },
+
+
+
+    stop: function() {
+
+        clearInterval(this.interval);
+
+        const durationMs = Date.now() - this.startTime;
+
+        const durationMin = Math.floor(durationMs / 60000);
+
+        const durationSec = Math.floor((durationMs % 60000) / 1000);
+
+        const timeStr = `${durationMin.toString().padStart(2,'0')}:${durationSec.toString().padStart(2,'0')}`;
+
+        
+
+        const avgSpeed = (durationMs > 0 && this.startDist > 0) ? Math.round(this.startDist / (durationMs/3600000)) : 0;
+
+
+
+        NaviLogic.recordStats = {
+
+            dist: this.startDist,
+
+            startTime: this.startTime,
+
+            path: this.path,
+
+            maxSpeed: this.maxSpeed 
+
+        };
+
+        
+
+        document.getElementById('sum-avg').innerText = avgSpeed;
+
+        document.getElementById('sum-dist').innerText = this.startDist.toFixed(2);
+
+        document.getElementById('sum-time').innerText = timeStr;
+
+        document.getElementById('sum-comparison-row').classList.add('hidden'); 
+
+
+
+        switchScreen('summary-screen');
+
+        
+
+        document.getElementById('global-nav').classList.add('hidden'); 
+
+        
+
+        const mapEl = document.getElementById('background-map');
+
+        mapEl.classList.remove('map-smooth-rotate');
+
+        mapEl.classList.add('map-locked'); 
+
+        if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+
+
+
         setTimeout(() => {
-            this.initDetailMap(ride);
-            this.drawChart(ride);
-        }, 150); 
-    },
 
-    closeDetails: function() {
-        const overlay = document.getElementById('detail-overlay');
-        if(overlay) overlay.classList.add('hidden');
-        if(this.detailMap) { this.detailMap.remove(); this.detailMap = null; }
-    },
+            const mapContainer = document.getElementById('summary-map');
 
-    initDetailMap: function(ride) {
-        const mapContainer = document.getElementById('detail-map');
-        if(!mapContainer) return;
-        mapContainer.innerHTML = ""; 
+            if (window.summaryMapInstance) { window.summaryMapInstance.remove(); window.summaryMapInstance = null; }
 
-        if (this.detailMap) { this.detailMap.remove(); this.detailMap = null; }
+            mapContainer.innerHTML = "";
 
-        this.detailMap = L.map('detail-map', { 
-            zoomControl: false, attributionControl: false, dragging: true 
-        });
+            window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.detailMap);
-        this.detailMap.invalidateSize();
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.summaryMapInstance);
 
-        if (ride.path && ride.path.length > 0) {
-            const latLngs = ride.path.map(p => [p.lat, p.lng]);
-            const polyline = L.polyline(latLngs, { color: '#bf5af2', weight: 4 }).addTo(this.detailMap);
-            this.detailMap.fitBounds(polyline.getBounds(), {padding: [30,30]});
-        } else {
-            this.detailMap.setView([51.16, 10.45], 6);
-        }
-    },
+            if (this.path.length > 1) {
 
-    drawChart: function(ride) {
-        // Wir nutzen hier direkt den Container, um das SVG reinzubauen.
-        // Die HTML hat zwar ein Canvas, aber das SVG ist robuster ohne Chart.js Config.
-        const container = document.querySelector('.chart-container');
-        if(!container) return;
-        
-        container.innerHTML = ""; // Canvas rauswerfen, SVG rein
-        
-        const speeds = ride.path ? ride.path.map(p => p.speed) : [];
-        // Wenn nur Nullen da sind (Stillstand), zeige trotzdem einen Strich
-        const maxVal = Math.max(...speeds, 10); 
-        
-        // Daten reduzieren bei langen Fahrten
-        let dataPoints = speeds;
-        if(dataPoints.length > 100) {
-            const step = Math.ceil(dataPoints.length / 100);
-            dataPoints = dataPoints.filter((_, i) => i % step === 0);
-        }
+                const latLngs = this.path.map(p => [p.lat, p.lng]);
 
-        const width = container.clientWidth || 300;
-        const height = 150; 
-        const padding = 5;
+                const line = L.polyline(latLngs, {color: '#bf5af2', weight: 4}).addTo(window.summaryMapInstance);
 
-        let points = "";
-        const stepX = (width - (padding*2)) / (Math.max(dataPoints.length - 1, 1));
-        
-        dataPoints.forEach((val, i) => {
-            const x = padding + (i * stepX);
-            const y = height - padding - ((val / maxVal) * (height - (padding*2)));
-            points += `${x},${y} `;
-        });
+                window.summaryMapInstance.fitBounds(line.getBounds(), {padding:[40,40]});
 
-        const svgHTML = `
-        <svg width="100%" height="100%" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
-            <defs>
-                <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stop-color="#bf5af2" stop-opacity="0.4"/>
-                    <stop offset="100%" stop-color="#bf5af2" stop-opacity="0"/>
-                </linearGradient>
-            </defs>
-            <polygon points="${padding},${height} ${points} ${width-padding},${height}" fill="url(#chartGradient)" />
-            <polyline points="${points}" fill="none" stroke="#bf5af2" stroke-width="2" vector-effect="non-scaling-stroke"/>
-        </svg>`;
+            }
 
-        container.style.position = 'relative'; 
-        container.innerHTML = svgHTML;
-    },
+        }, 300);
 
-    save: function(data) {
-        let rides = JSON.parse(localStorage.getItem('driverhub_rides')) || [];
-        rides.unshift(data);
-        localStorage.setItem('driverhub_rides', JSON.stringify(rides));
-        this.renderList();
-    },
 
-    deleteRide: function(index) {
-        if(confirm("Fahrt löschen?")) {
-            let rides = JSON.parse(localStorage.getItem('driverhub_rides')) || [];
-            rides.splice(index, 1);
-            localStorage.setItem('driverhub_rides', JSON.stringify(rides));
-            this.renderList();
-        }
+
+        document.getElementById('btn-save').onclick = () => {
+
+            GarageLogic.save({ 
+
+                date: Date.now(), 
+
+                dist: this.startDist, 
+
+                time: timeStr, 
+
+                avg: avgSpeed, 
+
+                max: this.maxSpeed, 
+
+                path: this.path 
+
+            });
+
+            showGarage(); 
+
+        };
+
+        document.getElementById('btn-discard').onclick = showHome; 
+
     }
-};
 
-document.addEventListener('DOMContentLoaded', () => {
-    GarageLogic.renderList();
-});
+};
