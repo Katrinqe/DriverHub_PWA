@@ -1,5 +1,5 @@
 /* =========================================
-   DRIVE LOGIC (VERSION 6.0 - DATA FREEZE FIX)
+   DRIVE LOGIC (VERSION 7.0 - ROTATION RESTORED)
    ========================================= */
 
 const DriverLogic = {
@@ -26,6 +26,12 @@ const DriverLogic = {
         if(document.getElementById('hud-speed')) document.getElementById('hud-speed').innerText = "0";
         if(document.getElementById('speed-limit')) document.getElementById('speed-limit').classList.add('hidden');
 
+        // Map Rotation vorbereiten
+        const mapEl = document.getElementById('background-map');
+        if(mapEl) {
+            mapEl.classList.add('map-smooth-rotate'); // CSS Klasse für weiche Drehung
+        }
+
         // Timer starten
         if(this.interval) clearInterval(this.interval);
         this.interval = setInterval(() => {
@@ -51,10 +57,7 @@ const DriverLogic = {
         const speed = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
         this.currentSpeed = speed;
 
-        // Max Speed live tracken
-        if (speed > this.maxSpeed) {
-            this.maxSpeed = speed;
-        }
+        if (speed > this.maxSpeed) this.maxSpeed = speed;
 
         this.path.push({
             lat: lat,
@@ -63,14 +66,33 @@ const DriverLogic = {
             time: Date.now()
         });
 
-        // Distanz berechnen
+        // Distanz & Rotation berechnen
         if (this.path.length > 1) {
             const last = this.path[this.path.length - 2];
             const curr = this.path[this.path.length - 1];
+            
+            // Distanz
             const p1 = L.latLng(last.lat, last.lng);
             const p2 = L.latLng(curr.lat, curr.lng);
             this.startDist += p1.distanceTo(p2) / 1000; 
+
+            // --- RESTORED: ROTATION LOGIC ---
+            // Wir drehen die Karte entgegengesetzt zur Fahrtrichtung (-angle)
+            const angle = this.getBearing(last.lat, last.lng, curr.lat, curr.lng);
+            const mapEl = document.getElementById('background-map');
+            
+            // Nur drehen, wenn wir uns wirklich bewegen (Speed > 3 km/h), sonst zittert es
+            if(mapEl && speed > 3) {
+                mapEl.style.transform = `translate(-50%, -50%) rotate(${-angle}deg)`;
+                
+                // Optional: Marker drehen, damit er nicht auf dem Kopf steht?
+                // Meistens lässt man den Marker fixiert und dreht nur die Map.
+            }
         }
+
+        // Map Position (Zentrierung)
+        if(App.map) App.map.panTo([lat, lng]);
+        if(App.userMarker) App.userMarker.setLatLng([lat, lng]);
 
         // HUD Update
         if(document.getElementById('hud-speed')) document.getElementById('hud-speed').innerText = this.currentSpeed;
@@ -82,6 +104,24 @@ const DriverLogic = {
             this.checkSpeedLimit(lat, lng);
         }
     },
+
+    // HELPER: Winkel berechnen
+    getBearing: function(startLat, startLng, destLat, destLng) {
+        startLat = this.toRadians(startLat);
+        startLng = this.toRadians(startLng);
+        destLat = this.toRadians(destLat);
+        destLng = this.toRadians(destLng);
+
+        const y = Math.sin(destLng - startLng) * Math.cos(destLat);
+        const x = Math.cos(startLat) * Math.sin(destLat) -
+                  Math.sin(startLat) * Math.cos(destLat) * Math.cos(destLng - startLng);
+        let brng = Math.atan2(y, x);
+        brng = this.toDegrees(brng);
+        return (brng + 360) % 360;
+    },
+    
+    toRadians: function(deg) { return deg * (Math.PI/180); },
+    toDegrees: function(rad) { return rad * (180/Math.PI); },
 
     updateTime: function() {
         const diff = Date.now() - this.startTime;
@@ -116,43 +156,24 @@ const DriverLogic = {
     },
 
     stop: function() {
-        // 1. Sofort alles stoppen
         clearInterval(this.interval);
         if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
 
-        // 2. DATEN EINFRIEREN (SNAPSHOT ERSTELLEN)
-        // Das ist der wichtigste Schritt: Wir speichern die Werte in lokalen Variablen,
-        // auf die der Save-Button sicher zugreifen kann.
-        
+        // Snapshot erstellen
         const durationMs = Date.now() - this.startTime;
-        const durationMin = Math.floor(durationMs / 60000); // Minuten
-        const durationSec = Math.floor((durationMs % 60000) / 1000); // Sekunden
+        const durationMin = Math.floor(durationMs / 60000); 
+        const durationSec = Math.floor((durationMs % 60000) / 1000); 
         
-        // Zeit String formatieren ("05:30")
         const finalTimeStr = `${durationMin.toString().padStart(2,'0')}:${durationSec.toString().padStart(2,'0')}`;
-        
-        // Werte kopieren
-        const finalDist = parseFloat(this.startDist.toFixed(2)); // Als Zahl speichern
+        const finalDist = parseFloat(this.startDist.toFixed(2));
         const finalMax = this.maxSpeed;
-        const finalPath = [...this.path]; // Echte Kopie des Pfades
+        const finalPath = [...this.path];
         
-        // Durchschnitt berechnen
         const avgSpeed = (durationMs > 0 && finalDist > 0) ? Math.round(finalDist / (durationMs/3600000)) : 0;
 
-        console.log("Drive Stopped. Stats:", { finalDist, finalTimeStr, finalMax, avgSpeed });
-
-        // 3. Summary Screen füllen (nur Anzeige)
-        if(document.getElementById('sum-avg')) document.getElementById('sum-avg').innerText = avgSpeed;
-        if(document.getElementById('sum-dist')) document.getElementById('sum-dist').innerText = finalDist.toFixed(2);
-        if(document.getElementById('sum-time')) document.getElementById('sum-time').innerText = finalTimeStr;
+        console.log("Drive Stopped. Rotation Reset.");
         
-        // UI Aufräumen
-        const compRow = document.getElementById('sum-comparison-row');
-        if(compRow) compRow.classList.add('hidden'); 
-        const globNav = document.getElementById('global-nav');
-        if(globNav) globNav.classList.add('hidden'); 
-        
-        // Map sperren
+        // Map Rotation zurücksetzen (damit Summary gerade ist)
         const mapEl = document.getElementById('background-map');
         if(mapEl) {
             mapEl.classList.remove('map-smooth-rotate');
@@ -160,7 +181,23 @@ const DriverLogic = {
             mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
         }
 
-        // Summary Map (Miniatur)
+        if (typeof NaviLogic !== 'undefined') {
+            NaviLogic.recordStats = {
+                dist: finalDist, startTime: this.startTime, path: finalPath, maxSpeed: finalMax 
+            };
+        }
+        
+        // Summary UI
+        if(document.getElementById('sum-avg')) document.getElementById('sum-avg').innerText = avgSpeed;
+        if(document.getElementById('sum-dist')) document.getElementById('sum-dist').innerText = finalDist.toFixed(2);
+        if(document.getElementById('sum-time')) document.getElementById('sum-time').innerText = finalTimeStr;
+        
+        const compRow = document.getElementById('sum-comparison-row');
+        if(compRow) compRow.classList.add('hidden'); 
+        const globNav = document.getElementById('global-nav');
+        if(globNav) globNav.classList.add('hidden'); 
+
+        // Mini Map rendern
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
             if(!mapContainer) return;
@@ -177,36 +214,26 @@ const DriverLogic = {
             }
         }, 300);
 
-        // Screen wechseln
         if(typeof switchScreen === 'function') switchScreen('summary-screen');
 
-        // 4. SPEICHERN BUTTON (DER FIX)
+        // Save Button (mit Snapshot Daten)
         const saveBtn = document.getElementById('btn-save');
         if(saveBtn) {
-            // Alten Listener entfernen (durch Überschreiben)
             saveBtn.onclick = () => {
-                
-                // Wir nutzen hier NUR die "final..." Variablen von oben!
-                // Nicht mehr "this.startDist", weil das weg sein könnte.
                 const rideData = { 
                     date: Date.now(), 
-                    dist: finalDist,        // Nimm den Snapshot
-                    time: finalTimeStr,     // Nimm den Snapshot
-                    avg: avgSpeed,          // Nimm den Snapshot
-                    max: finalMax,          // Nimm den Snapshot
+                    dist: finalDist, 
+                    time: finalTimeStr, 
+                    avg: avgSpeed, 
+                    max: finalMax, 
                     path: finalPath 
                 };
 
-                // Speichern
                 let rides = JSON.parse(localStorage.getItem('driverhub_rides')) || [];
                 rides.unshift(rideData);
                 localStorage.setItem('driverhub_rides', JSON.stringify(rides));
                 
-                // Garage updaten
-                if(typeof GarageLogic !== 'undefined') {
-                    GarageLogic.renderList();
-                }
-                
+                if(typeof GarageLogic !== 'undefined') GarageLogic.renderList();
                 if(typeof showGarage === 'function') showGarage(); 
             };
         }
