@@ -1,5 +1,5 @@
 /* =========================================
-   DRIVE LOGIC (FINAL FIX - NO CLONING)
+   DRIVE LOGIC (VERSION 10.0 - CRASH PROOF)
    ========================================= */
 
 const DriverLogic = {
@@ -21,26 +21,23 @@ const DriverLogic = {
         this.maxSpeed = 0; 
         this.lastSpeedCheck = 0;
         
-        // UI Reset
+        // UI Reset (Crash-Sicher)
         if(document.getElementById('hud-time')) document.getElementById('hud-time').innerText = "00:00";
         if(document.getElementById('hud-dist')) document.getElementById('hud-dist').innerText = "0.00";
         if(document.getElementById('hud-speed')) document.getElementById('hud-speed').innerText = "0";
         if(document.getElementById('speed-limit')) document.getElementById('speed-limit').classList.add('hidden');
 
-        // Map Rotation
+        // Map Rotation an
         const mapEl = document.getElementById('background-map');
         if(mapEl) mapEl.classList.add('map-smooth-rotate');
 
-        // BUTTON SCHARF SCHALTEN
         this.activateStopButton();
 
-        // Timer
         if(this.interval) clearInterval(this.interval);
         this.interval = setInterval(() => {
             this.updateTime();
         }, 1000);
 
-        // GPS
         if (navigator.geolocation) {
             if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
             this.watchId = navigator.geolocation.watchPosition(
@@ -51,34 +48,22 @@ const DriverLogic = {
         }
     },
 
-    // --- BUTTON FIX: KEIN KLONEN MEHR, DIREKTES BINDING ---
     activateStopButton: function() {
         const btn = document.getElementById('btn-stop');
         if(!btn) return;
 
-        // Alte Events löschen (Quick & Dirty aber sicher)
-        btn.onpointerdown = null;
-        btn.onpointerup = null;
-        btn.onpointercancel = null;
-        btn.onpointerleave = null;
-        btn.ontouchstart = null;
-        btn.ontouchend = null;
+        // Reset
+        btn.onpointerdown = null; btn.onpointerup = null; btn.onpointercancel = null; btn.onpointerleave = null;
+        btn.ontouchstart = null; btn.ontouchend = null;
 
         const startHold = (e) => {
-            // Wichtig: Verhindert Zoom/Scroll
             if(e.cancelable) e.preventDefault();
+            if(e.target.setPointerCapture && e.pointerId) e.target.setPointerCapture(e.pointerId);
+            btn.classList.add('holding');
             
-            // Pointer Capture für Touch (damit man nicht abrutscht)
-            if(e.target.setPointerCapture && e.pointerId) {
-                e.target.setPointerCapture(e.pointerId);
-            }
-            
-            btn.classList.add('holding'); // Start Animation
-            
-            // Timer starten
             this.holdTimer = setTimeout(() => {
                 btn.classList.remove('holding');
-                this.stop(); // STOPPT DIE FAHRT
+                this.stop(); // Fahrt stoppen
             }, 1500);
         };
 
@@ -88,13 +73,10 @@ const DriverLogic = {
             btn.classList.remove('holding');
         };
 
-        // Events binden
         btn.onpointerdown = startHold;
         btn.onpointerup = endHold;
         btn.onpointercancel = endHold;
         btn.onpointerleave = endHold;
-        
-        // Touch Backup (falls Pointer Events versagen)
         btn.ontouchstart = startHold;
         btn.ontouchend = endHold;
         btn.ontouchcancel = endHold;
@@ -110,12 +92,7 @@ const DriverLogic = {
 
         if (speed > this.maxSpeed) this.maxSpeed = speed;
 
-        this.path.push({
-            lat: lat,
-            lng: lng,
-            speed: speed,
-            time: Date.now()
-        });
+        this.path.push({lat, lng, speed, time: Date.now()});
 
         if (this.path.length > 1) {
             const last = this.path[this.path.length - 2];
@@ -125,7 +102,6 @@ const DriverLogic = {
             const p2 = L.latLng(curr.lat, curr.lng);
             this.startDist += p1.distanceTo(p2) / 1000; 
 
-            // Rotation
             const angle = this.getBearing(last.lat, last.lng, curr.lat, curr.lng);
             const mapEl = document.getElementById('background-map');
             if(mapEl && speed > 3) { 
@@ -133,13 +109,11 @@ const DriverLogic = {
             }
         }
 
-        // Map Follow
         if(typeof App !== 'undefined' && App.map) {
             App.map.panTo([lat, lng]);
             if(App.userMarker) App.userMarker.setLatLng([lat, lng]);
         }
 
-        // HUD Update
         if(document.getElementById('hud-speed')) document.getElementById('hud-speed').innerText = this.currentSpeed;
         if(document.getElementById('hud-dist')) document.getElementById('hud-dist').innerText = this.startDist.toFixed(2);
         
@@ -170,7 +144,6 @@ const DriverLogic = {
     checkSpeedLimit: function(lat, lng) {
         const query = `[out:json][timeout:5];way["maxspeed"](around:25,${lat},${lng});out tags;`;
         const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-        
         fetch(url).then(r => r.json()).then(data => {
             const el = document.getElementById('speed-limit');
             if(data.elements && data.elements.length > 0) {
@@ -179,24 +152,17 @@ const DriverLogic = {
                     const span = el.querySelector('span');
                     if(span) span.innerText = max;
                     el.classList.remove('hidden');
-                } else { 
-                    el.classList.add('hidden'); 
-                }
-            } else { 
-                el.classList.add('hidden'); 
-            }
-        }).catch(e => { 
-            const el = document.getElementById('speed-limit');
-            if(el) el.classList.add('hidden');
-        });
+                } else { el.classList.add('hidden'); }
+            } else { el.classList.add('hidden'); }
+        }).catch(() => {});
     },
 
     stop: function() {
+        console.log("Stopping...");
         clearInterval(this.interval);
         if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
         if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
 
-        // Snapshot erstellen
         const durationMs = Date.now() - this.startTime;
         const durationMin = Math.floor(durationMs / 60000);
         const durationSec = Math.floor((durationMs % 60000) / 1000);
@@ -214,10 +180,16 @@ const DriverLogic = {
             mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
         }
 
-        // Summary füllen
+        // Summary füllen (MIT SICHERHEITSCHECKS!)
         if(document.getElementById('sum-avg')) document.getElementById('sum-avg').innerText = avgSpeed;
         if(document.getElementById('sum-dist')) document.getElementById('sum-dist').innerText = finalDist.toFixed(2);
         if(document.getElementById('sum-time')) document.getElementById('sum-time').innerText = finalTimeStr;
+        
+        // Das hier war der Fehler! Wenn sum-max nicht existiert, stürzen wir jetzt nicht mehr ab.
+        if(document.getElementById('sum-max')) document.getElementById('sum-max').innerText = finalMax;
+
+        const compRow = document.getElementById('sum-comparison-row');
+        if(compRow) compRow.classList.add('hidden');
 
         // Mini Map
         setTimeout(() => {
@@ -237,32 +209,21 @@ const DriverLogic = {
             }
         }, 300);
 
+        // ENDLICH SCREEN WECHSELN
         if(typeof App !== 'undefined') App.switchScreen('summary-screen');
 
-        // SAVE BUTTON (Der muss funktionieren)
         const saveBtn = document.getElementById('btn-save');
         if(saveBtn) {
-            // Alten Event Listener überschreiben
             saveBtn.onclick = () => {
-                const rideData = { 
-                    date: Date.now(), 
-                    dist: finalDist, 
-                    time: finalTimeStr, 
-                    avg: avgSpeed, 
-                    max: finalMax, 
-                    path: finalPath 
-                };
-                
+                const rideData = { date: Date.now(), dist: finalDist, time: finalTimeStr, avg: avgSpeed, max: finalMax, path: finalPath };
                 let rides = JSON.parse(localStorage.getItem('driverhub_rides')) || [];
                 rides.unshift(rideData);
                 localStorage.setItem('driverhub_rides', JSON.stringify(rides));
-                
                 if(typeof GarageLogic !== 'undefined') GarageLogic.renderList();
                 if(typeof App !== 'undefined') App.switchScreen('home-screen'); 
             };
         }
         
-        // DISCARD
         const discardBtn = document.getElementById('btn-discard');
         if(discardBtn && typeof App !== 'undefined') discardBtn.onclick = () => App.switchScreen('home-screen'); 
     }
