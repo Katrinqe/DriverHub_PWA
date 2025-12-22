@@ -1,11 +1,11 @@
 /* =========================================
-   GARAGE LOGIC (VERSION 5.0 - DURATION & GRAPH FIX)
+   GARAGE LOGIC (MATCHING HTML DETAIL IDs)
    ========================================= */
 
 const GarageLogic = {
     detailMap: null, 
 
-    // 1. LISTE RENDERN
+    // LISTE BAUEN
     renderList: function() {
         const listContainer = document.getElementById('garage-list');
         if (!listContainer) return;
@@ -26,27 +26,27 @@ const GarageLogic = {
             const timeStr = dateObj.toLocaleTimeString('de-DE', {hour: '2-digit', minute:'2-digit'});
 
             const item = document.createElement('div');
-            item.className = "drive-card"; 
+            item.className = "drive-card"; // Dein Style aus CSS
             item.innerHTML = `
                 <div class="dc-info">
                     <h4>${dateStr} • ${timeStr}</h4>
                     <p>Dauer: ${ride.time} min</p>
                 </div>
                 <div style="display:flex; align-items:center; gap:15px;">
-                    <div class="dc-km">${ride.dist.toFixed(2)} km</div>
+                    <div class="dc-km">${ride.dist.toFixed(1)} km</div>
                     <button class="btn-delete-drive" data-index="${index}">
                         <i class="fa-solid fa-trash"></i>
                     </button>
                 </div>
             `;
 
-            // Klick auf Karte -> Details
+            // Klick Event
             item.onclick = (e) => {
                 if(e.target.closest('.btn-delete-drive')) return;
                 this.openDetailView(ride);
             };
 
-            // Löschen
+            // Delete Event
             item.querySelector('.btn-delete-drive').onclick = (e) => {
                 e.stopPropagation();
                 this.deleteRide(index);
@@ -60,14 +60,12 @@ const GarageLogic = {
         let totalDist = 0;
         rides.forEach(r => totalDist += r.dist);
         
-        const stats = document.querySelectorAll('.g-stat span');
-        if(stats.length >= 2) {
-            stats[0].innerText = rides.length;      
-            stats[1].innerText = totalDist.toFixed(1); 
-        }
+        // IDs aus HTML: total-drives, total-km
+        if(document.getElementById('total-drives')) document.getElementById('total-drives').innerText = rides.length;
+        if(document.getElementById('total-km')) document.getElementById('total-km').innerText = totalDist.toFixed(1);
     },
 
-    // 2. DETAIL VIEW ÖFFNEN (JETZT MIT DAUER!)
+    // DETAILS ÖFFNEN
     openDetailView: function(ride) {
         const overlay = document.getElementById('detail-overlay');
         if(!overlay) return;
@@ -75,46 +73,31 @@ const GarageLogic = {
         overlay.classList.remove('hidden'); 
         overlay.style.display = 'flex'; 
 
-        // Header Text
+        // Datum ID aus HTML: det-date
         const d = new Date(ride.date);
-        const headerTitle = overlay.querySelector('.detail-header h3');
-        if(headerTitle) headerTitle.innerText = d.toLocaleDateString();
-
-        // --- HIER IST DAS UPDATE: DAUER ANZEIGEN ---
-        const statLabels = overlay.querySelectorAll('.d-stat-box .label');
-        const statValues = overlay.querySelectorAll('.d-stat-box .val');
-        
-        if(statValues.length >= 3) {
-            // Box 1: DAUER (statt Avg)
-            if(statLabels[0]) statLabels[0].innerText = "DURATION";
-            statValues[0].innerText = ride.time; // Zeigt z.B. "00:15"
-
-            // Box 2: MAX SPEED
-            if(statLabels[1]) statLabels[1].innerText = "MAX SPEED";
-            statValues[1].innerText = ride.max + " km/h";
-
-            // Box 3: DISTANCE
-            if(statLabels[2]) statLabels[2].innerText = "DISTANCE";
-            statValues[2].innerText = ride.dist.toFixed(2) + " km";
+        if(document.getElementById('det-date')) {
+            document.getElementById('det-date').innerText = d.toLocaleDateString() + " " + d.toLocaleTimeString();
         }
 
-        // Close Button
-        const closeBtn = overlay.querySelector('.close-detail-btn');
-        if(closeBtn) {
-            closeBtn.onclick = () => {
-                overlay.style.display = 'none';
-                if(this.detailMap) { this.detailMap.remove(); this.detailMap = null; }
-            };
-        }
+        // Stats IDs aus HTML: det-dist, det-avg, det-max, det-time
+        if(document.getElementById('det-dist')) document.getElementById('det-dist').innerText = ride.dist.toFixed(2) + " km";
+        if(document.getElementById('det-avg')) document.getElementById('det-avg').innerText = ride.avg + " km/h";
+        if(document.getElementById('det-max')) document.getElementById('det-max').innerText = ride.max + " km/h";
+        if(document.getElementById('det-time')) document.getElementById('det-time').innerText = ride.time;
 
-        // Map & Graph laden
+        // Map & Chart initialisieren
         setTimeout(() => {
             this.initDetailMap(ride);
             this.drawChart(ride);
         }, 150); 
     },
 
-    // 3. MAP FIX
+    closeDetails: function() {
+        const overlay = document.getElementById('detail-overlay');
+        if(overlay) overlay.classList.add('hidden');
+        if(this.detailMap) { this.detailMap.remove(); this.detailMap = null; }
+    },
+
     initDetailMap: function(ride) {
         const mapContainer = document.getElementById('detail-map');
         if(!mapContainer) return;
@@ -138,38 +121,31 @@ const GarageLogic = {
         }
     },
 
-    // 4. GRAPH ZEICHNEN
     drawChart: function(ride) {
+        // Wir nutzen hier direkt den Container, um das SVG reinzubauen.
+        // Die HTML hat zwar ein Canvas, aber das SVG ist robuster ohne Chart.js Config.
         const container = document.querySelector('.chart-container');
         if(!container) return;
         
-        container.innerHTML = "";
+        container.innerHTML = ""; // Canvas rauswerfen, SVG rein
         
-        // Wenn keine Speed Daten da sind (weil du nicht gelaufen bist)
         const speeds = ride.path ? ride.path.map(p => p.speed) : [];
-        if (speeds.length < 2 || Math.max(...speeds) === 0) {
-            container.innerHTML = `
-                <div style="height:100%; display:flex; align-items:center; justify-content:center; flex-direction:column;">
-                    <i class="fa-solid fa-chart-line" style="color:#333; font-size:2rem; margin-bottom:10px;"></i>
-                    <p style="color:#555; font-size:0.8rem;">Keine Bewegung erkannt (Flatline)</p>
-                </div>`;
-            return;
-        }
-
-        // Daten reduzieren (Performance)
+        // Wenn nur Nullen da sind (Stillstand), zeige trotzdem einen Strich
+        const maxVal = Math.max(...speeds, 10); 
+        
+        // Daten reduzieren bei langen Fahrten
         let dataPoints = speeds;
         if(dataPoints.length > 100) {
             const step = Math.ceil(dataPoints.length / 100);
             dataPoints = dataPoints.filter((_, i) => i % step === 0);
         }
 
-        const maxVal = Math.max(...dataPoints, 10); 
         const width = container.clientWidth || 300;
         const height = 150; 
         const padding = 5;
 
         let points = "";
-        const stepX = (width - (padding*2)) / (dataPoints.length - 1);
+        const stepX = (width - (padding*2)) / (Math.max(dataPoints.length - 1, 1));
         
         dataPoints.forEach((val, i) => {
             const x = padding + (i * stepX);
