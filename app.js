@@ -2,7 +2,6 @@ let map, userMarker;
 let isDriveMode = false;
 let watchId = null;
 let isZooming = false; 
-let isAutoPanning = false; 
 let currentRotation = 0; 
 let pressTimer = null;
 const LONG_PRESS_DURATION = 1500; 
@@ -19,7 +18,6 @@ window.addEventListener('load', () => {
     const fade = document.getElementById('global-top-fade');
     if(fade) fade.classList.add('visible');
     
-    if(typeof GarageLogic !== 'undefined') GarageLogic.init();
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
@@ -83,37 +81,27 @@ function initMap() {
         );
     }
 
-    map.on('dragstart', () => {
-        if(!isAutoPanning) showRecenterButtons();
-    });
-
-    map.on('zoomstart', () => {
-        if(!isAutoPanning) {
-            showRecenterButtons();
-            if(userMarker && userMarker.getElement()) {
-                userMarker.getElement().classList.remove('smooth');
-            }
+    map.on('zoomstart movestart', () => {
+        isZooming = true;
+        if(userMarker && userMarker.getElement()) {
+            userMarker.getElement().classList.remove('smooth');
         }
+        if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden');
+        if(typeof NaviLogic !== 'undefined' && NaviLogic.isNavigating) document.getElementById('btn-nav-recenter').classList.remove('hidden');
     });
 
     map.on('zoomend moveend', () => {
-        setTimeout(() => { isAutoPanning = false; }, 500); 
-        
+        isZooming = false;
         if(userMarker && userMarker.getElement()) {
             userMarker.getElement().classList.add('smooth');
         }
     });
 }
 
-function showRecenterButtons() {
-    if(isDriveMode) document.getElementById('btn-recenter').classList.remove('hidden');
-    if(typeof NaviLogic !== 'undefined' && NaviLogic.isNavigating) document.getElementById('btn-nav-recenter').classList.remove('hidden');
-}
-
 function handlePositionUpdate(pos) {
     const newLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
     const heading = pos.coords.heading; 
-    const speedKm = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
+    const speedKm = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
 
     if (!userMarker) {
         const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
@@ -135,6 +123,7 @@ function handlePositionUpdate(pos) {
             while (diff < -180) diff += 360;
             while (diff > 180) diff -= 360;
             currentRotation += diff; 
+            // FIX: Translate dazu!
             if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(${currentRotation}deg)`;
         }
     } else {
@@ -144,34 +133,30 @@ function handlePositionUpdate(pos) {
         }
     }
 
-    if (isZooming && !isAutoPanning) return;
+    if (isZooming) return;
 
     if (isDriveMode) {
         DriverLogic.update(pos);
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
-            isAutoPanning = true; 
-            map.panTo(newLatLng, { animate: true, duration: 1.0 });
+            const dist = map.getCenter().distanceTo(newLatLng);
+            if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else if (isNavi) {
         NaviLogic.updatePosition(pos); 
         if (document.getElementById('btn-nav-recenter').classList.contains('hidden')) {
-            isAutoPanning = true;
-            map.panTo(newLatLng, { animate: true, duration: 1.0 });
+            const dist = map.getCenter().distanceTo(newLatLng);
+            if (dist > 5) map.panTo(newLatLng, { animate: true, duration: 1.0 });
         }
     } else {
         const isHome = document.getElementById('home-screen').classList.contains('active');
         const isExplore = !document.getElementById('explore-screen').classList.contains('hidden');
         
         if (isHome) {
-            isAutoPanning = true;
             map.setView(newLatLng, 15, { animate: false });
         } 
         else if (!isExplore) {
             const dist = map.getCenter().distanceTo(newLatLng);
-            if(dist > 50) {
-                isAutoPanning = true;
-                map.panTo(newLatLng, { animate: true, duration: 2.0 });
-            }
+            if(dist > 50) map.panTo(newLatLng, { animate: true, duration: 2.0 });
         }
     }
 }
@@ -183,9 +168,8 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
-    document.getElementById('btn-recenter').classList.add('hidden');
-
     document.getElementById('global-top-fade').classList.remove('visible');
+
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.add('map-smooth-rotate');
 
@@ -195,7 +179,6 @@ function startDriveMode() {
     map.scrollWheelZoom.enable();
 
     if(userMarker) {
-        isAutoPanning = true;
         map.setView(userMarker.getLatLng(), 18, { animate: false });
     }
     DriverLogic.start();
@@ -203,11 +186,8 @@ function startDriveMode() {
 
 function centerMapOnUser() {
     if(userMarker) {
-        isAutoPanning = true;
         map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
-        
         document.getElementById('btn-recenter').classList.add('hidden');
-        document.getElementById('btn-nav-recenter').classList.add('hidden');
     }
 }
 
@@ -224,6 +204,7 @@ function showHome() {
     mapEl.classList.add('map-locked'); 
 
     currentRotation = 0;
+    // FIX: Translate dazu!
     mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
     
     map.stop();
@@ -237,7 +218,6 @@ function showHome() {
 
     if(userMarker) {
         if(userMarker.getElement()) userMarker.getElement().classList.remove('smooth');
-        isAutoPanning = true;
         map.setView(userMarker.getLatLng(), 15, { animate: false });
         setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
     }
@@ -259,10 +239,6 @@ function showGarage() {
     switchScreen('garage-screen'); 
     updateNav('garage');
     GarageLogic.render(); 
-    
-    if(window.startGarage3D) {
-        setTimeout(() => { window.startGarage3D(); }, 100);
-    }
 }
 
 function showExplore() {
@@ -274,6 +250,7 @@ function showExplore() {
     document.getElementById('background-map').classList.remove('map-locked');
     document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
+    // FIX: Translate dazu!
     const mapEl = document.getElementById('background-map');
     if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
     
