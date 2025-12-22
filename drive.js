@@ -1,5 +1,5 @@
 /* =========================================
-   DRIVE LOGIC (VERSION 10.0 - CRASH PROOF)
+   DRIVE LOGIC (VERSION 11 - FORCE SWITCH)
    ========================================= */
 
 const DriverLogic = {
@@ -19,9 +19,8 @@ const DriverLogic = {
         this.startDist = 0;
         this.path = [];
         this.maxSpeed = 0; 
-        this.lastSpeedCheck = 0;
         
-        // UI Reset (Crash-Sicher)
+        // UI Reset
         if(document.getElementById('hud-time')) document.getElementById('hud-time').innerText = "00:00";
         if(document.getElementById('hud-dist')) document.getElementById('hud-dist').innerText = "0.00";
         if(document.getElementById('hud-speed')) document.getElementById('hud-speed').innerText = "0";
@@ -34,9 +33,7 @@ const DriverLogic = {
         this.activateStopButton();
 
         if(this.interval) clearInterval(this.interval);
-        this.interval = setInterval(() => {
-            this.updateTime();
-        }, 1000);
+        this.interval = setInterval(() => this.updateTime(), 1000);
 
         if (navigator.geolocation) {
             if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
@@ -52,7 +49,7 @@ const DriverLogic = {
         const btn = document.getElementById('btn-stop');
         if(!btn) return;
 
-        // Reset
+        // Reset Events
         btn.onpointerdown = null; btn.onpointerup = null; btn.onpointercancel = null; btn.onpointerleave = null;
         btn.ontouchstart = null; btn.ontouchend = null;
 
@@ -63,7 +60,7 @@ const DriverLogic = {
             
             this.holdTimer = setTimeout(() => {
                 btn.classList.remove('holding');
-                this.stop(); // Fahrt stoppen
+                this.stop(); 
             }, 1500);
         };
 
@@ -157,8 +154,10 @@ const DriverLogic = {
         }).catch(() => {});
     },
 
+    // --- STOP & FORCE SWITCH ---
     stop: function() {
-        console.log("Stopping...");
+        console.log("STOPPING DRIVE NOW");
+        
         clearInterval(this.interval);
         if(this.watchId) navigator.geolocation.clearWatch(this.watchId);
         if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
@@ -173,21 +172,19 @@ const DriverLogic = {
         const finalPath = [...this.path];
         const avgSpeed = (durationMs > 0 && finalDist > 0) ? Math.round(finalDist / (durationMs/3600000)) : 0;
 
-        // Reset Map
+        // Reset Map Rotation
         const mapEl = document.getElementById('background-map');
         if(mapEl) {
             mapEl.classList.remove('map-smooth-rotate');
             mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
         }
 
-        // Summary füllen (MIT SICHERHEITSCHECKS!)
+        // Fülle Summary (Sicherheits-Check: existiert Element?)
         if(document.getElementById('sum-avg')) document.getElementById('sum-avg').innerText = avgSpeed;
         if(document.getElementById('sum-dist')) document.getElementById('sum-dist').innerText = finalDist.toFixed(2);
         if(document.getElementById('sum-time')) document.getElementById('sum-time').innerText = finalTimeStr;
         
-        // Das hier war der Fehler! Wenn sum-max nicht existiert, stürzen wir jetzt nicht mehr ab.
-        if(document.getElementById('sum-max')) document.getElementById('sum-max').innerText = finalMax;
-
+        // Hide Comparison Row
         const compRow = document.getElementById('sum-comparison-row');
         if(compRow) compRow.classList.add('hidden');
 
@@ -195,9 +192,8 @@ const DriverLogic = {
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
             if(mapContainer) {
-                if (window.summaryMapInstance) { window.summaryMapInstance.remove(); window.summaryMapInstance = null; }
-                mapContainer.innerHTML = "";
-                window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
+                mapContainer.innerHTML = "<div id='mini-map' style='width:100%;height:100%;'></div>";
+                window.summaryMapInstance = L.map('mini-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.summaryMapInstance);
                 if (finalPath.length > 1) {
                     const latLngs = finalPath.map(p => [p.lat, p.lng]);
@@ -209,22 +205,52 @@ const DriverLogic = {
             }
         }, 300);
 
-        // ENDLICH SCREEN WECHSELN
-        if(typeof App !== 'undefined') App.switchScreen('summary-screen');
+        // --- DER FIX: SCREEN WECHSEL ERZWINGEN ---
+        // Wir verlassen uns NICHT auf App.switchScreen, falls das kaputt ist.
+        // Wir machen es manuell über die Klassen.
+        
+        // 1. Alle Screens verstecken
+        document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        
+        // 2. Summary Screen anzeigen
+        const summaryScreen = document.getElementById('summary-screen');
+        if(summaryScreen) {
+            summaryScreen.classList.remove('hidden');
+            summaryScreen.classList.add('active');
+            console.log("Forced switch to Summary Screen");
+        } else {
+            alert("Fehler: Summary Screen nicht gefunden!");
+        }
 
+        // SAVE BUTTON
         const saveBtn = document.getElementById('btn-save');
         if(saveBtn) {
             saveBtn.onclick = () => {
                 const rideData = { date: Date.now(), dist: finalDist, time: finalTimeStr, avg: avgSpeed, max: finalMax, path: finalPath };
+                
                 let rides = JSON.parse(localStorage.getItem('driverhub_rides')) || [];
                 rides.unshift(rideData);
                 localStorage.setItem('driverhub_rides', JSON.stringify(rides));
+                
                 if(typeof GarageLogic !== 'undefined') GarageLogic.renderList();
-                if(typeof App !== 'undefined') App.switchScreen('home-screen'); 
+                
+                // Manuell nach Hause
+                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+                document.getElementById('home-screen').classList.remove('hidden');
+                document.getElementById('home-screen').classList.add('active');
             };
         }
         
+        // DISCARD BUTTON
         const discardBtn = document.getElementById('btn-discard');
-        if(discardBtn && typeof App !== 'undefined') discardBtn.onclick = () => App.switchScreen('home-screen'); 
+        if(discardBtn) {
+            discardBtn.onclick = () => {
+                // Manuell nach Hause
+                document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+                document.getElementById('home-screen').classList.remove('hidden');
+                document.getElementById('home-screen').classList.add('active');
+            };
+        }
     }
 };
