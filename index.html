@@ -633,15 +633,22 @@
 
     
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                console.log("Starte System...");
-                if(window.GarageLogic) {
-                    window.GarageLogic.init();
-                }
-            }, 500); // Kurze Wartezeit für Sicherheit
-        });
-    </script>
+    // NOTFALL-START: Zwingt die Garage zum Anzeigen
+    window.onload = function() {
+        setTimeout(() => {
+            console.log("Manueller Start...");
+            if(window.GarageLogic) {
+                window.GarageLogic.init();
+                // Erzwingt, dass der Screen sichtbar wird
+                document.getElementById('garage-screen').classList.remove('hidden');
+                document.getElementById('garage-screen').classList.add('active');
+            } else {
+                alert("ALARM: GarageLogic immer noch nicht da!");
+            }
+        }, 1000);
+    };
+</script>
+    
 </body>
 </html>
 
