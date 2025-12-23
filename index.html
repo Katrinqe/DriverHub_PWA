@@ -631,23 +631,22 @@
     <script src="app.js?v=73"></script>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 
-    <script>
-    // NOTFALL-START: Zwingt die Garage zum Anzeigen
-    window.onload = function() {
-        setTimeout(() => {
-            console.log("Manueller Start...");
-            if(window.GarageLogic) {
-                window.GarageLogic.init();
-                // Erzwingt, dass der Screen sichtbar wird
-                document.getElementById('garage-screen').classList.remove('hidden');
-                document.getElementById('garage-screen').classList.add('active');
-            } else {
-                alert("ALARM: GarageLogic immer noch nicht da!");
-            }
-        }, 1000);
-    };
-</script>
-    
+   <script>
+        // STANDARD START (Startet im Hintergrund, zeigt aber Home an)
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                console.log("Starte System...");
+                
+                // Wir initialisieren die Garage leise im Hintergrund
+                if(window.GarageLogic) {
+                    window.GarageLogic.init();
+                }
+                
+                // HIER NICHTS MEHR ERZWINGEN!
+                // Die app.js kümmert sich darum, den Home-Screen zu zeigen.
+            }, 500);
+        });
+    </script>
 </body>
 </html>
 
