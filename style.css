@@ -267,3 +267,132 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 #splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; align-items: center; justify-content: center; transition: opacity 0.8s ease-out; pointer-events: none;}
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+
+/* --- NEW GARAGE DESIGN (NFS STYLE) --- */
+
+/* Hintergrund & Glow */
+#garage-screen {
+    background: linear-gradient(to bottom, #0d0b12, #000000);
+    padding: 0 20px 100px 20px; /* Platz unten für Navi */
+    overflow-y: auto;
+    color: white;
+}
+
+#garage-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 60vh;
+    /* Der lila Nebel hinter dem Auto */
+    background: radial-gradient(circle at 50% 20%, rgba(191, 90, 242, 0.25), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Showroom (Auto-Bereich) */
+.showroom-container {
+    position: relative;
+    width: 100%;
+    height: 280px; /* Platz fürs 3D Modell */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+    z-index: 1;
+}
+
+#car-model-viewer {
+    width: 100%;
+    height: 100%;
+    /* Vorläufiger Rahmen damit wir sehen wo das Auto hinkommt */
+    /* background: rgba(255,255,255,0.05); */
+}
+
+#car-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 10px;
+    text-shadow: 0 0 10px rgba(191, 90, 242, 0.5);
+}
+
+/* Stats Karten (Glassmorphism) */
+.career-card {
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(191, 90, 242, 0.3); /* Lila Rand */
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 15px;
+    box-shadow: 0 0 15px rgba(191, 90, 242, 0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.stats-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 30px;
+    z-index: 1;
+    position: relative;
+}
+
+.stat-card {
+    flex: 1;
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 15px;
+    text-align: center;
+}
+
+.label {
+    display: block;
+    font-size: 0.7rem;
+    color: #aaa;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+.value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: white;
+}
+
+.value small {
+    font-size: 0.9rem;
+    color: #bf5af2; /* Lila Einheit */
+    font-weight: 600;
+}
+
+/* Liste der Fahrten */
+.section-title {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.garage-list-new {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1;
+    position: relative;
+}
+
+/* Anpassung der alten Karten an das neue Design */
+.drive-card {
+    background: rgba(30, 30, 30, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 15px !important;
+}
