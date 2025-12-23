@@ -82,7 +82,11 @@ window.GarageLogic = {
         const addCard = document.createElement('div');
         addCard.className = 'car-slide add-new-card';
         addCard.innerHTML = `<i class="fa-solid fa-plus add-new-icon"></i><h3>ADD CAR</h3>`;
-        addCard.onclick = () => this.openEditor(-1);
+        addCard.onclick = () => { 
+    console.log("KLICK WURDE ERKANNT!"); 
+    alert("Button funktioniert!"); 
+    this.openEditor(-1); 
+};
         container.appendChild(addCard);
     },
 
