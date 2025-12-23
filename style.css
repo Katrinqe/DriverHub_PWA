@@ -432,3 +432,80 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     transform: scale(0.95);
     box-shadow: 0 0 5px rgba(191, 90, 242, 0.8);
 }
+
+/* --- GARAGE SWIPER & EDITOR --- */
+
+#garage-swiper-container {
+    width: 100%;
+    /* Der Platz zwischen Header und Buttons */
+    height: 550px; 
+    display: flex;
+    overflow-x: auto; /* Erlaubt seitliches Scrollen */
+    scroll-snap-type: x mandatory; /* Das magische Einrasten */
+    gap: 20px;
+    padding: 0 5%; /* Kleiner Rand links/rechts */
+    margin-top: 20px;
+    
+    /* Scrollbar verstecken */
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
+}
+#garage-swiper-container::-webkit-scrollbar { 
+    display: none; 
+}
+
+/* Die einzelne Karte im Slider */
+.car-slide {
+    flex: 0 0 90%; /* Jede Karte nimmt 90% der Breite ein */
+    scroll-snap-align: center; /* Rastet in der Mitte ein */
+    height: 100%;
+    position: relative;
+    /* Styles von .car-profile-card übernehmen wir hier */
+    background: rgba(20, 20, 20, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--theme-color, #bf5af2); /* Dynamische Farbe! */
+    border-radius: 24px;
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    /* Glow Effekt basierend auf Theme Color */
+    box-shadow: 0 0 20px var(--theme-glow, rgba(191,90,242, 0.2));
+}
+
+/* "Add New" Karte Style */
+.add-new-card {
+    justify-content: center;
+    border: 2px dashed rgba(255,255,255,0.2);
+    cursor: pointer;
+}
+.add-new-icon {
+    font-size: 3rem;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 10px;
+}
+
+/* Editor Styles */
+.input-group { margin-bottom: 20px; }
+.input-group label {
+    display: block; color: #888; font-size: 0.7rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px;
+}
+.input-group input {
+    width: 100%; background: #111; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; font-size: 1rem;
+}
+.specs-row { display: flex; gap: 15px; }
+
+/* Color Picker Circles */
+.color-picker-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.color-swatch {
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
+}
+.color-swatch.selected { border-color: white; transform: scale(1.1); }
+
+/* Model Selector */
+.model-option {
+    padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; display: flex; justify-content: space-between;
+}
+.model-option.selected { border-color: #bf5af2; background: #2a2a2a; }
