@@ -261,7 +261,11 @@ function showGarage() {
     
     switchScreen('garage-screen'); 
     updateNav('garage');
-    GarageLogic.render(); 
+   // FIX: Die neuen Render-Funktionen aufrufen
+    if(window.GarageLogic) {
+        GarageLogic.renderCars(); // Baut den Slider
+        GarageLogic.renderList(); // Baut die History-Liste
+    }
 }
 
 function showExplore() {
