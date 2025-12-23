@@ -14,9 +14,9 @@ const GarageLogic = {
     // HIER DEINE 3D DATEIEN EINTRAGEN
     // Achte darauf, dass die Dateien wirklich so heißen und im Ordner liegen!
     availableModels: [
-        { name: "Nissan Skyline R34", file: "r34.glb" }, 
-        { name: "Porsche 911 GT3", file: "porsche.glb" },
-        { name: "Ford Mustang", file: "mustang.glb" }
+        { name: "Honda Civic EJ2", file: "car.glb" }, 
+        { name: "Nissan Skyline R34 GTR", file: "car2.glb" },
+        { name: "Honda EG", file: "car3.glb" }
     ],
 
     // --- STARTUP ---
