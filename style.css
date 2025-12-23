@@ -268,18 +268,17 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
 
-/* --- GARAGE V2: CARD PROFILE STYLE --- */
+/* --- GARAGE V2: CARD PROFILE STYLE & SWIPER --- */
 
 #garage-screen {
-    background: #000; /* Tiefschwarz als Basis */
+    background: #000;
     padding: 0; 
-    overflow: hidden; /* Kein Scrollen auf der Hauptseite */
+    overflow: hidden; /* Hauptseite scrollt nicht, nur der Swiper! */
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-/* Fix 3: Der weiche Übergang oben */
 .top-fade-overlay {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 150px;
@@ -291,29 +290,42 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 #garage-bg {
     position: absolute;
     top: 0; left: 0; width: 100%; height: 70vh;
-    /* Der lila Glow sitzt jetzt tiefer */
     background: radial-gradient(circle at 50% 40%, rgba(191, 90, 242, 0.2), transparent 70%);
     z-index: 0;
 }
 
-/* Fix 5: Die große Karte */
-.car-profile-card {
-    margin-top: 60px; /* Abstand von oben */
-    width: 90%;
-    flex: 1; /* Nimmt den verfügbaren Platz bis zu den Buttons ein */
+/* SWIPER CONTAINER */
+#garage-swiper-container {
+    width: 100%;
+    height: 550px; /* Genug Platz für die Karte */
+    display: flex;
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory; 
+    gap: 20px;
+    padding: 0 5%; 
+    margin-top: 60px; /* Platz unterm Header */
+    z-index: 10;
+    
+    scrollbar-width: none; 
+}
+#garage-swiper-container::-webkit-scrollbar { display: none; }
+
+/* DIE KARTE (SLIDE) */
+.car-slide {
+    flex: 0 0 90%; /* 90% Breite */
+    scroll-snap-align: center;
+    height: 100%;
+    position: relative;
     background: rgba(20, 20, 20, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-top: 1px solid rgba(191, 90, 242, 0.5); /* Lila Akzent oben */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--theme-color, #bf5af2);
     border-radius: 24px;
     backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    position: relative;
-    z-index: 2;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    box-shadow: 0 0 20px var(--theme-glow, rgba(191,90,242, 0.2));
 }
 
 #car-name {
@@ -321,20 +333,17 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     font-weight: 900;
     font-style: italic;
     letter-spacing: 1px;
-    text-shadow: 0 0 15px rgba(191, 90, 242, 0.6);
-    margin: 0;
-    margin-bottom: 10px;
+    margin: 0 0 10px 0;
     z-index: 2;
 }
 
 #car-model-wrapper {
     width: 100%;
-    flex: 2; /* Der 3D Viewer kriegt den meisten Platz */
+    flex: 2; 
     min-height: 200px;
     margin-bottom: 20px;
 }
 
-/* Das Daten-Gitter */
 .car-specs-grid {
     width: 100%;
     display: grid;
@@ -346,57 +355,41 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     margin-bottom: 15px;
 }
 
-.spec-item {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-}
-
-.spec-item .lbl {
-    font-size: 0.65rem;
-    color: #888;
-    font-weight: 700;
-    margin-bottom: 2px;
-}
-
-.spec-item .val {
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: white;
-}
-
-.spec-item .val small {
-    font-size: 0.7rem;
-    color: #bf5af2;
-}
+.spec-item { display: flex; flex-direction: column; align-items: flex-start; }
+.spec-item .lbl { font-size: 0.65rem; color: #888; font-weight: 700; margin-bottom: 2px; }
+.spec-item .val { font-size: 1.1rem; font-weight: 800; color: white; }
+.spec-item .val small { font-size: 0.7rem; color: var(--theme-color, #bf5af2); }
 
 .best-track-display {
     font-size: 0.8rem;
     color: #ccc;
-    background: rgba(191, 90, 242, 0.1);
     padding: 8px 15px;
     border-radius: 20px;
-    border: 1px solid rgba(191, 90, 242, 0.2);
+    border: 1px solid transparent;
 }
 
-/* --- FIX: NEON BUTTONS & SPACING --- */
+/* ADD NEW CARD */
+.add-new-card {
+    justify-content: center;
+    border: 2px dashed rgba(255,255,255,0.2);
+    cursor: pointer;
+}
+.add-new-icon { font-size: 3rem; color: rgba(255,255,255,0.3); margin-bottom: 10px; }
 
+/* BUTTONS UNTEN */
 .garage-actions {
     width: 90%;
-    /* Automatische Höhe, damit sie nicht starr sind */
-    height: auto; 
+    height: auto;
     display: flex;
     gap: 15px;
     margin-top: 15px;
-    /* WICHTIG: 120px Platz nach unten, damit die Nav Bar nicht verdeckt wird */
-    margin-bottom: 120px; 
+    margin-bottom: 120px;
     z-index: 10;
 }
 
 .action-btn {
     flex: 1;
-    /* Höhe reduziert (vorher ca 80px, jetzt ca 50px) */
-    padding: 12px 0; 
+    padding: 12px 0;
     border-radius: 12px;
     font-weight: 800;
     font-size: 0.85rem;
@@ -406,106 +399,29 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     justify-content: center;
     gap: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
     text-transform: uppercase;
 }
 
-/* Style 1: Gefüllt (Wie Start Button) */
 .action-btn.neon-fill {
     background: linear-gradient(135deg, rgba(191, 90, 242, 0.9), rgba(90, 40, 160, 0.9));
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
-    box-shadow: 0 0 15px rgba(191, 90, 242, 0.4); /* Neon Glow */
+    box-shadow: 0 0 15px rgba(191, 90, 242, 0.4);
 }
-
-/* Style 2: Glas (Durchsichtig aber leuchtend) */
 .action-btn.neon-glass {
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(191, 90, 242, 0.6); /* Lila Rand */
-    color: #bf5af2; /* Lila Text */
-    box-shadow: inset 0 0 10px rgba(191, 90, 242, 0.1);
+    border: 1px solid rgba(191, 90, 242, 0.6);
+    color: #bf5af2;
 }
 
-/* Klick-Effekt */
-.action-btn:active {
-    transform: scale(0.95);
-    box-shadow: 0 0 5px rgba(191, 90, 242, 0.8);
-}
-
-/* --- GARAGE SWIPER & EDITOR --- */
-
-#garage-swiper-container {
-    width: 100%;
-    /* Der Platz zwischen Header und Buttons */
-    height: 550px; 
-    display: flex;
-    overflow-x: auto; /* Erlaubt seitliches Scrollen */
-    scroll-snap-type: x mandatory; /* Das magische Einrasten */
-    gap: 20px;
-    padding: 0 5%; /* Kleiner Rand links/rechts */
-    margin-top: 20px;
-    
-    /* Scrollbar verstecken */
-    scrollbar-width: none; 
-    -ms-overflow-style: none;
-}
-#garage-swiper-container::-webkit-scrollbar { 
-    display: none; 
-}
-
-/* Die einzelne Karte im Slider */
-.car-slide {
-    flex: 0 0 90%; /* Jede Karte nimmt 90% der Breite ein */
-    scroll-snap-align: center; /* Rastet in der Mitte ein */
-    height: 100%;
-    position: relative;
-    /* Styles von .car-profile-card übernehmen wir hier */
-    background: rgba(20, 20, 20, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-top: 1px solid var(--theme-color, #bf5af2); /* Dynamische Farbe! */
-    border-radius: 24px;
-    backdrop-filter: blur(20px);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    /* Glow Effekt basierend auf Theme Color */
-    box-shadow: 0 0 20px var(--theme-glow, rgba(191,90,242, 0.2));
-}
-
-/* "Add New" Karte Style */
-.add-new-card {
-    justify-content: center;
-    border: 2px dashed rgba(255,255,255,0.2);
-    cursor: pointer;
-}
-.add-new-icon {
-    font-size: 3rem;
-    color: rgba(255,255,255,0.3);
-    margin-bottom: 10px;
-}
-
-/* Editor Styles */
+/* EDITOR STYLES */
 .input-group { margin-bottom: 20px; }
-.input-group label {
-    display: block; color: #888; font-size: 0.7rem; font-weight: 700; margin-bottom: 8px; letter-spacing: 1px;
-}
-.input-group input {
-    width: 100%; background: #111; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; font-size: 1rem;
-}
+.input-group label { display: block; color: #888; font-size: 0.7rem; font-weight: 700; margin-bottom: 8px; }
+.input-group input { width: 100%; background: #111; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; font-size: 1rem; }
 .specs-row { display: flex; gap: 15px; }
-
-/* Color Picker Circles */
 .color-picker-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-.color-swatch {
-    width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid transparent;
-}
+.color-swatch { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; }
 .color-swatch.selected { border-color: white; transform: scale(1.1); }
-
-/* Model Selector */
-.model-option {
-    padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px; border: 1px solid transparent; cursor: pointer; display: flex; justify-content: space-between;
-}
-.model-option.selected { border-color: #bf5af2; background: #2a2a2a; }
+.model-option { padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; }
+.model-option.selected { border-color: #bf5af2; background: #2a2a2a; border: 1px solid #bf5af2; }
