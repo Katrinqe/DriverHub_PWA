@@ -297,16 +297,20 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 /* SWIPER CONTAINER */
 #garage-swiper-container {
     width: 100%;
-    height: 550px; /* Genug Platz für die Karte */
+    height: 550px; 
     display: flex;
     overflow-x: auto; 
     scroll-snap-type: x mandatory; 
     gap: 20px;
     padding: 0 5%; 
-    margin-top: 60px; /* Platz unterm Header */
+    margin-top: 60px; 
     z-index: 10;
     
     scrollbar-width: none; 
+
+    /* --- FÜGE DIESE 2 TEST-ZEILEN HINZU: --- */
+    border: 4px solid red;            /* Ein dicker roter Rand */
+    background: rgba(255, 0, 0, 0.2); /* Roter Hintergrund */
 }
 #garage-swiper-container::-webkit-scrollbar { display: none; }
 
