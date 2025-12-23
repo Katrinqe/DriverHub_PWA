@@ -268,131 +268,150 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
 
-/* --- NEW GARAGE DESIGN (NFS STYLE) --- */
+/* --- GARAGE V2: CARD PROFILE STYLE --- */
 
-/* Hintergrund & Glow */
 #garage-screen {
-    background: linear-gradient(to bottom, #0d0b12, #000000);
-    padding: 0 20px 100px 20px; /* Platz unten für Navi */
-    overflow-y: auto;
-    color: white;
+    background: #000; /* Tiefschwarz als Basis */
+    padding: 0; 
+    overflow: hidden; /* Kein Scrollen auf der Hauptseite */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Fix 3: Der weiche Übergang oben */
+.top-fade-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 150px;
+    background: linear-gradient(to bottom, #000000 10%, transparent 100%);
+    z-index: 5;
+    pointer-events: none;
 }
 
 #garage-bg {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 60vh;
-    /* Der lila Nebel hinter dem Auto */
-    background: radial-gradient(circle at 50% 20%, rgba(191, 90, 242, 0.25), transparent 60%);
-    pointer-events: none;
+    top: 0; left: 0; width: 100%; height: 70vh;
+    /* Der lila Glow sitzt jetzt tiefer */
+    background: radial-gradient(circle at 50% 40%, rgba(191, 90, 242, 0.2), transparent 70%);
     z-index: 0;
 }
 
-/* Showroom (Auto-Bereich) */
-.showroom-container {
-    position: relative;
-    width: 100%;
-    height: 280px; /* Platz fürs 3D Modell */
+/* Fix 5: Die große Karte */
+.car-profile-card {
+    margin-top: 60px; /* Abstand von oben */
+    width: 90%;
+    flex: 1; /* Nimmt den verfügbaren Platz bis zu den Buttons ein */
+    background: rgba(20, 20, 20, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(191, 90, 242, 0.5); /* Lila Akzent oben */
+    border-radius: 24px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-end;
-    margin-bottom: 20px;
-    z-index: 1;
-}
-
-#car-model-viewer {
-    width: 100%;
-    height: 100%;
-    /* Vorläufiger Rahmen damit wir sehen wo das Auto hinkommt */
-    /* background: rgba(255,255,255,0.05); */
+    padding: 20px;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
 }
 
 #car-name {
-    font-size: 1.5rem;
-    font-weight: 800;
-    text-transform: uppercase;
+    font-size: 1.4rem;
+    font-weight: 900;
+    font-style: italic;
     letter-spacing: 1px;
-    margin-top: 10px;
-    text-shadow: 0 0 10px rgba(191, 90, 242, 0.5);
+    text-shadow: 0 0 15px rgba(191, 90, 242, 0.6);
+    margin: 0;
+    margin-bottom: 10px;
+    z-index: 2;
 }
 
-/* Stats Karten (Glassmorphism) */
-.career-card {
-    background: rgba(20, 20, 20, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(191, 90, 242, 0.3); /* Lila Rand */
-    border-radius: 20px;
-    padding: 20px;
-    text-align: center;
-    margin-bottom: 15px;
-    box-shadow: 0 0 15px rgba(191, 90, 242, 0.1);
-    position: relative;
-    z-index: 1;
+#car-model-wrapper {
+    width: 100%;
+    flex: 2; /* Der 3D Viewer kriegt den meisten Platz */
+    min-height: 200px;
+    margin-bottom: 20px;
 }
 
-.stats-row {
-    display: flex;
+/* Das Daten-Gitter */
+.car-specs-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 15px;
-    margin-bottom: 30px;
-    z-index: 1;
-    position: relative;
-}
-
-.stat-card {
-    flex: 1;
-    background: rgba(20, 20, 20, 0.6);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
+    background: rgba(0,0,0,0.3);
     padding: 15px;
-    text-align: center;
+    border-radius: 15px;
+    margin-bottom: 15px;
 }
 
-.label {
-    display: block;
-    font-size: 0.7rem;
-    color: #aaa;
+.spec-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.spec-item .lbl {
+    font-size: 0.65rem;
+    color: #888;
     font-weight: 700;
-    letter-spacing: 1px;
-    margin-bottom: 5px;
-    text-transform: uppercase;
+    margin-bottom: 2px;
 }
 
-.value {
-    font-size: 1.8rem;
+.spec-item .val {
+    font-size: 1.1rem;
     font-weight: 800;
     color: white;
 }
 
-.value small {
-    font-size: 0.9rem;
-    color: #bf5af2; /* Lila Einheit */
-    font-weight: 600;
+.spec-item .val small {
+    font-size: 0.7rem;
+    color: #bf5af2;
 }
 
-/* Liste der Fahrten */
-.section-title {
+.best-track-display {
     font-size: 0.8rem;
-    color: #666;
-    font-weight: 700;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: #ccc;
+    background: rgba(191, 90, 242, 0.1);
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid rgba(191, 90, 242, 0.2);
 }
 
-.garage-list-new {
+/* Fix 4: Buttons unten */
+.garage-actions {
+    width: 90%;
+    height: 80px; /* Feste Höhe für den Bereich */
     display: flex;
-    flex-direction: column;
     gap: 10px;
-    z-index: 1;
-    position: relative;
+    margin-top: 15px;
+    margin-bottom: 90px; /* Platz fürs Navi unten */
+    z-index: 10;
 }
 
-/* Anpassung der alten Karten an das neue Design */
-.drive-card {
-    background: rgba(30, 30, 30, 0.5) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 15px !important;
+.action-btn {
+    flex: 1;
+    border: none;
+    border-radius: 16px;
+    background: #fff;
+    color: #000;
+    font-weight: 800;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.action-btn.outline {
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.2);
+    color: white;
+}
+
+.action-btn:active {
+    transform: scale(0.96);
 }
