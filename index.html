@@ -11,9 +11,10 @@
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=71">
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <link rel="stylesheet" href="style.css?v=70">
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 </head>
 <body>
 
@@ -258,12 +259,23 @@
         </div>
     </div>
 
-<div id="garage-screen" class="screen hidden">
+    <div id="garage-screen" class="screen hidden">
         <div class="top-fade-overlay"></div>
         <div id="garage-bg"></div>
         
         <div id="garage-swiper-container">
             </div>
+
+        <div class="garage-actions">
+            <button class="action-btn neon-fill" onclick="GarageLogic.showHistory()">
+                <i class="fa-solid fa-clock-rotate-left"></i> HISTORY
+            </button>
+            <button class="action-btn neon-glass" onclick="alert('Races coming soon!')">
+                <i class="fa-solid fa-flag-checkered"></i> RACES
+            </button>
+        </div>
+
+        <div id="garage-list" class="garage-list-new interactive-element"></div>
 
         <div id="car-editor-overlay" class="screen hidden" style="z-index: 200; background: #000;">
             <div class="garage-header-new">
@@ -271,7 +283,6 @@
             </div>
             
             <div class="editor-content" style="padding: 20px; overflow-y: auto; height: 80vh;">
-                
                 <div class="input-group">
                     <label>CAR NAME</label>
                     <input type="text" id="edit-car-name" placeholder="e.g. Nissan Skyline">
@@ -279,8 +290,7 @@
 
                 <div class="input-group">
                     <label>CHOOSE MODEL</label>
-                    <div class="model-selector" id="model-selector">
-                        </div>
+                    <div class="model-selector" id="model-selector"></div>
                 </div>
 
                 <div class="specs-row">
@@ -302,8 +312,7 @@
 
                 <div class="input-group">
                     <label>THEME COLOR</label>
-                    <div class="color-picker-row" id="color-picker-row">
-                        </div>
+                    <div class="color-picker-row" id="color-picker-row"></div>
                     <input type="hidden" id="edit-car-color" value="#bf5af2">
                 </div>
 
@@ -321,42 +330,24 @@
             </div>
         </div>
 
-            <div class="car-specs-grid">
-                <div class="spec-item">
-                    <span class="lbl">ENGINE</span>
-                    <span class="val">RB26DETT</span>
-                </div>
-                <div class="spec-item">
-                    <span class="lbl">POWER</span>
-                    <span class="val">280 <small>PS</small></span>
-                </div>
-                <div class="spec-item">
-                    <span class="lbl">WEIGHT</span>
-                    <span class="val">1560 <small>KG</small></span>
-                </div>
-                <div class="spec-item">
-                    <span class="lbl">0-100</span>
-                    <span class="val">4.9 <small>S</small></span>
-                </div>
-            </div>
-
-            <div class="best-track-display">
-                <i class="fa-solid fa-trophy" style="color:#ffd700;"></i> 
-                <span>#3 on <strong>Finkenbrunn</strong> (03:49)</span>
-            </div>
-        </div>
-
-     <div class="garage-actions">
-            <button class="action-btn neon-fill" onclick="GarageLogic.showHistory()">
-                <i class="fa-solid fa-clock-rotate-left"></i> HISTORY
-            </button>
-            <button class="action-btn neon-glass" onclick="alert('Races coming soon!')">
-                <i class="fa-solid fa-flag-checkered"></i> RACES
-            </button>
-        </div>
-
         <div id="detail-overlay" class="hidden interactive-element">
-            <button onclick="GarageLogic.closeDetails()" style="color:white; margin:20px;">Close Details</button>
+            <div class="detail-header">
+                <h3 id="det-date">Date</h3>
+                <button class="close-detail-btn" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="detail-content">
+                <div id="detail-map-container"><div id="detail-map"></div></div>
+                <div class="detail-stats-row">
+                    <div class="d-stat-box"><span class="label">DIST</span><span class="val" id="det-dist">0 km</span></div>
+                    <div class="d-stat-box"><span class="label">AVG</span><span class="val" id="det-avg">0</span></div>
+                    <div class="d-stat-box"><span class="label">MAX</span><span class="val" id="det-max">0</span></div>
+                </div>
+                <div style="text-align: center; margin: 10px 0; font-size: 0.9rem; color: #888;">
+                    Duration: <span id="det-time" style="color:white; font-weight:700;">00:00</span>
+                </div>
+                <div class="chart-container"><canvas id="speedChart"></canvas></div>
+                <div style="height: 50px;"></div>
+            </div>
         </div>
     </div>
     
@@ -366,12 +357,16 @@
         <div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="explore.js?v=70"></script>
-    <script src="garage.js?v=70"></script>
-    <script src="drive.js?v=70"></script>
-    <script src="navi.js?v=70"></script>
-    <script src="app.js?v=70"></script>
-    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+    <script src="explore.js?v=71"></script>
+    <script src="garage.js?v=71"></script>
+    <script src="drive.js?v=71"></script>
+    <script src="navi.js?v=71"></script>
+    <script src="app.js?v=71"></script>
+    <script>
+        // Kleiner Timeout um sicherzustellen, dass alles geladen ist
+        setTimeout(() => {
+            if(window.GarageLogic) window.GarageLogic.init();
+        }, 100);
+    </script>
 </body>
 </html>
