@@ -1,27 +1,26 @@
-/* GARAGE.JS - SAFE MODE VERSION */
+/* GARAGE.JS - SAFE MODE (UNZERSTÖRBAR) */
 
-// Hilfsfunktion: Lädt Daten sicher, ohne abzustürzen
+// 1. Diese Hilfsfunktion verhindert den Absturz bei kaputten Daten!
 function safeLoad(key) {
     try {
         const item = localStorage.getItem(key);
-        // Wenn null oder "undefined" (Text), gib leeres Array zurück
-        if (!item || item === "undefined") return [];
+        if (!item || item === "undefined" || item === "null") return [];
         return JSON.parse(item);
     } catch (e) {
-        console.warn("Daten korrupt, Reset durchgeführt für:", key);
-        // Bei Fehler: Reset, damit die App läuft
-        return []; 
+        console.warn("Daten waren beschädigt. Reset durchgeführt für:", key);
+        return []; // Gibt leeres Array zurück statt abzustürzen
     }
 }
 
 const GarageLogic = {
-    // --- DATEN SPEICHER (Jetzt Absturz-Sicher!) ---
+    // --- DATEN SPEICHER (Jetzt sicher!) ---
+    // Wir nutzen safeLoad statt JSON.parse direkt
     drives: safeLoad('driverhub_drives'),
     cars: safeLoad('driverhub_cars'),
     
     editingCarIndex: -1,
     
-    // DEINE MODELLE
+    // DEINE MODELLE (Dateinamen prüfen!)
     availableModels: [
         { name: "Honda Civic EJ2", file: "car.glb" }, 
         { name: "Nissan Skyline R34 GTR", file: "car2.glb" },
@@ -30,7 +29,7 @@ const GarageLogic = {
 
     // --- STARTUP ---
     init: function() {
-        console.log("Garage initializing... Autos geladen:", this.cars.length);
+        console.log("Garage startet... Autos geladen:", this.cars.length);
         this.renderCars();
         this.renderList();
     },
@@ -49,13 +48,13 @@ const GarageLogic = {
             const slide = document.createElement('div');
             slide.className = 'car-slide interactive-element';
             
-            // Fallback Farbe falls Daten beschädigt sind
+            // Fallback falls Farbe fehlt
             const themeColor = car.color || '#bf5af2';
             slide.style.setProperty('--theme-color', themeColor);
             slide.style.setProperty('--theme-glow', themeColor + '40');
 
             slide.innerHTML = `
-                <h1 id="car-name" style="text-shadow: 0 0 15px ${themeColor}80">${car.name || 'Unknown'}</h1>
+                <h1 id="car-name" style="text-shadow: 0 0 15px ${themeColor}80">${car.name || 'Unbenannt'}</h1>
                 
                 <div id="car-model-wrapper" style="pointer-events: none;"> 
                     <model-viewer 
@@ -85,11 +84,15 @@ const GarageLogic = {
                 <div style="position:absolute; bottom:10px; font-size:0.6rem; color:#666; text-transform:uppercase; letter-spacing:1px;">Hold to Edit</div>
             `;
 
+            // Long Press Logic
             let pressTimer;
-            slide.addEventListener('touchstart', () => { pressTimer = setTimeout(() => this.openEditor(index), 800); });
-            slide.addEventListener('touchend', () => clearTimeout(pressTimer));
-            slide.addEventListener('mousedown', () => { pressTimer = setTimeout(() => this.openEditor(index), 800); });
-            slide.addEventListener('mouseup', () => clearTimeout(pressTimer));
+            const startPress = () => { pressTimer = setTimeout(() => this.openEditor(index), 800); };
+            const endPress = () => clearTimeout(pressTimer);
+            
+            slide.addEventListener('touchstart', startPress);
+            slide.addEventListener('touchend', endPress);
+            slide.addEventListener('mousedown', startPress);
+            slide.addEventListener('mouseup', endPress);
 
             container.appendChild(slide);
         });
@@ -110,6 +113,7 @@ const GarageLogic = {
         this.editingCarIndex = index;
         document.getElementById('car-editor-overlay').classList.remove('hidden');
         
+        // Inputs holen
         const nameInp = document.getElementById('edit-car-name');
         const hpInp = document.getElementById('edit-car-hp');
         const weightInp = document.getElementById('edit-car-weight');
@@ -117,7 +121,7 @@ const GarageLogic = {
         const colorInp = document.getElementById('edit-car-color');
         const delBtn = document.getElementById('btn-delete-car');
 
-        // Model Selector aufbauen
+        // Model Selector neu bauen
         const modelList = document.getElementById('model-selector');
         modelList.innerHTML = '';
         this.availableModels.forEach(m => {
@@ -132,7 +136,7 @@ const GarageLogic = {
             modelList.appendChild(div);
         });
 
-        // Color Picker aufbauen
+        // Color Picker neu bauen
         const colors = ['#bf5af2', '#ff3b30', '#30d158', '#0a84ff', '#ff9f0a', '#ffffff', '#e0e0e0'];
         const colorRow = document.getElementById('color-picker-row');
         colorRow.innerHTML = '';
@@ -149,6 +153,7 @@ const GarageLogic = {
         });
 
         if(index > -1) {
+            // Bearbeiten: Daten füllen
             const car = this.cars[index];
             nameInp.value = car.name;
             hpInp.value = car.hp;
@@ -157,13 +162,16 @@ const GarageLogic = {
             colorInp.value = car.color;
             delBtn.style.display = 'block';
             
+            // Auswahl visualisieren
             setTimeout(() => {
                 const modOpt = Array.from(document.querySelectorAll('.model-option')).find(d => d.dataset.file === car.model);
                 if(modOpt) modOpt.classList.add('selected');
+                
                 const colOpt = Array.from(document.querySelectorAll('.color-swatch')).find(d => d.style.background.includes(car.color) || d.style.background === car.color);
                 if(colOpt) colOpt.classList.add('selected');
             }, 50);
         } else {
+            // Neu: Alles leeren
             nameInp.value = ''; hpInp.value = ''; weightInp.value = ''; engineInp.value = '';
             colorInp.value = '#bf5af2';
             delBtn.style.display = 'none';
@@ -179,7 +187,7 @@ const GarageLogic = {
         
         const selectedModelDiv = document.querySelector('.model-option.selected');
         if(!name || !selectedModelDiv) {
-            alert("Please provide a Name and select a Model!");
+            alert("Bitte Namen eingeben und Modell wählen!");
             return;
         }
         
@@ -201,7 +209,7 @@ const GarageLogic = {
     },
 
     deleteCurrentCar: function() {
-        if(confirm("Delete this car?")) {
+        if(confirm("Auto wirklich löschen?")) {
             this.cars.splice(this.editingCarIndex, 1);
             this.saveCarsToStorage();
             this.closeEditor();
@@ -241,7 +249,7 @@ const GarageLogic = {
     },
 
     saveDrive: function(d) { this.drives.unshift(d); this.saveDrivesToStorage(); this.renderList(); },
-    deleteDrive: function(i) { if(confirm("Delete?")) { this.drives.splice(i, 1); this.saveDrivesToStorage(); this.renderList(); } },
+    deleteDrive: function(i) { if(confirm("Löschen?")) { this.drives.splice(i, 1); this.saveDrivesToStorage(); this.renderList(); } },
     saveDrivesToStorage: function() { localStorage.setItem('driverhub_drives', JSON.stringify(this.drives)); },
     showHistory: function() { document.getElementById('garage-list').scrollIntoView({ behavior: 'smooth' }); },
     
@@ -251,13 +259,12 @@ const GarageLogic = {
         document.getElementById('det-date').innerText = new Date(drive.date).toLocaleString();
         document.getElementById('det-dist').innerText = drive.dist.toFixed(2) + ' km';
         document.getElementById('det-time').innerText = drive.time.toFixed(1) + ' min';
-        document.getElementById('det-avg').innerText = drive.avg.toFixed(1);
-        document.getElementById('det-max').innerText = drive.max.toFixed(1);
         
+        // Map Logik
         setTimeout(() => {
             if(!window.detailMap) {
                 window.detailMap = L.map('detail-map').setView([50, 10], 13);
-                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap' }).addTo(window.detailMap);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '' }).addTo(window.detailMap);
             }
             window.detailMap.eachLayer(l => { if (l instanceof L.Polyline || l instanceof L.Marker) window.detailMap.removeLayer(l); });
             if(drive.path && drive.path.length > 0) {
