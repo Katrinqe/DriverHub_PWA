@@ -1,6 +1,8 @@
 alert("HALLO! ICH BIN DA!");
 alert("DATEI GELADEN!"); // Test 1: Wird die Datei überhaupt gelesen?
 
+
+
 function safeLoad(key) { 
     // ... hier kommt dein normaler Code von vorhin ...
 
