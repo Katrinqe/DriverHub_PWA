@@ -258,14 +258,39 @@
         </div>
     </div>
 
-    <div id="garage-screen" class="screen hidden">
+<div id="garage-screen" class="screen hidden">
         <div id="garage-bg"></div>
-        <div class="garage-header"><h2>Garage</h2></div>
-        <div class="garage-total-card">
-            <div class="g-stat"><span id="total-drives">0</span><label>DRIVES</label></div>
-            <div class="g-stat"><span id="total-km">0.0</span><label>KM TOTAL</label></div>
+        
+        <div class="garage-header-new">
+            <h2>GARAGE</h2>
         </div>
-        <div id="garage-list" class="garage-list interactive-element"></div>
+
+        <div class="showroom-container">
+            <div id="car-model-viewer" class="interactive-element">
+                </div>
+            <h1 id="car-name">NISSAN SKYLINE R34</h1>
+        </div>
+
+        <div class="career-card interactive-element">
+            <span class="label">CAREER DISTANCE</span>
+            <div class="value"><span id="total-km">0.0</span> <small>km</small></div>
+            <span id="total-drives" style="display:none;">0</span>
+        </div>
+
+        <div class="stats-row interactive-element">
+            <div class="stat-card">
+                <span class="label">TOP SPEED</span>
+                <div class="value"><span id="garage-max-speed">0</span> <small>km/h</small></div>
+            </div>
+            <div class="stat-card">
+                <span class="label">TIME ON ROAD</span>
+                <div class="value"><span id="garage-total-time">0</span> <small>h</small></div>
+            </div>
+        </div>
+
+        <div class="section-title">RECENT DRIVES</div>
+
+        <div id="garage-list" class="garage-list-new interactive-element"></div>
         
         <div id="detail-overlay" class="hidden interactive-element">
             <div class="detail-header">
@@ -287,7 +312,6 @@
             </div>
         </div>
     </div>
-
     <div id="global-nav" class="bottom-nav interactive-element">
         <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
         <div class="nav-item" id="nav-explore"><i class="fa-solid fa-map"></i><span>Map</span></div>
