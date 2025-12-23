@@ -1,3 +1,8 @@
+alert("DATEI GELADEN!"); // Test 1: Wird die Datei überhaupt gelesen?
+
+function safeLoad(key) { 
+    // ... hier kommt dein normaler Code von vorhin ...
+
 /* GARAGE.JS - SAFE MODE (UNZERSTÖRBAR) */
 
 // 1. Diese Hilfsfunktion verhindert den Absturz bei kaputten Daten!
@@ -29,6 +34,7 @@ const GarageLogic = {
 
     // --- STARTUP ---
     init: function() {
+        alert("INIT GESTARTET! Autos: " + this.cars.length); // Test 2: Startet die Logik?
         console.log("Garage startet... Autos geladen:", this.cars.length);
         this.renderCars();
         this.renderList();
