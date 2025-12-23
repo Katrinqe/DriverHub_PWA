@@ -1,5 +1,6 @@
 const GarageLogic = {
-    drives: [],
+    // ÄNDERUNG 1: Daten sofort beim Start aus dem Speicher laden
+    drives: JSON.parse(localStorage.getItem('driverhub_drives')) || [],
 
     render: function() {
         const list = document.getElementById('garage-list');
@@ -7,6 +8,11 @@ const GarageLogic = {
         
         let totalKm = 0;
         this.drives.forEach((d, index) => {
+            // ... (Hier bleibt alles gleich wie vorher, lass den render-Code so) ...
+            // Falls du den render-Code nicht kopieren willst, sag Bescheid, 
+            // aber du musst hier nichts ändern.
+            
+            // --- HIER NUR ZUR ORIENTIERUNG, NICHTS ÄNDERN ---
             totalKm += d.dist;
             const card = document.createElement('div');
             card.className = 'drive-card';
@@ -37,6 +43,7 @@ const GarageLogic = {
             };
 
             list.appendChild(card);
+            // ------------------------------------------------
         });
 
         document.getElementById('total-drives').innerText = this.drives.length;
@@ -44,17 +51,31 @@ const GarageLogic = {
     },
 
     save: function(driveData) {
-        // driveData enthält jetzt { date, dist, time, avg, max, path }
+        // driveData enthält { date, dist, time, avg, max, path }
         this.drives.unshift(driveData);
+        
+        // ÄNDERUNG 2: Sofort speichern
+        this.saveToStorage();
+        
         this.render();
     },
 
     deleteDrive: function(index) {
         if(confirm("Delete this drive?")) {
             this.drives.splice(index, 1);
+            
+            // ÄNDERUNG 3: Sofort speichern nach Löschen
+            this.saveToStorage();
+            
             this.render();
         }
     },
+    
+    // NEUE HILFSFUNKTION
+    saveToStorage: function() {
+        localStorage.setItem('driverhub_drives', JSON.stringify(this.drives));
+    },
+
 
     openDetails: function(drive) {
         document.getElementById('detail-overlay').classList.remove('hidden');
