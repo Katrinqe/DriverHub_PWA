@@ -80,12 +80,13 @@ window.GarageLogic = {
 
         // Add Button
         const addCard = document.createElement('div');
-        addCard.className = 'car-slide add-new-card';
+        // WICHTIG: "interactive-element" hinzufügen, sonst ist der Button taub!
+        addCard.className = 'car-slide add-new-card interactive-element';
         addCard.innerHTML = `<i class="fa-solid fa-plus add-new-icon"></i><h3>ADD CAR</h3>`;
         addCard.onclick = () => { 
-    console.log("KLICK WURDE ERKANNT!"); 
-    alert("Button funktioniert!"); 
-    this.openEditor(-1); 
+        console.log("KLICK WURDE ERKANNT!"); 
+         alert("Button funktioniert!"); 
+         this.openEditor(-1); 
 };
         container.appendChild(addCard);
     },
