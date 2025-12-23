@@ -620,7 +620,53 @@
 
     </div>
 
+<div id="car-editor-overlay" class="hidden">
+        <div class="editor-card">
+            <div class="editor-header">
+                <h2>CAR PROFILE</h2>
+                <button onclick="GarageLogic.closeEditor()" class="close-editor-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="editor-scroll-content">
+                <div class="input-group">
+                    <label>NICKNAME</label>
+                    <input type="text" id="edit-car-name" placeholder="z.B. Drift King">
+                </div>
 
+                <div class="input-group">
+                    <label>CHOOSE MODEL</label>
+                    <div id="model-selector" class="model-grid"></div>
+                </div>
+
+                <div class="specs-row">
+                    <div class="input-group">
+                        <label>HORSEPOWER</label>
+                        <input type="number" id="edit-car-hp" placeholder="HP">
+                    </div>
+                    <div class="input-group">
+                        <label>WEIGHT (KG)</label>
+                        <input type="number" id="edit-car-weight" placeholder="KG">
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label>ENGINE TYPE</label>
+                    <input type="text" id="edit-car-engine" placeholder="e.g. RB26DETT">
+                </div>
+
+                <div class="input-group">
+                    <label>THEME COLOR</label>
+                    <div id="color-picker-row" class="color-row"></div>
+                    <input type="hidden" id="edit-car-color">
+                </div>
+
+                <div class="editor-actions">
+                    <button onclick="GarageLogic.saveCarEdit()" class="btn-save-car">SAVE CAR</button>
+                    <button id="btn-delete-car" onclick="GarageLogic.deleteCurrentCar()" class="btn-delete-car">DELETE</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
