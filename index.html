@@ -259,59 +259,64 @@
     </div>
 
 <div id="garage-screen" class="screen hidden">
+        <div class="top-fade-overlay"></div>
         <div id="garage-bg"></div>
         
-        <div class="garage-header-new">
-            <h2>GARAGE</h2>
-        </div>
-
-        <div class="showroom-container">
-            <div id="car-model-viewer" class="interactive-element">
-                </div>
+        <div class="car-profile-card interactive-element">
+            
             <h1 id="car-name">NISSAN SKYLINE R34</h1>
-        </div>
-
-        <div class="career-card interactive-element">
-            <span class="label">CAREER DISTANCE</span>
-            <div class="value"><span id="total-km">0.0</span> <small>km</small></div>
-            <span id="total-drives" style="display:none;">0</span>
-        </div>
-
-        <div class="stats-row interactive-element">
-            <div class="stat-card">
-                <span class="label">TOP SPEED</span>
-                <div class="value"><span id="garage-max-speed">0</span> <small>km/h</small></div>
+            
+            <div id="car-model-wrapper">
+                <model-viewer 
+                    src="dein_auto.glb" 
+                    alt="My Car" 
+                    auto-rotate 
+                    camera-controls 
+                    shadow-intensity="1"
+                    camera-orbit="45deg 75deg 105%"
+                    style="width: 100%; height: 100%;"
+                ></model-viewer>
             </div>
-            <div class="stat-card">
-                <span class="label">TIME ON ROAD</span>
-                <div class="value"><span id="garage-total-time">0</span> <small>h</small></div>
+
+            <div class="car-specs-grid">
+                <div class="spec-item">
+                    <span class="lbl">ENGINE</span>
+                    <span class="val">RB26DETT</span>
+                </div>
+                <div class="spec-item">
+                    <span class="lbl">POWER</span>
+                    <span class="val">280 <small>PS</small></span>
+                </div>
+                <div class="spec-item">
+                    <span class="lbl">WEIGHT</span>
+                    <span class="val">1560 <small>KG</small></span>
+                </div>
+                <div class="spec-item">
+                    <span class="lbl">0-100</span>
+                    <span class="val">4.9 <small>S</small></span>
+                </div>
+            </div>
+
+            <div class="best-track-display">
+                <i class="fa-solid fa-trophy" style="color:#ffd700;"></i> 
+                <span>#3 on <strong>Finkenbrunn</strong> (03:49)</span>
             </div>
         </div>
 
-        <div class="section-title">RECENT DRIVES</div>
+        <div class="garage-actions">
+            <button class="action-btn" onclick="GarageLogic.showHistory()">
+                <i class="fa-solid fa-clock-rotate-left"></i> DRIVE HISTORY
+            </button>
+            <button class="action-btn outline" onclick="alert('Races coming soon!')">
+                <i class="fa-solid fa-flag-checkered"></i> RACES
+            </button>
+        </div>
 
-        <div id="garage-list" class="garage-list-new interactive-element"></div>
-        
         <div id="detail-overlay" class="hidden interactive-element">
-            <div class="detail-header">
-                <h3 id="det-date">Date</h3>
-                <button class="close-detail-btn" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="detail-content">
-                <div id="detail-map-container"><div id="detail-map"></div></div>
-                <div class="detail-stats-row">
-                    <div class="d-stat-box"><span class="label">DIST</span><span class="val" id="det-dist">0 km</span></div>
-                    <div class="d-stat-box"><span class="label">AVG</span><span class="val" id="det-avg">0</span></div>
-                    <div class="d-stat-box"><span class="label">MAX</span><span class="val" id="det-max">0</span></div>
-                </div>
-                <div style="text-align: center; margin: 10px 0; font-size: 0.9rem; color: #888;">
-                    Duration: <span id="det-time" style="color:white; font-weight:700;">00:00</span>
-                </div>
-                <div class="chart-container"><canvas id="speedChart"></canvas></div>
-                <div style="height: 50px;"></div>
-            </div>
+            <button onclick="GarageLogic.closeDetails()" style="color:white; margin:20px;">Close Details</button>
         </div>
     </div>
+    
     <div id="global-nav" class="bottom-nav interactive-element">
         <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
         <div class="nav-item" id="nav-explore"><i class="fa-solid fa-map"></i><span>Map</span></div>
