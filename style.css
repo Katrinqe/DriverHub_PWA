@@ -475,3 +475,21 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 #car-editor-overlay {
     pointer-events: auto !important;
 }
+
+/* === EDITOR KLICK FIX === */
+#car-editor-overlay {
+    z-index: 99999 !important; /* Ganz oben */
+    pointer-events: auto !important; /* Klickbar */
+}
+
+.editor-card {
+    pointer-events: auto !important;
+    z-index: 100000 !important;
+}
+
+/* Der X-Button speziell */
+#car-editor-overlay button {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    z-index: 100001 !important;
+}
