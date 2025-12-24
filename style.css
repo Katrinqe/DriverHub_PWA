@@ -307,24 +307,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     box-sizing: border-box;
 }
 
-/* Der Container für die Karten */
-.garage-dashboard {
-    width: 100%;
-    height: 100%;
-    
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    padding: 0 20px;
-    
-    /* WICHTIG: Hier ist der Abstand zur Nav-Bar! */
-    /* 120px sorgt dafür, dass die Karten ÜBER der Nav-Bar aufhören */
-    padding-bottom: 120px !important; 
-    
-    box-sizing: border-box;
-    overflow-y: auto; 
-    -webkit-overflow-scrolling: touch;
-}
+
 /* Der ADD CAR Button (wenn kein Auto da ist) */
 .empty-add-container {
     width: 100%; 
@@ -375,10 +358,35 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     overflow: hidden;
     position: relative;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+
+
+/* === FINAL LAYOUT FIX: NAV BAR STOPPER === */
+
+.garage-dashboard {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    
+    /* WICHTIG: Das hier ist die magische Grenze! 
+       100vh (Bildschirm) minus 90px (Nav-Bar Höhe + Puffer) */
+    height: calc(100vh - 90px); 
+    
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    
+    /* Innenabstand: Oben Platz lassen, unten kaum noch nötig */
+    padding: 60px 20px 10px 20px; 
+    
+    box-sizing: border-box;
+    overflow-y: auto; /* Falls die Karten zu hoch werden, scrollen sie INNEN */
 }
-/* Header Button (View Details) Styling sicherstellen */
+
+/* Header Button Fix */
 .card-header-btn {
-    display: flex; /* Standardmäßig an */
+    display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
@@ -390,8 +398,9 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     font-size: 0.7rem;
     font-weight: 800;
     padding: 0 15px;
-    box-sizing: border-box; /* Wichtig damit Padding nicht breiter macht */
+    cursor: pointer;
 }
+    
 .card-header-btn:hover { color: white; background: rgba(255,255,255,0.1); }
 
 /* Inhalt der Karte */
