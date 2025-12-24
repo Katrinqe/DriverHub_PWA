@@ -268,21 +268,21 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
 
-/* === GARAGE FINAL V4: WORKING SWIPE & FAT GLASS === */
+/* === GARAGE FINAL V5: SWIPE FIX & DESIGN === */
 
 #garage-screen {
     position: fixed !important;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
     background: #000 !important;
-    z-index: 100; /* Sicher über der Map */
+    z-index: 100; 
     
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     padding-top: 10px;
-    overflow: hidden; /* Kein Wackeln der ganzen Seite */
+    overflow: hidden; 
 }
 
 /* Hintergrund */
@@ -294,22 +294,26 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     z-index: 0;
 }
 
-/* --- SWIPER CONTAINER (Der Fix fürs Swipen) --- */
+/* --- SWIPER CONTAINER (HIER IST DER FIX) --- */
 #garage-swiper-container {
     display: flex;
-    flex-direction: row; /* Zwingend nebeneinander */
-    flex-wrap: nowrap;   /* Verhindert Umbruch -> Scrollen muss passieren */
+    flex-direction: row; 
+    flex-wrap: nowrap !important; /* Darf nicht umbrechen */
     
     width: 100%;
-    height: 70vh; /* Platz lassen für Buttons unten */
+    height: 70vh; 
     
-    overflow-x: auto; /* Scrollen an! */
+    /* SCROLLING ERZWINGEN: */
+    overflow-x: scroll !important;
     overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch; /* Flüssig auf iPhone */
     
-    gap: 15px;
-    padding: 0 25px; /* Abstand links/rechts damit man Anfang sieht */
+    /* TOUCH MAGIC: */
+    touch-action: pan-x; /* Erlaubt horizontales Wischen */
+    -webkit-overflow-scrolling: touch; 
+    scroll-snap-type: x mandatory;
+    
+    gap: 20px;
+    padding: 0 25px; /* Randabstand */
     box-sizing: border-box;
     align-items: center;
     z-index: 10;
@@ -318,11 +322,12 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 #garage-swiper-container::-webkit-scrollbar { display: none; }
 
-/* --- DIE KARTE (Optik & Grip) --- */
+/* --- DIE KARTE --- */
 .car-slide {
-    /* WICHTIG: Karte darf nicht schrumpfen! */
-    flex: 0 0 85vw; 
-    width: 85vw;
+    /* GRÖSSE FESTNAGELN (Wichtig fürs Swipen!) */
+    flex: 0 0 85vw !important; 
+    width: 85vw !important;
+    min-width: 300px; /* Sicherheits-Breite */
     max-width: 400px;
     height: 100%;
     
@@ -333,24 +338,23 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     align-items: center;
     justify-content: flex-start;
     
-    /* FETTER GLAS EFFEKT (Card) */
+    /* FETTER GLAS EFFEKT */
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
-    
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 32px;
     box-shadow: 0 20px 50px rgba(0,0,0,0.6);
     
-    padding: 15px; /* Randabstand für Grip */
+    padding: 15px; 
     box-sizing: border-box;
 }
 
-/* Name (Gerade Schrift, Modern) */
+/* Name */
 .car-slide h1 {
-    font-family: sans-serif; /* Standard Schrift */
-    font-style: normal;      /* Gerade (nicht kursiv) */
-    font-weight: 900;        /* Sehr fett */
+    font-family: sans-serif;
+    font-style: normal;
+    font-weight: 900;
     text-transform: uppercase;
     font-size: 2.2rem;
     color: white;
@@ -359,19 +363,19 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     z-index: 5;
     text-align: center;
     text-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    pointer-events: none; /* Klick geht durch (Swipen leichter) */
+    /* Damit man auf dem Namen wischen kann: */
+    pointer-events: none; 
 }
 
 /* 3D Wrapper */
 #car-model-wrapper {
     width: 100%;
-    flex: 1; /* Füllt den Platz in der Mitte */
+    flex: 1; 
     position: relative;
     z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Extra Margin damit man oben/unten Platz zum Swipen hat */
     margin: 10px 0; 
 }
 
@@ -397,13 +401,14 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
     margin-bottom: 5px;
-    pointer-events: auto; /* Hier kann man tippen */
+    /* Hier darf man tippen UND wischen */
+    touch-action: pan-x; 
 }
 .spec-item { display: flex; flex-direction: column; }
 .spec-item .lbl { font-size: 0.6rem; color: #888; font-weight: 800; letter-spacing: 1px; }
 .spec-item .val { font-size: 1.2rem; color: white; font-weight: 800; }
 
-/* Add Card Style */
+/* Add Card */
 .add-new-card {
     background: transparent !important;
     border: 3px dashed rgba(255,255,255,0.15) !important;
@@ -413,13 +418,12 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .add-new-card > div { display: flex; flex-direction: column; align-items: center; }
 
 
-/* --- BUTTONS UNTEN (FETTER GLAS LOOK) --- */
+/* --- BUTTONS (Deine gewünschte Optik) --- */
 .garage-actions {
     position: absolute;
-    bottom: 110px; /* Perfekter Abstand zur Nav-Bar (Nav ist ca 80px) */
+    bottom: 110px; 
     left: 50%;
     transform: translateX(-50%);
-    
     width: 90%;
     max-width: 380px;
     display: flex;
@@ -431,27 +435,24 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     flex: 1;
     height: 56px;
     border-radius: 16px;
-    
-    /* Text Style */
     color: white;
     font-family: sans-serif;
     font-weight: 800;
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 1px;
-    
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     cursor: pointer;
     
-    /* === DER "START DRIVE" SUPER GLAS LOOK === */
-    background: rgba(255, 255, 255, 0.1);       /* Milchig */
-    backdrop-filter: blur(25px);                /* Starker Blur */
+    /* FETTER GLAS LOOK (Wie Start Drive) */
+    background: rgba(255, 255, 255, 0.1);       
+    backdrop-filter: blur(25px);                
     -webkit-backdrop-filter: blur(25px);
-    border: 2px solid rgba(255, 255, 255, 0.3); /* Dicker heller Rand */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);    /* Tiefer Schatten */
+    border: 2px solid rgba(255, 255, 255, 0.3); 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);    
     
     transition: transform 0.1s;
 }
@@ -461,15 +462,5 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     background: rgba(255, 255, 255, 0.2);
 }
 
-/* History etwas farbig anhauchen (optional) */
-.action-btn.neon-fill {
-    border-color: rgba(191, 90, 242, 0.5); /* Lila Rand */
-    background: rgba(191, 90, 242, 0.15);  /* Lila Glas */
-}
-
-/* Nav Bar Safety */
 #global-nav { z-index: 900 !important; }
-
-/* Editor Sicherung */
-#car-editor-overlay { display: flex; }
 #car-editor-overlay.hidden { display: none !important; }
