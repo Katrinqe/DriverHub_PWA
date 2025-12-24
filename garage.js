@@ -60,35 +60,43 @@ window.GarageLogic = {
         // Race Card ist erstmal statisch im HTML, da noch keine Daten
     },
 
-// CARD 1: CAR PROFILE (MIT HARD-RESET LOGIK)
+// CARD 1: CAR PROFILE (MIT NOTBREMSE)
     renderCarCard: function() {
         const container = document.getElementById('car-card-content');
         if(!container) return;
         container.innerHTML = '';
 
-        // HEADER BUTTON FINDEN
         const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
 
-        // PRÜFUNG: Ist die Liste leer ODER hat das erste Auto keinen Namen?
-        // Das löst dein Problem mit dem leeren schwarzen Kasten!
-        if(!this.cars || this.cars.length === 0 || !this.cars[0].name) {
+        // NOTBREMSE: Prüfen auf kaputte Daten
+        let isBroken = false;
+        if(this.cars && this.cars.length > 0) {
+            // Wenn ein Auto da ist, aber keinen Namen hat -> KAPUTT
+            if(!this.cars[0].name || this.cars[0].name.trim() === "") {
+                isBroken = true;
+                this.cars = []; // Löschen!
+                localStorage.setItem('driverhub_cars', JSON.stringify([])); // Speichern!
+            }
+        }
+
+        // FALL: KEIN AUTO ODER KAPUTT -> ADD BUTTON
+        if(!this.cars || this.cars.length === 0 || isBroken) {
             
-            // Header Button VERSTECKEN, wenn kein Auto da ist
+            // Header VERSTECKEN!
             if(headerBtn) headerBtn.style.display = 'none';
 
-            // ADD BUTTON ANZEIGEN
             container.innerHTML = `
                 <div class="empty-add-container" onclick="GarageLogic.openEditor(-1)" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
-                    <div class="empty-add-icon" style="font-size:2rem; color:#555; border:2px dashed #444; border-radius:50%; width:50px; height:50px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">
+                    <div class="empty-add-icon" style="font-size:2rem; color:#555; border:2px dashed #444; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:15px;">
                         <i class="fa-solid fa-plus"></i>
                     </div>
-                    <span style="color:#888; font-family:sans-serif; font-weight:800; letter-spacing:1px; font-size:0.8rem;">ADD YOUR CAR</span>
+                    <span style="color:#888; font-family:sans-serif; font-weight:800; letter-spacing:1px; font-size:0.9rem;">ADD YOUR CAR</span>
                 </div>
             `;
             return;
         }
 
-        // Falls Auto gültig ist: Header Button ZEIGEN
+        // FALL: GÜLTIGES AUTO -> ANZEIGEN
         if(headerBtn) headerBtn.style.display = 'flex';
 
         const car = this.cars[0]; 
@@ -110,7 +118,6 @@ window.GarageLogic = {
                 </div>
                 <div class="mini-car-name">${car.name}</div>
             </div>
-
             <div class="card-split-right">
                 <div class="d-stat"><label>ENGINE</label><span>${car.engine}</span></div>
                 <div class="d-stat"><label>POWER</label><span style="color:${col};">${car.hp}<small>PS</small></span></div>
