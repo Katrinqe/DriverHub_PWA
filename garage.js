@@ -1,6 +1,6 @@
-/* GARAGE.JS - FINAL VERSION */
+/* GARAGE.JS - FINAL FIXED VERSION */
 
-// Hilfsfunktion: Lädt Daten sicher, ohne Absturz
+// Hilfsfunktion: Lädt Daten sicher
 function safeLoad(key) {
     try {
         const item = localStorage.getItem(key);
@@ -33,7 +33,7 @@ window.GarageLogic = {
         this.renderList();
     },
 
-  // 1. SWIPER AUFBAUEN (Optimiert)
+    // 1. SWIPER AUFBAUEN
     renderCars: function() {
         const container = document.getElementById('garage-swiper-container');
         if(!container) return;
@@ -41,16 +41,15 @@ window.GarageLogic = {
         container.innerHTML = '';
         container.style.border = 'none'; 
 
+        // AUTOS RENDERN
         this.cars.forEach((car, index) => {
             const slide = document.createElement('div');
             slide.className = 'car-slide interactive-element';
             
-            // Farbe holen oder Standard Lila
             const col = car.color || '#bf5af2';
             
-            // CSS Variablen für diesen Slide setzen (Für die Aura!)
             slide.style.setProperty('--theme-color', col);
-            slide.style.setProperty('--theme-glow', col); // Volle Farbe für den Gradient
+            slide.style.setProperty('--theme-glow', col);
 
             slide.innerHTML = `
                 <h1 style="font-style:italic; font-size:2.5rem; margin-bottom:0; text-shadow: 0 0 15px ${col}80">${car.name}</h1>
@@ -80,13 +79,11 @@ window.GarageLogic = {
                 </div>
             `;
             
-            // Long Press Logik zum Bearbeiten
+            // Long Press Logik
             let pressTimer;
             const start = () => { pressTimer = setTimeout(() => this.openEditor(index), 800); };
             const end = () => clearTimeout(pressTimer);
             
-            // WICHTIG: Wir fügen den Listener auf den TEXT und die STATS hinzu, 
-            // NICHT auf das 3D Modell (sonst dreht es sich nicht, sondern öffnet den Editor)
             const triggers = slide.querySelectorAll('h1, .car-specs-grid, .best-track-display');
             triggers.forEach(t => {
                 t.addEventListener('touchstart', start); 
@@ -98,10 +95,10 @@ window.GarageLogic = {
             container.appendChild(slide);
         });
 
-        // Add Button (Als eigene Karte ganz rechts)
+        // ADD BUTTON (Hier war der Fehler - jetzt bereinigt!)
         const addCard = document.createElement('div');
         addCard.className = 'car-slide add-new-card interactive-element';
-        addCard.style.scrollSnapAlign = 'center'; // Rastet auch ein
+        addCard.style.scrollSnapAlign = 'center'; 
         addCard.innerHTML = `
             <div style="border: 2px dashed #333; border-radius: 20px; width: 80%; height: 60%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #111;">
                 <i class="fa-solid fa-plus" style="font-size: 3rem; color: #333; margin-bottom: 20px;"></i>
@@ -112,38 +109,21 @@ window.GarageLogic = {
         container.appendChild(addCard);
     },
 
-        // Add Button
-        const addCard = document.createElement('div');
-        // WICHTIG: "interactive-element" hinzufügen, sonst ist der Button taub!
-        addCard.className = 'car-slide add-new-card interactive-element';
-        addCard.innerHTML = `<i class="fa-solid fa-plus add-new-icon"></i><h3>ADD CAR</h3>`;
-        addCard.onclick = () => this.openEditor(-1);
-        
-        container.appendChild(addCard);
-    },
-
-// 2. EDITOR ÖFFNEN (Mit Lebensretter-Fix)
+    // 2. EDITOR ÖFFNEN
     openEditor: function(index) {
         this.editingCarIndex = index;
         
-        // FENSTER FINDEN
         let overlay = document.getElementById('car-editor-overlay');
-        
-        // !!! ÄNDERUNG 1: Alarm statt nur Konsole, damit wir es sofort merken
         if(!overlay) { 
-            alert("FEHLER: Das HTML-Element 'car-editor-overlay' wurde nicht gefunden! Hast du das < Zeichen gelöscht?"); 
+            console.error("Overlay fehlt!"); 
             return; 
         }
         
-        // !!! ÄNDERUNG 2: Der Lebensretter ist zurück! 
-        // Holt das Fenster aus jedem Versteck direkt in den Vordergrund.
         document.body.appendChild(overlay);
 
-        // VORSCHAU ELEMENT HOLEN
         const previewViewer = document.getElementById('editor-preview-viewer');
-
-        // A) MODELLE LADEN
         const modelList = document.getElementById('model-selector');
+        
         if(modelList) {
             modelList.innerHTML = '';
             this.availableModels.forEach(m => {
@@ -170,7 +150,6 @@ window.GarageLogic = {
             });
         }
 
-        // B) FARBEN LADEN
         const colorRow = document.getElementById('color-picker-row');
         if(colorRow) {
             colorRow.innerHTML = '';
@@ -188,7 +167,6 @@ window.GarageLogic = {
             });
         }
 
-        // C) DATEN FÜLLEN
         if(index > -1 && this.cars[index]) {
             const car = this.cars[index];
             if(document.getElementById('edit-car-name')) document.getElementById('edit-car-name').value = car.name;
@@ -212,18 +190,19 @@ window.GarageLogic = {
             if(document.getElementById('btn-delete-car')) document.getElementById('btn-delete-car').style.display = 'block';
         } else {
             if(document.getElementById('edit-car-name')) document.getElementById('edit-car-name').value = '';
-            // ... (restliche Resets)
+            if(document.getElementById('edit-car-hp')) document.getElementById('edit-car-hp').value = '';
+            if(document.getElementById('edit-car-weight')) document.getElementById('edit-car-weight').value = '';
+            if(document.getElementById('edit-car-engine')) document.getElementById('edit-car-engine').value = '';
             if(document.getElementById('edit-car-color')) document.getElementById('edit-car-color').value = '#bf5af2';
             if(previewViewer) previewViewer.src = ''; 
             if(document.getElementById('btn-delete-car')) document.getElementById('btn-delete-car').style.display = 'none';
         }
 
-        // !!! ÄNDERUNG 3: Hartes Anzeigen
         overlay.style.display = 'flex';
         overlay.classList.remove('hidden');
     },
 
-    // SPEICHERN (Fix für den Fehler)
+    // SPEICHERN
     saveCarEdit: function() {
         const name = document.getElementById('edit-car-name').value;
         const hp = document.getElementById('edit-car-hp').value || '-';
@@ -231,7 +210,6 @@ window.GarageLogic = {
         const engine = document.getElementById('edit-car-engine').value || '-';
         const color = document.getElementById('edit-car-color').value || '#bf5af2';
         
-        // Wir suchen GENAU das Element, das die Klasse 'selected' hat
         const selectedModelDiv = document.querySelector('.model-option.selected');
         
         if(!name) { alert("Bitte gib einen Namen ein!"); return; }
@@ -256,7 +234,7 @@ window.GarageLogic = {
 
         this.saveCarsToStorage();
         this.closeEditor();
-        this.renderCars(); // Garage neu malen
+        this.renderCars(); 
     },
 
     deleteCurrentCar: function() {
@@ -268,16 +246,16 @@ window.GarageLogic = {
         }
     },
 
-    // SCHLIESSEN
     closeEditor: function() { 
         const overlay = document.getElementById('car-editor-overlay');
         if(overlay) {
-            overlay.style.display = 'none'; // Verstecken
+            overlay.style.display = 'none';
         }
     },
+    
     saveCarsToStorage: function() { localStorage.setItem('driverhub_cars', JSON.stringify(this.cars)); },
 
-    // 3. LISTE & HISTORY
+    // LISTE & HISTORY
     renderList: function() {
         const list = document.getElementById('garage-list');
         if(!list) return;
