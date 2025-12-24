@@ -33,50 +33,84 @@ window.GarageLogic = {
         this.renderList();
     },
 
-    // 1. SWIPER AUFBAUEN
+  // 1. SWIPER AUFBAUEN (Optimiert)
     renderCars: function() {
         const container = document.getElementById('garage-swiper-container');
         if(!container) return;
         
-        // Sauber machen (auch den grünen Test-Rahmen entfernen falls noch da)
         container.innerHTML = '';
         container.style.border = 'none'; 
 
-        // Autos rendern
         this.cars.forEach((car, index) => {
             const slide = document.createElement('div');
             slide.className = 'car-slide interactive-element';
+            
+            // Farbe holen oder Standard Lila
             const col = car.color || '#bf5af2';
             
+            // CSS Variablen für diesen Slide setzen (Für die Aura!)
             slide.style.setProperty('--theme-color', col);
-            slide.style.setProperty('--theme-glow', col + '40');
+            slide.style.setProperty('--theme-glow', col); // Volle Farbe für den Gradient
 
             slide.innerHTML = `
-                <h1 id="car-name" style="text-shadow: 0 0 15px ${col}80">${car.name}</h1>
-                <div id="car-model-wrapper" style="pointer-events: none;"> 
-                    <model-viewer src="${car.model}" auto-rotate camera-orbit="45deg 75deg 105%" style="width: 100%; height: 100%;" disable-zoom shadow-intensity="1"></model-viewer>
+                <h1 style="font-style:italic; font-size:2.5rem; margin-bottom:0; text-shadow: 0 0 15px ${col}80">${car.name}</h1>
+                
+                <div id="car-model-wrapper" style="position:relative; width:100%; height:45vh; display:flex; align-items:center; justify-content:center;">
+                    <div class="car-aura-bg"></div>
+                    
+                    <model-viewer 
+                        src="${car.model}" 
+                        camera-controls 
+                        auto-rotate 
+                        camera-orbit="45deg 75deg 105%" 
+                        style="width: 100%; height: 100%; z-index:5;" 
+                        shadow-intensity="1"
+                        disable-zoom> </model-viewer>
                 </div>
-                <div class="car-specs-grid">
-                    <div class="spec-item"><span class="lbl">ENGINE</span><span class="val">${car.engine}</span></div>
-                    <div class="spec-item"><span class="lbl">POWER</span><span class="val">${car.hp} <small>PS</small></span></div>
-                    <div class="spec-item"><span class="lbl">WEIGHT</span><span class="val">${car.weight} <small>KG</small></span></div>
+
+                <div class="car-specs-grid" style="z-index:10; background:rgba(0,0,0,0.5); backdrop-filter:blur(5px); border-radius:20px; padding:15px; margin-top:-20px; border:1px solid ${col}40;">
+                    <div class="spec-item"><span class="lbl">ENGINE</span><span class="val" style="color:white;">${car.engine}</span></div>
+                    <div class="spec-item"><span class="lbl">POWER</span><span class="val" style="color:${col};">${car.hp} <small>PS</small></span></div>
+                    <div class="spec-item"><span class="lbl">WEIGHT</span><span class="val" style="color:white;">${car.weight} <small>KG</small></span></div>
                     <div class="spec-item"><span class="lbl">0-100</span><span class="val">--- <small>S</small></span></div>
                 </div>
-                <div class="best-track-display" style="border-color:${col}40; background:${col}10">
+
+                <div class="best-track-display" style="border-color:${col}40; background:${col}10; margin-top:20px;">
                     <i class="fa-solid fa-trophy" style="color:#ffd700;"></i> <span>No Records</span>
                 </div>
-                <div style="position:absolute; bottom:10px; font-size:0.6rem; color:#666;">Hold to Edit</div>
             `;
             
-            // Long Press
+            // Long Press Logik zum Bearbeiten
             let pressTimer;
             const start = () => { pressTimer = setTimeout(() => this.openEditor(index), 800); };
             const end = () => clearTimeout(pressTimer);
-            slide.addEventListener('touchstart', start); slide.addEventListener('touchend', end);
-            slide.addEventListener('mousedown', start); slide.addEventListener('mouseup', end);
+            
+            // WICHTIG: Wir fügen den Listener auf den TEXT und die STATS hinzu, 
+            // NICHT auf das 3D Modell (sonst dreht es sich nicht, sondern öffnet den Editor)
+            const triggers = slide.querySelectorAll('h1, .car-specs-grid, .best-track-display');
+            triggers.forEach(t => {
+                t.addEventListener('touchstart', start); 
+                t.addEventListener('touchend', end);
+                t.addEventListener('mousedown', start); 
+                t.addEventListener('mouseup', end);
+            });
             
             container.appendChild(slide);
         });
+
+        // Add Button (Als eigene Karte ganz rechts)
+        const addCard = document.createElement('div');
+        addCard.className = 'car-slide add-new-card interactive-element';
+        addCard.style.scrollSnapAlign = 'center'; // Rastet auch ein
+        addCard.innerHTML = `
+            <div style="border: 2px dashed #333; border-radius: 20px; width: 80%; height: 60%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #111;">
+                <i class="fa-solid fa-plus" style="font-size: 3rem; color: #333; margin-bottom: 20px;"></i>
+                <h3 style="color: white;">ADD CAR</h3>
+            </div>
+        `;
+        addCard.onclick = () => this.openEditor(-1);
+        container.appendChild(addCard);
+    },
 
         // Add Button
         const addCard = document.createElement('div');
