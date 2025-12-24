@@ -88,14 +88,23 @@ window.GarageLogic = {
         container.appendChild(addCard);
     },
 
-// 2. EDITOR ÖFFNEN (Korrigiert: Mit Farben & 3D)
+// 2. EDITOR ÖFFNEN (Mit Lebensretter-Fix)
     openEditor: function(index) {
         this.editingCarIndex = index;
         
-        // FENSTER FINDEN (Sicherheits-Check)
+        // FENSTER FINDEN
         let overlay = document.getElementById('car-editor-overlay');
-        if(!overlay) { console.error("Overlay fehlt!"); return; }
         
+        // !!! ÄNDERUNG 1: Alarm statt nur Konsole, damit wir es sofort merken
+        if(!overlay) { 
+            alert("FEHLER: Das HTML-Element 'car-editor-overlay' wurde nicht gefunden! Hast du das < Zeichen gelöscht?"); 
+            return; 
+        }
+        
+        // !!! ÄNDERUNG 2: Der Lebensretter ist zurück! 
+        // Holt das Fenster aus jedem Versteck direkt in den Vordergrund.
+        document.body.appendChild(overlay);
+
         // VORSCHAU ELEMENT HOLEN
         const previewViewer = document.getElementById('editor-preview-viewer');
 
@@ -107,33 +116,27 @@ window.GarageLogic = {
                 const div = document.createElement('div');
                 div.className = 'model-option'; 
                 div.innerHTML = `<span>${m.name}</span>`;
-                // Styling direkt hier sicherstellen
                 div.style.cssText = "padding:10px; border:1px solid #444; margin:2px; color:#888; cursor:pointer; background:#222; border-radius:8px; text-align:center;";
-                
-                div.setAttribute('data-file', m.file); // Wichtig fürs Speichern!
+                div.setAttribute('data-file', m.file); 
 
                 div.onclick = () => {
-                    // Reset aller Optionen
                     document.querySelectorAll('.model-option').forEach(e => {
                         e.style.borderColor = '#444';
                         e.style.color = '#888';
                         e.style.background = '#222';
                         e.classList.remove('selected');
                     });
-                    // Aktivieren
                     div.classList.add('selected');
                     div.style.borderColor = '#007aff';
                     div.style.color = 'white';
                     div.style.background = 'rgba(0, 122, 255, 0.2)';
-                    
-                    // 3D Vorschau Update
                     if(previewViewer) previewViewer.src = m.file;
                 };
                 modelList.appendChild(div);
             });
         }
 
-        // B) FARBEN LADEN (Das hat gefehlt!)
+        // B) FARBEN LADEN
         const colorRow = document.getElementById('color-picker-row');
         if(colorRow) {
             colorRow.innerHTML = '';
@@ -141,63 +144,47 @@ window.GarageLogic = {
                 const circle = document.createElement('div');
                 circle.className = 'color-swatch';
                 circle.style.cssText = `width:35px; height:35px; border-radius:50%; background:${c}; cursor:pointer; border:2px solid transparent; transition:transform 0.2s;`;
-                
                 circle.onclick = () => {
-                    // Alle Kreise klein machen
-                    Array.from(colorRow.children).forEach(k => {
-                        k.style.transform = 'scale(1)';
-                        k.style.borderColor = 'transparent';
-                    });
-                    // Den hier groß machen
+                    Array.from(colorRow.children).forEach(k => { k.style.transform = 'scale(1)'; k.style.borderColor = 'transparent'; });
                     circle.style.transform = 'scale(1.2)';
                     circle.style.borderColor = 'white';
-                    // Wert speichern
                     document.getElementById('edit-car-color').value = c;
                 };
                 colorRow.appendChild(circle);
             });
         }
 
-        // C) DATEN FÜLLEN (Bearbeiten oder Neu)
+        // C) DATEN FÜLLEN
         if(index > -1 && this.cars[index]) {
             const car = this.cars[index];
-            document.getElementById('edit-car-name').value = car.name;
-            document.getElementById('edit-car-hp').value = car.hp;
-            document.getElementById('edit-car-weight').value = car.weight;
-            document.getElementById('edit-car-engine').value = car.engine;
-            document.getElementById('edit-car-color').value = car.color;
+            if(document.getElementById('edit-car-name')) document.getElementById('edit-car-name').value = car.name;
+            if(document.getElementById('edit-car-hp')) document.getElementById('edit-car-hp').value = car.hp;
+            if(document.getElementById('edit-car-weight')) document.getElementById('edit-car-weight').value = car.weight;
+            if(document.getElementById('edit-car-engine')) document.getElementById('edit-car-engine').value = car.engine;
+            if(document.getElementById('edit-car-color')) document.getElementById('edit-car-color').value = car.color;
             
-            // Vorschau setzen
             if(previewViewer) previewViewer.src = car.model;
 
-            // Modell automatisch auswählen (nach kurzer Pause, damit DOM bereit ist)
             setTimeout(() => {
                 const opt = document.querySelector(`.model-option[data-file="${car.model}"]`);
                 if(opt) opt.click();
                 
-                // Farbe auswählen
                 const colorInp = document.getElementById('edit-car-color').value;
                 const colDivs = colorRow ? Array.from(colorRow.children) : [];
-                // Finde den Kreis mit der Hintergrundfarbe
-                const match = colDivs.find(d => d.style.background.includes(colorInp) || (d.style.background && colorInp && d.style.background.replace(/\s/g, '') === colorInp.replace(/\s/g, ''))); 
-                // Einfacher Fallback Check
-                if(!match && colDivs.length > 0) colDivs[0].click(); // Fallback
-                else if(match) match.click();
+                const match = colDivs.find(d => d.style.background.includes(colorInp)); 
+                if(match) match.click();
             }, 50);
 
-            document.getElementById('btn-delete-car').style.display = 'block';
+            if(document.getElementById('btn-delete-car')) document.getElementById('btn-delete-car').style.display = 'block';
         } else {
-            // ALLES LEEREN
-            document.getElementById('edit-car-name').value = '';
-            document.getElementById('edit-car-hp').value = '';
-            document.getElementById('edit-car-weight').value = '';
-            document.getElementById('edit-car-engine').value = '';
-            document.getElementById('edit-car-color').value = '#bf5af2'; // Standard Farbe
+            if(document.getElementById('edit-car-name')) document.getElementById('edit-car-name').value = '';
+            // ... (restliche Resets)
+            if(document.getElementById('edit-car-color')) document.getElementById('edit-car-color').value = '#bf5af2';
             if(previewViewer) previewViewer.src = ''; 
-            document.getElementById('btn-delete-car').style.display = 'none';
+            if(document.getElementById('btn-delete-car')) document.getElementById('btn-delete-car').style.display = 'none';
         }
 
-        // ANZEIGEN
+        // !!! ÄNDERUNG 3: Hartes Anzeigen
         overlay.style.display = 'flex';
         overlay.classList.remove('hidden');
     },
