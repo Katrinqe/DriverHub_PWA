@@ -268,8 +268,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
 
-/* === GARAGE DASHBOARD V1 (3 Static Cards) === */
+/* ========================================= */
+/* === GARAGE COMPLETE FIXED STYLE (V6) === */
+/* ========================================= */
 
+/* 1. Der Screen-Container */
 #garage-screen {
     position: fixed !important;
     top: 0; left: 0;
@@ -278,11 +281,12 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     z-index: 100;
     display: flex;
     flex-direction: column;
-    padding-top: 50px; /* Platz oben */
-    padding-bottom: 90px; /* Platz unten für Nav */
+    padding-top: 60px; /* Platz für Statusbar oben */
     box-sizing: border-box;
+    overflow: hidden; /* Kein Scrollen des ganzen Screens */
 }
 
+/* Hintergrund-Effekt */
 #garage-bg {
     position: absolute;
     top: -20%; right: -20%; width: 80%; height: 60%;
@@ -291,129 +295,83 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     z-index: 0;
 }
 
-#garage-screen {
-    position: fixed !important;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: #050505 !important;
-    z-index: 100;
+/* 2. Das Dashboard (Container für die 3 Karten) */
+.garage-dashboard {
+    position: absolute;
+    top: 60px; /* Start unter der Top-Zone */
+    left: 0;
+    width: 100%;
+    
+    /* WICHTIG: Berechnung der Höhe, damit es GENAU über der Nav-Bar endet */
+    /* 100vh (Ganze Höhe) - 60px (Oben) - 90px (Nav-Bar unten) */
+    height: calc(100vh - 150px); 
+    
     display: flex;
     flex-direction: column;
-    padding-top: 50px; 
-    
-    /* FIX: Exakt so viel Platz lassen, dass die Nav-Bar passt (ca. 80-90px) */
-    padding-bottom: 90px; 
+    gap: 15px; /* Abstand zwischen den Karten */
+    padding: 0 20px 10px 20px; /* Rand links/rechts */
     
     box-sizing: border-box;
+    overflow-y: auto; /* Scrollen erlaubt, falls Karteninhalt zu groß ist */
+    -webkit-overflow-scrolling: touch;
 }
 
-
-/* Der ADD CAR Button (wenn kein Auto da ist) */
-.empty-add-container {
-    width: 100%; 
-    height: 100%;
-    display: flex;
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center;
-    color: #666; 
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-/* ADD CAR STYLE SICHERSTELLEN */
-.empty-add-container {
-    width: 100%; height: 100%;
-    display: flex; flex-direction: column; 
-    align-items: center; justify-content: center;
-    color: #888; 
-    cursor: pointer;
-}
-
-.empty-add-icon {
-    font-size: 2.5rem; margin-bottom: 10px; color: #555;
-    border: 2px dashed #444; border-radius: 50%;
-    width: 60px; height: 60px;
-    display: flex; align-items: center; justify-content: center;
-}
-.empty-add-text {
-    font-family: sans-serif;
-    font-weight: 800;
-    font-size: 0.9rem;
-    letter-spacing: 2px;
-    color: #888;
-}
-
+/* 3. Die einzelne Karte (Glass Look) */
 .dashboard-card {
-    /* FIX: Jede Karte wächst, um den leeren Platz zu füllen! */
+    /* Flex 1 = Alle Karten teilen sich den Platz gleichmäßig auf */
     flex: 1; 
+    min-height: 140px; /* Mindesthöhe, damit sie nicht kollabieren */
     
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
     overflow: hidden;
     position: relative;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-
-
-
-/* === FINAL LAYOUT FIX: NAV BAR STOPPER === */
-
-.garage-dashboard {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    
-    /* WICHTIG: Das hier ist die magische Grenze! 
-       100vh (Bildschirm) minus 90px (Nav-Bar Höhe + Puffer) */
-    height: calc(100vh - 90px); 
-    
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    
-    /* Innenabstand: Oben Platz lassen, unten kaum noch nötig */
-    padding: 60px 20px 10px 20px; 
-    
-    box-sizing: border-box;
-    overflow-y: auto; /* Falls die Karten zu hoch werden, scrollen sie INNEN */
 }
 
-/* Header Button Fix */
+/* Header Button (View Details) */
 .card-header-btn {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     width: 100%;
-    height: 35px;
+    height: 32px; /* Feste Höhe */
+    min-height: 32px;
     background: rgba(255, 255, 255, 0.05);
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    
     color: #888;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 0 15px;
     cursor: pointer;
 }
-    
-.card-header-btn:hover { color: white; background: rgba(255,255,255,0.1); }
 
-/* Inhalt der Karte */
+/* 4. Das INNENLEBEN (Das hat gefehlt!) */
 .card-body {
-    flex: 1;
+    flex: 1; /* Füllt den Rest der Karte */
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: row; /* Links / Rechts Aufteilung */
     position: relative;
+    overflow: hidden;
 }
 
-/* --- LINKS / RECHTS LAYOUT --- */
+/* Linke Seite (Auto / Map) */
 .card-split-left {
     width: 45%;
+    height: 100%;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -422,32 +380,60 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     border-right: 1px solid rgba(255,255,255,0.05);
 }
 
+/* Rechte Seite (Stats) */
 .card-split-right {
     width: 55%;
+    height: 100%;
     padding: 10px 15px;
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 2 Spalten Stats */
+    grid-template-columns: 1fr 1fr; /* 2 Spalten */
     gap: 5px 10px;
-    align-content: center;
+    align-content: center; /* Vertikal mittig */
 }
 
-/* --- CAR CARD SPECIFICS --- */
+/* Texte Styles */
 .mini-car-name {
-    font-size: 0.7rem; color: #888; font-weight: 700; margin-top: 5px; text-transform: uppercase;
+    font-size: 0.7rem; 
+    color: #999; 
+    font-weight: 800; 
+    text-transform: uppercase;
+    margin-top: 5px;
+    text-align: center;
 }
 
-/* --- MAP STYLE --- */
-.mini-map-box {
-    width: 100%; height: 100%;
-    background: #111;
-    opacity: 0.8;
-}
-/* Mini Map Controls ausblenden */
-.leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
-
-/* --- STATS STYLE --- */
 .d-stat { display: flex; flex-direction: column; }
 .d-stat label { font-size: 0.55rem; color: #666; font-weight: 700; margin-bottom: 2px; }
-.d-stat span { font-size: 0.9rem; color: white; font-weight: 700; }
+.d-stat span { font-size: 0.9rem; color: white; font-weight: 800; }
 .d-stat span small { font-size: 0.6rem; color: #888; margin-left: 2px; }
 
+/* 5. ADD BUTTON STYLE (Damit er sichtbar ist) */
+.empty-add-container {
+    width: 100%; 
+    height: 100%;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center;
+    cursor: pointer;
+    padding: 20px;
+}
+.empty-add-icon {
+    font-size: 2rem; 
+    margin-bottom: 10px; 
+    color: #666;
+    border: 2px dashed #444; 
+    border-radius: 50%;
+    width: 50px; height: 50px;
+    display: flex; align-items: center; justify-content: center;
+}
+.empty-add-text {
+    font-family: sans-serif;
+    font-weight: 800;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    color: #888;
+}
+
+/* Mini Map Canvas */
+.mini-map-box { width: 100%; height: 100%; background: #111; opacity: 0.9; }
+.leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
