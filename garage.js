@@ -60,38 +60,39 @@ window.GarageLogic = {
         // Race Card ist erstmal statisch im HTML, da noch keine Daten
     },
 
-// CARD 1: CAR PROFILE
+// CARD 1: CAR PROFILE (MIT HARD-RESET LOGIK)
     renderCarCard: function() {
         const container = document.getElementById('car-card-content');
         if(!container) return;
         container.innerHTML = '';
 
-        // FALL 1: KEIN AUTO GESPEICHERT -> ZEIGE "ADD CAR"
-        if(!this.cars || this.cars.length === 0) {
+        // HEADER BUTTON FINDEN
+        const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
+
+        // PRÜFUNG: Ist die Liste leer ODER hat das erste Auto keinen Namen?
+        // Das löst dein Problem mit dem leeren schwarzen Kasten!
+        if(!this.cars || this.cars.length === 0 || !this.cars[0].name) {
+            
+            // Header Button VERSTECKEN, wenn kein Auto da ist
+            if(headerBtn) headerBtn.style.display = 'none';
+
+            // ADD BUTTON ANZEIGEN
             container.innerHTML = `
-                <div class="empty-add-container" onclick="GarageLogic.openEditor(-1)">
-                    <div class="empty-add-icon">
+                <div class="empty-add-container" onclick="GarageLogic.openEditor(-1)" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                    <div class="empty-add-icon" style="font-size:2rem; color:#555; border:2px dashed #444; border-radius:50%; width:50px; height:50px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;">
                         <i class="fa-solid fa-plus"></i>
                     </div>
-                    <span class="empty-add-text">ADD YOUR CAR</span>
+                    <span style="color:#888; font-family:sans-serif; font-weight:800; letter-spacing:1px; font-size:0.8rem;">ADD YOUR CAR</span>
                 </div>
             `;
-            // Den Header-Button oben ("View Details") deaktivieren oder ausblenden, 
-            // damit es nicht verwirrt:
-            const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
-            if(headerBtn) headerBtn.style.opacity = '0.3';
-            
             return;
         }
 
-        // FALL 2: AUTO IST DA -> ZEIGE DATEN
-        // Header wieder sichtbar machen
-        const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
-        if(headerBtn) headerBtn.style.opacity = '1';
+        // Falls Auto gültig ist: Header Button ZEIGEN
+        if(headerBtn) headerBtn.style.display = 'flex';
 
         const car = this.cars[0]; 
         this.editingCarIndex = 0; 
-
         const col = car.color || '#bf5af2';
 
         const html = `
