@@ -1,7 +1,7 @@
-/* GARAGE.JS - FINAL CLEAN VERSION (V7) */
+/* GARAGE.JS - FINAL V8 (Compatible Fix) */
 
 window.GarageLogic = {
-    // 1. DATEN LADEN (Mit Sicherheits-Check)
+    // 1. DATEN
     drives: JSON.parse(localStorage.getItem('driverhub_drives') || '[]'),
     cars: JSON.parse(localStorage.getItem('driverhub_cars') || '[]'),
     editingCarIndex: -1,
@@ -16,14 +16,13 @@ window.GarageLogic = {
     // 3. START
     init: function() {
         console.log("Garage Init...");
-        this.renderGarage();
+        this.renderCars(); // Hier hieß es vorher renderGarage -> Fehler!
     },
 
-    // 4. DASHBOARD RENDERN (Füllt die 3 Karten)
-    renderGarage: function() {
+    // 4. HAUPTFUNKTION (Jetzt wieder renderCars, damit app.js glücklich ist)
+    renderCars: function() {
         this.renderCarCard();
         this.renderDriveCard();
-        // Race Card ist statisch im HTML, braucht hier nichts
     },
 
     // === CARD 1: CAR PROFILE ===
@@ -34,10 +33,9 @@ window.GarageLogic = {
 
         const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
 
-        // NOTBREMSE: Prüfen ob das Auto "leer" ist (Kaputter Speicher)
+        // Check auf kaputte Daten
         let isBroken = false;
         if(this.cars && this.cars.length > 0) {
-            // Wenn Name fehlt -> Auto ist kaputt -> Löschen!
             if(!this.cars[0].name || this.cars[0].name.trim() === "") {
                 isBroken = true;
                 this.cars = []; 
@@ -45,25 +43,20 @@ window.GarageLogic = {
             }
         }
 
-        // FALL A: KEIN AUTO -> ADD BUTTON ZEIGEN
+        // ADD BUTTON ZEIGEN
         if(!this.cars || this.cars.length === 0 || isBroken) {
-            // Header Button ausblenden
             if(headerBtn) headerBtn.style.display = 'none';
-
             container.innerHTML = `
                 <div class="empty-add-container" onclick="GarageLogic.openEditor(-1)">
-                    <div class="empty-add-icon">
-                        <i class="fa-solid fa-plus"></i>
-                    </div>
+                    <div class="empty-add-icon"><i class="fa-solid fa-plus"></i></div>
                     <span class="empty-add-text">ADD YOUR CAR</span>
                 </div>
             `;
             return;
         }
 
-        // FALL B: AUTO DA -> ANZEIGEN
+        // AUTO ANZEIGEN
         if(headerBtn) headerBtn.style.display = 'flex';
-
         const car = this.cars[0]; 
         this.editingCarIndex = 0; 
         const col = car.color || '#bf5af2';
@@ -71,15 +64,7 @@ window.GarageLogic = {
         const html = `
             <div class="card-split-left" style="border-right-color: ${col}30;">
                 <div style="width:100%; height:80%; cursor:grab;">
-                    <model-viewer 
-                        src="${car.model}" 
-                        auto-rotate 
-                        camera-controls 
-                        disable-zoom
-                        interaction-prompt="none"
-                        style="width:100%; height:100%;"
-                        shadow-intensity="1">
-                    </model-viewer>
+                    <model-viewer src="${car.model}" auto-rotate camera-controls disable-zoom interaction-prompt="none" style="width:100%; height:100%;" shadow-intensity="1"></model-viewer>
                 </div>
                 <div class="mini-car-name">${car.name}</div>
             </div>
@@ -113,7 +98,6 @@ window.GarageLogic = {
         const dist = drive.dist ? drive.dist.toFixed(1) : "0.0";
         const max = drive.maxSpeed ? Math.round(drive.maxSpeed) : 0;
         
-        // Mini Map HTML
         container.innerHTML = `
             <div class="card-split-left" style="padding:0; border:none;">
                 <div id="mini-map-canvas" class="mini-map-box"></div>
@@ -125,14 +109,11 @@ window.GarageLogic = {
             </div>
         `;
 
-        // Map zeichnen (kurz warten damit Container da ist)
         setTimeout(() => {
             if(document.getElementById('mini-map-canvas') && drive.path && drive.path.length > 0) {
-                if(this.miniMap) { this.miniMap.remove(); } // Alte Map löschen
-                
+                if(this.miniMap) { this.miniMap.remove(); }
                 this.miniMap = L.map('mini-map-canvas', { zoomControl: false, dragging: false, attributionControl: false });
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.miniMap);
-                
                 const latlngs = drive.path.map(p => [p.lat, p.lng]);
                 const polyline = L.polyline(latlngs, {color: '#bf5af2', weight: 3}).addTo(this.miniMap);
                 this.miniMap.fitBounds(polyline.getBounds(), {padding: [10, 10]});
@@ -144,13 +125,18 @@ window.GarageLogic = {
     openEditor: function(index) {
         this.editingCarIndex = index;
         const overlay = document.getElementById('car-editor-overlay');
-        if(!overlay) return;
-        document.body.appendChild(overlay); // Nach oben holen
+        
+        // HIER IST DER CHECK: Wenn Overlay fehlt, passiert nichts!
+        if(!overlay) { 
+            alert("FEHLER: Editor-Code fehlt in index.html!"); 
+            return; 
+        }
+        
+        document.body.appendChild(overlay); 
 
         // Modelle laden
         const modelList = document.getElementById('model-selector');
         const previewViewer = document.getElementById('editor-preview-viewer');
-        
         if(modelList) {
             modelList.innerHTML = '';
             this.availableModels.forEach(m => {
@@ -159,16 +145,9 @@ window.GarageLogic = {
                 div.innerHTML = `<span>${m.name}</span>`;
                 div.style.cssText = "padding:10px; border:1px solid #444; margin:2px; color:#888; cursor:pointer; background:#222; border-radius:8px; text-align:center;";
                 div.setAttribute('data-file', m.file);
-                
                 div.onclick = () => {
-                    document.querySelectorAll('.model-option').forEach(e => {
-                        e.style.borderColor = '#444'; 
-                        e.style.color='#888'; 
-                        e.classList.remove('selected');
-                    });
-                    div.classList.add('selected'); 
-                    div.style.borderColor = '#007aff';
-                    div.style.color = 'white';
+                    document.querySelectorAll('.model-option').forEach(e => {e.style.borderColor='#444'; e.style.color='#888'; e.classList.remove('selected');});
+                    div.classList.add('selected'); div.style.borderColor='#007aff'; div.style.color='white';
                     if(previewViewer) previewViewer.src = m.file;
                 };
                 modelList.appendChild(div);
@@ -219,9 +198,9 @@ window.GarageLogic = {
         
         if(!name) { alert("Bitte gib einen Namen ein!"); return; }
         
-        let modelFile = "car.glb"; // Fallback
+        let modelFile = "car.glb"; 
         if(selectedModelDiv) modelFile = selectedModelDiv.getAttribute('data-file');
-        else if(this.cars.length > 0) modelFile = this.cars[0].model; // Altes Modell behalten
+        else if(this.cars.length > 0) modelFile = this.cars[0].model; 
 
         const newCar = {
             name: name,
@@ -232,32 +211,26 @@ window.GarageLogic = {
             model: modelFile
         };
 
-        if(this.cars.length > 0) {
-            this.cars[0] = newCar;
-        } else {
-            this.cars.push(newCar);
-        }
+        if(this.cars.length > 0) this.cars[0] = newCar;
+        else this.cars.push(newCar);
 
         localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
         this.closeEditor();
-        this.renderGarage(); // Update!
+        this.renderCars();
     },
 
     closeEditor: function() {
         const overlay = document.getElementById('car-editor-overlay');
         if(overlay) overlay.style.display = 'none';
     },
-    
     deleteCurrentCar: function() {
-        if(confirm("Wirklich löschen?")) {
+        if(confirm("Löschen?")) {
             this.cars = [];
             localStorage.setItem('driverhub_cars', '[]');
             this.closeEditor();
-            this.renderGarage();
+            this.renderCars();
         }
     },
-
-    // Placeholder
-    showHistory: function() { alert("History Page coming soon!"); },
+    showHistory: function() { alert("Kommt bald!"); },
     openCarDetails: function() { this.openEditor(0); }
 };
