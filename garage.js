@@ -88,90 +88,61 @@ window.GarageLogic = {
         container.appendChild(addCard);
     },
 
-    // 2. EDITOR ÖFFNEN
-    openEditor: function(index) {
+   openEditor: function(index) {
         this.editingCarIndex = index;
         
-        // ELEMENT HOLEN
-        const overlay = document.getElementById('car-editor-overlay');
-        if (!overlay) return;
+        // TRICK: Wir suchen ALLE Fenster mit dieser ID
+        const allOverlays = document.querySelectorAll('#car-editor-overlay');
+        let overlay;
 
-        // WICHTIG: Modelle laden, BEVOR wir anzeigen!
-        const modelList = document.getElementById('model-selector');
-        modelList.innerHTML = ''; // Erst leeren
-        
-        this.availableModels.forEach(m => {
-            const div = document.createElement('div');
-            div.className = 'model-option';
-            // Kleines Styling direkt hier, falls CSS fehlt
-            div.style.padding = "10px";
-            div.style.border = "1px solid #444";
-            div.style.borderRadius = "8px";
-            div.style.cursor = "pointer";
-            div.style.textAlign = "center";
-            div.style.background = "#222";
-            div.style.color = "#fff";
-            
-            div.innerHTML = `<span>${m.name}</span>`;
-            
-            div.onclick = () => {
-                // Auswahllogik
-                document.querySelectorAll('.model-option').forEach(e => {
-                    e.style.borderColor = '#444';
-                    e.style.color = '#fff';
-                    e.classList.remove('selected');
-                });
-                div.classList.add('selected');
-                div.style.borderColor = '#007aff'; // Blaues Highlight
-                div.style.color = '#007aff';
-                div.dataset.file = m.file;
-            };
-            modelList.appendChild(div);
-        });
-
-        // Farben laden
-        const colorRow = document.getElementById('color-picker-row');
-        colorRow.innerHTML = '';
-        ['#bf5af2', '#ff3b30', '#30d158', '#0a84ff', '#ff9f0a', '#ffffff'].forEach(c => {
-            const circle = document.createElement('div');
-            circle.style.width = "30px";
-            circle.style.height = "30px";
-            circle.style.borderRadius = "50%";
-            circle.style.background = c;
-            circle.style.cursor = "pointer";
-            circle.style.border = "2px solid transparent";
-            
-            circle.onclick = () => {
-                document.querySelectorAll('.color-row div').forEach(e => e.style.transform = 'scale(1)');
-                circle.style.transform = 'scale(1.2)';
-                document.getElementById('edit-car-color').value = c;
-            };
-            colorRow.appendChild(circle);
-        });
-
-        // Felder füllen (wenn Bearbeiten) oder leeren (wenn Neu)
-        if(index > -1) {
-            const car = this.cars[index];
-            document.getElementById('edit-car-name').value = car.name;
-            document.getElementById('edit-car-hp').value = car.hp;
-            document.getElementById('edit-car-weight').value = car.weight;
-            document.getElementById('edit-car-engine').value = car.engine;
-            document.getElementById('edit-car-color').value = car.color;
-            document.getElementById('btn-delete-car').style.display = 'block';
+        if (allOverlays.length > 1) {
+            console.warn("ACHTUNG: Du hast das Fenster doppelt! Ich nehme das letzte.");
+            // Wir nehmen das letzte (das ist wahrscheinlich das richtige unten im Body)
+            overlay = allOverlays[allOverlays.length - 1]; 
+            // Das falsche erste löschen wir zur Sicherheit, damit es nicht stört
+            allOverlays[0].remove();
+        } else if (allOverlays.length === 1) {
+            overlay = allOverlays[0];
         } else {
-            // Alles leeren für neues Auto
-            document.getElementById('edit-car-name').value = '';
-            document.getElementById('edit-car-hp').value = '';
-            document.getElementById('edit-car-weight').value = '';
-            document.getElementById('edit-car-engine').value = '';
-            document.getElementById('edit-car-color').value = '#bf5af2';
-            document.getElementById('btn-delete-car').style.display = 'none';
+            alert("FEHLER: Kein Fenster gefunden!");
+            return;
         }
 
-        // ENDLICH ANZEIGEN:
-        overlay.style.display = 'flex'; 
-    },
+        // JETZT: Fenster aus jedem Käfig befreien und in den Body schieben
+        document.body.appendChild(overlay);
 
+        // Modelle laden
+        const modelList = document.getElementById('model-selector');
+        if(modelList) {
+            modelList.innerHTML = '';
+            this.availableModels.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'model-option';
+                div.innerHTML = `<span>${m.name}</span>`;
+                div.style.cssText = "padding:10px; border:1px solid #555; margin:2px; color:white; cursor:pointer;";
+                div.onclick = () => {
+                    document.querySelectorAll('.model-option').forEach(e => e.style.borderColor = '#555');
+                    div.style.borderColor = '#007aff';
+                    div.dataset.file = m.file;
+                };
+                modelList.appendChild(div);
+            });
+        }
+
+        // Daten füllen
+        if(index > -1 && this.cars[index]) {
+            const car = this.cars[index];
+            if(document.getElementById('edit-car-name')) document.getElementById('edit-car-name').value = car.name;
+            if(document.getElementById('btn-delete-car')) document.getElementById('btn-delete-car').style.display = 'block';
+        } else {
+            if(document.getElementById('edit-car-name')) document.getElementById('edit-car-name').value = '';
+            if(document.getElementById('btn-delete-car')) document.getElementById('btn-delete-car').style.display = 'none';
+        }
+
+        // ENDLICH ANZEIGEN
+        overlay.style.display = 'flex';
+        overlay.classList.remove('hidden');
+    },
     saveCarEdit: function() {
         const name = document.getElementById('edit-car-name').value;
         const hp = document.getElementById('edit-car-hp').value;
