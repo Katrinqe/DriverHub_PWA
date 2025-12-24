@@ -1,4 +1,4 @@
-/* GARAGE.JS - FINAL V8 (Compatible Fix) */
+/* GARAGE.JS - FINAL V9 (Fix für App-Absturz) */
 
 window.GarageLogic = {
     // 1. DATEN
@@ -16,13 +16,19 @@ window.GarageLogic = {
     // 3. START
     init: function() {
         console.log("Garage Init...");
-        this.renderCars(); // Hier hieß es vorher renderGarage -> Fehler!
+        this.renderCars(); 
     },
 
-    // 4. HAUPTFUNKTION (Jetzt wieder renderCars, damit app.js glücklich ist)
+    // 4. HAUPTFUNKTION (Dashboard Render)
     renderCars: function() {
         this.renderCarCard();
         this.renderDriveCard();
+    },
+
+    // !!! WICHTIG: DUMMY-FUNKTION GEGEN ABSTURZ !!!
+    // Deine app.js ruft das auf. Wir lassen es leer, damit kein Fehler kommt.
+    renderList: function() {
+        console.log("Alte Listen-Funktion ignoriert (Dashboard aktiv).");
     },
 
     // === CARD 1: CAR PROFILE ===
@@ -121,14 +127,15 @@ window.GarageLogic = {
         }, 300);
     },
 
-    // === EDITOR FUNKTIONEN ===
+    // === EDITOR ===
     openEditor: function(index) {
         this.editingCarIndex = index;
         const overlay = document.getElementById('car-editor-overlay');
         
-        // HIER IST DER CHECK: Wenn Overlay fehlt, passiert nichts!
+        // HIER IST DER FINAL CHECK
         if(!overlay) { 
-            alert("FEHLER: Editor-Code fehlt in index.html!"); 
+            console.error("Editor Overlay fehlt in HTML!"); 
+            alert("Fehler: Overlay fehlt. Hast du den HTML Code eingefügt?");
             return; 
         }
         
