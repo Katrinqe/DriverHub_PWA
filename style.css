@@ -574,3 +574,65 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     font-weight: 700;
     cursor: pointer;
 }
+
+/* === NEUER GARAGE SWIPER & LOOK === */
+
+/* 1. Hintergrund stabil machen (Keine Map sichtbar) */
+#garage-screen {
+    background: #000 !important; /* WICHTIG: Tiefschwarz & undurchsichtig */
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1000;
+    overscroll-behavior: none; /* Verhindert das "Wackeln" der ganzen Seite */
+}
+
+/* 2. Der Swiper (Das Einrasten) */
+#garage-swiper-container {
+    display: flex;
+    overflow-x: scroll; /* Seitlich scrollen */
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory; /* Zwingt zum Einrasten */
+    width: 100%;
+    height: 100%;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    gap: 0; /* Keine Lücke zwischen den Karten */
+}
+
+/* 3. Die Karte selbst (Zentriert) */
+.car-slide {
+    min-width: 100vw; /* Immer volle Bildschirmbreite */
+    height: 100%;
+    scroll-snap-align: center; /* Rastet in der Mitte ein */
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 20px;
+    box-sizing: border-box;
+}
+
+/* 4. Aura & 3D Bereich */
+#car-model-wrapper {
+    width: 100%;
+    height: 50vh; /* Größe des 3D Bereichs */
+    position: relative;
+    z-index: 2;
+    /* Damit man das Auto drehen kann: */
+    pointer-events: auto !important; 
+}
+
+/* Der leuchtende Hintergrund hinter dem Auto */
+.car-aura-bg {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--theme-glow) 0%, transparent 70%);
+    opacity: 0.6;
+    z-index: 1; /* Hinter dem Auto */
+    pointer-events: none;
+}
