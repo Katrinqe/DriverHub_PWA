@@ -60,27 +60,37 @@ window.GarageLogic = {
         // Race Card ist erstmal statisch im HTML, da noch keine Daten
     },
 
-    // CARD 1: CAR PROFILE
+// CARD 1: CAR PROFILE
     renderCarCard: function() {
         const container = document.getElementById('car-card-content');
         if(!container) return;
         container.innerHTML = '';
 
-        // Fall 1: Kein Auto da -> ADD BUTTON
-        if(this.cars.length === 0) {
+        // FALL 1: KEIN AUTO GESPEICHERT -> ZEIGE "ADD CAR"
+        if(!this.cars || this.cars.length === 0) {
             container.innerHTML = `
-                <button class="empty-add-btn" onclick="GarageLogic.openEditor(-1)">
-                    <i class="fa-solid fa-plus" style="font-size:1.5rem; margin-bottom:8px;"></i>
-                    <span style="font-size:0.8rem; font-weight:bold;">ADD CAR</span>
-                </button>
+                <div class="empty-add-container" onclick="GarageLogic.openEditor(-1)">
+                    <div class="empty-add-icon">
+                        <i class="fa-solid fa-plus"></i>
+                    </div>
+                    <span class="empty-add-text">ADD YOUR CAR</span>
+                </div>
             `;
+            // Den Header-Button oben ("View Details") deaktivieren oder ausblenden, 
+            // damit es nicht verwirrt:
+            const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
+            if(headerBtn) headerBtn.style.opacity = '0.3';
+            
             return;
         }
 
-        // Fall 2: Auto anzeigen (Wir nehmen das erste Auto oder das zuletzt bearbeitete)
-        // Einfachheitshalber: Index 0
+        // FALL 2: AUTO IST DA -> ZEIGE DATEN
+        // Header wieder sichtbar machen
+        const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
+        if(headerBtn) headerBtn.style.opacity = '1';
+
         const car = this.cars[0]; 
-        this.editingCarIndex = 0; // Damit Editor weiß, wen er bearbeiten soll
+        this.editingCarIndex = 0; 
 
         const col = car.color || '#bf5af2';
 
