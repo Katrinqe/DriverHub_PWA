@@ -88,61 +88,88 @@ window.GarageLogic = {
         container.appendChild(addCard);
     },
 
-    // 2. EDITOR
+    // 2. EDITOR ÖFFNEN
     openEditor: function(index) {
         this.editingCarIndex = index;
-        document.getElementById('car-editor-overlay').classList.remove('hidden');
         
-        const nameInp = document.getElementById('edit-car-name');
-        const hpInp = document.getElementById('edit-car-hp');
-        const weightInp = document.getElementById('edit-car-weight');
-        const engineInp = document.getElementById('edit-car-engine');
-        const colorInp = document.getElementById('edit-car-color');
-        const delBtn = document.getElementById('btn-delete-car');
+        // ELEMENT HOLEN
+        const overlay = document.getElementById('car-editor-overlay');
+        if (!overlay) return;
+
+        // WICHTIG: Modelle laden, BEVOR wir anzeigen!
         const modelList = document.getElementById('model-selector');
+        modelList.innerHTML = ''; // Erst leeren
         
-        modelList.innerHTML = '';
         this.availableModels.forEach(m => {
             const div = document.createElement('div');
             div.className = 'model-option';
-            div.innerHTML = `<span>${m.name}</span> <i class="fa-solid fa-car"></i>`;
+            // Kleines Styling direkt hier, falls CSS fehlt
+            div.style.padding = "10px";
+            div.style.border = "1px solid #444";
+            div.style.borderRadius = "8px";
+            div.style.cursor = "pointer";
+            div.style.textAlign = "center";
+            div.style.background = "#222";
+            div.style.color = "#fff";
+            
+            div.innerHTML = `<span>${m.name}</span>`;
+            
             div.onclick = () => {
-                document.querySelectorAll('.model-option').forEach(e => e.classList.remove('selected'));
+                // Auswahllogik
+                document.querySelectorAll('.model-option').forEach(e => {
+                    e.style.borderColor = '#444';
+                    e.style.color = '#fff';
+                    e.classList.remove('selected');
+                });
                 div.classList.add('selected');
+                div.style.borderColor = '#007aff'; // Blaues Highlight
+                div.style.color = '#007aff';
                 div.dataset.file = m.file;
             };
             modelList.appendChild(div);
         });
 
+        // Farben laden
         const colorRow = document.getElementById('color-picker-row');
         colorRow.innerHTML = '';
         ['#bf5af2', '#ff3b30', '#30d158', '#0a84ff', '#ff9f0a', '#ffffff'].forEach(c => {
             const circle = document.createElement('div');
-            circle.className = 'color-swatch';
+            circle.style.width = "30px";
+            circle.style.height = "30px";
+            circle.style.borderRadius = "50%";
             circle.style.background = c;
+            circle.style.cursor = "pointer";
+            circle.style.border = "2px solid transparent";
+            
             circle.onclick = () => {
-                document.querySelectorAll('.color-swatch').forEach(e => e.classList.remove('selected'));
-                circle.classList.add('selected');
-                colorInp.value = c;
+                document.querySelectorAll('.color-row div').forEach(e => e.style.transform = 'scale(1)');
+                circle.style.transform = 'scale(1.2)';
+                document.getElementById('edit-car-color').value = c;
             };
             colorRow.appendChild(circle);
         });
 
+        // Felder füllen (wenn Bearbeiten) oder leeren (wenn Neu)
         if(index > -1) {
             const car = this.cars[index];
-            nameInp.value = car.name; hpInp.value = car.hp; weightInp.value = car.weight;
-            engineInp.value = car.engine; colorInp.value = car.color;
-            delBtn.style.display = 'block';
-            setTimeout(() => {
-                const m = Array.from(document.querySelectorAll('.model-option')).find(el => el.dataset.file === car.model);
-                if(m) m.classList.add('selected');
-                const c = Array.from(document.querySelectorAll('.color-swatch')).find(el => el.style.background === car.color);
-                if(c) c.classList.add('selected');
-            }, 50);
+            document.getElementById('edit-car-name').value = car.name;
+            document.getElementById('edit-car-hp').value = car.hp;
+            document.getElementById('edit-car-weight').value = car.weight;
+            document.getElementById('edit-car-engine').value = car.engine;
+            document.getElementById('edit-car-color').value = car.color;
+            document.getElementById('btn-delete-car').style.display = 'block';
         } else {
-            nameInp.value = ''; hpInp.value = ''; weightInp.value = ''; engineInp.value = ''; colorInp.value = '#bf5af2';
-            delBtn.style.display = 'none';
+            // Alles leeren für neues Auto
+            document.getElementById('edit-car-name').value = '';
+            document.getElementById('edit-car-hp').value = '';
+            document.getElementById('edit-car-weight').value = '';
+            document.getElementById('edit-car-engine').value = '';
+            document.getElementById('edit-car-color').value = '#bf5af2';
+            document.getElementById('btn-delete-car').style.display = 'none';
         }
+
+        // ENDLICH ANZEIGEN:
+        overlay.style.display = 'flex'; 
     },
 
     saveCarEdit: function() {
@@ -177,7 +204,13 @@ window.GarageLogic = {
         }
     },
 
-    closeEditor: function() { document.getElementById('car-editor-overlay').classList.add('hidden'); },
+    // SCHLIESSEN
+    closeEditor: function() { 
+        const overlay = document.getElementById('car-editor-overlay');
+        if(overlay) {
+            overlay.style.display = 'none'; // Verstecken
+        }
+    },
     saveCarsToStorage: function() { localStorage.setItem('driverhub_cars', JSON.stringify(this.cars)); },
 
     // 3. LISTE & HISTORY
