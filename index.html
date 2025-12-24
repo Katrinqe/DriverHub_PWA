@@ -520,21 +520,41 @@
 
 
 <div id="garage-screen" class="screen hidden">
-        <div class="top-fade-overlay"></div>
         <div id="garage-bg"></div>
         
-        <div id="garage-swiper-container"></div>
+        <div class="garage-dashboard">
+            
+            <div id="card-car-profile" class="dashboard-card glass-panel">
+                <button class="card-header-btn" onclick="GarageLogic.openCarDetails()">
+                    <span>VIEW CAR DETAILS</span> <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <div class="card-body" id="car-card-content">
+                    </div>
+            </div>
 
-        <div class="garage-actions">
-            <button class="action-btn neon-fill" onclick="GarageLogic.showHistory()">
-                <i class="fa-solid fa-clock-rotate-left"></i> HISTORY
-            </button>
-            <button class="action-btn neon-glass" onclick="alert('Races coming soon!')">
-                <i class="fa-solid fa-flag-checkered"></i> RACES
-            </button>
+            <div id="card-last-drive" class="dashboard-card glass-panel">
+                <button class="card-header-btn" onclick="GarageLogic.showHistory()">
+                    <span>VIEW DRIVE HISTORY</span> <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <div class="card-body" id="drive-card-content">
+                    </div>
+            </div>
+
+            <div id="card-last-race" class="dashboard-card glass-panel">
+                <button class="card-header-btn" onclick="alert('Race Mode coming soon!')">
+                    <span>VIEW RACE HISTORY</span> <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <div class="card-body" id="race-card-content">
+                    <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#666;">
+                        <i class="fa-solid fa-flag-checkered" style="font-size:1.5rem; margin-bottom:10px;"></i>
+                        <span style="font-size:0.8rem;">NO RECENT RACES</span>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
-        <div id="garage-list" class="garage-list-new interactive-element"></div>
+        </div>
 
        
             
