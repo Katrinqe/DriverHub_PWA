@@ -307,18 +307,24 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     box-sizing: border-box;
 }
 
+/* Der Container für die Karten */
 .garage-dashboard {
     width: 100%;
-    /* FIX: Dashboard nimmt sich 100% der Höhe des Screens */
-    height: 100%; 
+    height: 100%;
+    
     display: flex;
     flex-direction: column;
     gap: 15px;
     padding: 0 20px;
+    
+    /* WICHTIG: Hier ist der Abstand zur Nav-Bar! */
+    /* 120px sorgt dafür, dass die Karten ÜBER der Nav-Bar aufhören */
+    padding-bottom: 120px !important; 
+    
     box-sizing: border-box;
-    /* Kein extra Padding unten, das macht der Screen-Container */
+    overflow-y: auto; 
+    -webkit-overflow-scrolling: touch;
 }
-
 /* Der ADD CAR Button (wenn kein Auto da ist) */
 .empty-add-container {
     width: 100%; 
@@ -370,21 +376,21 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     position: relative;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
-/* Der Rest bleibt gleich... */
+/* Header Button (View Details) Styling sicherstellen */
 .card-header-btn {
-    height: 35px; /* Etwas höher für bessere Bedienbarkeit */
+    display: flex; /* Standardmäßig an */
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 35px;
     background: rgba(255, 255, 255, 0.05);
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     color: #888;
     font-size: 0.7rem;
     font-weight: 800;
-    letter-spacing: 1px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     padding: 0 15px;
-    cursor: pointer;
+    box-sizing: border-box; /* Wichtig damit Padding nicht breiter macht */
 }
 .card-header-btn:hover { color: white; background: rgba(255,255,255,0.1); }
 
