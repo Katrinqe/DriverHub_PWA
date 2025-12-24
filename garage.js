@@ -33,13 +33,14 @@ window.GarageLogic = {
         this.renderList();
     },
 
-    // 1. SWIPER AUFBAUEN
+   // 1. SWIPER AUFBAUEN (Update: Ohne "No Records")
     renderCars: function() {
         const container = document.getElementById('garage-swiper-container');
         if(!container) return;
         
         container.innerHTML = '';
-        container.style.border = 'none'; 
+        // WICHTIG: Damit Swipen klappt, muss der Container sauber sein
+        container.scrollLeft = 0; 
 
         // AUTOS RENDERN
         this.cars.forEach((car, index) => {
@@ -48,15 +49,15 @@ window.GarageLogic = {
             
             const col = car.color || '#bf5af2';
             
+            // Variablen setzen
             slide.style.setProperty('--theme-color', col);
             slide.style.setProperty('--theme-glow', col);
 
             slide.innerHTML = `
-                <h1 style="font-style:italic; font-size:2.5rem; margin-bottom:0; text-shadow: 0 0 15px ${col}80">${car.name}</h1>
+                <h1 style="font-style:italic; font-size:2.8rem; margin-bottom:0; text-shadow: 0 0 25px ${col};">${car.name}</h1>
                 
-                <div id="car-model-wrapper" style="position:relative; width:100%; height:45vh; display:flex; align-items:center; justify-content:center;">
+                <div id="car-model-wrapper">
                     <div class="car-aura-bg"></div>
-                    
                     <model-viewer 
                         src="${car.model}" 
                         camera-controls 
@@ -67,24 +68,22 @@ window.GarageLogic = {
                         disable-zoom> </model-viewer>
                 </div>
 
-                <div class="car-specs-grid" style="z-index:10; background:rgba(0,0,0,0.5); backdrop-filter:blur(5px); border-radius:20px; padding:15px; margin-top:-20px; border:1px solid ${col}40;">
+                <div class="car-specs-grid">
                     <div class="spec-item"><span class="lbl">ENGINE</span><span class="val" style="color:white;">${car.engine}</span></div>
                     <div class="spec-item"><span class="lbl">POWER</span><span class="val" style="color:${col};">${car.hp} <small>PS</small></span></div>
                     <div class="spec-item"><span class="lbl">WEIGHT</span><span class="val" style="color:white;">${car.weight} <small>KG</small></span></div>
                     <div class="spec-item"><span class="lbl">0-100</span><span class="val">--- <small>S</small></span></div>
                 </div>
-
-                <div class="best-track-display" style="border-color:${col}40; background:${col}10; margin-top:20px;">
-                    <i class="fa-solid fa-trophy" style="color:#ffd700;"></i> <span>No Records</span>
-                </div>
-            `;
+                
+                `;
             
             // Long Press Logik
             let pressTimer;
             const start = () => { pressTimer = setTimeout(() => this.openEditor(index), 800); };
             const end = () => clearTimeout(pressTimer);
             
-            const triggers = slide.querySelectorAll('h1, .car-specs-grid, .best-track-display');
+            // Klick nur auf Text/Stats öffnet Editor
+            const triggers = slide.querySelectorAll('h1, .car-specs-grid');
             triggers.forEach(t => {
                 t.addEventListener('touchstart', start); 
                 t.addEventListener('touchend', end);
@@ -95,14 +94,13 @@ window.GarageLogic = {
             container.appendChild(slide);
         });
 
-        // ADD BUTTON (Hier war der Fehler - jetzt bereinigt!)
+        // ADD BUTTON
         const addCard = document.createElement('div');
         addCard.className = 'car-slide add-new-card interactive-element';
-        addCard.style.scrollSnapAlign = 'center'; 
         addCard.innerHTML = `
-            <div style="border: 2px dashed #333; border-radius: 20px; width: 80%; height: 60%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #111;">
-                <i class="fa-solid fa-plus" style="font-size: 3rem; color: #333; margin-bottom: 20px;"></i>
-                <h3 style="color: white;">ADD CAR</h3>
+            <div>
+                <i class="fa-solid fa-plus" style="font-size: 3rem; color: #555; margin-bottom: 20px;"></i>
+                <h3 style="color: #888;">ADD CAR</h3>
             </div>
         `;
         addCard.onclick = () => this.openEditor(-1);
