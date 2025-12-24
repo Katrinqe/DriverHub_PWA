@@ -1,35 +1,25 @@
-/* GARAGE.JS - FINAL V9 (Fix für App-Absturz) */
+/* GARAGE.JS - FINAL V10 (Overlay & Model Fix) */
 
 window.GarageLogic = {
     // 1. DATEN
     drives: JSON.parse(localStorage.getItem('driverhub_drives') || '[]'),
     cars: JSON.parse(localStorage.getItem('driverhub_cars') || '[]'),
     editingCarIndex: -1,
-    
-    // 2. MODELLE
-    availableModels: [
-        { name: "Honda Civic EJ2", file: "car.glb" }, 
-        { name: "Nissan Skyline R34", file: "car2.glb" },
-        { name: "Honda EG", file: "car3.glb" }
-    ],
 
-    // 3. START
+    // 2. START
     init: function() {
-        console.log("Garage Init...");
-        this.renderCars(); 
+        console.log("Garage V10 Init...");
+        this.renderCars();
     },
 
-    // 4. HAUPTFUNKTION (Dashboard Render)
+    // 3. RENDER (Dashboard)
     renderCars: function() {
         this.renderCarCard();
         this.renderDriveCard();
     },
-
-    // !!! WICHTIG: DUMMY-FUNKTION GEGEN ABSTURZ !!!
-    // Deine app.js ruft das auf. Wir lassen es leer, damit kein Fehler kommt.
-    renderList: function() {
-        console.log("Alte Listen-Funktion ignoriert (Dashboard aktiv).");
-    },
+    
+    // Dummy für app.js
+    renderList: function() { console.log("Listen-Dummy OK."); },
 
     // === CARD 1: CAR PROFILE ===
     renderCarCard: function() {
@@ -39,7 +29,7 @@ window.GarageLogic = {
 
         const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
 
-        // Check auf kaputte Daten
+        // Check auf kaputte Daten (Namenlos)
         let isBroken = false;
         if(this.cars && this.cars.length > 0) {
             if(!this.cars[0].name || this.cars[0].name.trim() === "") {
@@ -49,7 +39,7 @@ window.GarageLogic = {
             }
         }
 
-        // ADD BUTTON ZEIGEN
+        // ADD BUTTON
         if(!this.cars || this.cars.length === 0 || isBroken) {
             if(headerBtn) headerBtn.style.display = 'none';
             container.innerHTML = `
@@ -61,7 +51,7 @@ window.GarageLogic = {
             return;
         }
 
-        // AUTO ANZEIGEN
+        // CAR ANZEIGEN
         if(headerBtn) headerBtn.style.display = 'flex';
         const car = this.cars[0]; 
         this.editingCarIndex = 0; 
@@ -99,7 +89,6 @@ window.GarageLogic = {
             `;
             return;
         }
-
         const drive = this.drives[0];
         const dist = drive.dist ? drive.dist.toFixed(1) : "0.0";
         const max = drive.maxSpeed ? Math.round(drive.maxSpeed) : 0;
@@ -132,42 +121,52 @@ window.GarageLogic = {
         this.editingCarIndex = index;
         const overlay = document.getElementById('car-editor-overlay');
         
-        // HIER IST DER FINAL CHECK
-        if(!overlay) { 
-            console.error("Editor Overlay fehlt in HTML!"); 
-            alert("Fehler: Overlay fehlt. Hast du den HTML Code eingefügt?");
-            return; 
-        }
-        
+        if(!overlay) { alert("Overlay HTML fehlt!"); return; }
         document.body.appendChild(overlay); 
+        overlay.style.display = 'flex';
+        overlay.classList.remove('hidden');
 
-        // Modelle laden
+        // 1. MODELLE LADEN (Hartcodiert, damit es immer geht)
+        const models = [
+            { name: "Honda Civic EJ2", file: "car.glb" }, 
+            { name: "Nissan Skyline R34", file: "car2.glb" },
+            { name: "Honda EG", file: "car3.glb" }
+        ];
+
         const modelList = document.getElementById('model-selector');
         const previewViewer = document.getElementById('editor-preview-viewer');
+        
         if(modelList) {
-            modelList.innerHTML = '';
-            this.availableModels.forEach(m => {
+            modelList.innerHTML = ''; // Liste leeren
+            models.forEach(m => {
                 const div = document.createElement('div');
                 div.className = 'model-option';
                 div.innerHTML = `<span>${m.name}</span>`;
-                div.style.cssText = "padding:10px; border:1px solid #444; margin:2px; color:#888; cursor:pointer; background:#222; border-radius:8px; text-align:center;";
+                // Inline Style sicherheitshalber hier nochmal setzen
+                div.style.cssText = "padding:10px; border:1px solid #444; margin:2px; color:#888; cursor:pointer; background:#222; border-radius:8px; text-align:center; font-size:0.8rem; font-family:sans-serif;";
                 div.setAttribute('data-file', m.file);
+                
                 div.onclick = () => {
-                    document.querySelectorAll('.model-option').forEach(e => {e.style.borderColor='#444'; e.style.color='#888'; e.classList.remove('selected');});
-                    div.classList.add('selected'); div.style.borderColor='#007aff'; div.style.color='white';
+                    // Reset Styles
+                    document.querySelectorAll('.model-option').forEach(e => {
+                        e.style.borderColor='#444'; e.style.color='#888'; e.style.background='#222'; e.classList.remove('selected');
+                    });
+                    // Active Style
+                    div.classList.add('selected'); 
+                    div.style.borderColor='#007aff'; div.style.color='white'; div.style.background='rgba(0,122,255,0.2)';
                     if(previewViewer) previewViewer.src = m.file;
                 };
                 modelList.appendChild(div);
             });
         }
 
-        // Farben laden
+        // 2. FARBEN LADEN
         const colorRow = document.getElementById('color-picker-row');
         if(colorRow) {
             colorRow.innerHTML = '';
             ['#bf5af2', '#ff3b30', '#30d158', '#0a84ff', '#ffffff'].forEach(c => {
                 const circle = document.createElement('div');
-                circle.style.cssText = `width:35px; height:35px; border-radius:50%; background:${c}; cursor:pointer; border:2px solid transparent;`;
+                circle.style.cssText = `width:35px; height:35px; border-radius:50%; background:${c}; cursor:pointer; border:2px solid transparent; flex-shrink:0;`;
                 circle.onclick = () => {
                     document.getElementById('edit-car-color').value = c;
                     Array.from(colorRow.children).forEach(k => k.style.borderColor='transparent');
@@ -177,7 +176,7 @@ window.GarageLogic = {
             });
         }
 
-        // Felder füllen
+        // 3. DATEN FÜLLEN
         if(index > -1 && this.cars[0]) {
              const c = this.cars[0];
              document.getElementById('edit-car-name').value = c.name;
@@ -187,16 +186,13 @@ window.GarageLogic = {
              if(previewViewer) previewViewer.src = c.model;
              if(document.getElementById('btn-delete-car')) document.getElementById('btn-delete-car').style.display = 'block';
         } else {
-             document.getElementById('edit-car-name').value = '';
-             document.getElementById('edit-car-hp').value = '';
-             document.getElementById('edit-car-weight').value = '';
-             document.getElementById('edit-car-engine').value = '';
+             // Reset
+             ['edit-car-name', 'edit-car-hp', 'edit-car-weight', 'edit-car-engine'].forEach(id => {
+                 if(document.getElementById(id)) document.getElementById(id).value = '';
+             });
              if(previewViewer) previewViewer.src = '';
              if(document.getElementById('btn-delete-car')) document.getElementById('btn-delete-car').style.display = 'none';
         }
-        
-        overlay.style.display = 'flex';
-        overlay.classList.remove('hidden');
     },
 
     saveCarEdit: function() {
@@ -230,6 +226,7 @@ window.GarageLogic = {
         const overlay = document.getElementById('car-editor-overlay');
         if(overlay) overlay.style.display = 'none';
     },
+    
     deleteCurrentCar: function() {
         if(confirm("Löschen?")) {
             this.cars = [];
