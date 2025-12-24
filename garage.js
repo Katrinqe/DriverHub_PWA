@@ -88,54 +88,77 @@ window.GarageLogic = {
         container.appendChild(addCard);
     },
 
-// 2. EDITOR ÖFFNEN (Mit 3D Vorschau Logik)
+// 2. EDITOR ÖFFNEN (Korrigiert: Mit Farben & 3D)
     openEditor: function(index) {
         this.editingCarIndex = index;
         
-        // Retter-Logik: Fenster finden oder holen
+        // FENSTER FINDEN (Sicherheits-Check)
         let overlay = document.getElementById('car-editor-overlay');
-        if(!overlay) { alert("Overlay fehlt!"); return; }
-        document.body.appendChild(overlay); // Sicherstellen, dass es oben liegt
-
+        if(!overlay) { console.error("Overlay fehlt!"); return; }
+        
         // VORSCHAU ELEMENT HOLEN
         const previewViewer = document.getElementById('editor-preview-viewer');
 
-        // MODELLE AUFBAUEN
+        // A) MODELLE LADEN
         const modelList = document.getElementById('model-selector');
         if(modelList) {
             modelList.innerHTML = '';
             this.availableModels.forEach(m => {
                 const div = document.createElement('div');
-                div.className = 'model-option'; // Wichtig für CSS Suche später!
+                div.className = 'model-option'; 
                 div.innerHTML = `<span>${m.name}</span>`;
+                // Styling direkt hier sicherstellen
                 div.style.cssText = "padding:10px; border:1px solid #444; margin:2px; color:#888; cursor:pointer; background:#222; border-radius:8px; text-align:center;";
                 
-                // Wir speichern den Dateinamen direkt am Element
-                div.setAttribute('data-file', m.file); 
+                div.setAttribute('data-file', m.file); // Wichtig fürs Speichern!
 
                 div.onclick = () => {
-                    // 1. Alle anderen deaktivieren
+                    // Reset aller Optionen
                     document.querySelectorAll('.model-option').forEach(e => {
                         e.style.borderColor = '#444';
                         e.style.color = '#888';
                         e.style.background = '#222';
                         e.classList.remove('selected');
                     });
-
-                    // 2. Das hier aktivieren
+                    // Aktivieren
                     div.classList.add('selected');
                     div.style.borderColor = '#007aff';
                     div.style.color = 'white';
                     div.style.background = 'rgba(0, 122, 255, 0.2)';
-
-                    // 3. VORSCHAU AKTUALISIEREN!
+                    
+                    // 3D Vorschau Update
                     if(previewViewer) previewViewer.src = m.file;
                 };
                 modelList.appendChild(div);
             });
         }
 
-        // DATEN FÜLLEN
+        // B) FARBEN LADEN (Das hat gefehlt!)
+        const colorRow = document.getElementById('color-picker-row');
+        if(colorRow) {
+            colorRow.innerHTML = '';
+            ['#bf5af2', '#ff3b30', '#30d158', '#0a84ff', '#ff9f0a', '#ffffff'].forEach(c => {
+                const circle = document.createElement('div');
+                circle.className = 'color-swatch';
+                circle.style.cssText = `width:35px; height:35px; border-radius:50%; background:${c}; cursor:pointer; border:2px solid transparent; transition:transform 0.2s;`;
+                
+                circle.onclick = () => {
+                    // Alle Kreise klein machen
+                    Array.from(colorRow.children).forEach(k => {
+                        k.style.transform = 'scale(1)';
+                        k.style.borderColor = 'transparent';
+                    });
+                    // Den hier groß machen
+                    circle.style.transform = 'scale(1.2)';
+                    circle.style.borderColor = 'white';
+                    // Wert speichern
+                    document.getElementById('edit-car-color').value = c;
+                };
+                colorRow.appendChild(circle);
+            });
+        }
+
+        // C) DATEN FÜLLEN (Bearbeiten oder Neu)
         if(index > -1 && this.cars[index]) {
             const car = this.cars[index];
             document.getElementById('edit-car-name').value = car.name;
@@ -144,28 +167,33 @@ window.GarageLogic = {
             document.getElementById('edit-car-engine').value = car.engine;
             document.getElementById('edit-car-color').value = car.color;
             
-            // Auto in Vorschau laden
+            // Vorschau setzen
             if(previewViewer) previewViewer.src = car.model;
 
-            // Den richtigen Button blau markieren
+            // Modell automatisch auswählen (nach kurzer Pause, damit DOM bereit ist)
             setTimeout(() => {
-                const options = document.querySelectorAll('.model-option');
-                options.forEach(opt => {
-                    if(opt.getAttribute('data-file') === car.model) opt.click();
-                });
-            }, 100);
+                const opt = document.querySelector(`.model-option[data-file="${car.model}"]`);
+                if(opt) opt.click();
+                
+                // Farbe auswählen
+                const colorInp = document.getElementById('edit-car-color').value;
+                const colDivs = colorRow ? Array.from(colorRow.children) : [];
+                // Finde den Kreis mit der Hintergrundfarbe
+                const match = colDivs.find(d => d.style.background.includes(colorInp) || (d.style.background && colorInp && d.style.background.replace(/\s/g, '') === colorInp.replace(/\s/g, ''))); 
+                // Einfacher Fallback Check
+                if(!match && colDivs.length > 0) colDivs[0].click(); // Fallback
+                else if(match) match.click();
+            }, 50);
 
             document.getElementById('btn-delete-car').style.display = 'block';
         } else {
-            // Alles leeren
+            // ALLES LEEREN
             document.getElementById('edit-car-name').value = '';
             document.getElementById('edit-car-hp').value = '';
             document.getElementById('edit-car-weight').value = '';
             document.getElementById('edit-car-engine').value = '';
-            
-            // Leere Vorschau oder Standard Auto
+            document.getElementById('edit-car-color').value = '#bf5af2'; // Standard Farbe
             if(previewViewer) previewViewer.src = ''; 
-            
             document.getElementById('btn-delete-car').style.display = 'none';
         }
 
@@ -174,32 +202,21 @@ window.GarageLogic = {
         overlay.classList.remove('hidden');
     },
 
-    // SPEICHERN (Fix für "Model missing")
+    // SPEICHERN (Fix für den Fehler)
     saveCarEdit: function() {
-        console.log("Speichere...");
-        
         const name = document.getElementById('edit-car-name').value;
         const hp = document.getElementById('edit-car-hp').value || '-';
         const weight = document.getElementById('edit-car-weight').value || '-';
         const engine = document.getElementById('edit-car-engine').value || '-';
         const color = document.getElementById('edit-car-color').value || '#bf5af2';
         
-        // MODELL SUCHE (Robuster)
+        // Wir suchen GENAU das Element, das die Klasse 'selected' hat
         const selectedModelDiv = document.querySelector('.model-option.selected');
         
-        // Debugging Hilfe falls es nicht klappt
-        if(!selectedModelDiv) {
-            console.error("Kein div mit Klasse .selected gefunden!");
-            alert("Name & Model missing! (Bitte klicke auf ein Auto-Modell)");
-            return;
-        }
+        if(!name) { alert("Bitte gib einen Namen ein!"); return; }
+        if(!selectedModelDiv) { alert("Bitte wähle ein Automodell aus (antippen)!"); return; }
         
         const modelFile = selectedModelDiv.getAttribute('data-file');
-
-        if(!name || !modelFile) { 
-            alert("Name oder Modell fehlt!"); 
-            return; 
-        }
 
         const newCar = {
             name: name,
