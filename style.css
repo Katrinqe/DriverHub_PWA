@@ -268,238 +268,131 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
 
-/* === GARAGE FINAL V5: SWIPE FIX & DESIGN === */
+/* === GARAGE DASHBOARD V1 (3 Static Cards) === */
 
 #garage-screen {
     position: fixed !important;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
-    background: #000 !important;
-    z-index: 100; 
-    
+    background: #050505 !important;
+    z-index: 100;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding-top: 10px;
-    overflow: hidden; 
+    padding-top: 50px; /* Platz oben */
+    padding-bottom: 90px; /* Platz unten für Nav */
+    box-sizing: border-box;
 }
 
-/* Hintergrund */
 #garage-bg {
     position: absolute;
-    top: -20%; left: -20%; width: 140%; height: 60%;
-    background: radial-gradient(circle, rgba(60,60,60,0.4) 0%, transparent 60%);
+    top: -20%; right: -20%; width: 80%; height: 60%;
+    background: radial-gradient(circle, rgba(50,50,50,0.2) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
 }
 
-/* --- SWIPER CONTAINER (HIER IST DER FIX) --- */
-#garage-swiper-container {
-    display: flex;
-    flex-direction: row; 
-    flex-wrap: nowrap !important; /* Darf nicht umbrechen */
-    
+/* Der Container für die 3 Karten */
+.garage-dashboard {
     width: 100%;
-    height: 70vh; 
-    
-    /* SCROLLING ERZWINGEN: */
-    overflow-x: scroll !important;
-    overflow-y: hidden;
-    
-    /* TOUCH MAGIC: */
-    touch-action: pan-x; /* Erlaubt horizontales Wischen */
-    -webkit-overflow-scrolling: touch; 
-    scroll-snap-type: x mandatory;
-    
-    gap: 20px;
-    padding: 0 25px; /* Randabstand */
-    box-sizing: border-box;
-    align-items: center;
-    z-index: 10;
-    
-    scrollbar-width: none;
-}
-#garage-swiper-container::-webkit-scrollbar { display: none; }
-
-/* --- DIE KARTE --- */
-.car-slide {
-    /* GRÖSSE FESTNAGELN (Wichtig fürs Swipen!) */
-    flex: 0 0 85vw !important; 
-    width: 85vw !important;
-    min-width: 300px; /* Sicherheits-Breite */
-    max-width: 400px;
     height: 100%;
+    display: flex;
+    flex-direction: column; /* Untereinander */
+    gap: 15px;
+    padding: 0 20px; /* Rand links/rechts */
+    box-sizing: border-box;
+    overflow-y: auto; /* Falls Bildschirme sehr klein sind */
+}
+
+/* Allgemeine Card Styles */
+.dashboard-card {
+    flex: 1; /* Alle 3 teilen sich den Platz gleichmäßig */
+    min-height: 160px; /* Mindesthöhe pro Karte */
     
-    scroll-snap-align: center;
+    display: flex;
+    flex-direction: column;
+    
+    /* GLASS EFFECT */
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Der Header-Button oben in jeder Karte */
+.card-header-btn {
+    width: 100%;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: #888;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    cursor: pointer;
+}
+.card-header-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+
+/* Inhalt der Karte */
+.card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: row; /* Links / Rechts Aufteilung */
+    position: relative;
+}
+
+/* --- LINKS / RECHTS LAYOUT --- */
+.card-split-left {
+    width: 45%;
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    
-    /* FETTER GLAS EFFEKT */
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 32px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-    
-    padding: 15px; 
-    box-sizing: border-box;
-}
-
-/* Name */
-.car-slide h1 {
-    font-family: sans-serif;
-    font-style: normal;
-    font-weight: 900;
-    text-transform: uppercase;
-    font-size: 2.2rem;
-    color: white;
-    margin-top: 20px;
-    margin-bottom: 0;
-    z-index: 5;
-    text-align: center;
-    text-shadow: 0 5px 15px rgba(0,0,0,0.5);
-    /* Damit man auf dem Namen wischen kann: */
-    pointer-events: none; 
-}
-
-/* 3D Wrapper */
-#car-model-wrapper {
-    width: 100%;
-    flex: 1; 
-    position: relative;
-    z-index: 2;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    margin: 10px 0; 
+    border-right: 1px solid rgba(255,255,255,0.05);
 }
 
-/* Aura */
-.car-aura-bg {
-    position: absolute;
-    width: 260px; height: 260px;
-    background: radial-gradient(circle, var(--theme-glow) 0%, transparent 70%);
-    opacity: 0.6;
-    filter: blur(50px);
-    z-index: -1;
-    pointer-events: none;
-}
-
-/* Stats Box */
-.car-specs-grid {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 20px;
-    padding: 15px;
+.card-split-right {
+    width: 55%;
+    padding: 10px 15px;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 5px;
-    /* Hier darf man tippen UND wischen */
-    touch-action: pan-x; 
-}
-.spec-item { display: flex; flex-direction: column; }
-.spec-item .lbl { font-size: 0.6rem; color: #888; font-weight: 800; letter-spacing: 1px; }
-.spec-item .val { font-size: 1.2rem; color: white; font-weight: 800; }
-
-/* Add Card */
-.add-new-card {
-    background: transparent !important;
-    border: 3px dashed rgba(255,255,255,0.15) !important;
-    box-shadow: none !important;
-    justify-content: center !important;
-}
-.add-new-card > div { display: flex; flex-direction: column; align-items: center; }
-
-
-/* --- BUTTONS (Deine gewünschte Optik) --- */
-.garage-actions {
-    position: absolute;
-    bottom: 110px; 
-    left: 50%;
-    transform: translateX(-50%);
-    width: 90%;
-    max-width: 380px;
-    display: flex;
-    gap: 12px;
-    z-index: 20;
+    grid-template-columns: 1fr 1fr; /* 2 Spalten Stats */
+    gap: 5px 10px;
+    align-content: center;
 }
 
-.action-btn {
-    flex: 1;
-    height: 56px;
-    border-radius: 16px;
-    color: white;
-    font-family: sans-serif;
-    font-weight: 800;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    cursor: pointer;
-    
-    /* FETTER GLAS LOOK (Wie Start Drive) */
-    background: rgba(255, 255, 255, 0.1);       
-    backdrop-filter: blur(25px);                
-    -webkit-backdrop-filter: blur(25px);
-    border: 2px solid rgba(255, 255, 255, 0.3); 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);    
-    
-    transition: transform 0.1s;
+/* --- CAR CARD SPECIFICS --- */
+.mini-car-name {
+    font-size: 0.7rem; color: #888; font-weight: 700; margin-top: 5px; text-transform: uppercase;
 }
 
-.action-btn:active {
-    transform: scale(0.96);
-    background: rgba(255, 255, 255, 0.2);
+/* --- MAP STYLE --- */
+.mini-map-box {
+    width: 100%; height: 100%;
+    background: #111;
+    opacity: 0.8;
 }
+/* Mini Map Controls ausblenden */
+.leaflet-control-zoom, .leaflet-control-attribution { display: none !important; }
 
-#global-nav { z-index: 900 !important; }
-#car-editor-overlay.hidden { display: none !important; }
+/* --- STATS STYLE --- */
+.d-stat { display: flex; flex-direction: column; }
+.d-stat label { font-size: 0.55rem; color: #666; font-weight: 700; margin-bottom: 2px; }
+.d-stat span { font-size: 0.9rem; color: white; font-weight: 700; }
+.d-stat span small { font-size: 0.6rem; color: #888; margin-left: 2px; }
 
-/* === NOTFALL SWIPE FIX === */
-
-/* 1. Das Auto darf KEINE Touches mehr klauen! */
-model-viewer {
-    pointer-events: none !important; /* Das ist der Schlüssel! */
-}
-
-/* 2. Der Container muss Scrollen erzwingen */
-#garage-swiper-container {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important; /* Scrollen an */
-    overflow-y: hidden;
-    
-    /* WICHTIG: Sagt dem Browser, dass hier gewischt wird */
-    touch-action: pan-x !important; 
-    
-    width: 100%;
-    height: 70vh;
-    gap: 20px;
-    padding: 0 25px;
-    box-sizing: border-box;
-    align-items: center;
-    
-    /* Scrollbalken weg */
-    scrollbar-width: none; 
-}
-
-/* 3. Die Karte muss breit bleiben */
-.car-slide {
-    flex: 0 0 85vw !important; /* Feste Breite */
-    width: 85vw !important;
-    height: 100%;
-    
-    /* Damit man auch auf der Karte wischen kann */
-    touch-action: pan-x !important; 
-    pointer-events: auto; /* Die Karte selbst darf man anfassen */
+/* Add Car State */
+.empty-add-btn {
+    width: 100%; height: 100%;
+    background: transparent; border: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #666; cursor: pointer;
 }
