@@ -464,3 +464,42 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 
 #global-nav { z-index: 900 !important; }
 #car-editor-overlay.hidden { display: none !important; }
+
+/* === NOTFALL SWIPE FIX === */
+
+/* 1. Das Auto darf KEINE Touches mehr klauen! */
+model-viewer {
+    pointer-events: none !important; /* Das ist der Schlüssel! */
+}
+
+/* 2. Der Container muss Scrollen erzwingen */
+#garage-swiper-container {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important; /* Scrollen an */
+    overflow-y: hidden;
+    
+    /* WICHTIG: Sagt dem Browser, dass hier gewischt wird */
+    touch-action: pan-x !important; 
+    
+    width: 100%;
+    height: 70vh;
+    gap: 20px;
+    padding: 0 25px;
+    box-sizing: border-box;
+    align-items: center;
+    
+    /* Scrollbalken weg */
+    scrollbar-width: none; 
+}
+
+/* 3. Die Karte muss breit bleiben */
+.car-slide {
+    flex: 0 0 85vw !important; /* Feste Breite */
+    width: 85vw !important;
+    height: 100%;
+    
+    /* Damit man auch auf der Karte wischen kann */
+    touch-action: pan-x !important; 
+    pointer-events: auto; /* Die Karte selbst darf man anfassen */
+}
