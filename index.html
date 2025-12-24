@@ -617,59 +617,60 @@
 
     </div>
 
-<div id="car-editor-overlay" style="position: fixed !important; z-index: 20000 !important; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center;">
-        <div class="editor-card">
-            <div class="editor-header">
-                <h2>CAR PROFILE</h2>
-                <button onclick="GarageLogic.closeEditor()" class="close-editor-btn"><i class="fa-solid fa-xmark"></i></button>
+<div id="car-editor-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 20000; align-items: center; justify-content: center;">
+    
+    <div class="editor-card" style="width: 90%; max-width: 400px; background: #111; border: 1px solid #333; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; max-height: 90vh;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: white; margin: 0; font-style: italic; font-family: sans-serif;">CAR PROFILE</h2>
+            <button onclick="GarageLogic.closeEditor()" style="background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer;">✕</button>
+        </div>
+        
+        <div class="editor-scroll-content" style="overflow-y: auto; padding-right: 5px;">
+            
+            <div id="editor-3d-preview-container" style="width: 100%; height: 200px; background: radial-gradient(circle, #333 0%, #000 100%); margin-bottom: 20px; border-radius: 15px; border: 1px solid #444; overflow: hidden; position: relative;">
+                <model-viewer id="editor-preview-viewer" src="" auto-rotate camera-controls disable-zoom style="width: 100%; height: 100%;" shadow-intensity="1"></model-viewer>
+                <div style="position: absolute; bottom: 10px; width: 100%; text-align: center; color: #666; font-size: 0.7rem; pointer-events: none;">PREVIEW</div>
+            </div>
+
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">NICKNAME</label>
+                <input type="text" id="edit-car-name" placeholder="z.B. Drift King" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
+            </div>
+
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">CHOOSE MODEL</label>
+                <div id="model-selector" class="model-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">HP</label>
+                    <input type="number" id="edit-car-hp" placeholder="HP" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">WEIGHT</label>
+                    <input type="number" id="edit-car-weight" placeholder="KG" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
+                </div>
             </div>
             
-            <div class="editor-scroll-content">
-    
-    <div id="editor-3d-preview-container" style="width:100%; height:200px; background: radial-gradient(circle, #333 0%, #000 100%); margin-bottom: 20px; border-radius: 15px; border: 1px solid #444; overflow:hidden; position:relative;">
-        <model-viewer id="editor-preview-viewer" src="" auto-rotate camera-controls disable-zoom style="width:100%; height:100%;" shadow-intensity="1"></model-viewer>
-        <div style="position:absolute; bottom:10px; width:100%; text-align:center; color:#666; font-size:0.7rem; pointer-events:none;">PREVIEW</div>
-    </div>
-
-    <div class="input-group">
-        <label>NICKNAME</label>
-        <input type="text" id="edit-car-name" placeholder="z.B. Drift King">
-    </div>
-                <div class="input-group">
-                    <label>CHOOSE MODEL</label>
-                    <div id="model-selector" class="model-grid"></div>
-                </div>
-
-                <div class="specs-row">
-                    <div class="input-group">
-                        <label>HORSEPOWER</label>
-                        <input type="number" id="edit-car-hp" placeholder="HP">
-                    </div>
-                    <div class="input-group">
-                        <label>WEIGHT (KG)</label>
-                        <input type="number" id="edit-car-weight" placeholder="KG">
-                    </div>
-                </div>
-                
-                <div class="input-group">
-                    <label>ENGINE TYPE</label>
-                    <input type="text" id="edit-car-engine" placeholder="e.g. RB26DETT">
-                </div>
-
-                <div class="input-group">
-                    <label>THEME COLOR</label>
-                    <div id="color-picker-row" class="color-row"></div>
-                    <input type="hidden" id="edit-car-color">
-                </div>
-
-                <div class="editor-actions">
-                    <button onclick="GarageLogic.saveCarEdit()" class="btn-save-car">SAVE CAR</button>
-                    <button id="btn-delete-car" onclick="GarageLogic.deleteCurrentCar()" class="btn-delete-car">DELETE</button>
-                </div>
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">ENGINE</label>
+                <input type="text" id="edit-car-engine" placeholder="e.g. V8" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
             </div>
+
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">THEME COLOR</label>
+                <div id="color-picker-row" class="color-row" style="display: flex; gap: 10px; justify-content: center;"></div>
+                <input type="hidden" id="edit-car-color">
+            </div>
+
+            <button onclick="GarageLogic.saveCarEdit()" style="width: 100%; background: #007aff; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1rem; margin-bottom: 10px; cursor: pointer;">SAVE CAR</button>
+            <button id="btn-delete-car" onclick="GarageLogic.deleteCurrentCar()" style="width: 100%; background: transparent; border: 1px solid #ff3b30; color: #ff3b30; padding: 10px; border-radius: 12px; font-weight: bold; cursor: pointer;">DELETE</button>
+            
         </div>
     </div>
-
+</div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="explore.js?v=73"></script>
