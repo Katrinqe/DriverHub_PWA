@@ -268,94 +268,95 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .splash-logo { width: 150px; animation: pulseLogo 2s infinite; }
 @keyframes pulseLogo { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
 
-/* === GARAGE FINAL: CARD PROFILE STYLE === */
+/* === GARAGE FINAL V3: PREMIUM GLASS LOOK === */
 
-/* 1. Haupt-Screen Setup */
 #garage-screen {
     position: fixed !important;
     top: 0; left: 0;
     width: 100vw; height: 100vh;
-    background: #050505 !important; /* Tiefschwarz */
-    z-index: 100; /* Unter der Nav-Bar, über der Map */
+    background: #000 !important; /* Tiefschwarz */
+    z-index: 100; 
+    
+    /* Layout */
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    padding-top: 20px; /* Abstand oben */
-    padding-bottom: 90px; /* Platz für Nav unten */
-    box-sizing: border-box;
-    overflow: hidden; /* Kein Scrollen der ganzen Seite */
+    justify-content: flex-start; /* Wir fangen oben an */
+    padding-top: 10px; 
+    overflow: hidden;
 }
 
-/* Hintergrund-Effekt (Optional, macht es edler) */
+/* Optionaler Hintergrund-Schimmer */
 #garage-bg {
     position: absolute;
     top: -20%; left: -20%; width: 140%; height: 60%;
-    background: radial-gradient(circle, rgba(50,50,50,0.4) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(50,50,50,0.3) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
 }
 
-/* 2. Der Swiper (Container für die Karten) */
+/* --- SWIPER CONTAINER --- */
 #garage-swiper-container {
     display: flex;
     flex-direction: row;
+    
+    /* LÄNGER GEZOGEN: */
+    height: 75vh; 
     width: 100%;
-    height: 65vh; /* Feste Höhe für die Karten! */
-    min-height: 500px;
     
-    overflow-x: auto; /* Seitlich scrollen */
-    scroll-snap-type: x mandatory; /* Einrasten */
+    /* SWIPING FIX: */
+    overflow-x: scroll !important; /* Erzwingt Scrollen */
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch; /* Weiches Scrollen auf iPhone */
+    
     gap: 15px;
-    padding: 0 20px; /* Rand links/rechts */
+    padding: 0 20px; /* Kleiner Abstand an den Seiten */
     box-sizing: border-box;
-    align-items: center; /* Vertikal zentrieren */
-    
+    align-items: center; 
     z-index: 10;
     
-    /* Scrollbalken verstecken */
+    /* Scrollbalken weg */
     scrollbar-width: none;
 }
 #garage-swiper-container::-webkit-scrollbar { display: none; }
 
-/* 3. Die Karte (Der "Blue EJ2" Look) */
+/* --- DIE KARTE (Card Style) --- */
 .car-slide {
-    flex: 0 0 90vw; /* Karte nimmt 90% der Breite ein */
-    height: 95%; /* Fast so hoch wie der Container */
-    scroll-snap-align: center;
+    /* Damit man das nächste Auto sieht und swipen will: */
+    flex: 0 0 85vw; /* Nur 85% Breite nehmen! */
+    max-width: 400px; /* Nicht zu breit auf Tablets */
+    height: 100%; /* Füllt die 75vh aus */
     
+    scroll-snap-align: center;
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
     
-    /* Glassmorphism Style */
-    background: rgba(20, 20, 20, 0.6);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
+    /* ECHTER GLASS EFFECT (Dezenter) */
+    background: rgba(255, 255, 255, 0.03); /* Sehr transparent */
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     
-    /* Der farbige Strich oben (passend zum Auto) */
-    border-top: 3px solid var(--theme-color, #bf5af2);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    /* Kein harter Strich oben, sondern feiner Rand überall */
+    border: 1px solid rgba(255, 255, 255, 0.1); 
+    border-radius: 30px;
+    
+    /* Glow kommt vom Schatten */
+    box-shadow: 0 0 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.02);
     
     padding: 20px;
     box-sizing: border-box;
 }
-
-/* 4. Inhalte in der Karte */
 
 /* Name */
 .car-slide h1 {
     font-family: sans-serif;
     font-style: italic;
     font-weight: 800;
-    font-size: 2.2rem;
     color: white;
-    margin: 10px 0 0 0;
-    text-shadow: 0 0 20px var(--theme-glow);
+    margin-top: 10px;
     z-index: 5;
     text-align: center;
 }
@@ -363,21 +364,22 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 /* 3D Wrapper */
 #car-model-wrapper {
     width: 100%;
-    flex: 1; /* Nimmt den verfügbaren Platz in der Mitte */
+    flex: 1; /* Nimmt sich den Platz */
     position: relative;
     z-index: 2;
-    min-height: 250px;
+    /* Vertikal zentrieren */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Aura hinter dem Auto */
+/* Aura */
 .car-aura-bg {
     position: absolute;
-    top: 55%; left: 50%; /* Leicht nach unten versetzt */
-    transform: translate(-50%, -50%);
-    width: 250px; height: 250px;
+    width: 300px; height: 300px;
     background: radial-gradient(circle, var(--theme-glow) 0%, transparent 70%);
-    opacity: 0.5;
-    filter: blur(40px);
+    opacity: 0.4; /* Etwas dezenter */
+    filter: blur(50px);
     z-index: -1;
     pointer-events: none;
 }
@@ -385,80 +387,82 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 /* Stats Box */
 .car-specs-grid {
     width: 100%;
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 16px;
-    padding: 15px;
+    /* Dunkler Glass Hintergrund */
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 20px;
+    padding: 20px;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 15px 10px;
-    margin-bottom: 10px;
-    border: 1px solid rgba(255,255,255,0.05);
+    gap: 20px 10px;
+    margin-bottom: 20px;
 }
-
 .spec-item { display: flex; flex-direction: column; }
-.spec-item .lbl { font-size: 0.65rem; color: #888; font-weight: 700; letter-spacing: 1px; }
-.spec-item .val { font-size: 1.1rem; color: white; font-weight: 700; }
+.spec-item .lbl { font-size: 0.65rem; color: #666; font-weight: 700; letter-spacing: 1px; margin-bottom: 2px;}
+.spec-item .val { font-size: 1.2rem; color: white; font-weight: 700; }
 
-/* Trophy / Info unten */
-.best-track-display {
-    font-size: 0.8rem;
-    color: #666;
-    margin-top: 5px;
-    padding: 5px 15px;
-    border-radius: 20px;
-    background: rgba(255,255,255,0.05);
-}
 
-/* 5. ADD CARD Styling */
+/* --- ADD CARD STYLE --- */
 .add-new-card {
     justify-content: center !important;
-    background: rgba(20,20,20,0.4) !important;
-    border: 2px dashed rgba(255,255,255,0.2) !important;
-    border-top: none !important; /* Kein farbiger Strich hier */
-    cursor: pointer;
+    background: transparent !important; /* Transparent */
+    border: 2px dashed rgba(255,255,255,0.15) !important;
+    box-shadow: none !important;
 }
-.add-new-card h3 { font-family: sans-serif; margin-top: 15px; color: #888; letter-spacing: 2px; }
+.add-new-card > div {
+    display: flex; flex-direction: column; align-items: center;
+}
 
-/* 6. BUTTONS UNTEN (History / Races) */
+
+/* --- BUTTONS UNTEN (Position Fix) --- */
 .garage-actions {
+    position: absolute;
+    bottom: 95px; /* Knapp über der Nav-Bar (Nav ist ca 80px hoch) */
+    left: 50%;
+    transform: translateX(-50%);
+    
     width: 90%;
+    max-width: 400px;
     display: flex;
     gap: 15px;
-    margin-top: 20px; /* Abstand zur Karte */
     z-index: 20;
 }
 
 .action-btn {
     flex: 1;
-    padding: 15px 0;
-    border-radius: 12px;
-    font-weight: 800;
+    height: 50px;
+    border-radius: 15px;
+    font-weight: 700;
     font-size: 0.9rem;
     text-transform: uppercase;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    border: none;
     cursor: pointer;
     font-family: sans-serif;
-}
-
-.action-btn.neon-fill {
-    background: #bf5af2;
     color: white;
-    box-shadow: 0 0 20px rgba(191, 90, 242, 0.3);
-}
-
-.action-btn.neon-glass {
+    
+    /* Echter Glass Look für die Buttons */
     background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
+    transition: all 0.2s;
 }
 
-/* Damit die Nav-Bar (unten) sicher drüber liegt */
-#global-nav { z-index: 900 !important; }
+.action-btn:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.1);
+}
 
-/* Editor Overlay Styling (bleibt gleich, nur zur Sicherheit) */
+/* History Button etwas hervorheben */
+.action-btn.neon-fill {
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    border-color: rgba(191, 90, 242, 0.3);
+}
+
+/* Nav Bar Safety */
+#global-nav { z-index: 900 !important; }
 #car-editor-overlay { display: flex; }
 #car-editor-overlay.hidden { display: none !important; }
