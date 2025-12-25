@@ -1,9 +1,9 @@
-/* GARAGE.JS - FINAL V25 (UNCOMPRESSED & READABLE) */
+/* GARAGE.JS - FINAL V26 (THE VAULT - DATA SAFETY FIX) */
 
 window.GarageLogic = {
-    // === 1. DATA ===
-    drives: JSON.parse(localStorage.getItem('driverhub_drives') || '[]'),
-    cars: JSON.parse(localStorage.getItem('driverhub_cars') || '[]'),
+    // === 1. DATA & SAFETY LOAD ===
+    drives: [],
+    cars: [],
     activeDriveIndex: -1,
     editingCarIndex: -1,
     
@@ -15,48 +15,57 @@ window.GarageLogic = {
 
     // === 2. INIT ===
     init: function() {
-        console.log("Garage V25 Init (Readable)");
+        console.log("Garage V26 Init - Safety Mode");
+        
+        // SICHERES LADEN (Verhindert Datenverlust)
+        try {
+            const rawDrives = localStorage.getItem('driverhub_drives');
+            this.drives = rawDrives ? JSON.parse(rawDrives) : [];
+            
+            const rawCars = localStorage.getItem('driverhub_cars');
+            let loadedCars = rawCars ? JSON.parse(rawCars) : [];
+            
+            // CLEANER: Entferne kaputte/leere Einträge ("null"), aber behalte den Rest!
+            this.cars = loadedCars.filter(c => c && typeof c === 'object');
+            
+            // Wenn wir gefiltert haben, speichern wir die saubere Version sofort zurück
+            if(this.cars.length !== loadedCars.length) {
+                localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
+            }
+            
+        } catch (e) {
+            console.error("Data Corruption prevented:", e);
+            this.cars = []; 
+        }
+
         this.renderCars();
 
-        // Button Bindings (Verzögert, um sicherzugehen, dass HTML da ist)
+        // Button Bindings
         setTimeout(() => {
             const carBtn = document.querySelector('#card-car-profile .card-header-btn');
             if(carBtn) {
-                carBtn.onclick = (e) => { 
-                    e.preventDefault(); 
-                    e.stopPropagation(); 
-                    this.openDetailScreen(); 
-                };
+                carBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.openDetailScreen(); };
                 carBtn.style.cursor = "pointer";
             }
-
             const driveBtn = document.querySelector('#card-drive-history .card-header-btn');
             if(driveBtn) {
-                driveBtn.onclick = (e) => { 
-                    e.preventDefault(); 
-                    e.stopPropagation(); 
-                    this.openHistoryScreen(); 
-                };
+                driveBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.openHistoryScreen(); };
                 driveBtn.style.cursor = "pointer";
             }
         }, 1000);
     },
 
-    // Alias Functions (Bridge for old HTML calls)
+    // Alias Bridge
     showHistory: function() { this.openHistoryScreen(); },
     showCarDetails: function() { this.openDetailScreen(); },
 
-    // Core Save Function (called from drive.js)
+    // Core Save
     save: function(driveData) {
         if(!driveData) return;
         const GL = window.GarageLogic; 
         GL.drives.unshift(driveData);
         localStorage.setItem('driverhub_drives', JSON.stringify(GL.drives));
-        
-        // Update Dashboard if visible
-        if(document.getElementById('drive-card-content')) {
-            GL.renderDriveCard();
-        }
+        if(document.getElementById('drive-card-content')) GL.renderDriveCard();
     },
 
     // ==========================================
@@ -73,7 +82,7 @@ window.GarageLogic = {
 
     closeDetailScreen: function() {
         document.getElementById('car-details-screen').classList.add('hidden');
-        this.renderCars(); // Update Dashboard on close
+        this.renderCars();
     },
 
     renderDetailList: function() {
@@ -82,20 +91,25 @@ window.GarageLogic = {
         container.innerHTML = '';
 
         this.cars.forEach((car, index) => {
+            // Safety Fallback für fehlende Werte
+            const name = car.name || "Unknown Car";
             const isActive = (index === 0);
             const col = car.color || '#bf5af2';
             const acc = car.acceleration || '---';
+            const hp = car.hp || '-';
+            const weight = car.weight || '-';
+            const engine = car.engine || '-';
             
             const html = `
             <div class="detail-card">
                 <div class="detail-model-box">
                     <model-viewer src="${car.model}" auto-rotate camera-controls disable-zoom interaction-prompt="none" style="width:100%; height:100%;" shadow-intensity="1"></model-viewer>
                 </div>
-                <div class="detail-name">${car.name}</div>
+                <div class="detail-name">${name}</div>
                 <div class="detail-stats-grid">
-                    <div class="detail-stat"><label>ENGINE</label><span>${car.engine}</span></div>
-                    <div class="detail-stat"><label>POWER</label><span style="color:${col}">${car.hp}<small>PS</small></span></div>
-                    <div class="detail-stat"><label>WEIGHT</label><span>${car.weight}<small>KG</small></span></div>
+                    <div class="detail-stat"><label>ENGINE</label><span>${engine}</span></div>
+                    <div class="detail-stat"><label>POWER</label><span style="color:${col}">${hp}<small>PS</small></span></div>
+                    <div class="detail-stat"><label>WEIGHT</label><span>${weight}<small>KG</small></span></div>
                     <div class="detail-stat"><label>0-100</label><span>${acc}<small>S</small></span></div>
                 </div>
                 <div class="detail-extra-box">
@@ -129,10 +143,18 @@ window.GarageLogic = {
     },
 
     setActiveCar: function(index) {
-        if(index === 0) return;
+        // SAFETY CHECK: Existiert das Auto überhaupt?
+        if(!this.cars[index]) {
+            console.error("Garage Error: Auto nicht gefunden an Index", index);
+            return;
+        }
+        if(index === 0) return; // Ist schon oben
+
         const selectedCar = this.cars[index];
-        this.cars.splice(index, 1);
-        this.cars.unshift(selectedCar);
+        this.cars.splice(index, 1); // Rausnehmen
+        this.cars.unshift(selectedCar); // Vorne einfügen
+        
+        // Sofort speichern
         localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
         this.renderDetailList();
     },
@@ -151,6 +173,7 @@ window.GarageLogic = {
         this.renderColorList();
         
         let carToEdit = null;
+        // Safety Check
         if(index > -1 && this.cars[index]) {
             carToEdit = this.cars[index];
             this.editingCarIndex = index;
@@ -159,14 +182,14 @@ window.GarageLogic = {
         }
 
         if(carToEdit) {
-            document.getElementById('final-name').value = carToEdit.name;
-            document.getElementById('final-hp').value = carToEdit.hp;
-            document.getElementById('final-weight').value = carToEdit.weight;
-            document.getElementById('final-engine').value = carToEdit.engine;
-            document.getElementById('final-color-input').value = carToEdit.color;
+            document.getElementById('final-name').value = carToEdit.name || "";
+            document.getElementById('final-hp').value = carToEdit.hp || "";
+            document.getElementById('final-weight').value = carToEdit.weight || "";
+            document.getElementById('final-engine').value = carToEdit.engine || "";
+            document.getElementById('final-color-input').value = carToEdit.color || "#bf5af2";
             if(document.getElementById('final-preview')) document.getElementById('final-preview').src = carToEdit.model;
             
-            this.highlightColor(carToEdit.color);
+            this.highlightColor(carToEdit.color || "#bf5af2");
             
             const list = document.getElementById('final-model-list');
             if(list) Array.from(list.children).forEach(btn => {
@@ -177,6 +200,7 @@ window.GarageLogic = {
                 }
             });
         } else {
+            // Reset
             document.getElementById('final-name').value = '';
             document.getElementById('final-hp').value = '';
             document.getElementById('final-weight').value = '';
@@ -189,16 +213,19 @@ window.GarageLogic = {
 
     saveCarEdit: function() {
         const nameVal = document.getElementById('final-name').value;
-        if(!nameVal) { alert("Name?"); return; }
+        if(!nameVal || nameVal.trim() === "") { 
+            alert("Please enter a name!"); 
+            return; 
+        }
 
         let modelFile = "car.glb";
         const selected = document.querySelector('.selected-model');
         if(selected) modelFile = selected.getAttribute('data-file');
-        else if(this.editingCarIndex > -1) modelFile = this.cars[this.editingCarIndex].model;
+        else if(this.editingCarIndex > -1 && this.cars[this.editingCarIndex]) modelFile = this.cars[this.editingCarIndex].model;
         else if(this.cars.length > 0) modelFile = this.cars[0].model;
 
         let currentAcc = '-';
-        if(this.editingCarIndex > -1 && this.cars[this.editingCarIndex].acceleration) {
+        if(this.editingCarIndex > -1 && this.cars[this.editingCarIndex] && this.cars[this.editingCarIndex].acceleration) {
             currentAcc = this.cars[this.editingCarIndex].acceleration;
         }
 
@@ -212,12 +239,18 @@ window.GarageLogic = {
             color: document.getElementById('final-color-input').value || '#bf5af2'
         };
         
-        if(this.editingCarIndex > -1) this.cars[this.editingCarIndex] = newCar;
-        else this.cars.push(newCar);
+        if(this.editingCarIndex > -1) {
+            // Update existierendes Auto
+            this.cars[this.editingCarIndex] = newCar;
+        } else {
+            // Neues Auto
+            this.cars.push(newCar);
+        }
 
+        // Sicher speichern
         localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
-        document.getElementById('final-overlay').style.display = 'none';
         
+        document.getElementById('final-overlay').style.display = 'none';
         this.renderCars();
         if(!document.getElementById('car-details-screen').classList.contains('hidden')) {
             this.renderDetailList();
@@ -226,12 +259,14 @@ window.GarageLogic = {
 
     deleteCurrentCar: function() {
         if(confirm("Delete?")) {
-            if(this.editingCarIndex > -1) this.cars.splice(this.editingCarIndex, 1);
-            else this.cars = [];
+            if(this.editingCarIndex > -1) {
+                this.cars.splice(this.editingCarIndex, 1);
+            } else {
+                this.cars = [];
+            }
             
             localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
             document.getElementById('final-overlay').style.display = 'none';
-            
             this.renderCars();
             if(!document.getElementById('car-details-screen').classList.contains('hidden')) {
                 this.renderDetailList();
@@ -239,7 +274,6 @@ window.GarageLogic = {
         }
     },
 
-    // Helper functions for Editor
     renderModelList: function() {
         const list = document.getElementById('final-model-list');
         const viewer = document.getElementById('final-preview');
@@ -292,7 +326,7 @@ window.GarageLogic = {
     },
 
     // ==========================================
-    // === SECTION 5: DRIVE HISTORY & ANALYSIS ===
+    // === SECTION 5: HISTORY ===
     // ==========================================
 
     openHistoryScreen: function() {
@@ -312,77 +346,45 @@ window.GarageLogic = {
         if(!list) return;
         list.innerHTML = '';
 
-        // 1. Calculate Global Stats
-        let totalKm = 0;
-        let globalMax = 0;
-        let avgSum = 0;
-        let avgCount = 0;
-
+        // 1. Global Stats
+        let totalKm = 0; let globalMax = 0; let avgSum = 0; let avgCount = 0;
         this.drives.forEach(d => {
             if(d.dist) totalKm += parseFloat(d.dist);
-            
-            let m = d.max !== undefined ? d.max : (d.maxSpeed || 0);
-            if(m > globalMax) globalMax = m;
-
-            let a = d.avg !== undefined ? d.avg : (d.avgSpeed || 0);
-            if(a > 0) { avgSum += parseFloat(a); avgCount++; }
+            let m = d.max !== undefined ? d.max : (d.maxSpeed || 0); if(m > globalMax) globalMax = m;
+            let a = d.avg !== undefined ? d.avg : (d.avgSpeed || 0); if(a > 0) { avgSum += parseFloat(a); avgCount++; }
         });
-
         let globalAvg = avgCount > 0 ? Math.round(avgSum / avgCount) : 0;
 
-        // 2. Render Global Card
+        // Global Card
         const globalCard = document.createElement('div');
         globalCard.className = 'global-stats-card';
         globalCard.innerHTML = `
             <div class="global-header">LIFETIME STATISTICS</div>
             <div class="global-grid">
-                <div class="global-item">
-                    <label>TOTAL DIST</label>
-                    <span>${totalKm.toFixed(1)}<small style="font-size:0.8rem; color:#888;"> km</small></span>
-                </div>
-                <div class="global-item">
-                    <label>MAX SPEED</label>
-                    <span style="color:#30d158;">${Math.round(globalMax)}<small style="font-size:0.8rem; color:#888;"> km/h</small></span>
-                </div>
-                <div class="global-item">
-                    <label>AVG SPEED</label>
-                    <span>${globalAvg}<small style="font-size:0.8rem; color:#888;"> km/h</small></span>
-                </div>
-            </div>
-        `;
+                <div class="global-item"><label>TOTAL DIST</label><span>${totalKm.toFixed(1)}<small style="font-size:0.8rem; color:#888;"> km</small></span></div>
+                <div class="global-item"><label>MAX SPEED</label><span style="color:#30d158;">${Math.round(globalMax)}<small style="font-size:0.8rem; color:#888;"> km/h</small></span></div>
+                <div class="global-item"><label>AVG SPEED</label><span>${globalAvg}<small style="font-size:0.8rem; color:#888;"> km/h</small></span></div>
+            </div>`;
         list.appendChild(globalCard);
 
         if(this.drives.length === 0) {
-            const empty = document.createElement('div');
-            empty.innerHTML = `<div style="text-align:center; color:#666; margin-top:20px;">NO RECORDED DRIVES</div>`;
-            list.appendChild(empty);
+            list.innerHTML += `<div style="text-align:center; color:#666; margin-top:20px;">NO RECORDED DRIVES</div>`;
             return;
         }
 
-        // 3. Render Drives List
         this.drives.forEach((d, index) => {
             const dist = d.dist ? d.dist.toFixed(1) : "0.0";
             let mv = Math.round(d.max !== undefined ? d.max : (d.maxSpeed || 0));
             let av = Math.round(d.avg !== undefined ? d.avg : (d.avgSpeed || 0));
             let ts = d.time || "---";
-            if(!d.time && d.duration) {
-                const sec = Math.round(d.duration/1000);
-                const m = Math.floor(sec/60);
-                const s = sec%60;
-                ts = `${m}m ${s}s`;
-            }
+            if(!d.time && d.duration) { const sec = Math.round(d.duration/1000); const m = Math.floor(sec/60); const s = sec%60; ts = `${m}m ${s}s`; }
             
             const div = document.createElement('div');
             div.className = 'history-card-wrapper';
             div.innerHTML = `
-                <div class="history-header">
-                    <span>${new Date(d.date).toLocaleDateString()}</span>
-                    <span>VIEW DETAILS <i class="fa-solid fa-chevron-right"></i></span>
-                </div>
+                <div class="history-header"><span>${new Date(d.date).toLocaleDateString()}</span><span>VIEW DETAILS <i class="fa-solid fa-chevron-right"></i></span></div>
                 <div class="h-split">
-                    <div class="h-left">
-                        <div id="hist-map-${index}" class="h-map-mini"></div>
-                    </div>
+                    <div class="h-left"><div id="hist-map-${index}" class="h-map-mini"></div></div>
                     <div class="h-right">
                         <div class="h-stat"><label>TIME</label><span>${ts}</span></div>
                         <div class="h-stat"><label>DIST</label><span>${dist}<small>km</small></span></div>
@@ -390,11 +392,9 @@ window.GarageLogic = {
                         <div class="h-stat"><label>MAX</label><span style="color:#30d158;">${mv}<small>km/h</small></span></div>
                     </div>
                 </div>`;
-            
             div.onclick = () => { this.openDriveDetail(index); };
             list.appendChild(div);
 
-            // Lazy Load Maps
             setTimeout(() => {
                 if(d.path && d.path.length > 0) {
                     const mid = `hist-map-${index}`;
@@ -420,12 +420,7 @@ window.GarageLogic = {
         let mv = Math.round(d.max !== undefined ? d.max : (d.maxSpeed || 0));
         let av = Math.round(d.avg !== undefined ? d.avg : (d.avgSpeed || 0));
         let ts = d.time || "---";
-        if(!d.time && d.duration) {
-            const sec = Math.round(d.duration/1000);
-            const m = Math.floor(sec/60);
-            const s = sec%60;
-            ts = `${m}m ${s}s`;
-        }
+        if(!d.time && d.duration) { const sec = Math.round(d.duration/1000); const m = Math.floor(sec/60); const s = sec%60; ts = `${m}m ${s}s`; }
 
         document.getElementById('dd-time').innerText = ts;
         document.getElementById('dd-dist').innerText = dist + " km";
@@ -433,20 +428,16 @@ window.GarageLogic = {
         document.getElementById('dd-max').innerText = mv + " km/h";
         document.getElementById('dd-date').innerText = new Date(d.date).toLocaleString();
 
-        // RENDER LARGE MAP
         setTimeout(() => {
             if(this.detailMap) { this.detailMap.remove(); this.detailMap = null; }
             if(d.path && d.path.length > 0) {
                  this.detailMap = L.map('detail-map-canvas', { zoomControl:false, attributionControl:false });
                  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.detailMap);
                  const line = L.polyline(d.path.map(p => [p.lat, p.lng]), {color:'#bf5af2', weight:4}).addTo(this.detailMap);
-                 
-                 // IMPORTANT FIX FOR MAP SIZE:
                  this.detailMap.invalidateSize(); 
                  this.detailMap.fitBounds(line.getBounds(), {padding:[20,20]});
             }
         }, 300);
-        
         this.drawSpeedGraph(d.path);
     },
 
@@ -467,48 +458,26 @@ window.GarageLogic = {
     drawSpeedGraph: function(pathData) {
         const cvs = document.getElementById('speed-graph-canvas');
         if(!cvs || !pathData || pathData.length < 2) return;
-        
-        const rect = cvs.parentElement.getBoundingClientRect();
-        cvs.width = rect.width * 2; 
-        cvs.height = rect.height * 2;
-        
-        const ctx = cvs.getContext('2d'); 
-        ctx.scale(2, 2);
-        
-        const points = pathData.map(p => p.speed || 0);
-        const maxSpeed = Math.max(...points, 10);
-        
-        const w = rect.width; 
-        const h = rect.height; 
-        const stepX = w / (points.length - 1);
-        
-        ctx.clearRect(0, 0, w, h);
-        ctx.lineWidth = 2; 
-        ctx.lineJoin = 'round';
-        
-        const grad = ctx.createLinearGradient(0, h, 0, 0);
-        grad.addColorStop(0, '#30d158'); 
-        grad.addColorStop(0.5, '#ffd60a'); 
-        grad.addColorStop(1, '#ff3b30');
-        
-        ctx.strokeStyle = grad; 
-        ctx.beginPath();
-        
-        points.forEach((spd, i) => {
-            const x = i * stepX;
-            const y = h - ( (spd / maxSpeed) * (h * 0.8) );
+        const r = cvs.parentElement.getBoundingClientRect();
+        cvs.width = r.width * 2; cvs.height = r.height * 2;
+        const ctx = cvs.getContext('2d'); ctx.scale(2, 2);
+        const pts = pathData.map(p => p.speed || 0);
+        const max = Math.max(...pts, 10);
+        const w = r.width; const h = r.height; const sx = w / (pts.length - 1);
+        ctx.clearRect(0, 0, w, h); ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        const g = ctx.createLinearGradient(0, h, 0, 0);
+        g.addColorStop(0, '#30d158'); g.addColorStop(0.5, '#ffd60a'); g.addColorStop(1, '#ff3b30');
+        ctx.strokeStyle = g; ctx.beginPath();
+        pts.forEach((v, i) => {
+            const x = i * sx;
+            const y = h - ((v / max) * (h * 0.8));
             if(i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         });
-        
-        ctx.stroke();
-        ctx.lineTo(w, h); 
-        ctx.lineTo(0, h); 
-        ctx.fillStyle = "rgba(255, 255, 255, 0.05)"; 
-        ctx.fill();
+        ctx.stroke(); ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.fillStyle = "rgba(255, 255, 255, 0.05)"; ctx.fill();
     },
 
     // ==========================================
-    // === SECTION 6: DASHBOARD RENDER ===
+    // === SECTION 6: DASHBOARD ===
     // ==========================================
 
     renderCars: function() {
@@ -516,12 +485,14 @@ window.GarageLogic = {
         if(carCont) {
             const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
             
-            if(this.cars.length === 0 || !this.cars[0].name) {
+            // CHECK: Haben wir überhaupt ein Auto?
+            if(!this.cars || this.cars.length === 0) {
                 if(headerBtn) headerBtn.style.display='none';
                 carCont.innerHTML = `<div onclick="GarageLogic.openEditor(-1)" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;"><div style="font-size:2rem; color:#555; border:2px dashed #444; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;"><i class="fa-solid fa-plus"></i></div><span style="color:#888; font-weight:800; font-size:0.8rem; letter-spacing:1px;">ADD YOUR CAR</span></div>`;
             } else {
                 if(headerBtn) headerBtn.style.display='flex';
-                const c = this.cars[0];
+                // Hier auch Safety Fallback
+                const c = this.cars[0] || {name: 'Error', model:'car.glb', color:'#bf5af2'};
                 const col = c.color || '#bf5af2';
                 const acc = c.acceleration || '---';
                 carCont.innerHTML = `
@@ -530,9 +501,9 @@ window.GarageLogic = {
                     <div class="mini-car-name">${c.name}</div>
                 </div>
                 <div class="card-split-right" style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; align-content:center;">
-                    <div class="d-stat"><label>ENGINE</label><span>${c.engine}</span></div>
-                    <div class="d-stat"><label>POWER</label><span style="color:${col};">${c.hp}<small>PS</small></span></div>
-                    <div class="d-stat"><label>WEIGHT</label><span>${c.weight}<small>KG</small></span></div>
+                    <div class="d-stat"><label>ENGINE</label><span>${c.engine||'-'}</span></div>
+                    <div class="d-stat"><label>POWER</label><span style="color:${col};">${c.hp||'-'}<small>PS</small></span></div>
+                    <div class="d-stat"><label>WEIGHT</label><span>${c.weight||'-'}<small>KG</small></span></div>
                     <div class="d-stat"><label>0-100</label><span>${acc}<small>S</small></span></div>
                 </div>`;
             }
@@ -543,34 +514,25 @@ window.GarageLogic = {
     renderDriveCard: function() {
         const driveCont = document.getElementById('drive-card-content');
         if(!driveCont) return;
-
         if(this.drives.length === 0) {
             driveCont.innerHTML = `<div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#666;"><i class="fa-solid fa-road" style="font-size:1.5rem; margin-bottom:10px; opacity:0.5;"></i><span style="font-size:0.7rem; font-weight:800; letter-spacing:1px; opacity:0.7;">NO RECENT DRIVES</span></div>`;
         } else {
             const d = this.drives[0];
             const dist = d.dist ? d.dist.toFixed(1) : "0.0";
-            
-            let maxVal = Math.round(d.max !== undefined ? d.max : (d.maxSpeed || 0));
-            let avgVal = Math.round(d.avg !== undefined ? d.avg : (d.avgSpeed || 0));
-            
-            let timeStr = d.time || "---";
-            if(!d.time && d.duration) {
-                const sec = Math.round(d.duration / 1000);
-                const m = Math.floor(sec/60);
-                const s = sec%60;
-                timeStr = `${m}m ${s}s`;
-            }
+            let mv = Math.round(d.max !== undefined ? d.max : (d.maxSpeed || 0));
+            let av = Math.round(d.avg !== undefined ? d.avg : (d.avgSpeed || 0));
+            let ts = d.time || "---";
+            if(!d.time && d.duration) { const sec = Math.round(d.duration/1000); const m = Math.floor(sec/60); const s = sec%60; ts = `${m}m ${s}s`; }
 
             driveCont.innerHTML = `
             <div class="card-split-left" style="padding:0; border:none;"><div id="mini-map-canvas" class="mini-map-box"></div></div>
             <div class="card-split-right" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; align-content:center; padding-top:10px;">
-                <div class="d-stat"><label>TIME</label><span>${timeStr}</span></div>
+                <div class="d-stat"><label>TIME</label><span>${ts}</span></div>
                 <div class="d-stat"><label>DIST</label><span>${dist}<small>km</small></span></div>
-                <div class="d-stat"><label>AVG SPEED</label><span>${avgVal}<small>km/h</small></span></div>
-                <div class="d-stat"><label>MAX SPEED</label><span style="color:#30d158;">${maxVal}<small>km/h</small></span></div>
+                <div class="d-stat"><label>AVG SPEED</label><span>${av}<small>km/h</small></span></div>
+                <div class="d-stat"><label>MAX SPEED</label><span style="color:#30d158;">${mv}<small>km/h</small></span></div>
                 <div style="grid-column: span 2; font-size:0.6rem; color:#555; text-align:right; margin-top:5px;">${new Date(d.date).toLocaleDateString()}</div>
             </div>`;
-            
             setTimeout(() => {
                 if(document.getElementById('mini-map-canvas') && d.path) {
                     if(this.miniMap) this.miniMap.remove();
