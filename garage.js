@@ -1,4 +1,4 @@
-/* GARAGE.JS - FINAL V18 (Clean 0-100 & History Stats) */
+/* GARAGE.JS - FINAL V19 (Stats Match Fix) */
 
 window.GarageLogic = {
     // 1. DATEN
@@ -12,11 +12,11 @@ window.GarageLogic = {
     ],
 
     init: function() {
-        console.log("Garage V18 Init");
+        console.log("Garage V19 Init");
         this.renderCars();
     },
 
-    // 2. SAVE (Sicher)
+    // 2. SAVE
     save: function(driveData) {
         if(!driveData) return;
         const GL = window.GarageLogic; 
@@ -31,7 +31,7 @@ window.GarageLogic = {
         }
     },
 
-    // 3. EDITOR (Ohne 0-100 Input)
+    // 3. EDITOR
     openEditor: function() {
         const overlay = document.getElementById('final-overlay');
         if(!overlay) { alert("Error: Overlay missing"); return; }
@@ -47,7 +47,6 @@ window.GarageLogic = {
             document.getElementById('final-hp').value = c.hp;
             document.getElementById('final-weight').value = c.weight;
             document.getElementById('final-engine').value = c.engine;
-            // 0-100 Input wurde entfernt!
             
             document.getElementById('final-color-input').value = c.color;
             if(document.getElementById('final-preview')) document.getElementById('final-preview').src = c.model;
@@ -62,7 +61,6 @@ window.GarageLogic = {
             });
             this.highlightColor(c.color);
         } else {
-            // Reset
             document.getElementById('final-name').value = '';
             document.getElementById('final-hp').value = '';
             document.getElementById('final-weight').value = '';
@@ -73,7 +71,6 @@ window.GarageLogic = {
         }
     },
 
-    // Helper Listen
     renderModelList: function() {
         const list = document.getElementById('final-model-list');
         const viewer = document.getElementById('final-preview');
@@ -136,8 +133,6 @@ window.GarageLogic = {
             modelFile = this.cars[0].model; 
         }
 
-        // Acceleration bleibt erhalten wenn schon da, sonst ---
-        // Wir überschreiben es NICHT aus dem Input, da es keinen Input mehr gibt.
         let currentAcc = '-';
         if(this.cars.length > 0 && this.cars[0].acceleration) {
             currentAcc = this.cars[0].acceleration;
@@ -149,7 +144,7 @@ window.GarageLogic = {
             hp: document.getElementById('final-hp').value || '-',
             weight: document.getElementById('final-weight').value || '-',
             engine: document.getElementById('final-engine').value || '-',
-            acceleration: currentAcc, // Bleibt statisch oder alt
+            acceleration: currentAcc,
             color: document.getElementById('final-color-input').value || '#bf5af2'
         };
         
@@ -170,7 +165,7 @@ window.GarageLogic = {
 
     // 5. RENDER CARDS
     renderCars: function() {
-        // === CAR CARD ===
+        // CAR
         const carCont = document.getElementById('car-card-content');
         if(carCont) {
             if(this.cars.length === 0 || !this.cars[0].name) {
@@ -189,7 +184,6 @@ window.GarageLogic = {
                 const col = c.color || '#bf5af2';
                 const acc = c.acceleration || '---';
                 
-                // Anzeige mit 0-100 (aber nur Read-Only hier)
                 carCont.innerHTML = `
                 <div class="card-split-left" style="border-right-color:${col}30;">
                     <div style="width:100%; height:80%;"><model-viewer src="${c.model}" auto-rotate camera-controls disable-zoom style="width:100%; height:100%;" shadow-intensity="1" interaction-prompt="none"></model-viewer></div>
@@ -204,7 +198,7 @@ window.GarageLogic = {
             }
         }
 
-        // === DRIVE CARD ===
+        // DRIVE (Hier ist der FIX!)
         this.renderDriveCard();
     },
 
@@ -221,27 +215,32 @@ window.GarageLogic = {
         } else {
             const d = this.drives[0];
             const dist = d.dist ? d.dist.toFixed(1) : "0.0";
-            const max = d.maxSpeed ? Math.round(d.maxSpeed) : 0;
             
-            // Time & Avg Berechnung
+            // --- FIX: Wir prüfen auf BEIDE Variablennamen (Old & New) ---
+            
+            // 1. MAX SPEED (drive.js nutzt 'max', old was 'maxSpeed')
+            let maxVal = 0;
+            if(d.max !== undefined) maxVal = Math.round(d.max);
+            else if(d.maxSpeed !== undefined) maxVal = Math.round(d.maxSpeed);
+
+            // 2. AVG SPEED (drive.js nutzt 'avg', old was 'avgSpeed')
+            let avgStr = "---";
+            if(d.avg !== undefined) avgStr = Math.round(d.avg);
+            else if(d.avgSpeed !== undefined) avgStr = Math.round(d.avgSpeed);
+
+            // 3. TIME (drive.js nutzt 'time' String, old was 'duration' MS)
             let timeStr = "---";
-            if(d.duration) {
+            if(d.time) {
+                // Dein drive.js liefert z.B. "00:15"
+                timeStr = d.time; 
+            } else if(d.duration) {
+                // Fallback für alte Daten
                 const sec = Math.round(d.duration / 1000); 
                 const m = Math.floor(sec / 60);
                 const s = sec % 60;
                 timeStr = `${m}m ${s}s`;
-            } else if (d.startTime && d.endTime) {
-                 const ms = d.endTime - d.startTime;
-                 const sec = Math.round(ms / 1000);
-                 const m = Math.floor(sec / 60);
-                 const s = sec % 60;
-                 timeStr = `${m}m ${s}s`;
             }
 
-            let avgStr = "---";
-            if(d.avgSpeed) avgStr = Math.round(d.avgSpeed);
-            
-            // Grid Layout mit TIME & AVG
             driveCont.innerHTML = `
             <div class="card-split-left" style="padding:0; border:none;"><div id="mini-map-canvas" class="mini-map-box"></div></div>
             <div class="card-split-right" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; align-content:center; padding-top:10px;">
@@ -250,7 +249,7 @@ window.GarageLogic = {
                 <div class="d-stat"><label>DIST</label><span>${dist}<small>km</small></span></div>
                 
                 <div class="d-stat"><label>AVG SPEED</label><span>${avgStr}<small>km/h</small></span></div>
-                <div class="d-stat"><label>MAX SPEED</label><span style="color:#30d158;">${max}<small>km/h</small></span></div>
+                <div class="d-stat"><label>MAX SPEED</label><span style="color:#30d158;">${maxVal}<small>km/h</small></span></div>
                 
                 <div style="grid-column: span 2; font-size:0.6rem; color:#555; text-align:right; margin-top:5px;">
                     ${new Date(d.date).toLocaleDateString()}
