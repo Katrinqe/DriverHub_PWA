@@ -1,4 +1,4 @@
-/* GARAGE.JS - FINAL V22 (Navigation Fix) */
+/* GARAGE.JS - FINAL V23 (Fix for "showHistory is not a function") */
 
 window.GarageLogic = {
     // === DATA ===
@@ -15,36 +15,37 @@ window.GarageLogic = {
 
     // === INIT ===
     init: function() {
-        console.log("Garage V22 Init");
+        console.log("Garage V23 Init - Repair Mode");
         this.renderCars();
 
-        // Bindings
+        // Wir binden die Events sicherheitshalber neu, falls HTML onclicks fehlen
         setTimeout(() => {
-            // 1. CAR DETAILS: Klick auf den Header Button
             const carBtn = document.querySelector('#card-car-profile .card-header-btn');
             if(carBtn) {
-                carBtn.onclick = (e) => { 
-                    e.preventDefault(); e.stopPropagation(); 
-                    this.openDetailScreen(); 
-                };
-                // Visueller Hinweis, dass es klickbar ist
+                carBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.openDetailScreen(); };
                 carBtn.style.cursor = "pointer";
             }
-
-            // 2. DRIVE HISTORY: Klick NUR auf den Header Button ("VIEW DRIVE HISTORY")
             const driveBtn = document.querySelector('#card-drive-history .card-header-btn');
             if(driveBtn) {
-                driveBtn.onclick = (e) => { 
-                    e.preventDefault(); e.stopPropagation(); 
-                    this.openHistoryScreen(); 
-                };
+                driveBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.openHistoryScreen(); };
                 driveBtn.style.cursor = "pointer";
             }
-            
-            // WICHTIG: Kein Klick mehr auf den Body (Map), wie gewünscht!
         }, 1000);
     },
 
+    // === WICHTIG: DIE BRÜCKEN-FUNKTIONEN (ALIAS) ===
+    // Damit der Fehler "is not a function" verschwindet, wenn alte Buttons geklickt werden.
+    showHistory: function() {
+        this.openHistoryScreen();
+    },
+    
+    // Falls irgendwo noch ein alter Aufruf für Car Details ist
+    showCarDetails: function() {
+        this.openDetailScreen();
+    },
+
+
+    // === CORE LOGIC ===
     save: function(driveData) {
         if(!driveData) return;
         const GL = window.GarageLogic; 
@@ -356,7 +357,6 @@ window.GarageLogic = {
     // ==========================================
 
     renderCars: function() {
-        // ... (Dieser Teil bleibt exakt wie zuvor, damit die Buttons im Dashboard korrekt erstellt werden)
         const carCont = document.getElementById('car-card-content');
         if(carCont) {
             const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
@@ -392,15 +392,8 @@ window.GarageLogic = {
         } else {
             const d = this.drives[0];
             const dist = d.dist ? d.dist.toFixed(1) : "0.0";
-            
-            let maxVal = 0;
-            if(d.max !== undefined) maxVal = Math.round(d.max);
-            else if(d.maxSpeed !== undefined) maxVal = Math.round(d.maxSpeed);
-
-            let avgVal = "---";
-            if(d.avg !== undefined) avgVal = Math.round(d.avg);
-            else if(d.avgSpeed !== undefined) avgVal = Math.round(d.avgSpeed);
-
+            let maxVal = Math.round(d.max || d.maxSpeed || 0);
+            let avgVal = Math.round(d.avg || d.avgSpeed || 0);
             let timeStr = d.time || "---";
             if(!d.time && d.duration) {
                 const sec = Math.round(d.duration / 1000); const m = Math.floor(sec/60); const s = sec%60;
