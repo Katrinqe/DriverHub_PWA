@@ -762,28 +762,38 @@
         </div>
 </div>
 
+<div id="drive-history-screen" class="hidden" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#050505; z-index:2100; display:flex; flex-direction:column;">
+    <div class="details-header">
+        <button onclick="GarageLogic.closeHistoryScreen()" class="back-btn"><i class="fa-solid fa-chevron-left"></i> GARAGE</button>
+        <div style="flex:1;"></div>
+        <div style="width:40px;"></div>
+    </div>
+    
+    <div id="drive-history-list" class="details-scroll-area" style="gap:20px; padding-top:10px;"></div>
+</div>
+
 <div id="drive-detail-view" class="hidden" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#050505; z-index:2200; display:flex; flex-direction:column;">
     <div class="details-header">
-        <button onclick="GarageLogic.closeDriveDetail()" class="back-btn"><i class="fa-solid fa-chevron-left"></i> HISTORY</button>
-        <h2>ANALYSIS</h2>
+        <button onclick="GarageLogic.closeDriveDetail()" class="back-btn"><i class="fa-solid fa-chevron-left"></i> BACK</button>
+        <div style="flex:1;"></div>
         <div style="width:40px;"></div>
     </div>
     
     <div class="details-scroll-area">
-        <div style="width:100%; height:300px; background:#111; border-radius:20px; border:1px solid #333; overflow:hidden; margin-bottom:20px; position:relative;">
+        <div style="width:100%; height:450px; background:#111; border-radius:20px; border:1px solid #333; overflow:hidden; margin-bottom:25px; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
              <div id="detail-map-canvas" style="width:100%; height:100%;"></div>
         </div>
 
-        <div class="detail-stats-grid" style="border:none; background:rgba(255,255,255,0.03); border-radius:15px; margin-bottom:20px;">
-             <div class="detail-stat"><label>TIME</label><span id="dd-time">--:--</span></div>
-             <div class="detail-stat"><label>DIST</label><span id="dd-dist">--</span></div>
-             <div class="detail-stat"><label>AVG</label><span id="dd-avg">--</span></div>
-             <div class="detail-stat"><label>MAX</label><span id="dd-max" style="color:#30d158;">--</span></div>
+        <div class="detail-stats-grid" style="border:none; background:rgba(255,255,255,0.03); border-radius:15px; margin-bottom:25px; padding:20px;">
+             <div class="detail-stat"><label style="font-size:0.7rem;">TIME</label><span id="dd-time" style="font-size:1.2rem;">--:--</span></div>
+             <div class="detail-stat"><label style="font-size:0.7rem;">DIST</label><span id="dd-dist" style="font-size:1.2rem;">--</span></div>
+             <div class="detail-stat"><label style="font-size:0.7rem;">AVG</label><span id="dd-avg" style="font-size:1.2rem;">--</span></div>
+             <div class="detail-stat"><label style="font-size:0.7rem;">MAX</label><span id="dd-max" style="color:#30d158; font-size:1.2rem;">--</span></div>
         </div>
 
         <div class="detail-extra-box" style="border:none; padding:0; margin-bottom:20px;">
-            <span class="detail-label" style="margin-left:5px;">SPEED GRAPH</span>
-            <div style="width:100%; height:150px; background:rgba(0,0,0,0.3); border-radius:15px; border:1px solid #333; position:relative; overflow:hidden;">
+            <span class="detail-label" style="margin-left:5px; font-size:0.8rem;">SPEED GRAPH</span>
+            <div style="width:100%; height:180px; background:rgba(0,0,0,0.3); border-radius:15px; border:1px solid #333; position:relative; overflow:hidden;">
                 <canvas id="speed-graph-canvas" style="width:100%; height:100%;"></canvas>
             </div>
         </div>
