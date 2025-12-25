@@ -493,3 +493,156 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     cursor: pointer !important;
     z-index: 100001 !important;
 }
+
+/* === CAR DETAILS PAGE === */
+
+#car-details-screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: #050505; /* Tiefschwarz */
+    z-index: 2000; /* Über der Nav-Bar (Nav ist meist 100-1000) */
+    display: flex;
+    flex-direction: column;
+}
+
+#car-details-screen.hidden {
+    display: none !important;
+}
+
+/* Header */
+.details-header {
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.details-header h2 {
+    color: white;
+    font-family: sans-serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.back-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+}
+
+/* Scroll Area */
+.details-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* Abstand zwischen den Autos */
+    padding-bottom: 50px;
+}
+
+/* === DETAIL CARD STYLE === */
+.detail-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 25px;
+    padding: 0;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Großes 3D Modell */
+.detail-model-box {
+    width: 100%;
+    height: 250px; /* Größer als im Dashboard */
+    background: radial-gradient(circle at center, rgba(255,255,255,0.05) 0%, transparent 70%);
+    position: relative;
+}
+
+/* Name */
+.detail-name {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 900;
+    font-family: sans-serif;
+    text-transform: uppercase;
+    color: white;
+    margin-top: 10px;
+    letter-spacing: 1px;
+}
+
+/* Stats Grid */
+.detail-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 5px;
+    padding: 15px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.detail-stat { display: flex; flex-direction: column; align-items: center; }
+.detail-stat label { font-size: 0.55rem; color: #666; font-weight: 700; margin-bottom: 3px; }
+.detail-stat span { font-size: 0.85rem; color: white; font-weight: 800; }
+
+/* Records & Graph Dummy */
+.detail-extra-box {
+    padding: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.detail-label { font-size: 0.7rem; color: #888; font-weight: 800; margin-bottom: 10px; display: block; }
+.detail-graph-placeholder {
+    width: 100%;
+    height: 100px;
+    border: 1px dashed #333;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: #444; font-size: 0.7rem; font-weight: 700;
+    background: rgba(0,0,0,0.2);
+}
+
+/* Footer Actions (Select & Edit) */
+.detail-actions {
+    display: flex;
+    height: 50px;
+}
+.action-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #666;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+.action-btn:first-child { border-right: 1px solid rgba(255,255,255,0.05); }
+.action-btn:active { background: rgba(255,255,255,0.1); color: white; }
+
+/* Wenn Auto aktiv ausgewählt ist */
+.action-btn.is-active {
+    color: #30d158; /* Grün für Check */
+    background: rgba(48, 209, 88, 0.1);
+}
+
+/* ADD CAR BUTTON (Ganz unten) */
+.detail-add-btn {
+    width: 100%;
+    padding: 20px;
+    border: 2px dashed #333;
+    border-radius: 20px;
+    color: #555;
+    font-weight: 800;
+    text-align: center;
+    cursor: pointer;
+    margin-top: 10px;
+}
