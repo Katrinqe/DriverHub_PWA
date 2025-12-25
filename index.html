@@ -688,30 +688,52 @@
     <div style="width: 90%; max-width: 400px; background: #111; border: 1px solid #333; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; max-height: 90vh;">
         
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h2 style="color: white; margin: 0; font-family: sans-serif;">CAR PROFILE</h2>
+            <h2 style="color: white; margin: 0; font-family: sans-serif; font-style: italic;">CAR PROFILE</h2>
             <button onclick="document.getElementById('final-overlay').style.display='none'" style="background: transparent; border: 1px solid #444; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer;">✕</button>
         </div>
         
-        <div style="overflow-y: auto;">
+        <div style="overflow-y: auto; padding-right: 5px;">
             
-            <div style="width: 100%; height: 180px; background: #222; border-radius: 15px; margin-bottom: 20px; overflow: hidden;">
+            <div style="width: 100%; height: 200px; background: radial-gradient(circle, #222 0%, #000 100%); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border: 1px solid #333;">
                 <model-viewer id="final-preview" src="" auto-rotate camera-controls disable-zoom style="width: 100%; height: 100%;" shadow-intensity="1"></model-viewer>
             </div>
 
             <div style="margin-bottom: 15px;">
                 <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">NICKNAME</label>
-                <input type="text" id="final-name" placeholder="Name eingeben..." style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
+                <input type="text" id="final-name" placeholder="z.B. Street Beast" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
             </div>
 
             <div style="margin-bottom: 15px;">
                 <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">CHOOSE MODEL</label>
-                <div id="final-model-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 50px; border: 1px dashed #333; padding: 5px;">
+                <div id="final-model-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 50px;">
                     </div>
             </div>
 
-            <button onclick="GarageLogic.saveCarEdit()" style="width: 100%; background: #007aff; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1rem; margin-top: 10px; cursor: pointer;">SAVE CAR</button>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">HP</label>
+                    <input type="number" id="final-hp" placeholder="PS" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">WEIGHT</label>
+                    <input type="number" id="final-weight" placeholder="KG" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
+                </div>
+            </div>
             
-            <button onclick="GarageLogic.deleteCurrentCar()" style="width: 100%; background: transparent; border: 1px solid #ff3b30; color: #ff3b30; padding: 10px; border-radius: 12px; font-weight: bold; margin-top: 10px; cursor: pointer;">DELETE ALL</button>
+            <div style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">ENGINE</label>
+                <input type="text" id="final-engine" placeholder="z.B. V8 Biturbo" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">THEME COLOR</label>
+                <div id="final-color-list" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;"></div>
+                <input type="hidden" id="final-color-input">
+            </div>
+
+            <button onclick="GarageLogic.saveCarEdit()" style="width: 100%; background: #007aff; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1rem; margin-bottom: 10px; cursor: pointer;">SAVE CAR</button>
+            <button onclick="GarageLogic.deleteCurrentCar()" style="width: 100%; background: transparent; border: 1px solid #ff3b30; color: #ff3b30; padding: 10px; border-radius: 12px; font-weight: bold; cursor: pointer;">DELETE ALL</button>
+            
         </div>
     </div>
 </div>
