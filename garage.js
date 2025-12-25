@@ -1,4 +1,4 @@
-/* GARAGE.JS - FINAL V21 (COMPLETE: Editor, Car Details, History, Graph) */
+/* GARAGE.JS - FINAL V22 (Navigation Fix) */
 
 window.GarageLogic = {
     // === DATA ===
@@ -15,22 +15,33 @@ window.GarageLogic = {
 
     // === INIT ===
     init: function() {
-        console.log("Garage V21 Init");
+        console.log("Garage V22 Init");
         this.renderCars();
 
         // Bindings
         setTimeout(() => {
-            // Car Details Klick
+            // 1. CAR DETAILS: Klick auf den Header Button
             const carBtn = document.querySelector('#card-car-profile .card-header-btn');
-            if(carBtn) carBtn.onclick = (e) => { e.stopPropagation(); this.openDetailScreen(); };
+            if(carBtn) {
+                carBtn.onclick = (e) => { 
+                    e.preventDefault(); e.stopPropagation(); 
+                    this.openDetailScreen(); 
+                };
+                // Visueller Hinweis, dass es klickbar ist
+                carBtn.style.cursor = "pointer";
+            }
 
-            // Drive History Klick
+            // 2. DRIVE HISTORY: Klick NUR auf den Header Button ("VIEW DRIVE HISTORY")
             const driveBtn = document.querySelector('#card-drive-history .card-header-btn');
-            if(driveBtn) driveBtn.onclick = (e) => { e.stopPropagation(); this.openHistoryScreen(); };
+            if(driveBtn) {
+                driveBtn.onclick = (e) => { 
+                    e.preventDefault(); e.stopPropagation(); 
+                    this.openHistoryScreen(); 
+                };
+                driveBtn.style.cursor = "pointer";
+            }
             
-            // Drive Body Klick
-            const driveBody = document.getElementById('drive-card-content');
-            if(driveBody) driveBody.onclick = () => { if(this.drives.length>0) this.openHistoryScreen(); };
+            // WICHTIG: Kein Klick mehr auf den Body (Map), wie gewünscht!
         }, 1000);
     },
 
@@ -116,7 +127,6 @@ window.GarageLogic = {
             document.getElementById('final-color-input').value = carToEdit.color;
             if(document.getElementById('final-preview')) document.getElementById('final-preview').src = carToEdit.model;
             this.highlightColor(carToEdit.color);
-            // Model Select
             const list = document.getElementById('final-model-list');
             if(list) Array.from(list.children).forEach(btn => {
                 if(btn.getAttribute('data-file') === carToEdit.model) { btn.classList.add('selected-model'); btn.style.borderColor='#007aff'; btn.style.color='white'; }
@@ -223,8 +233,16 @@ window.GarageLogic = {
 
         this.drives.forEach((d, index) => {
             const dist = d.dist ? d.dist.toFixed(1) : "0.0";
-            let maxVal = Math.round(d.max || d.maxSpeed || 0);
-            let avgVal = Math.round(d.avg || d.avgSpeed || 0);
+            
+            // Fix für Namenschaos
+            let maxVal = 0;
+            if(d.max !== undefined) maxVal = Math.round(d.max);
+            else if(d.maxSpeed !== undefined) maxVal = Math.round(d.maxSpeed);
+
+            let avgVal = "---";
+            if(d.avg !== undefined) avgVal = Math.round(d.avg);
+            else if(d.avgSpeed !== undefined) avgVal = Math.round(d.avgSpeed);
+
             let timeStr = d.time || "---";
             if(!d.time && d.duration) {
                 const sec = Math.round(d.duration / 1000); const m = Math.floor(sec/60); const s = sec%60;
@@ -269,8 +287,15 @@ window.GarageLogic = {
         screen.classList.remove('hidden');
 
         const dist = d.dist ? d.dist.toFixed(2) : "0.00";
-        let maxVal = Math.round(d.max || d.maxSpeed || 0);
-        let avgVal = Math.round(d.avg || d.avgSpeed || 0);
+        
+        let maxVal = 0;
+        if(d.max !== undefined) maxVal = Math.round(d.max);
+        else if(d.maxSpeed !== undefined) maxVal = Math.round(d.maxSpeed);
+
+        let avgVal = "---";
+        if(d.avg !== undefined) avgVal = Math.round(d.avg);
+        else if(d.avgSpeed !== undefined) avgVal = Math.round(d.avgSpeed);
+
         let timeStr = d.time || "---";
         if(!d.time && d.duration) { const sec = Math.round(d.duration/1000); const m = Math.floor(sec/60); const s = sec%60; timeStr = `${m}m ${s}s`; }
 
@@ -331,6 +356,7 @@ window.GarageLogic = {
     // ==========================================
 
     renderCars: function() {
+        // ... (Dieser Teil bleibt exakt wie zuvor, damit die Buttons im Dashboard korrekt erstellt werden)
         const carCont = document.getElementById('car-card-content');
         if(carCont) {
             const headerBtn = document.querySelector('#card-car-profile .card-header-btn');
@@ -366,10 +392,20 @@ window.GarageLogic = {
         } else {
             const d = this.drives[0];
             const dist = d.dist ? d.dist.toFixed(1) : "0.0";
-            let maxVal = Math.round(d.max || d.maxSpeed || 0);
-            let avgVal = Math.round(d.avg || d.avgSpeed || 0);
+            
+            let maxVal = 0;
+            if(d.max !== undefined) maxVal = Math.round(d.max);
+            else if(d.maxSpeed !== undefined) maxVal = Math.round(d.maxSpeed);
+
+            let avgVal = "---";
+            if(d.avg !== undefined) avgVal = Math.round(d.avg);
+            else if(d.avgSpeed !== undefined) avgVal = Math.round(d.avgSpeed);
+
             let timeStr = d.time || "---";
-            if(!d.time && d.duration) { const sec = Math.round(d.duration/1000); const m = Math.floor(sec/60); const s = sec%60; timeStr = `${m}m ${s}s`; }
+            if(!d.time && d.duration) {
+                const sec = Math.round(d.duration / 1000); const m = Math.floor(sec/60); const s = sec%60;
+                timeStr = `${m}m ${s}s`;
+            }
 
             driveCont.innerHTML = `
             <div class="card-split-left" style="padding:0; border:none;"><div id="mini-map-canvas" class="mini-map-box"></div></div>
