@@ -1,4 +1,4 @@
-/* GARAGE.JS - FINAL V16 (Bulletproof Scope) */
+/* GARAGE.JS - FINAL V18 (Clean 0-100 & History Stats) */
 
 window.GarageLogic = {
     // 1. DATEN
@@ -11,35 +11,27 @@ window.GarageLogic = {
         { name: "Honda EG", file: "car3.glb" }
     ],
 
-    // 2. START
     init: function() {
-        console.log("Garage V16 Init");
+        console.log("Garage V18 Init");
         this.renderCars();
     },
 
-    // 3. SAVE (JETZT SCOPE-SICHER!)
+    // 2. SAVE (Sicher)
     save: function(driveData) {
         if(!driveData) return;
-        
-        // WICHTIG: Wir nutzen jetzt 'window.GarageLogic' statt 'this'
-        // Das verhindert, dass der Bezug verloren geht.
         const GL = window.GarageLogic; 
         
-        // 1. Daten speichern
         GL.drives.unshift(driveData);
         localStorage.setItem('driverhub_drives', JSON.stringify(GL.drives));
         
         console.log("Fahrt gespeichert:", driveData);
 
-        // 2. Ansicht aktualisieren
-        // Da wir nicht wissen, ob wir gerade auf dem Garage-Screen sind,
-        // rendern wir sicherheitshalber neu, falls die Elemente existieren.
         if(document.getElementById('drive-card-content')) {
             GL.renderDriveCard();
         }
     },
 
-    // 4. EDITOR
+    // 3. EDITOR (Ohne 0-100 Input)
     openEditor: function() {
         const overlay = document.getElementById('final-overlay');
         if(!overlay) { alert("Error: Overlay missing"); return; }
@@ -55,10 +47,11 @@ window.GarageLogic = {
             document.getElementById('final-hp').value = c.hp;
             document.getElementById('final-weight').value = c.weight;
             document.getElementById('final-engine').value = c.engine;
+            // 0-100 Input wurde entfernt!
+            
             document.getElementById('final-color-input').value = c.color;
             if(document.getElementById('final-preview')) document.getElementById('final-preview').src = c.model;
             
-            // Markieren
             const list = document.getElementById('final-model-list');
             Array.from(list.children).forEach(btn => {
                 if(btn.getAttribute('data-file') === c.model) {
@@ -80,18 +73,17 @@ window.GarageLogic = {
         }
     },
 
+    // Helper Listen
     renderModelList: function() {
         const list = document.getElementById('final-model-list');
         const viewer = document.getElementById('final-preview');
         if(!list) return;
         list.innerHTML = ''; 
-        
         this.availableModels.forEach(model => {
             const btn = document.createElement('div');
             btn.style.cssText = "padding:12px; background:#222; border:1px solid #444; color:#888; border-radius:8px; text-align:center; cursor:pointer; font-size:0.8rem; font-family:sans-serif; transition:all 0.2s;";
             btn.innerText = model.name;
             btn.setAttribute('data-file', model.file);
-            
             btn.onclick = () => {
                 Array.from(list.children).forEach(c => {
                     c.style.borderColor = '#444'; c.style.color = '#888'; c.style.background = '#222'; c.classList.remove('selected-model');
@@ -131,6 +123,7 @@ window.GarageLogic = {
         });
     },
 
+    // 4. SPEICHERN
     saveCarEdit: function() {
         const nameVal = document.getElementById('final-name').value;
         if(!nameVal) { alert("Bitte Namen eingeben!"); return; }
@@ -143,12 +136,20 @@ window.GarageLogic = {
             modelFile = this.cars[0].model; 
         }
 
+        // Acceleration bleibt erhalten wenn schon da, sonst ---
+        // Wir überschreiben es NICHT aus dem Input, da es keinen Input mehr gibt.
+        let currentAcc = '-';
+        if(this.cars.length > 0 && this.cars[0].acceleration) {
+            currentAcc = this.cars[0].acceleration;
+        }
+
         const newCar = {
             name: nameVal,
             model: modelFile,
             hp: document.getElementById('final-hp').value || '-',
             weight: document.getElementById('final-weight').value || '-',
             engine: document.getElementById('final-engine').value || '-',
+            acceleration: currentAcc, // Bleibt statisch oder alt
             color: document.getElementById('final-color-input').value || '#bf5af2'
         };
         
@@ -169,7 +170,7 @@ window.GarageLogic = {
 
     // 5. RENDER CARDS
     renderCars: function() {
-        // CAR CARD
+        // === CAR CARD ===
         const carCont = document.getElementById('car-card-content');
         if(carCont) {
             if(this.cars.length === 0 || !this.cars[0].name) {
@@ -186,21 +187,24 @@ window.GarageLogic = {
                     document.querySelector('#card-car-profile .card-header-btn').style.display='flex';
                 const c = this.cars[0];
                 const col = c.color || '#bf5af2';
+                const acc = c.acceleration || '---';
                 
+                // Anzeige mit 0-100 (aber nur Read-Only hier)
                 carCont.innerHTML = `
                 <div class="card-split-left" style="border-right-color:${col}30;">
                     <div style="width:100%; height:80%;"><model-viewer src="${c.model}" auto-rotate camera-controls disable-zoom style="width:100%; height:100%;" shadow-intensity="1" interaction-prompt="none"></model-viewer></div>
                     <div class="mini-car-name">${c.name}</div>
                 </div>
-                <div class="card-split-right">
+                <div class="card-split-right" style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; align-content:center;">
                     <div class="d-stat"><label>ENGINE</label><span>${c.engine}</span></div>
                     <div class="d-stat"><label>POWER</label><span style="color:${col};">${c.hp}<small>PS</small></span></div>
                     <div class="d-stat"><label>WEIGHT</label><span>${c.weight}<small>KG</small></span></div>
+                    <div class="d-stat"><label>0-100</label><span>${acc}<small>S</small></span></div>
                 </div>`;
             }
         }
 
-        // DRIVE CARD AUFRUF
+        // === DRIVE CARD ===
         this.renderDriveCard();
     },
 
@@ -218,13 +222,39 @@ window.GarageLogic = {
             const d = this.drives[0];
             const dist = d.dist ? d.dist.toFixed(1) : "0.0";
             const max = d.maxSpeed ? Math.round(d.maxSpeed) : 0;
+            
+            // Time & Avg Berechnung
+            let timeStr = "---";
+            if(d.duration) {
+                const sec = Math.round(d.duration / 1000); 
+                const m = Math.floor(sec / 60);
+                const s = sec % 60;
+                timeStr = `${m}m ${s}s`;
+            } else if (d.startTime && d.endTime) {
+                 const ms = d.endTime - d.startTime;
+                 const sec = Math.round(ms / 1000);
+                 const m = Math.floor(sec / 60);
+                 const s = sec % 60;
+                 timeStr = `${m}m ${s}s`;
+            }
 
+            let avgStr = "---";
+            if(d.avgSpeed) avgStr = Math.round(d.avgSpeed);
+            
+            // Grid Layout mit TIME & AVG
             driveCont.innerHTML = `
             <div class="card-split-left" style="padding:0; border:none;"><div id="mini-map-canvas" class="mini-map-box"></div></div>
-            <div class="card-split-right">
+            <div class="card-split-right" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; align-content:center; padding-top:10px;">
+                
+                <div class="d-stat"><label>TIME</label><span>${timeStr}</span></div>
+                <div class="d-stat"><label>DIST</label><span>${dist}<small>km</small></span></div>
+                
+                <div class="d-stat"><label>AVG SPEED</label><span>${avgStr}<small>km/h</small></span></div>
                 <div class="d-stat"><label>MAX SPEED</label><span style="color:#30d158;">${max}<small>km/h</small></span></div>
-                <div class="d-stat"><label>DISTANCE</label><span>${dist}<small>km</small></span></div>
-                <div class="d-stat"><label>DATE</label><span>${new Date(d.date).toLocaleDateString()}</span></div>
+                
+                <div style="grid-column: span 2; font-size:0.6rem; color:#555; text-align:right; margin-top:5px;">
+                    ${new Date(d.date).toLocaleDateString()}
+                </div>
             </div>`;
             
             setTimeout(() => {
@@ -239,6 +269,5 @@ window.GarageLogic = {
         }
     },
     
-    // Dummy
     renderList: function() {}
 };
