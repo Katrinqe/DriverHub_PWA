@@ -1,4 +1,4 @@
-/* GARAGE.JS - FINAL FULL VERSION (V14) */
+/* GARAGE.JS - FINAL V15 (Save Fix) */
 
 window.GarageLogic = {
     // 1. DATEN LADEN
@@ -14,14 +14,31 @@ window.GarageLogic = {
 
     // 3. START
     init: function() {
-        console.log("Garage Full V14 Init");
+        console.log("Garage V15 Init");
         this.renderCars();
     },
 
-    // 4. EDITOR ÖFFNEN (Vollständig)
+    // === WICHTIG: DIE FEHLENDE SAVE-FUNKTION ===
+    // Damit drive.js die Fahrt hier abliefern kann
+    save: function(driveData) {
+        if(!driveData) return;
+        
+        // 1. Vorne anfügen
+        this.drives.unshift(driveData);
+        
+        // 2. Speichern
+        localStorage.setItem('driverhub_drives', JSON.stringify(this.drives));
+        
+        // 3. UI sofort aktualisieren
+        this.renderDriveCard();
+        
+        console.log("Fahrt in Garage gespeichert!", driveData);
+    },
+
+    // 4. EDITOR ÖFFNEN
     openEditor: function() {
         const overlay = document.getElementById('final-overlay');
-        if(!overlay) { alert("Fehler: #final-overlay fehlt in index.html!"); return; }
+        if(!overlay) { alert("Fehler: #final-overlay fehlt!"); return; }
         
         document.body.appendChild(overlay);
         overlay.style.display = 'flex';
@@ -30,7 +47,7 @@ window.GarageLogic = {
         this.renderModelList();
         this.renderColorList();
         
-        // B) WERTE FÜLLEN (Edit Mode oder Neu)
+        // B) WERTE FÜLLEN
         if(this.cars.length > 0) {
             const c = this.cars[0];
             document.getElementById('final-name').value = c.name;
@@ -39,11 +56,10 @@ window.GarageLogic = {
             document.getElementById('final-engine').value = c.engine;
             document.getElementById('final-color-input').value = c.color;
             
-            // Vorschau setzen
             const viewer = document.getElementById('final-preview');
             if(viewer) viewer.src = c.model;
             
-            // Modell in Liste markieren
+            // Markierungen setzen
             const list = document.getElementById('final-model-list');
             Array.from(list.children).forEach(btn => {
                 if(btn.getAttribute('data-file') === c.model) {
@@ -52,12 +68,10 @@ window.GarageLogic = {
                     btn.style.color = 'white';
                 }
             });
-            
-            // Farbe markieren
             this.highlightColor(c.color);
 
         } else {
-            // Reset aller Felder
+            // Reset
             document.getElementById('final-name').value = '';
             document.getElementById('final-hp').value = '';
             document.getElementById('final-weight').value = '';
@@ -68,7 +82,7 @@ window.GarageLogic = {
         }
     },
 
-    // 5. HELPER: LISTEN BAUEN
+    // 5. HELPER: LISTEN
     renderModelList: function() {
         const list = document.getElementById('final-model-list');
         const viewer = document.getElementById('final-preview');
@@ -117,18 +131,17 @@ window.GarageLogic = {
         });
     },
 
-    // 6. SPEICHERN (Alles lesen!)
+    // 6. SPEICHERN (Auto Editor)
     saveCarEdit: function() {
         const nameVal = document.getElementById('final-name').value;
         if(!nameVal) { alert("Bitte Namen eingeben!"); return; }
 
-        // Modell finden
         let modelFile = "car.glb";
         const selected = document.querySelector('.selected-model');
         if(selected) {
             modelFile = selected.getAttribute('data-file');
         } else if(this.cars.length > 0) {
-            modelFile = this.cars[0].model; // Fallback
+            modelFile = this.cars[0].model; 
         }
 
         const newCar = {
@@ -144,7 +157,7 @@ window.GarageLogic = {
         localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
         
         document.getElementById('final-overlay').style.display = 'none';
-        this.renderCars(); // Update Dashboard
+        this.renderCars();
     },
 
     deleteCurrentCar: function() {
@@ -161,9 +174,7 @@ window.GarageLogic = {
         // === CARD 1: AUTO ===
         const carCont = document.getElementById('car-card-content');
         if(carCont) {
-            // Prüfung: Kein Auto?
             if(this.cars.length === 0 || !this.cars[0].name) {
-                // Header verstecken
                 if(document.querySelector('#card-car-profile .card-header-btn')) 
                     document.querySelector('#card-car-profile .card-header-btn').style.display='none';
                 
@@ -173,10 +184,8 @@ window.GarageLogic = {
                     <span style="color:#888; font-weight:800; font-size:0.8rem; letter-spacing:1px;">ADD YOUR CAR</span>
                 </div>`;
             } else {
-                // Header zeigen
                 if(document.querySelector('#card-car-profile .card-header-btn')) 
                     document.querySelector('#card-car-profile .card-header-btn').style.display='flex';
-                
                 const c = this.cars[0];
                 const col = c.color || '#bf5af2';
                 
@@ -198,7 +207,6 @@ window.GarageLogic = {
         const driveCont = document.getElementById('drive-card-content');
         if(driveCont) {
             if(this.drives.length === 0) {
-                // Schönes "No Drives" Design (Icon + Text)
                 driveCont.innerHTML = `
                 <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#666;">
                     <i class="fa-solid fa-road" style="font-size:1.5rem; margin-bottom:10px; opacity:0.5;"></i>
@@ -217,7 +225,6 @@ window.GarageLogic = {
                     <div class="d-stat"><label>DATE</label><span>${new Date(d.date).toLocaleDateString()}</span></div>
                 </div>`;
                 
-                // Map zeichnen (Verzögert)
                 setTimeout(() => {
                     if(document.getElementById('mini-map-canvas') && d.path) {
                         if(this.miniMap) this.miniMap.remove();
@@ -231,6 +238,6 @@ window.GarageLogic = {
         }
     },
     
-    // Dummy
+    // Dummy für app.js
     renderList: function() {}
 };
