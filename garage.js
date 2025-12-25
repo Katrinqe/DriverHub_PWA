@@ -1,4 +1,4 @@
-/* GARAGE.JS - FINAL V23 (Fix for "showHistory is not a function") */
+/* GARAGE.JS - FINAL V24 (Global Stats & Analysis Update) */
 
 window.GarageLogic = {
     // === DATA ===
@@ -15,10 +15,9 @@ window.GarageLogic = {
 
     // === INIT ===
     init: function() {
-        console.log("Garage V23 Init - Repair Mode");
+        console.log("Garage V24 Init");
         this.renderCars();
 
-        // Wir binden die Events sicherheitshalber neu, falls HTML onclicks fehlen
         setTimeout(() => {
             const carBtn = document.querySelector('#card-car-profile .card-header-btn');
             if(carBtn) {
@@ -33,19 +32,10 @@ window.GarageLogic = {
         }, 1000);
     },
 
-    // === WICHTIG: DIE BRÜCKEN-FUNKTIONEN (ALIAS) ===
-    // Damit der Fehler "is not a function" verschwindet, wenn alte Buttons geklickt werden.
-    showHistory: function() {
-        this.openHistoryScreen();
-    },
-    
-    // Falls irgendwo noch ein alter Aufruf für Car Details ist
-    showCarDetails: function() {
-        this.openDetailScreen();
-    },
+    // ALIAS (Bridge)
+    showHistory: function() { this.openHistoryScreen(); },
+    showCarDetails: function() { this.openDetailScreen(); },
 
-
-    // === CORE LOGIC ===
     save: function(driveData) {
         if(!driveData) return;
         const GL = window.GarageLogic; 
@@ -55,9 +45,8 @@ window.GarageLogic = {
     },
 
     // ==========================================
-    // === SECTION 1: CAR DETAILS & EDITOR ===
+    // === SECTION 1: CAR DETAILS ===
     // ==========================================
-
     openDetailScreen: function() {
         const screen = document.getElementById('car-details-screen');
         if(screen) { screen.classList.remove('hidden'); this.renderDetailList(); }
@@ -75,7 +64,6 @@ window.GarageLogic = {
             const isActive = (index === 0);
             const col = car.color || '#bf5af2';
             const acc = car.acceleration || '---';
-            
             const html = `
             <div class="detail-card">
                 <div class="detail-model-box"><model-viewer src="${car.model}" auto-rotate camera-controls disable-zoom interaction-prompt="none" style="width:100%; height:100%;" shadow-intensity="1"></model-viewer></div>
@@ -100,7 +88,6 @@ window.GarageLogic = {
         addBtn.onclick = () => { this.openEditor(-1); };
         container.appendChild(addBtn);
     },
-
     setActiveCar: function(index) {
         if(index === 0) return;
         const selectedCar = this.cars[index];
@@ -109,17 +96,13 @@ window.GarageLogic = {
         localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
         this.renderDetailList();
     },
-
     openEditor: function(index) {
         const overlay = document.getElementById('final-overlay');
         if(!overlay) return;
         document.body.appendChild(overlay); overlay.style.display = 'flex';
         this.renderModelList(); this.renderColorList();
-        
         let carToEdit = null;
-        if(index > -1 && this.cars[index]) { carToEdit = this.cars[index]; this.editingCarIndex = index; } 
-        else { this.editingCarIndex = -1; }
-
+        if(index > -1 && this.cars[index]) { carToEdit = this.cars[index]; this.editingCarIndex = index; } else { this.editingCarIndex = -1; }
         if(carToEdit) {
             document.getElementById('final-name').value = carToEdit.name;
             document.getElementById('final-hp').value = carToEdit.hp;
@@ -129,9 +112,7 @@ window.GarageLogic = {
             if(document.getElementById('final-preview')) document.getElementById('final-preview').src = carToEdit.model;
             this.highlightColor(carToEdit.color);
             const list = document.getElementById('final-model-list');
-            if(list) Array.from(list.children).forEach(btn => {
-                if(btn.getAttribute('data-file') === carToEdit.model) { btn.classList.add('selected-model'); btn.style.borderColor='#007aff'; btn.style.color='white'; }
-            });
+            if(list) Array.from(list.children).forEach(btn => { if(btn.getAttribute('data-file') === carToEdit.model) { btn.classList.add('selected-model'); btn.style.borderColor='#007aff'; btn.style.color='white'; }});
         } else {
             document.getElementById('final-name').value = '';
             document.getElementById('final-hp').value = '';
@@ -142,7 +123,6 @@ window.GarageLogic = {
             this.highlightColor('#bf5af2');
         }
     },
-
     saveCarEdit: function() {
         const nameVal = document.getElementById('final-name').value;
         if(!nameVal) { alert("Name?"); return; }
@@ -151,74 +131,30 @@ window.GarageLogic = {
         if(selected) modelFile = selected.getAttribute('data-file');
         else if(this.editingCarIndex > -1) modelFile = this.cars[this.editingCarIndex].model;
         else if(this.cars.length > 0) modelFile = this.cars[0].model;
-
         let currentAcc = '-';
         if(this.editingCarIndex > -1 && this.cars[this.editingCarIndex].acceleration) currentAcc = this.cars[this.editingCarIndex].acceleration;
-
-        const newCar = {
-            name: nameVal, model: modelFile,
-            hp: document.getElementById('final-hp').value || '-',
-            weight: document.getElementById('final-weight').value || '-',
-            engine: document.getElementById('final-engine').value || '-',
-            acceleration: currentAcc,
-            color: document.getElementById('final-color-input').value || '#bf5af2'
-        };
-        
-        if(this.editingCarIndex > -1) this.cars[this.editingCarIndex] = newCar;
-        else this.cars.push(newCar);
-
+        const newCar = { name: nameVal, model: modelFile, hp: document.getElementById('final-hp').value || '-', weight: document.getElementById('final-weight').value || '-', engine: document.getElementById('final-engine').value || '-', acceleration: currentAcc, color: document.getElementById('final-color-input').value || '#bf5af2' };
+        if(this.editingCarIndex > -1) this.cars[this.editingCarIndex] = newCar; else this.cars.push(newCar);
         localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
         document.getElementById('final-overlay').style.display = 'none';
         this.renderCars();
         if(!document.getElementById('car-details-screen').classList.contains('hidden')) this.renderDetailList();
     },
-
     deleteCurrentCar: function() {
         if(confirm("Delete?")) {
-            if(this.editingCarIndex > -1) this.cars.splice(this.editingCarIndex, 1);
-            else this.cars = [];
+            if(this.editingCarIndex > -1) this.cars.splice(this.editingCarIndex, 1); else this.cars = [];
             localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
             document.getElementById('final-overlay').style.display = 'none';
             this.renderCars();
             if(!document.getElementById('car-details-screen').classList.contains('hidden')) this.renderDetailList();
         }
     },
-
-    renderModelList: function() {
-        const list = document.getElementById('final-model-list');
-        const viewer = document.getElementById('final-preview');
-        if(!list) return; list.innerHTML = ''; 
-        this.availableModels.forEach(model => {
-            const btn = document.createElement('div');
-            btn.style.cssText = "padding:12px; background:#222; border:1px solid #444; color:#888; border-radius:8px; text-align:center; cursor:pointer; font-size:0.8rem; font-family:sans-serif; transition:all 0.2s;";
-            btn.innerText = model.name; btn.setAttribute('data-file', model.file);
-            btn.onclick = () => {
-                Array.from(list.children).forEach(c => { c.style.borderColor = '#444'; c.style.color = '#888'; c.style.background = '#222'; c.classList.remove('selected-model'); });
-                btn.style.borderColor = '#007aff'; btn.style.color = 'white'; btn.style.background = 'rgba(0,122,255,0.2)';
-                btn.classList.add('selected-model');
-                if(viewer) viewer.src = model.file;
-            };
-            list.appendChild(btn);
-        });
-    },
-    renderColorList: function() {
-        const list = document.getElementById('final-color-list');
-        if(!list) return; list.innerHTML = '';
-        ['#bf5af2', '#ff3b30', '#30d158', '#0a84ff', '#ff9f0a', '#ffffff'].forEach(c => {
-            const div = document.createElement('div');
-            div.style.cssText = `width:35px; height:35px; border-radius:50%; background:${c}; cursor:pointer; border:2px solid transparent; flex-shrink:0; transition:transform 0.2s;`;
-            div.setAttribute('data-color', c);
-            div.onclick = () => { document.getElementById('final-color-input').value = c; this.highlightColor(c); };
-            list.appendChild(div);
-        });
-    },
-    highlightColor: function(color) {
-        const list = document.getElementById('final-color-list'); if(!list) return;
-        Array.from(list.children).forEach(c => { c.style.borderColor = 'transparent'; c.style.transform = 'scale(1)'; if(c.getAttribute('data-color') === color) { c.style.borderColor = 'white'; c.style.transform = 'scale(1.2)'; } });
-    },
+    renderModelList: function() { const list = document.getElementById('final-model-list'); const viewer = document.getElementById('final-preview'); if(!list) return; list.innerHTML = ''; this.availableModels.forEach(model => { const btn = document.createElement('div'); btn.style.cssText = "padding:12px; background:#222; border:1px solid #444; color:#888; border-radius:8px; text-align:center; cursor:pointer; font-size:0.8rem; font-family:sans-serif; transition:all 0.2s;"; btn.innerText = model.name; btn.setAttribute('data-file', model.file); btn.onclick = () => { Array.from(list.children).forEach(c => { c.style.borderColor = '#444'; c.style.color = '#888'; c.style.background = '#222'; c.classList.remove('selected-model'); }); btn.style.borderColor = '#007aff'; btn.style.color = 'white'; btn.style.background = 'rgba(0,122,255,0.2)'; btn.classList.add('selected-model'); if(viewer) viewer.src = model.file; }; list.appendChild(btn); }); },
+    renderColorList: function() { const list = document.getElementById('final-color-list'); if(!list) return; list.innerHTML = ''; ['#bf5af2', '#ff3b30', '#30d158', '#0a84ff', '#ff9f0a', '#ffffff'].forEach(c => { const div = document.createElement('div'); div.style.cssText = `width:35px; height:35px; border-radius:50%; background:${c}; cursor:pointer; border:2px solid transparent; flex-shrink:0; transition:transform 0.2s;`; div.setAttribute('data-color', c); div.onclick = () => { document.getElementById('final-color-input').value = c; this.highlightColor(c); }; list.appendChild(div); }); },
+    highlightColor: function(color) { const list = document.getElementById('final-color-list'); if(!list) return; Array.from(list.children).forEach(c => { c.style.borderColor = 'transparent'; c.style.transform = 'scale(1)'; if(c.getAttribute('data-color') === color) { c.style.borderColor = 'white'; c.style.transform = 'scale(1.2)'; } }); },
 
     // ==========================================
-    // === SECTION 2: DRIVE HISTORY & GRAPH ===
+    // === SECTION 2: DRIVE HISTORY & ANALYSIS ===
     // ==========================================
 
     openHistoryScreen: function() {
@@ -230,12 +166,68 @@ window.GarageLogic = {
     renderHistoryList: function() {
         const list = document.getElementById('drive-history-list'); if(!list) return;
         list.innerHTML = '';
-        if(this.drives.length === 0) { list.innerHTML = `<div style="text-align:center; color:#666; margin-top:50px;">NO RECORDED DRIVES</div>`; return; }
+
+        // --- 1. GLOBAL STATS BERECHNUNG ---
+        let totalKm = 0;
+        let globalMax = 0;
+        let avgSum = 0;
+        let avgCount = 0;
+
+        this.drives.forEach(d => {
+            // Distance
+            if(d.dist) totalKm += parseFloat(d.dist);
+            
+            // Max Speed
+            let m = 0;
+            if(d.max !== undefined) m = d.max;
+            else if(d.maxSpeed !== undefined) m = d.maxSpeed;
+            if(m > globalMax) globalMax = m;
+
+            // Avg Speed (Wir mitteln die Durchschnitte, pragmatische Lösung)
+            let a = 0;
+            if(d.avg !== undefined) a = d.avg;
+            else if(d.avgSpeed !== undefined) a = d.avgSpeed;
+            if(a > 0) {
+                avgSum += parseFloat(a);
+                avgCount++;
+            }
+        });
+
+        let globalAvg = 0;
+        if(avgCount > 0) globalAvg = Math.round(avgSum / avgCount);
+
+        // --- 2. GLOBAL CARD RENDERN (GANZ OBEN) ---
+        const globalCard = document.createElement('div');
+        globalCard.className = 'global-stats-card';
+        globalCard.innerHTML = `
+            <div class="global-header">LIFETIME STATISTICS</div>
+            <div class="global-grid">
+                <div class="global-item">
+                    <label>TOTAL DIST</label>
+                    <span>${totalKm.toFixed(1)}<small style="font-size:0.8rem; color:#888;"> km</small></span>
+                </div>
+                <div class="global-item">
+                    <label>MAX SPEED</label>
+                    <span style="color:#30d158;">${Math.round(globalMax)}<small style="font-size:0.8rem; color:#888;"> km/h</small></span>
+                </div>
+                <div class="global-item">
+                    <label>AVG SPEED</label>
+                    <span>${globalAvg}<small style="font-size:0.8rem; color:#888;"> km/h</small></span>
+                </div>
+            </div>
+        `;
+        list.appendChild(globalCard); // Als erstes hinzufügen
+
+        // --- 3. LISTE DER FAHRTEN ---
+        if(this.drives.length === 0) { 
+            const empty = document.createElement('div');
+            empty.innerHTML = `<div style="text-align:center; color:#666; margin-top:20px;">NO RECORDED DRIVES</div>`;
+            list.appendChild(empty);
+            return; 
+        }
 
         this.drives.forEach((d, index) => {
             const dist = d.dist ? d.dist.toFixed(1) : "0.0";
-            
-            // Fix für Namenschaos
             let maxVal = 0;
             if(d.max !== undefined) maxVal = Math.round(d.max);
             else if(d.maxSpeed !== undefined) maxVal = Math.round(d.maxSpeed);
@@ -288,17 +280,9 @@ window.GarageLogic = {
         screen.classList.remove('hidden');
 
         const dist = d.dist ? d.dist.toFixed(2) : "0.00";
-        
-        let maxVal = 0;
-        if(d.max !== undefined) maxVal = Math.round(d.max);
-        else if(d.maxSpeed !== undefined) maxVal = Math.round(d.maxSpeed);
-
-        let avgVal = "---";
-        if(d.avg !== undefined) avgVal = Math.round(d.avg);
-        else if(d.avgSpeed !== undefined) avgVal = Math.round(d.avgSpeed);
-
-        let timeStr = d.time || "---";
-        if(!d.time && d.duration) { const sec = Math.round(d.duration/1000); const m = Math.floor(sec/60); const s = sec%60; timeStr = `${m}m ${s}s`; }
+        let maxVal = 0; if(d.max !== undefined) maxVal = Math.round(d.max); else if(d.maxSpeed !== undefined) maxVal = Math.round(d.maxSpeed);
+        let avgVal = "---"; if(d.avg !== undefined) avgVal = Math.round(d.avg); else if(d.avgSpeed !== undefined) avgVal = Math.round(d.avgSpeed);
+        let timeStr = d.time || "---"; if(!d.time && d.duration) { const sec = Math.round(d.duration/1000); const m = Math.floor(sec/60); const s = sec%60; timeStr = `${m}m ${s}s`; }
 
         document.getElementById('dd-time').innerText = timeStr;
         document.getElementById('dd-dist').innerText = dist + " km";
@@ -353,9 +337,8 @@ window.GarageLogic = {
     },
 
     // ==========================================
-    // === SECTION 3: DASHBOARD RENDER ===
+    // === SECTION 3: DASHBOARD ===
     // ==========================================
-
     renderCars: function() {
         const carCont = document.getElementById('car-card-content');
         if(carCont) {
@@ -383,7 +366,6 @@ window.GarageLogic = {
         }
         this.renderDriveCard();
     },
-
     renderDriveCard: function() {
         const driveCont = document.getElementById('drive-card-content');
         if(!driveCont) return;
@@ -392,13 +374,9 @@ window.GarageLogic = {
         } else {
             const d = this.drives[0];
             const dist = d.dist ? d.dist.toFixed(1) : "0.0";
-            let maxVal = Math.round(d.max || d.maxSpeed || 0);
-            let avgVal = Math.round(d.avg || d.avgSpeed || 0);
-            let timeStr = d.time || "---";
-            if(!d.time && d.duration) {
-                const sec = Math.round(d.duration / 1000); const m = Math.floor(sec/60); const s = sec%60;
-                timeStr = `${m}m ${s}s`;
-            }
+            let maxVal = 0; if(d.max !== undefined) maxVal = Math.round(d.max); else if(d.maxSpeed !== undefined) maxVal = Math.round(d.maxSpeed);
+            let avgVal = "---"; if(d.avg !== undefined) avgVal = Math.round(d.avg); else if(d.avgSpeed !== undefined) avgVal = Math.round(d.avgSpeed);
+            let timeStr = d.time || "---"; if(!d.time && d.duration) { const sec = Math.round(d.duration/1000); const m = Math.floor(sec/60); const s = sec%60; timeStr = `${m}m ${s}s`; }
 
             driveCont.innerHTML = `
             <div class="card-split-left" style="padding:0; border:none;"><div id="mini-map-canvas" class="mini-map-box"></div></div>
