@@ -1,97 +1,90 @@
-/* PERF.JS - PERFORMANCE HUB LOGIC */
+/* PERF.JS - V3 FIX */
 
 window.PerfLogic = {
     map: null,
-    currentMode: 'track', // 'track', 'drag', 'analytics'
+    currentMode: 'track',
 
-    // Init wird beim ersten Laden aufgerufen
     init: function() {
-        console.log("PerfLogic Loaded");
+        console.log("PerfLogic Init");
         this.setupTabs();
     },
 
-    // Wird aufgerufen, wenn man auf den PERF Tab in der Navbar drückt
     onScreenShow: function() {
-        // Map nur laden, wenn noch nicht da (spart Ressourcen)
+        // Map laden oder Größe korrigieren
         if (!this.map) {
-            setTimeout(() => this.loadMap(), 100);
+            this.loadMap();
+        } else {
+            // FIX FÜR "BLÖCKE" AUF DER KARTE
+            setTimeout(() => {
+                this.map.invalidateSize();
+            }, 200);
         }
     },
 
     loadMap: function() {
-        // Karte initialisieren (Dark Mode Style)
         this.map = L.map('perf-map', {
             zoomControl: false, 
             attributionControl: false
-        }).setView([51.1657, 10.4515], 13); // Default Mitte DE
+        }).setView([49.4521, 11.0767], 13); // Nürnberg
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19
         }).addTo(this.map);
     },
 
-    // Tab-Wechsel (Track / Drag / Analytics)
     setupTabs: function() {
         const tabs = document.querySelectorAll('.psn-item');
         tabs.forEach(tab => {
             tab.onclick = () => {
-                // UI Update
                 tabs.forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                
-                // Mode merken
                 this.currentMode = tab.innerText.toLowerCase();
-                console.log("Switched to Mode:", this.currentMode);
-                
-                // Hier später Logik zum Inhalt tauschen
             };
         });
     },
 
-    // SIMULATION: Auswahl eines Tracks
     selectTrack: function(trackId) {
         if(!this.map) return;
 
-        // 1. Text anzeigen
         const overlay = document.getElementById('perf-map-overlay-text');
         overlay.classList.remove('hidden');
         overlay.innerText = "LOADING TRACK...";
-        overlay.style.animation = 'none';
-        overlay.offsetHeight; /* Trigger reflow */
-        overlay.style.animation = 'fadeIn 0.5s ease-out';
-
-        // 2. Map Animation (Simulierte Koordinaten für Demo)
-        // Später kommen die echten Daten aus dem Track-Objekt
-        const start = [49.4521, 11.0767]; // Nürnberg Hbf Gegend
-        const end = [49.4600, 11.0800];
         
-        // Kameraflug
-        this.map.flyTo(start, 14, { duration: 1.5 });
-
-        // Nach Animation: Linie zeichnen & Dots setzen
+        // Simuliere Ladezeit
         setTimeout(() => {
-            // Alte Layer löschen (Clean Map)
-            this.map.eachLayer((layer) => {
-                if (!layer._url) this.map.removeLayer(layer);
-            });
+            const start = [49.4521, 11.0767]; 
+            const end = [49.4600, 11.0800];
+            
+            this.map.invalidateSize(); // Sicherheitshalber nochmal
+            this.map.flyTo(start, 14, { duration: 1.5 });
 
-            // Start Dot (Grün Pulsierend)
-            const startIcon = L.divIcon({ className: 'pulsing-dot-green', iconSize: [15,15] });
-            L.marker(start, {icon: startIcon}).addTo(this.map);
+            setTimeout(() => {
+                // Alte Layer weg
+                this.map.eachLayer((layer) => { if (!layer._url) this.map.removeLayer(layer); });
 
-            // Ziel Dot (Rot Pulsierend)
-            const endIcon = L.divIcon({ className: 'pulsing-dot-red', iconSize: [15,15] });
-            L.marker(end, {icon: endIcon}).addTo(this.map);
+                // DOTS ERSTELLEN (Mit explizitem HTML für Sicherheit)
+                const greenIcon = L.divIcon({ 
+                    className: 'custom-div-icon',
+                    html: '<div style="width:15px;height:15px;background:#30d158;border-radius:50%;border:2px solid white;box-shadow:0 0 10px #30d158;"></div>',
+                    iconSize: [15,15],
+                    iconAnchor: [7,7]
+                });
+                
+                const redIcon = L.divIcon({ 
+                    className: 'custom-div-icon',
+                    html: '<div style="width:15px;height:15px;background:#ff3b30;border-radius:50%;border:2px solid white;box-shadow:0 0 10px #ff3b30;"></div>',
+                    iconSize: [15,15],
+                    iconAnchor: [7,7]
+                });
 
-            // Linie zeichnen
-            L.polyline([start, [49.455, 11.078], end], {color: '#ff3b30', weight: 4}).addTo(this.map);
+                L.marker(start, {icon: greenIcon}).addTo(this.map);
+                L.marker(end, {icon: redIcon}).addTo(this.map);
+                L.polyline([start, [49.455, 11.078], end], {color: '#ff3b30', weight: 4}).addTo(this.map);
 
-            // Text Update
-            overlay.innerText = "START YOUR RACE";
-
-        }, 1600);
+                overlay.innerText = "START YOUR RACE";
+            }, 1600);
+        }, 100);
     }
 };
 
-// Start Init sofort
 PerfLogic.init();
