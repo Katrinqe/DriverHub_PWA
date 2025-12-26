@@ -731,8 +731,9 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     font-family: sans-serif;
 }
 
+
 /* ========================================= */
-/* === PERFORMANCE HUB (V4 - FINAL FIX) === */
+/* === PERFORMANCE HUB (V5 - POLISHED) === */
 /* ========================================= */
 
 /* 1. LAYOUT & MAP */
@@ -741,32 +742,45 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     width: 100%; height: 50vh;
     z-index: 0 !important;
 }
-#perf-map { width: 100%; height: 100%; background: #111; }
+#perf-map { 
+    width: 100%; height: 100%; 
+    background: #0a0a0a; /* Dunkler Hintergrund gegen weiße Blitzer */
+}
 
-/* Der Fade muss ÜBER der Map liegen */
+/* FADE: Z-Index 500 zwingt es über alle Map-Layer */
 .perf-map-fade {
     position: absolute; bottom: 0; left: 0;
-    width: 100%; height: 250px;
-    background: linear-gradient(to bottom, rgba(5,5,5,0) 0%, #050505 80%);
+    width: 100%; height: 150px;
+    background: linear-gradient(to bottom, rgba(5,5,5,0) 0%, #050505 100%);
     pointer-events: none !important;
-    z-index: 2 !important; 
+    z-index: 500 !important; 
 }
 
 #perf-map-overlay-text {
-    position: absolute; bottom: 60px; width: 100%;
+    position: absolute; bottom: 40px; width: 100%;
     text-align: center; color: white; font-weight: 900;
     font-family: sans-serif; font-style: italic; letter-spacing: 2px;
-    text-shadow: 0 0 10px #ff3b30;
-    z-index: 3 !important;
+    text-shadow: 0 0 20px #ff3b30;
+    z-index: 501 !important; /* Über dem Fade */
     pointer-events: none;
     animation: fadeIn 0.5s ease-out;
 }
 
-/* 2. SUB NAVIGATION (Das Menü Track/Drag...) */
+/* 2. MINI MAPS (In den Cards) */
+.tc-map-preview { 
+    height: 60%; width: 100%; 
+    background-color: #1a1a1a; 
+    border-bottom: 1px solid #333;
+    /* Platzhalter-Strecke (SVG) */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Cpath d='M10,50 Q30,50 40,30 T80,20 T90,10' fill='none' stroke='%23333' stroke-width='3'/%3E%3C/svg%3E");
+    background-size: cover;
+    background-position: center;
+    opacity: 0.6;
+}
+
+/* 3. NAVIGATION */
 .perf-sub-nav {
-    position: fixed; /* Festgeklebt */
-    bottom: 115px; /* Abstand von unten */
-    left: 50%; transform: translateX(-50%);
+    position: fixed; bottom: 115px; left: 50%; transform: translateX(-50%);
     width: 80%; height: 45px;
     background: rgba(20, 0, 0, 0.6);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -774,71 +788,54 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     border-radius: 30px;
     display: flex; align-items: center; justify-content: space-between;
     padding: 5px;
-    z-index: 100 !important; /* Immer ganz oben */
+    z-index: 600 !important; /* Über allem */
     box-shadow: 0 0 20px rgba(255, 59, 48, 0.15);
     pointer-events: auto !important;
 }
-.psn-item {
-    flex: 1; text-align: center; color: #888; font-size: 0.7rem; font-weight: 800;
-    padding: 8px 0; border-radius: 25px; transition: all 0.3s ease; cursor: pointer;
-}
+.psn-item { flex: 1; text-align: center; color: #888; font-size: 0.7rem; font-weight: 800; padding: 8px 0; border-radius: 25px; transition: all 0.3s ease; }
 .psn-item.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.6); }
 
-/* 3. SCROLL CONTAINER */
+/* 4. SCROLL AREA */
 .perf-content-scroll {
-    position: absolute; top: 0; left: 0;
-    width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     overflow-y: auto; overflow-x: hidden;
-    z-index: 10 !important;
-    pointer-events: none; /* Klicks durchlassen */
+    z-index: 10 !important; pointer-events: none;
 }
-/* Platzhalter für die Map oben */
-.perf-content-scroll > div:first-child {
-    height: 40vh !important;
-    pointer-events: none !important;
-}
-/* Inhalte wieder klickbar machen */
+.perf-content-scroll > div:first-child { height: 40vh !important; pointer-events: none !important; }
 .perf-stats-row, .perf-section-title, .track-list-horizontal {
-    pointer-events: auto !important;
-    position: relative; z-index: 11;
+    pointer-events: auto !important; position: relative; z-index: 11;
 }
 
-/* 4. STATS & KARTEN DESIGN */
+/* 5. RESTLICHES DESIGN */
 .perf-stats-row { display: flex; justify-content: space-around; padding: 0 20px; margin-bottom: 30px; margin-top: 20px; }
 .p-stat-box { text-align: center; }
 .p-stat-box label { display: block; font-size: 0.6rem; color: #666; font-weight: 800; margin-bottom: 2px; }
 .p-stat-box span { font-size: 1.2rem; color: white; font-weight: 900; font-family: sans-serif; }
 .glow-text span { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.5); }
-
 .perf-section-title { padding: 0 20px; font-size: 0.8rem; color: #888; font-weight: 800; margin-bottom: 15px; letter-spacing: 1px; }
-
-.track-list-horizontal {
-    display: flex; gap: 15px; padding-left: 20px;
-    overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 20px;
-}
-.track-list-horizontal::-webkit-scrollbar { display: none; }
-
-.track-card {
-    flex: 0 0 200px; height: 140px;
-    background: #111; border: 1px solid #333;
-    border-radius: 15px; overflow: hidden;
-    scroll-snap-align: start; position: relative;
-    transition: transform 0.2s;
-}
+.track-list-horizontal { display: flex; gap: 15px; padding-left: 20px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 20px; }
+.track-card { flex: 0 0 200px; height: 140px; background: #111; border: 1px solid #333; border-radius: 15px; overflow: hidden; scroll-snap-align: start; position: relative; transition: transform 0.2s; }
 .track-card:active { transform: scale(0.95); }
-
-.add-track-card {
-    border: 1px dashed #444; background: rgba(255,255,255,0.02);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666;
-}
+.add-track-card { border: 1px dashed #444; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; }
 .add-track-card span { color: #666; font-weight: 800; margin-top: 5px; }
 .add-icon { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #444; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
-
-.tc-map-preview { height: 60%; width: 100%; background: #222; border-bottom: 1px solid #222; }
 .tc-info { padding: 8px; }
 .tc-name { font-size: 0.75rem; color: white; font-weight: 800; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tc-stats { display: flex; justify-content: space-between; font-size: 0.6rem; color: #888; }
 .tc-score { position: absolute; top: 5px; right: 5px; background: #ff3b30; color: white; font-size: 0.5rem; padding: 2px 5px; border-radius: 4px; font-weight: 800; }
-
-.nav-item.active-perf { color: #ff3b30; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6); }
+.nav-item.active-perf { color: #ff3b30; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6); } 
 .nav-item.active-perf i { transform: translateY(-2px); }
+
+/* 6. PULSIERENDE PUNKTE (WICHTIG) */
+.pulsing-dot-green {
+    width: 15px; height: 15px; background: #30d158; border-radius: 50%;
+    border: 2px solid white; box-shadow: 0 0 15px #30d158;
+    animation: pulseG 1.5s infinite;
+}
+.pulsing-dot-red {
+    width: 15px; height: 15px; background: #ff3b30; border-radius: 50%;
+    border: 2px solid white; box-shadow: 0 0 15px #ff3b30;
+    animation: pulseR 1.5s infinite;
+}
+@keyframes pulseG { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes pulseR { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
