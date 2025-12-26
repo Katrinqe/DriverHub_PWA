@@ -1008,3 +1008,26 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 
 /* Verhindert, dass Leaflet Controls stören */
 .tc-map-preview .leaflet-control-container { display: none; }
+
+/* === V7 FIXES === */
+
+/* 1. MINI MAP FIX (Graues Bild weg!) */
+.tc-map-preview {
+    background-image: none !important; /* WICHTIG: Das alte Bild löschen */
+    background-color: #111;
+}
+
+/* 2. NEW PURPLE PIN (REMOVE) */
+.pin-dot.purple { 
+    background: #bf5af2; 
+    box-shadow: 0 0 10px #bf5af2; 
+    width: 12px; height: 12px; border-radius: 50%; border: 2px solid white;
+}
+
+/* Anpassung Container für 4 Pins */
+.cb-pins-container {
+    width: 70%; /* Etwas breiter machen für den 4. Button */
+    justify-content: space-evenly;
+}
+
+/* Undo Button Styles löschen wir, da nicht mehr gebraucht */
