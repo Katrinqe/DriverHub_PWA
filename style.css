@@ -731,93 +731,114 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     font-family: sans-serif;
 }
 
-/* PERF.JS - V3 FIX */
+/* ========================================= */
+/* === PERFORMANCE HUB (V4 - FINAL FIX) === */
+/* ========================================= */
 
-window.PerfLogic = {
-    map: null,
-    currentMode: 'track',
+/* 1. LAYOUT & MAP */
+#perf-map-container {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 50vh;
+    z-index: 0 !important;
+}
+#perf-map { width: 100%; height: 100%; background: #111; }
 
-    init: function() {
-        console.log("PerfLogic Init");
-        this.setupTabs();
-    },
+/* Der Fade muss ÜBER der Map liegen */
+.perf-map-fade {
+    position: absolute; bottom: 0; left: 0;
+    width: 100%; height: 250px;
+    background: linear-gradient(to bottom, rgba(5,5,5,0) 0%, #050505 80%);
+    pointer-events: none !important;
+    z-index: 2 !important; 
+}
 
-    onScreenShow: function() {
-        // Map laden oder Größe korrigieren
-        if (!this.map) {
-            this.loadMap();
-        } else {
-            // FIX FÜR "BLÖCKE" AUF DER KARTE
-            setTimeout(() => {
-                this.map.invalidateSize();
-            }, 200);
-        }
-    },
+#perf-map-overlay-text {
+    position: absolute; bottom: 60px; width: 100%;
+    text-align: center; color: white; font-weight: 900;
+    font-family: sans-serif; font-style: italic; letter-spacing: 2px;
+    text-shadow: 0 0 10px #ff3b30;
+    z-index: 3 !important;
+    pointer-events: none;
+    animation: fadeIn 0.5s ease-out;
+}
 
-    loadMap: function() {
-        this.map = L.map('perf-map', {
-            zoomControl: false, 
-            attributionControl: false
-        }).setView([49.4521, 11.0767], 13); // Nürnberg
+/* 2. SUB NAVIGATION (Das Menü Track/Drag...) */
+.perf-sub-nav {
+    position: fixed; /* Festgeklebt */
+    bottom: 115px; /* Abstand von unten */
+    left: 50%; transform: translateX(-50%);
+    width: 80%; height: 45px;
+    background: rgba(20, 0, 0, 0.6);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 59, 48, 0.3);
+    border-radius: 30px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 5px;
+    z-index: 100 !important; /* Immer ganz oben */
+    box-shadow: 0 0 20px rgba(255, 59, 48, 0.15);
+    pointer-events: auto !important;
+}
+.psn-item {
+    flex: 1; text-align: center; color: #888; font-size: 0.7rem; font-weight: 800;
+    padding: 8px 0; border-radius: 25px; transition: all 0.3s ease; cursor: pointer;
+}
+.psn-item.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.6); }
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19
-        }).addTo(this.map);
-    },
+/* 3. SCROLL CONTAINER */
+.perf-content-scroll {
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow-y: auto; overflow-x: hidden;
+    z-index: 10 !important;
+    pointer-events: none; /* Klicks durchlassen */
+}
+/* Platzhalter für die Map oben */
+.perf-content-scroll > div:first-child {
+    height: 40vh !important;
+    pointer-events: none !important;
+}
+/* Inhalte wieder klickbar machen */
+.perf-stats-row, .perf-section-title, .track-list-horizontal {
+    pointer-events: auto !important;
+    position: relative; z-index: 11;
+}
 
-    setupTabs: function() {
-        const tabs = document.querySelectorAll('.psn-item');
-        tabs.forEach(tab => {
-            tab.onclick = () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                this.currentMode = tab.innerText.toLowerCase();
-            };
-        });
-    },
+/* 4. STATS & KARTEN DESIGN */
+.perf-stats-row { display: flex; justify-content: space-around; padding: 0 20px; margin-bottom: 30px; margin-top: 20px; }
+.p-stat-box { text-align: center; }
+.p-stat-box label { display: block; font-size: 0.6rem; color: #666; font-weight: 800; margin-bottom: 2px; }
+.p-stat-box span { font-size: 1.2rem; color: white; font-weight: 900; font-family: sans-serif; }
+.glow-text span { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.5); }
 
-    selectTrack: function(trackId) {
-        if(!this.map) return;
+.perf-section-title { padding: 0 20px; font-size: 0.8rem; color: #888; font-weight: 800; margin-bottom: 15px; letter-spacing: 1px; }
 
-        const overlay = document.getElementById('perf-map-overlay-text');
-        overlay.classList.remove('hidden');
-        overlay.innerText = "LOADING TRACK...";
-        
-        // Simuliere Ladezeit
-        setTimeout(() => {
-            const start = [49.4521, 11.0767]; 
-            const end = [49.4600, 11.0800];
-            
-            this.map.invalidateSize(); // Sicherheitshalber nochmal
-            this.map.flyTo(start, 14, { duration: 1.5 });
+.track-list-horizontal {
+    display: flex; gap: 15px; padding-left: 20px;
+    overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 20px;
+}
+.track-list-horizontal::-webkit-scrollbar { display: none; }
 
-            setTimeout(() => {
-                // Alte Layer weg
-                this.map.eachLayer((layer) => { if (!layer._url) this.map.removeLayer(layer); });
+.track-card {
+    flex: 0 0 200px; height: 140px;
+    background: #111; border: 1px solid #333;
+    border-radius: 15px; overflow: hidden;
+    scroll-snap-align: start; position: relative;
+    transition: transform 0.2s;
+}
+.track-card:active { transform: scale(0.95); }
 
-                // DOTS ERSTELLEN (Mit explizitem HTML für Sicherheit)
-                const greenIcon = L.divIcon({ 
-                    className: 'custom-div-icon',
-                    html: '<div style="width:15px;height:15px;background:#30d158;border-radius:50%;border:2px solid white;box-shadow:0 0 10px #30d158;"></div>',
-                    iconSize: [15,15],
-                    iconAnchor: [7,7]
-                });
-                
-                const redIcon = L.divIcon({ 
-                    className: 'custom-div-icon',
-                    html: '<div style="width:15px;height:15px;background:#ff3b30;border-radius:50%;border:2px solid white;box-shadow:0 0 10px #ff3b30;"></div>',
-                    iconSize: [15,15],
-                    iconAnchor: [7,7]
-                });
+.add-track-card {
+    border: 1px dashed #444; background: rgba(255,255,255,0.02);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666;
+}
+.add-track-card span { color: #666; font-weight: 800; margin-top: 5px; }
+.add-icon { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #444; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
 
-                L.marker(start, {icon: greenIcon}).addTo(this.map);
-                L.marker(end, {icon: redIcon}).addTo(this.map);
-                L.polyline([start, [49.455, 11.078], end], {color: '#ff3b30', weight: 4}).addTo(this.map);
+.tc-map-preview { height: 60%; width: 100%; background: #222; border-bottom: 1px solid #222; }
+.tc-info { padding: 8px; }
+.tc-name { font-size: 0.75rem; color: white; font-weight: 800; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-stats { display: flex; justify-content: space-between; font-size: 0.6rem; color: #888; }
+.tc-score { position: absolute; top: 5px; right: 5px; background: #ff3b30; color: white; font-size: 0.5rem; padding: 2px 5px; border-radius: 4px; font-weight: 800; }
 
-                overlay.innerText = "START YOUR RACE";
-            }, 1600);
-        }, 100);
-    }
-};
-
-PerfLogic.init();
+.nav-item.active-perf { color: #ff3b30; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6); }
+.nav-item.active-perf i { transform: translateY(-2px); }
