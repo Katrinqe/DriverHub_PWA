@@ -1,4 +1,4 @@
-/* PERF.JS - V4 (INTERACTIVE MAP FIX) */
+/* PERF.JS - V5 (FORCE INTERACTION) */
 
 window.PerfLogic = {
     map: null,
@@ -7,7 +7,7 @@ window.PerfLogic = {
     
     // Creator State
     isCreatorMode: false,
-    selectedPin: 'start', // 'start', 'check', 'finish'
+    selectedPin: 'start', 
     creatorPoints: [], 
     polyLine: null,
 
@@ -27,22 +27,23 @@ window.PerfLogic = {
     },
 
     loadMap: function() {
-        // Init mit expliziten Interaktions-Rechten
         this.map = L.map('perf-map', {
             zoomControl: false, 
             attributionControl: false,
-            dragging: true,      // WICHTIG
-            touchZoom: true,     // WICHTIG
+            // ALLES EINSCHALTEN
+            dragging: true,
+            touchZoom: true,
             doubleClickZoom: true,
             scrollWheelZoom: true,
-            tap: false // Fix für manche Mobile-Browser
+            boxZoom: false,
+            keyboard: false,
+            tap: true 
         }).setView([51.1657, 10.4515], 6);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19
         }).addTo(this.map);
 
-        // Klick Handler
         this.map.on('click', (e) => {
             if(this.isCreatorMode) {
                 this.placePinOnMap(e.latlng);
@@ -54,8 +55,6 @@ window.PerfLogic = {
         if(navigator.geolocation) {
             navigator.geolocation.watchPosition(pos => {
                 const latlng = [pos.coords.latitude, pos.coords.longitude];
-                
-                // User Marker (Blauer Punkt)
                 if(!this.userMarker) {
                     const icon = L.divIcon({
                         className: 'user-marker-wrap', 
@@ -63,8 +62,6 @@ window.PerfLogic = {
                         iconSize: [40,40], iconAnchor: [20,20]
                     });
                     this.userMarker = L.marker(latlng, {icon: icon}).addTo(this.map);
-                    
-                    // Nur hinspringen wenn wir nicht gerade eine Strecke bauen
                     if(!this.isCreatorMode) this.map.setView(latlng, 15);
                 } else {
                     this.userMarker.setLatLng(latlng);
@@ -73,37 +70,36 @@ window.PerfLogic = {
         }
     },
 
-    // === CREATOR MODE LOGIC ===
+    // === CREATOR MODE (DER FIX) ===
 
     enterCreatorMode: function() {
         this.isCreatorMode = true;
         this.creatorPoints = []; 
 
-        // 1. UI Animation (Dashboard weg, Creator rein)
-        document.getElementById('perf-dashboard-ui').classList.add('fade-out-ui');
+        // 1. STÖRENFRIEDE KOMPLETT ENTFERNEN (Display: none)
+        // Das ist der Unterschied: Wir verstecken sie nicht nur, wir nehmen sie aus dem Layout.
+        document.querySelector('.perf-content-scroll').style.display = 'none';
+        document.querySelector('.perf-map-fade').style.display = 'none';
+        document.querySelector('.perf-sub-nav').style.display = 'none'; // Leiste weg
+        
+        // UI einblenden
         document.getElementById('perf-creator-ui').classList.remove('hidden');
-        document.getElementById('perf-creator-ui').classList.add('fade-in-ui'); // Sicherstellen dass es sichtbar ist
-        
-        // Navbar & Fade weg
-        document.getElementById('perf-fade-overlay').style.opacity = '0';
-        document.getElementById('nav-perf').parentElement.classList.add('hidden');
+        document.getElementById('nav-perf').parentElement.classList.add('hidden'); // Main Nav weg
 
-        // 2. MAP FREISCHALTEN (Der wichtige Teil!)
+        // 2. MAP AUF VOLLBILD ZWINGEN
         const mapContainer = document.getElementById('perf-map-container');
-        mapContainer.style.height = "100vh"; // Vollbild
-        mapContainer.style.zIndex = "100";   // Nach ganz vorne holen
+        mapContainer.style.height = "100vh"; 
+        mapContainer.style.zIndex = "5000"; // Brutal nach vorne
+        mapContainer.style.position = "fixed"; // Sicherstellen dass es steht
         
-        // Leaflet zwingen aufzuwachen
+        // 3. LEAFLET AUFWECKEN
         setTimeout(() => { 
             this.map.invalidateSize(); 
             this.map.dragging.enable();
             this.map.touchZoom.enable();
-        }, 300);
+        }, 100);
 
-        // Standard Pin wählen
         this.selectPinType('start');
-        
-        // Reset Text
         document.getElementById('ct-dist').innerText = "0.0 km";
     },
 
@@ -118,28 +114,29 @@ window.PerfLogic = {
     quitCreator: function() {
         this.isCreatorMode = false;
 
-        // UI Reset
-        document.getElementById('perf-dashboard-ui').classList.remove('fade-out-ui');
-        document.getElementById('perf-creator-ui').classList.add('hidden');
-        document.getElementById('perf-creator-ui').classList.remove('fade-in-ui');
+        // 1. ALLES WIEDERHERSTELLEN
+        document.querySelector('.perf-content-scroll').style.display = 'block';
+        document.querySelector('.perf-map-fade').style.display = 'block';
+        document.querySelector('.perf-sub-nav').style.display = 'flex';
         
-        document.getElementById('perf-fade-overlay').style.opacity = '1';
+        document.getElementById('perf-creator-ui').classList.add('hidden');
         document.getElementById('nav-perf').parentElement.classList.remove('hidden');
 
-        // Map Reset
+        // 2. MAP ZURÜCKSETZEN
         const mapContainer = document.getElementById('perf-map-container');
         mapContainer.style.height = "50vh";
-        mapContainer.style.zIndex = "0"; // Wieder nach hinten
+        mapContainer.style.zIndex = "0";
+        mapContainer.style.position = "absolute";
         
         setTimeout(() => { this.map.invalidateSize(); }, 300);
 
         this.clearCreatorMap();
     },
 
+    // === PIN LOGIC (Bleibt gleich) ===
+
     selectPinType: function(type) {
         this.selectedPin = type;
-        
-        // UI Update
         document.querySelectorAll('.cb-pin').forEach(el => el.classList.remove('active'));
         if(type === 'start') document.getElementById('pin-start').classList.add('active');
         if(type === 'check') document.getElementById('pin-check').classList.add('active');
@@ -147,43 +144,27 @@ window.PerfLogic = {
     },
 
     placePinOnMap: function(latlng) {
-        // Icon Logik
-        let color = '#fff';
         let className = 'pin-dot white';
-        
-        if(this.selectedPin === 'start') { color = '#30d158'; className = 'pin-dot green'; }
-        if(this.selectedPin === 'finish') { color = '#ff3b30'; className = 'pin-dot red'; }
+        if(this.selectedPin === 'start') className = 'pin-dot green';
+        if(this.selectedPin === 'finish') className = 'pin-dot red';
 
-        // Marker erstellen (Wir nutzen die CSS Klassen aus style.css)
         const iconHtml = `<div class="${className}" style="width:16px;height:16px;"></div>`;
-        const icon = L.divIcon({ 
-            className: 'custom-pin-icon', // Dummy Klasse damit Leaflet nicht meckert
-            html: iconHtml, 
-            iconSize: [20,20], 
-            iconAnchor: [10,10] 
-        });
+        const icon = L.divIcon({ className: 'custom-pin-icon', html: iconHtml, iconSize: [20,20], iconAnchor: [10,10] });
 
         const marker = L.marker(latlng, {icon: icon}).addTo(this.map);
         this.creatorPoints.push({ latlng: latlng, type: this.selectedPin, marker: marker });
 
-        // Auto-Switch Logik (User Flow)
         if(this.selectedPin === 'start') this.selectPinType('check');
-        
         this.drawCreatorPolyline();
     },
 
     drawCreatorPolyline: function() {
         if(this.polyLine) this.map.removeLayer(this.polyLine);
-        
         const latlngs = this.creatorPoints.map(p => p.latlng);
         if(latlngs.length > 1) {
             this.polyLine = L.polyline(latlngs, {color: '#bf5af2', weight: 4, dashArray: '10, 10'}).addTo(this.map);
-            
-            // Distanz berechnen
             let dist = 0;
-            for(let i=0; i<latlngs.length-1; i++) {
-                dist += latlngs[i].distanceTo(latlngs[i+1]);
-            }
+            for(let i=0; i<latlngs.length-1; i++) dist += latlngs[i].distanceTo(latlngs[i+1]);
             document.getElementById('ct-dist').innerText = (dist/1000).toFixed(2) + " km";
         }
     },
@@ -196,7 +177,6 @@ window.PerfLogic = {
     },
 
     saveTrack: function() {
-        // Validierung
         const hasStart = this.creatorPoints.some(p => p.type === 'start');
         const hasFinish = this.creatorPoints.some(p => p.type === 'finish');
         
@@ -210,23 +190,19 @@ window.PerfLogic = {
             const track = {
                 id: Date.now(),
                 name: name,
-                // Speichern als reines Daten-Objekt
                 points: this.creatorPoints.map(p => ({lat: p.latlng.lat, lng: p.latlng.lng, type: p.type})),
                 dist: document.getElementById('ct-dist').innerText,
                 bestTime: '---'
             };
-            
             this.tracks.push(track);
             localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
             
-            // Beenden ohne Confirm-Frage
+            this.isCreatorMode = false; // Flag resetten
             this.quitCreator();
             this.renderTrackList();
             this.updateGlobalStats();
         }
     },
-
-    // === RENDER DASHBOARD ===
 
     renderTrackList: function() {
         const list = document.getElementById('perf-track-list');
@@ -241,17 +217,10 @@ window.PerfLogic = {
                 <div class="tc-map-preview"></div>
                 <div class="tc-info">
                     <div class="tc-name">${t.name}</div>
-                    <div class="tc-stats">
-                        <span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span>
-                        <span><i class="fa-solid fa-road"></i> ${t.dist}</span>
-                    </div>
-                </div>
-            `;
-            // Wenn man hier klickt, soll später die Detail-Ansicht kommen
-            // div.onclick = () => this.showTrackDetails(t);
+                    <div class="tc-stats"><span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span><span><i class="fa-solid fa-road"></i> ${t.dist}</span></div>
+                </div>`;
             list.appendChild(div);
         });
-        
         const spacer = document.createElement('div');
         spacer.style.width='20px'; spacer.style.flexShrink='0';
         list.appendChild(spacer);
