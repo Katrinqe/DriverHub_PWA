@@ -997,3 +997,14 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     border: 1px solid rgba(255, 255, 255, 0.3);
     margin-right: 10px; /* Abstand zum Start-Pin */
 }
+/* Mini Map Container (Jetzt für echte Karte) */
+.tc-map-preview { 
+    height: 60%; width: 100%; 
+    background-color: #1a1a1a; 
+    border-bottom: 1px solid #333;
+    position: relative; /* Wichtig für Leaflet */
+    z-index: 1;
+}
+
+/* Verhindert, dass Leaflet Controls stören */
+.tc-map-preview .leaflet-control-container { display: none; }
