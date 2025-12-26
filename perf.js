@@ -275,22 +275,29 @@ window.PerfLogic = {
         list.appendChild(spacer);
     },
 
-    renderMiniMap: function(track) {
+   renderMiniMap: function(track) {
         const container = document.getElementById(`mini-map-${track.id}`);
         if(!container || container._leaflet_id) return; 
 
-        // Statische Karte ohne Controls
+        // 1. Map erstellen
         const miniMap = L.map(container, {
             zoomControl: false, attributionControl: false,
             dragging: false, touchZoom: false, doubleClickZoom: false, 
             scrollWheelZoom: false, boxZoom: false, keyboard: false, tap: false
         });
 
+        // 2. Tile Layer (Dunkel)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(miniMap);
 
-        if(track.routePath) {
+        // 3. Route & Zoom (Der wichtige Teil!)
+        if(track.routePath && track.routePath.length > 0) {
             const poly = L.polyline(track.routePath, {color: '#ff3b30', weight: 4}).addTo(miniMap);
-            miniMap.fitBounds(poly.getBounds(), {padding: [10, 10]});
+            
+            // TIMEOUT FIX: Warten bis der Browser das CSS fertig hat
+            setTimeout(() => {
+                miniMap.invalidateSize(); // "Wie groß bin ich wirklich?"
+                miniMap.fitBounds(poly.getBounds(), {padding: [20, 20]}); // "Zoom auf die Linie!"
+            }, 300);
         }
     },
 
