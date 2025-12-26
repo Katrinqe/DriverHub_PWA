@@ -838,12 +838,29 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     top: auto; 
 }
 
-/* 4. Scroll-Bereich reparieren */
+/* === MAP INTERACTION FIX === */
+
+/* Der Scroll-Container liegt ÜBER der Map, muss aber Geister-Modus haben */
 .perf-content-scroll {
-    z-index: 50 !important; /* Über der Map */
-    pointer-events: none; /* Lässt Klicks zur Map durch */
+    z-index: 50; 
+    pointer-events: none !important; /* WICHTIG: Lässt Klicks durch zur Map */
 }
 
+/* Aber die Inhalte IM Scroll-Container (Karten, Stats) müssen klickbar sein */
+.perf-content-scroll > * {
+    pointer-events: auto !important; /* Reaktiviert Klicks für Inhalt */
+}
+
+/* Der leere Platzhalter oben (Spacer) muss Klicks durchlassen */
+.perf-content-scroll > div:first-child {
+    pointer-events: none !important;
+}
+
+/* Die rote Nav-Leiste muss immer bedienbar sein */
+.perf-sub-nav {
+    pointer-events: auto !important;
+    z-index: 100;
+}
 /* Der Inhalt IN der Scroll-Area muss klickbar und sichtbar sein */
 .perf-stats-row, 
 .perf-section-title, 
