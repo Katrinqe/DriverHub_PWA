@@ -991,12 +991,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     filter: drop-shadow(0 0 2px rgba(255,255,255,0.3)); /* Leichter Glow für die Linie */
 }
 
-/* 4. UNDO BUTTON (Creator) */
-.cb-action-btn.undo {
-    background: rgba(255, 255, 255, 0.1); color: white; 
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    margin-right: 10px; /* Abstand zum Start-Pin */
-}
+
 /* Mini Map Container (Jetzt für echte Karte) */
 .tc-map-preview { 
     height: 60%; width: 100%; 
