@@ -26,18 +26,17 @@ window.PerfLogic = {
         this.startUserTracking();
     },
 
-    loadMap: function() {
+  loadMap: function() {
+        // Init OHNE "tap: true" (Das macht oft Probleme auf Mobile)
         this.map = L.map('perf-map', {
             zoomControl: false, 
             attributionControl: false,
-            // ALLES EINSCHALTEN
             dragging: true,
             touchZoom: true,
             doubleClickZoom: true,
             scrollWheelZoom: true,
             boxZoom: false,
-            keyboard: false,
-            tap: true 
+            keyboard: false
         }).setView([51.1657, 10.4515], 6);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -89,7 +88,7 @@ window.PerfLogic = {
         // 2. MAP AUF VOLLBILD ZWINGEN
         const mapContainer = document.getElementById('perf-map-container');
         mapContainer.style.height = "100vh"; 
-        mapContainer.style.zIndex = "5000"; // Brutal nach vorne
+        mapContainer.style.zIndex = "0"; // Brutal nach vorne
         mapContainer.style.position = "fixed"; // Sicherstellen dass es steht
         
         // 3. LEAFLET AUFWECKEN
