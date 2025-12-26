@@ -1,22 +1,19 @@
-/* PERF.JS - LOGIC CORE V1 (CLEAN START) */
+/* PERF.JS - CREATOR MODE V2 */
 
 window.PerfLogic = {
     map: null,
-    tracks: JSON.parse(localStorage.getItem('driverhub_tracks') || '[]'), // Echte Daten laden
-    isCreating: false,
-    tempTrackPoints: [], // Hier speichern wir die Pins während des Erstellens
+    userMarker: null,
+    tracks: JSON.parse(localStorage.getItem('driverhub_tracks') || '[]'),
     
-    // Icons (Vorladen)
-    icons: {
-        start: L.divIcon({ className: 'dummy', html: '<div class="pulsing-dot-green"></div>', iconSize: [20,20] }),
-        finish: L.divIcon({ className: 'dummy', html: '<div class="pulsing-dot-red"></div>', iconSize: [20,20] }),
-        point: L.divIcon({ className: 'dummy', html: '<div style="width:10px;height:10px;background:white;border-radius:50%;"></div>', iconSize: [10,10] })
-    },
+    // Creator State
+    isCreatorMode: false,
+    selectedPin: 'start', // 'start', 'check', 'finish'
+    creatorPoints: [], // Array von Markern
 
     init: function() {
-        console.log("PerfLogic Init - Clean Mode");
+        console.log("PerfLogic Init");
         this.renderTrackList();
-        this.updateStats();
+        this.updateGlobalStats();
     },
 
     onScreenShow: function() {
@@ -25,118 +22,184 @@ window.PerfLogic = {
         } else {
             setTimeout(() => { this.map.invalidateSize(); }, 200);
         }
+        this.startUserTracking();
     },
 
     loadMap: function() {
         this.map = L.map('perf-map', {
             zoomControl: false, attributionControl: false
-        }).setView([51.1657, 10.4515], 6); // Deutschland Weit raus
+        }).setView([51.1657, 10.4515], 6);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19
         }).addTo(this.map);
 
-        // Klick-Handler für Map (nur wenn Creator aktiv ist)
+        // Klick auf Map -> Punkt setzen (nur im Creator Mode)
         this.map.on('click', (e) => {
-            if(this.isCreating) {
-                this.addTrackPoint(e.latlng);
+            if(this.isCreatorMode) {
+                this.placePinOnMap(e.latlng);
             }
         });
-        
-        // Versuchen zum User zu springen
+    },
+
+    startUserTracking: function() {
         if(navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                this.map.setView([pos.coords.latitude, pos.coords.longitude], 15);
-            });
-        }
-    },
-
-    // === TRACK CREATOR LOGIC ===
-    
-    openTrackCreator: function() {
-        this.isCreating = true;
-        this.tempTrackPoints = [];
-        
-        // UI Update: Overlay Text ändern
-        const overlay = document.getElementById('perf-map-overlay-text');
-        overlay.classList.remove('hidden');
-        overlay.innerText = "TAP MAP TO SET START POINT";
-        
-        // Map säubern
-        this.map.eachLayer((layer) => { if (!layer._url) this.map.removeLayer(layer); });
-        
-        alert("CREATOR MODE: Tippe auf die Karte, um Punkte zu setzen.\n1. Start\n2. Checkpoints\n3. Finish");
-    },
-
-    addTrackPoint: function(latlng) {
-        this.tempTrackPoints.push(latlng);
-        const index = this.tempTrackPoints.length - 1;
-        
-        // Welches Icon?
-        let icon = this.icons.point;
-        if(index === 0) icon = this.icons.start;
-        
-        // Marker setzen
-        L.marker(latlng, {icon: icon}).addTo(this.map);
-        
-        // Linie ziehen (wenn mehr als 1 Punkt)
-        if(this.tempTrackPoints.length > 1) {
-            L.polyline(this.tempTrackPoints, {color: '#ff3b30', weight: 4}).addTo(this.map);
-        }
-
-        // Status Text Update
-        const overlay = document.getElementById('perf-map-overlay-text');
-        if(index === 0) overlay.innerText = "SET CHECKPOINTS...";
-        
-        // Wenn 2 Punkte da sind -> Fragen ob fertig
-        if(this.tempTrackPoints.length >= 2) {
-            // Kleiner Timeout damit der Marker erst erscheint
-            setTimeout(() => {
-                if(confirm("Is this the Finish Line?")) {
-                    this.finishTrackCreation();
+            navigator.geolocation.watchPosition(pos => {
+                const latlng = [pos.coords.latitude, pos.coords.longitude];
+                
+                // User Marker erstellen / updaten
+                if(!this.userMarker) {
+                    const icon = L.divIcon({
+                        className: 'user-marker-wrap', // Nutzt dein existierendes CSS
+                        html: '<div class="user-pulse"></div><div class="user-dot"></div>',
+                        iconSize: [40,40], iconAnchor: [20,20]
+                    });
+                    this.userMarker = L.marker(latlng, {icon: icon}).addTo(this.map);
+                    // Nur beim ersten Mal hinzoomen, wenn nicht im Creator Mode
+                    if(!this.isCreatorMode) this.map.setView(latlng, 15);
+                } else {
+                    this.userMarker.setLatLng(latlng);
                 }
-            }, 100);
+            }, err => {}, {enableHighAccuracy: true});
         }
     },
 
-    finishTrackCreation: function() {
-        const name = prompt("Name your Track:", "New Track");
-        if(!name) return; // Abgebrochen
+    // === CREATOR MODE LOGIC ===
 
-        const newTrack = {
-            id: Date.now(),
-            name: name,
-            points: this.tempTrackPoints,
-            bestTime: null,
-            score: 0,
-            date: new Date().toISOString()
-        };
+    enterCreatorMode: function() {
+        this.isCreatorMode = true;
+        this.creatorPoints = []; // Reset
 
-        this.tracks.push(newTrack);
-        this.saveData();
+        // 1. UI Animation
+        document.getElementById('perf-dashboard-ui').classList.add('fade-out-ui');
+        document.getElementById('perf-creator-ui').classList.remove('hidden');
+        document.getElementById('perf-fade-overlay').style.opacity = '0'; // Fade weg für klare Sicht
+        document.getElementById('nav-perf').parentElement.classList.add('hidden'); // Navbar weg
+
+        // 2. Map Interaktion freischalten
+        // Wir ändern die CSS Klasse des Map Containers temporär
+        document.getElementById('perf-map-container').style.height = "100vh"; // Vollbild
+        document.getElementById('perf-map-container').style.zIndex = "100"; // Nach vorne holen
         
-        this.isCreating = false;
-        document.getElementById('perf-map-overlay-text').innerText = "TRACK SAVED";
-        this.renderTrackList();
+        setTimeout(() => { this.map.invalidateSize(); }, 300);
+
+        // Standard Pin
+        this.selectPinType('start');
     },
 
-    // === DATA MANAGEMENT ===
-
-    saveData: function() {
-        localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
-        this.updateStats();
+    leaveCreatorMode: function() {
+        if(confirm("Discard Track?")) {
+            this.quitCreator();
+        }
     },
 
-    updateStats: function() {
-        // Echte Stats berechnen
-        document.getElementById('perf-total-tracks').innerText = this.tracks.length;
-        // Best Time & Score Logik kommt später
+    quitCreator: function() {
+        this.isCreatorMode = false;
+
+        // UI Reset
+        document.getElementById('perf-dashboard-ui').classList.remove('fade-out-ui');
+        document.getElementById('perf-creator-ui').classList.add('hidden');
+        document.getElementById('perf-fade-overlay').style.opacity = '1';
+        document.getElementById('nav-perf').parentElement.classList.remove('hidden');
+
+        // Map Reset
+        document.getElementById('perf-map-container').style.height = "50vh";
+        document.getElementById('perf-map-container').style.zIndex = "0";
+        setTimeout(() => { this.map.invalidateSize(); }, 300);
+
+        // Marker löschen
+        this.clearCreatorMap();
     },
+
+    selectPinType: function(type) {
+        this.selectedPin = type;
+        
+        // UI Update (Buttons highlighten)
+        document.querySelectorAll('.cb-pin').forEach(el => el.classList.remove('active'));
+        if(type === 'start') document.getElementById('pin-start').classList.add('active');
+        if(type === 'check') document.getElementById('pin-check').classList.add('active');
+        if(type === 'finish') document.getElementById('pin-finish').classList.add('active');
+    },
+
+    placePinOnMap: function(latlng) {
+        // Welches Icon?
+        let color = '#fff';
+        if(this.selectedPin === 'start') color = '#30d158';
+        if(this.selectedPin === 'finish') color = '#ff3b30';
+
+        const iconHtml = `<div style="width:16px;height:16px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 0 10px ${color};"></div>`;
+        const icon = L.divIcon({ className: 'd', html: iconHtml, iconSize: [20,20], iconAnchor: [10,10] });
+
+        const marker = L.marker(latlng, {icon: icon}).addTo(this.map);
+        this.creatorPoints.push({ latlng: latlng, type: this.selectedPin, marker: marker });
+
+        // Automatisch weiter schalten
+        if(this.selectedPin === 'start') this.selectPinType('check');
+        
+        this.drawCreatorPolyline();
+    },
+
+    drawCreatorPolyline: function() {
+        // Linie zwischen Punkten ziehen (Simuliert Routing für jetzt)
+        if(this.polyLine) this.map.removeLayer(this.polyLine);
+        
+        const latlngs = this.creatorPoints.map(p => p.latlng);
+        if(latlngs.length > 1) {
+            this.polyLine = L.polyline(latlngs, {color: '#bf5af2', weight: 4, dashArray: '10, 10'}).addTo(this.map);
+            
+            // Distanz berechnen (Luftlinie grob)
+            let dist = 0;
+            for(let i=0; i<latlngs.length-1; i++) {
+                dist += latlngs[i].distanceTo(latlngs[i+1]);
+            }
+            document.getElementById('ct-dist').innerText = (dist/1000).toFixed(2) + " km";
+        }
+    },
+
+    clearCreatorMap: function() {
+        this.creatorPoints.forEach(p => this.map.removeLayer(p.marker));
+        if(this.polyLine) this.map.removeLayer(this.polyLine);
+        this.creatorPoints = [];
+    },
+
+    saveTrack: function() {
+        // Validierung
+        const hasStart = this.creatorPoints.some(p => p.type === 'start');
+        const hasFinish = this.creatorPoints.some(p => p.type === 'finish');
+        
+        if(!hasStart || !hasFinish) {
+            alert("Track needs at least a START and FINISH point!");
+            return;
+        }
+
+        const name = prompt("Track Name:", "My Epic Track");
+        if(name) {
+            const track = {
+                id: Date.now(),
+                name: name,
+                // Speichere nur Koordinaten, nicht die Marker-Objekte
+                points: this.creatorPoints.map(p => ({lat: p.latlng.lat, lng: p.latlng.lng, type: p.type})),
+                dist: document.getElementById('ct-dist').innerText,
+                bestTime: '---'
+            };
+            
+            this.tracks.push(track);
+            localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
+            
+            // Clean Exit
+            this.isCreatorMode = false; // Flag resetten damit quitCreator nicht fragt
+            this.quitCreator();
+            this.renderTrackList();
+            this.updateGlobalStats();
+        }
+    },
+
+    // === RENDER DASHBOARD ===
 
     renderTrackList: function() {
         const list = document.getElementById('perf-track-list');
-        // Alles löschen bis auf den ersten Button (Create)
-        const createBtn = list.firstElementChild;
+        // Behalte den Create Button
+        const createBtn = list.querySelector('.add-track-card');
         list.innerHTML = '';
         list.appendChild(createBtn);
 
@@ -148,28 +211,23 @@ window.PerfLogic = {
                 <div class="tc-info">
                     <div class="tc-name">${t.name}</div>
                     <div class="tc-stats">
-                        <span><i class="fa-solid fa-trophy"></i> --:--</span>
-                        <span><i class="fa-solid fa-road"></i> ? km</span>
+                        <span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span>
+                        <span><i class="fa-solid fa-road"></i> ${t.dist}</span>
                     </div>
                 </div>
             `;
-            // Klick lädt diesen Track in die Map
-            div.onclick = () => this.loadTrackToMap(t);
             list.appendChild(div);
         });
         
-        // Spacer am Ende
+        // Spacer
         const spacer = document.createElement('div');
-        spacer.style.width = '20px';
-        spacer.style.flexShrink = '0';
+        spacer.style.width='20px'; spacer.style.flexShrink='0';
         list.appendChild(spacer);
     },
 
-    loadTrackToMap: function(track) {
-        // Hier kommt später die Logik, um einen existierenden Track anzuzeigen
-        console.log("Loading Track:", track.name);
+    updateGlobalStats: function() {
+        document.getElementById('perf-total-tracks').innerText = this.tracks.length;
     }
 };
 
-// Init starten
 PerfLogic.init();
