@@ -120,18 +120,48 @@ window.PerfLogic = {
         }
     },
 
+   // === ZOOM FIX ===
     showTrackOnMap: function(track) {
-        // Aufräumen (außer User & Hubs)
+        // Aufräumen
         this.map.eachLayer((layer) => { 
             if (!layer._url && layer !== this.userMarker && !this.hubMarkers.includes(layer)) {
                 this.map.removeLayer(layer); 
             }
         });
 
-        // Route zeichnen
         if(track.routePath) {
             const poly = L.polyline(track.routePath, {color: '#ff3b30', weight: 5}).addTo(this.map);
-            this.map.flyToBounds(poly.getBounds(), {padding: [50, 200], duration: 1.0}); // Padding unten größer für UI
+            
+            // Padding unten erhöht (300px), damit die Cards die Strecke nicht verdecken
+            this.map.flyToBounds(poly.getBounds(), {
+                paddingTopLeft: [20, 50],
+                paddingBottomRight: [20, 300], 
+                duration: 1.0
+            });
+        }
+    },
+
+    // === MINI MAP RENDERER (Echte Karte!) ===
+    renderMiniMap: function(track) {
+        const container = document.getElementById(`mini-map-${track.id}`);
+        if(!container) return;
+
+        // Leaflet Instanz für die Mini-Map
+        const miniMap = L.map(container, {
+            zoomControl: false, attributionControl: false,
+            dragging: false, touchZoom: false, doubleClickZoom: false, 
+            scrollWheelZoom: false, boxZoom: false, keyboard: false, tap: false
+        });
+
+        // Dark Tile Layer
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(miniMap);
+
+        // Route zeichnen
+        if(track.routePath) {
+            const poly = L.polyline(track.routePath, {color: '#ff3b30', weight: 4}).addTo(miniMap);
+            miniMap.fitBounds(poly.getBounds(), {padding: [10, 10]});
         }
     },
 
@@ -316,33 +346,49 @@ window.PerfLogic = {
 
     // === RENDER LIST + SVG GENERATOR ===
 
+   // === RENDER LIST UPDATE ===
     renderTrackList: function() {
         const list = document.getElementById('perf-track-list');
-        const createBtn = list.querySelector('.add-track-card');
-        list.innerHTML = '';
-        list.appendChild(createBtn);
+        list.innerHTML = ''; // Komplett leeren
 
+        // 1. Erst die Tracks rendern
         this.tracks.forEach(t => {
-            // SVG generieren
-            const svg = this.generateMiniMapSVG(t.routePath);
-
+            // Wir nutzen jetzt wieder einen echten Map-Container für die Preview
+            // (Die Logik zum Befüllen kommt gleich)
             const div = document.createElement('div');
             div.className = 'track-card';
-            div.id = `track-card-${t.id}`; // ID für Scrolling
+            div.id = `track-card-${t.id}`;
             div.innerHTML = `
-                <div class="tc-map-preview">${svg}</div>
+                <div class="tc-map-preview" id="mini-map-${t.id}"></div>
                 <div class="tc-info">
                     <div class="tc-name">${t.name}</div>
-                    <div class="tc-stats"><span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span><span><i class="fa-solid fa-road"></i> ${t.dist}</span></div>
+                    <div class="tc-stats">
+                        <span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span>
+                        <span><i class="fa-solid fa-road"></i> ${t.dist}</span>
+                    </div>
                 </div>`;
             div.onclick = () => this.selectTrack(t);
             list.appendChild(div);
+
+            // Mini Map laden (verzögert, damit DOM da ist)
+            setTimeout(() => this.renderMiniMap(t), 100);
         });
+
+        // 2. DANN den "Create Track" Button (ganz rechts)
+        const createDiv = document.createElement('div');
+        createDiv.className = 'track-card add-track-card';
+        createDiv.onclick = () => this.enterCreatorMode();
+        createDiv.innerHTML = `
+            <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+            <span>CREATE TRACK</span>
+        `;
+        list.appendChild(createDiv);
+        
+        // Spacer
         const spacer = document.createElement('div');
         spacer.style.width='20px'; spacer.style.flexShrink='0';
         list.appendChild(spacer);
     },
-
     // Helper: SVG aus Geo-Koordinaten bauen
     generateMiniMapSVG: function(latlngs) {
         if(!latlngs || latlngs.length === 0) return '';
