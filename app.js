@@ -33,6 +33,7 @@ window.addEventListener('load', () => {
     bindNavBtn('nav-home', showHome);
     bindNavBtn('nav-garage', showGarage);
     bindNavBtn('nav-explore', showExplore);
+    bindNavBtn('nav-perf', showPerf);
 
     const navBar = document.getElementById('global-nav');
     if(navBar) {
@@ -285,15 +286,21 @@ function showExplore() {
 
 function updateNav(activeId) {
     document.getElementById('global-nav').classList.remove('hidden');
+    
     const homeBtn = document.getElementById('nav-home');
     const exploreBtn = document.getElementById('nav-explore');
     const garageBtn = document.getElementById('nav-garage');
+    const perfBtn = document.getElementById('nav-perf'); // NEU
+
     homeBtn.classList.remove('active-home');
     exploreBtn.classList.remove('active-map');
     garageBtn.classList.remove('active-garage');
+    if(perfBtn) perfBtn.classList.remove('active-perf'); // NEU
+
     if(activeId === 'home') homeBtn.classList.add('active-home');
     if(activeId === 'explore') exploreBtn.classList.add('active-map');
     if(activeId === 'garage') garageBtn.classList.add('active-garage');
+    if(activeId === 'perf' && perfBtn) perfBtn.classList.add('active-perf'); // NEU
 }
 
 function switchScreen(id) {
@@ -336,4 +343,25 @@ function initWeather() {
             const el = document.getElementById('loc-text'); if(el) el.innerText = city;
         }).catch(e => console.log(e));
     });
+}
+
+function showPerf() {
+    // 1. Andere Modi beenden
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
+    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
+    
+    // 2. Map Effekte zurücksetzen (falls man von Home kommt)
+    document.getElementById('global-top-fade').classList.remove('visible');
+    document.getElementById('background-map').classList.remove('map-locked');
+    document.getElementById('background-map').classList.remove('map-smooth-rotate');
+    
+    // 3. Screen wechseln
+    switchScreen('performance-screen');
+    updateNav('perf'); // Macht den Button rot
+
+    // 4. Dem Spezialisten Bescheid sagen
+    if(window.PerfLogic) {
+        // Kurze Verzögerung, damit der Screen sicher sichtbar ist
+        setTimeout(() => PerfLogic.onScreenShow(), 50);
+    }
 }
