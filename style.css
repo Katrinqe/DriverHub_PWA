@@ -950,3 +950,50 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 #performance-screen {
     pointer-events: auto !important;
 }
+
+
+
+
+
+
+
+/* === V6 UPDATES === */
+
+/* 1. MAP HUBS (Die Marker auf der Hauptkarte) */
+.track-hub-marker {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 4px 8px;
+    white-space: nowrap;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    transition: transform 0.2s;
+}
+.track-hub-marker:active { transform: scale(0.9); }
+.thm-name { display: block; font-size: 0.6rem; font-weight: 800; color: white; }
+.thm-time { display: block; font-size: 0.55rem; color: #30d158; font-family: monospace; }
+/* Pfeil unten dran */
+.track-hub-marker::after {
+    content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
+    border-width: 5px 5px 0; border-style: solid; border-color: rgba(0,0,0,0.8) transparent transparent;
+}
+
+/* 2. ACTIVE CARD STATE */
+.track-card.active-card {
+    border: 1px solid #ff3b30;
+    box-shadow: 0 0 15px rgba(255, 59, 48, 0.3);
+}
+
+/* 3. MINI MAP SVG */
+.tc-map-preview svg {
+    width: 100%; height: 100%;
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.3)); /* Leichter Glow für die Linie */
+}
+
+/* 4. UNDO BUTTON (Creator) */
+.cb-action-btn.undo {
+    background: rgba(255, 255, 255, 0.1); color: white; 
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    margin-right: 10px; /* Abstand zum Start-Pin */
+}
