@@ -86,54 +86,74 @@
     </div>
 
 
-  <div id="performance-screen" class="hidden screen" style="background: #050505; position: relative; overflow: hidden;">
+<div id="performance-screen" class="hidden screen-container" style="background: #050505; position: relative; overflow: hidden;">
     
     <div id="perf-map-container">
         <div id="perf-map"></div>
-        <div class="perf-map-fade"></div>
-        <div id="perf-map-overlay-text" class="hidden">START YOUR RACE</div>
-    </div>
-
-    <div class="perf-sub-nav">
-        <div class="psn-item active">TRACK</div>
-        <div class="psn-item">DRAG</div>
-        <div class="psn-item">ANALYTICS</div>
-    </div>
-
-    <div class="perf-content-scroll">
-        
-        <div style="height: 45vh;"></div>
-
-        <div class="perf-stats-row">
-            <div class="p-stat-box">
-                <label>TRACKS</label>
-                <span id="perf-total-tracks">0</span>
-            </div>
-            <div class="p-stat-box glow-text">
-                <label>SCORE</label>
-                <span id="perf-global-score">---</span>
-            </div>
-            <div class="p-stat-box">
-                <label>BEST TIME</label>
-                <span id="perf-best-time">--:--</span>
-            </div>
+        <div class="perf-map-fade" id="perf-fade-overlay"></div>
         </div>
 
-        <div class="perf-section-title">YOUR TRACKS</div>
+    <div id="perf-dashboard-ui">
         
-        <div class="track-list-horizontal" id="perf-track-list">
-            <div class="track-card add-track-card" onclick="PerfLogic.openTrackCreator()">
-                <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
-                <span>CREATE TRACK</span>
-            </div>
-            
-            <div style="width: 20px; flex-shrink:0;"></div>
+        <div class="perf-sub-nav">
+            <div class="psn-item active">TRACK</div>
+            <div class="psn-item">DRAG</div>
+            <div class="psn-item">ANALYTICS</div>
         </div>
 
-        <div style="height: 120px;"></div>
+        <div class="perf-content-scroll">
+            <div style="height: 45vh;"></div> <div class="perf-stats-row">
+                <div class="p-stat-box"><label>TRACKS</label><span id="perf-total-tracks">0</span></div>
+                <div class="p-stat-box glow-text"><label>SCORE</label><span id="perf-global-score">---</span></div>
+                <div class="p-stat-box"><label>BEST TIME</label><span id="perf-best-time">--:--</span></div>
+            </div>
+
+            <div class="perf-section-title">YOUR TRACKS</div>
+            <div class="track-list-horizontal" id="perf-track-list">
+                <div class="track-card add-track-card" onclick="PerfLogic.enterCreatorMode()">
+                    <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                    <span>CREATE TRACK</span>
+                </div>
+                <div style="width: 20px; flex-shrink:0;"></div>
+            </div>
+            <div style="height: 120px;"></div>
+        </div>
     </div>
+
+    <div id="perf-creator-ui" class="hidden">
+        
+        <div class="creator-top-hud">
+            <div class="cth-item"><label>DIST</label><span id="ct-dist">0.0 km</span></div>
+            <div class="cth-item"><label>EST. TIME</label><span id="ct-time">--:--</span></div>
+            <div class="cth-item"><label>ELEVATION</label><span id="ct-elev">0 m</span></div>
+        </div>
+
+        <div class="creator-bottom-bar">
+            <button class="cb-action-btn cancel" onclick="PerfLogic.leaveCreatorMode()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="cb-pins-container">
+                <div class="cb-pin active" id="pin-start" onclick="PerfLogic.selectPinType('start')">
+                    <div class="pin-dot green"></div><span>START</span>
+                </div>
+                <div class="cb-pin" id="pin-check" onclick="PerfLogic.selectPinType('check')">
+                    <div class="pin-dot white"></div><span>POINT</span>
+                </div>
+                <div class="cb-pin" id="pin-finish" onclick="PerfLogic.selectPinType('finish')">
+                    <div class="pin-dot red"></div><span>FINISH</span>
+                </div>
+            </div>
+
+            <button class="cb-action-btn save" onclick="PerfLogic.saveTrack()">
+                <i class="fa-solid fa-check"></i>
+            </button>
+        </div>
+
+        <div class="creator-crosshair"><i class="fa-solid fa-plus"></i></div>
+    </div>
+
 </div>
-
     <div id="explore-screen" class="screen hidden">
 
         <div class="explore-top-ui interactive-element">
