@@ -1,23 +1,25 @@
-/* PERF.JS - V8 (FINAL FULL FEATURE) */
+/* PERF.JS - V9 (SETUP CONFIGURATION) */
 
 window.PerfLogic = {
     map: null,
+    setupMap: null, // Neue Map Instanz für das Setup
     userMarker: null,
     tracks: JSON.parse(localStorage.getItem('driverhub_tracks') || '[]'),
     
-    // Creator State
     isCreatorMode: false,
     selectedPin: 'start', 
     creatorPoints: [], 
     routeLayer: null,
     
-    // Cache
+    // Config State
+    startType: 'standing', // 'standing' or 'flying'
+    
     hubMarkers: [],
     selectedTrackLayer: null, 
 
     init: function() {
-        console.log("PerfLogic Init V8");
-        this.renderTrackList(); // Rendert Liste + MiniMaps
+        console.log("PerfLogic Init V9");
+        this.renderTrackList();
         this.updateGlobalStats();
     },
 
@@ -31,25 +33,18 @@ window.PerfLogic = {
     },
 
     loadMap: function() {
-        // Init Hauptkarte
         this.map = L.map('perf-map', {
             zoomControl: false, attributionControl: false,
             dragging: true, touchZoom: true, doubleClickZoom: true,
             scrollWheelZoom: true, boxZoom: false, keyboard: false, tap: false 
         }).setView([51.1657, 10.4515], 6);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19
-        }).addTo(this.map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.map);
 
-        // Klick Event
         this.map.on('click', (e) => {
-            if(this.isCreatorMode && this.selectedPin !== 'remove') {
-                this.placePinOnMap(e.latlng);
-            }
+            if(this.isCreatorMode && this.selectedPin !== 'remove') this.placePinOnMap(e.latlng);
         });
 
-        // Hubs laden
         this.renderMapHubs();
     },
 
@@ -60,7 +55,6 @@ window.PerfLogic = {
                 if(!this.userMarker) {
                     const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
                     this.userMarker = L.marker(latlng, {icon: icon, zIndexOffset: 1000}).addTo(this.map);
-                    // Zoom zum User nur wenn wir nicht gerade was anderes machen
                     if(!this.isCreatorMode && !this.selectedTrackLayer) this.map.setView(latlng, 15);
                 } else {
                     this.userMarker.setLatLng(latlng);
@@ -69,18 +63,16 @@ window.PerfLogic = {
         }
     },
 
-    // === CREATOR MODE (Das X funktioniert hier!) ===
+    // === CREATOR MODE ===
 
     enterCreatorMode: function() {
         this.isCreatorMode = true;
         this.creatorPoints = []; 
 
-        // Cleanup Map
         if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer);
         this.selectedTrackLayer = null;
-        this.hubMarkers.forEach(m => m.setOpacity(0)); // Hubs ausblenden
+        this.hubMarkers.forEach(m => m.setOpacity(0)); 
         
-        // UI Switch
         document.querySelector('.perf-content-scroll').style.display = 'none';
         document.querySelector('.perf-map-fade').style.display = 'none';
         document.querySelector('.perf-sub-nav').style.display = 'none';
@@ -88,7 +80,6 @@ window.PerfLogic = {
         document.getElementById('perf-creator-ui').classList.remove('hidden');
         document.getElementById('nav-perf').parentElement.classList.add('hidden');
 
-        // Map Vollbild
         const mapContainer = document.getElementById('perf-map-container');
         mapContainer.style.height = "100vh"; 
         mapContainer.style.zIndex = "0"; 
@@ -104,9 +95,8 @@ window.PerfLogic = {
     },
 
     leaveCreatorMode: function() {
-        // Das ist die Funktion für das X
         if(this.creatorPoints.length > 0) {
-            if(confirm("Cancel creating track?")) this.quitCreator();
+            if(confirm("Discard Track?")) this.quitCreator();
         } else {
             this.quitCreator();
         }
@@ -115,7 +105,6 @@ window.PerfLogic = {
     quitCreator: function() {
         this.isCreatorMode = false;
         
-        // UI Reset
         document.querySelector('.perf-content-scroll').style.display = 'block';
         document.querySelector('.perf-map-fade').style.display = 'block';
         document.querySelector('.perf-sub-nav').style.display = 'flex';
@@ -131,12 +120,97 @@ window.PerfLogic = {
         setTimeout(() => { this.map.invalidateSize(); }, 300);
         
         this.clearCreatorMap();
-        this.hubMarkers.forEach(m => m.setOpacity(1)); // Hubs wieder an
-        this.renderMapHubs();
+        this.hubMarkers.forEach(m => m.setOpacity(1)); 
     },
 
-    // === PIN LOGIC (Inklusive Remove) ===
+    // === SETUP & SAVE LOGIC (NEU) ===
 
+    // Wird vom grünen Haken aufgerufen
+    saveTrack: function() {
+        const hasStart = this.creatorPoints.some(p => p.type === 'start');
+        const hasFinish = this.creatorPoints.some(p => p.type === 'finish');
+        
+        if(!hasStart || !hasFinish) { alert("Start & Finish required!"); return; }
+        if(!this.currentRouteGeo) { alert("No route found."); return; }
+
+        // Statt Prompt -> Setup Screen öffnen
+        this.openSetupScreen();
+    },
+
+    openSetupScreen: function() {
+        document.getElementById('track-setup-screen').classList.remove('hidden');
+        
+        // Setup Map initialisieren
+        if(!this.setupMap) {
+            this.setupMap = L.map('setup-map', {
+                zoomControl: false, attributionControl: false,
+                dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false
+            });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.setupMap);
+        }
+
+        // Aktuelle Route auf die Setup Map zeichnen
+        setTimeout(() => {
+            this.setupMap.invalidateSize();
+            // Alte Layer weg
+            this.setupMap.eachLayer(l => { if(!l._url) this.setupMap.removeLayer(l); });
+            
+            // Route
+            const poly = L.polyline(this.currentRouteGeo, {color: '#ff3b30', weight: 5}).addTo(this.setupMap);
+            this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
+        }, 200);
+    },
+
+    setStartType: function(type) {
+        this.startType = type;
+        // UI Toggle
+        document.getElementById('btn-standing').classList.toggle('active', type === 'standing');
+        document.getElementById('btn-flying').classList.toggle('active', type === 'flying');
+        
+        // Inputs zeigen/verstecken
+        const flySettings = document.getElementById('flying-settings');
+        if(type === 'flying') flySettings.classList.remove('hidden');
+        else flySettings.classList.add('hidden');
+    },
+
+    cancelSetup: function() {
+        document.getElementById('track-setup-screen').classList.add('hidden');
+    },
+
+    finalizeSave: function() {
+        const nameInput = document.getElementById('setup-name').value;
+        const name = nameInput.trim() || "Unnamed Track";
+
+        // Daten sammeln
+        const track = {
+            id: Date.now(),
+            name: name,
+            routePath: this.currentRouteGeo, 
+            pins: this.creatorPoints.map(p => ({lat: p.latlng.lat, lng: p.latlng.lng, type: p.type})),
+            dist: this.currentRouteStats.dist,
+            bestTime: '---',
+            config: {
+                type: this.startType,
+                flyTarget: document.getElementById('fly-target').value,
+                flyMin: document.getElementById('fly-min').value,
+                flyMax: document.getElementById('fly-max').value
+            }
+        };
+
+        this.tracks.push(track);
+        localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
+        
+        // ALLES Schließen
+        this.cancelSetup(); // Setup zu
+        this.quitCreator(); // Creator zu
+        
+        // UI Update
+        this.renderTrackList();
+        this.renderMapHubs(); 
+        this.updateGlobalStats();
+    },
+
+    // === PIN LOGIC ===
     selectPinType: function(type) {
         this.selectedPin = type;
         document.querySelectorAll('.cb-pin').forEach(el => el.classList.remove('active'));
@@ -155,14 +229,10 @@ window.PerfLogic = {
         const icon = L.divIcon({ className: 'custom-pin-icon', html: iconHtml, iconSize: [20,20], iconAnchor: [10,10] });
 
         const marker = L.marker(latlng, {icon: icon, interactive: true}).addTo(this.map);
-        
         const pointData = { latlng: latlng, type: this.selectedPin, marker: marker };
         this.creatorPoints.push(pointData);
 
-        // Remove Handler
-        marker.on('click', () => {
-            if(this.selectedPin === 'remove') this.removePoint(pointData);
-        });
+        marker.on('click', () => { if(this.selectedPin === 'remove') this.removePoint(pointData); });
 
         if(this.selectedPin === 'start') this.selectPinType('check');
         this.calculateRoute();
@@ -180,7 +250,6 @@ window.PerfLogic = {
             document.getElementById('ct-dist').innerText = "0.0 km";
             return;
         }
-
         const coords = this.creatorPoints.map(p => `${p.latlng.lng},${p.latlng.lat}`).join(';');
         const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
 
@@ -212,40 +281,11 @@ window.PerfLogic = {
         document.getElementById('ct-dist').innerText = "0.0 km";
     },
 
-    saveTrack: function() {
-        const hasStart = this.creatorPoints.some(p => p.type === 'start');
-        const hasFinish = this.creatorPoints.some(p => p.type === 'finish');
-        
-        if(!hasStart || !hasFinish) { alert("Start & Finish required!"); return; }
-        if(!this.currentRouteGeo) { alert("No route found."); return; }
-
-        const name = prompt("Name your Track:", "My Track");
-        if(name) {
-            const track = {
-                id: Date.now(),
-                name: name,
-                routePath: this.currentRouteGeo, 
-                pins: this.creatorPoints.map(p => ({lat: p.latlng.lat, lng: p.latlng.lng, type: p.type})),
-                dist: this.currentRouteStats.dist,
-                bestTime: '---'
-            };
-            this.tracks.push(track);
-            localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
-            
-            this.quitCreator();
-            this.renderTrackList();
-            this.renderMapHubs(); 
-            this.updateGlobalStats();
-        }
-    },
-
     // === RENDER LIST & MINI MAPS ===
-
     renderTrackList: function() {
         const list = document.getElementById('perf-track-list');
         list.innerHTML = ''; 
 
-        // 1. Tracks rendern (Links)
         this.tracks.forEach(t => {
             const div = document.createElement('div');
             div.className = 'track-card';
@@ -258,12 +298,9 @@ window.PerfLogic = {
                 </div>`;
             div.onclick = () => this.selectTrack(t);
             list.appendChild(div);
-
-            // Echte Mini-Map zeichnen
             setTimeout(() => this.renderMiniMap(t), 200);
         });
 
-        // 2. Create Button (Rechts - also als letztes append)
         const createDiv = document.createElement('div');
         createDiv.className = 'track-card add-track-card';
         createDiv.onclick = () => this.enterCreatorMode();
@@ -275,48 +312,37 @@ window.PerfLogic = {
         list.appendChild(spacer);
     },
 
-   renderMiniMap: function(track) {
+    renderMiniMap: function(track) {
         const container = document.getElementById(`mini-map-${track.id}`);
         if(!container || container._leaflet_id) return; 
 
-        // 1. Map erstellen
         const miniMap = L.map(container, {
             zoomControl: false, attributionControl: false,
             dragging: false, touchZoom: false, doubleClickZoom: false, 
             scrollWheelZoom: false, boxZoom: false, keyboard: false, tap: false
         });
-
-        // 2. Tile Layer (Dunkel)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(miniMap);
 
-        // 3. Route & Zoom (Der wichtige Teil!)
         if(track.routePath && track.routePath.length > 0) {
-            const poly = L.polyline(track.routePath, {color: '#ff3b30', weight: 4}).addTo(miniMap);
-            
-            // TIMEOUT FIX: Warten bis der Browser das CSS fertig hat
+            const poly = L.polyline(track.routePath, {color: '#ff3b30', weight: 6}).addTo(miniMap);
             setTimeout(() => {
-                miniMap.invalidateSize(); // "Wie groß bin ich wirklich?"
-                miniMap.fitBounds(poly.getBounds(), {padding: [20, 20]}); // "Zoom auf die Linie!"
+                miniMap.invalidateSize();
+                miniMap.fitBounds(poly.getBounds(), {padding: [10, 10]});
             }, 300);
         }
     },
 
-    // === HUBS & SELECT ===
-
     renderMapHubs: function() {
         this.hubMarkers.forEach(m => this.map.removeLayer(m));
         this.hubMarkers = [];
-
         this.tracks.forEach(track => {
             if(!track.pins || track.pins.length === 0) return;
             const start = track.pins.find(p => p.type === 'start') || track.pins[0];
-            
             const icon = L.divIcon({
                 className: 'custom-hub',
                 html: `<div class="track-hub-marker"><span class="thm-name">${track.name}</span></div>`,
                 iconSize: [80, 30], iconAnchor: [40, 35]
             });
-
             const marker = L.marker([start.lat, start.lng], {icon: icon}).addTo(this.map);
             marker.on('click', () => this.selectTrack(track));
             this.hubMarkers.push(marker);
@@ -335,26 +361,17 @@ window.PerfLogic = {
 
     showTrackOnMap: function(track) {
         if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer);
-        
-        // Alte Marker weg (außer Hubs & User)
         this.map.eachLayer(layer => {
             if(layer instanceof L.Marker && layer !== this.userMarker && !this.hubMarkers.includes(layer)) {
                 this.map.removeLayer(layer);
             }
         });
 
-        // Route
         if(track.routePath) {
             this.selectedTrackLayer = L.polyline(track.routePath, {color: '#ff3b30', weight: 6}).addTo(this.map);
-            // ZOOM FIX: Bessere Padding Werte
-            this.map.flyToBounds(this.selectedTrackLayer.getBounds(), {
-                paddingTopLeft: [30, 30],
-                paddingBottomRight: [30, 180], 
-                duration: 1.0
-            });
+            this.map.flyToBounds(this.selectedTrackLayer.getBounds(), { paddingTopLeft: [30, 30], paddingBottomRight: [30, 180], duration: 1.0 });
         }
 
-        // Start/Ziel Dots
         if(track.pins) {
             track.pins.forEach(p => {
                 if(p.type === 'start' || p.type === 'finish') {
