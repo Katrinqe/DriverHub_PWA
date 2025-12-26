@@ -127,8 +127,7 @@
             <div class="cth-item"><label>EST. TIME</label><span id="ct-time">--:--</span></div>
             <div class="cth-item"><label>ELEVATION</label><span id="ct-elev">0 m</span></div>
         </div>
-
-        <div class="creator-bottom-bar">
+<div class="creator-bottom-bar">
             <button class="cb-action-btn cancel" onclick="PerfLogic.leaveCreatorMode()">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -142,6 +141,9 @@
                 </div>
                 <div class="cb-pin" id="pin-finish" onclick="PerfLogic.selectPinType('finish')">
                     <div class="pin-dot red"></div><span>FINISH</span>
+                </div>
+                <div class="cb-pin" id="pin-remove" onclick="PerfLogic.selectPinType('remove')">
+                    <div class="pin-dot purple"></div><span>REMOVE</span>
                 </div>
             </div>
 
