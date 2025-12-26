@@ -1026,3 +1026,17 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 
 /* Undo Button Styles löschen wir, da nicht mehr gebraucht */
+
+/* === V8 MINI MAP LINE FIX === */
+
+/* WICHTIG: Überschreibt den alten SVG-Code, der die Linie versteckt hat */
+.tc-map-preview svg {
+    width: auto !important;
+    height: auto !important;
+    filter: drop-shadow(0 0 5px rgba(255, 59, 48, 0.8)); /* Roter Glow für Sichtbarkeit */
+}
+
+/* Sicherstellen, dass die Leaflet-Layer nicht beschnitten werden */
+.tc-map-preview .leaflet-pane {
+    z-index: 1 !important;
+}
