@@ -1,4 +1,4 @@
-/* PERF.JS - V5 (FORCE INTERACTION) */
+/* PERF.JS - V6 (SMART ROUTING & FIXES) */
 
 window.PerfLogic = {
     map: null,
@@ -9,7 +9,7 @@ window.PerfLogic = {
     isCreatorMode: false,
     selectedPin: 'start', 
     creatorPoints: [], 
-    polyLine: null,
+    routeLayer: null, // Statt Polyline nutzen wir das hier für die echte Route
 
     init: function() {
         console.log("PerfLogic Init");
@@ -26,27 +26,23 @@ window.PerfLogic = {
         this.startUserTracking();
     },
 
-  loadMap: function() {
-        // Init OHNE "tap: true" (Das macht oft Probleme auf Mobile)
+    loadMap: function() {
+        // START FIX: Letzte Position laden oder Default DE
+        const savedPos = JSON.parse(localStorage.getItem('last_known_pos') || '[51.1657, 10.4515]');
+        const zoom = localStorage.getItem('last_known_pos') ? 15 : 6;
+
         this.map = L.map('perf-map', {
-            zoomControl: false, 
-            attributionControl: false,
-            dragging: true,
-            touchZoom: true,
-            doubleClickZoom: true,
-            scrollWheelZoom: true,
-            boxZoom: false,
-            keyboard: false
-        }).setView([51.1657, 10.4515], 6);
+            zoomControl: false, attributionControl: false,
+            dragging: true, touchZoom: true, doubleClickZoom: true,
+            scrollWheelZoom: true, boxZoom: false, keyboard: false, tap: false 
+        }).setView(savedPos, zoom);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19
         }).addTo(this.map);
 
         this.map.on('click', (e) => {
-            if(this.isCreatorMode) {
-                this.placePinOnMap(e.latlng);
-            }
+            if(this.isCreatorMode) this.placePinOnMap(e.latlng);
         });
     },
 
@@ -54,6 +50,10 @@ window.PerfLogic = {
         if(navigator.geolocation) {
             navigator.geolocation.watchPosition(pos => {
                 const latlng = [pos.coords.latitude, pos.coords.longitude];
+                
+                // Position speichern für nächsten Start
+                localStorage.setItem('last_known_pos', JSON.stringify(latlng));
+
                 if(!this.userMarker) {
                     const icon = L.divIcon({
                         className: 'user-marker-wrap', 
@@ -61,7 +61,8 @@ window.PerfLogic = {
                         iconSize: [40,40], iconAnchor: [20,20]
                     });
                     this.userMarker = L.marker(latlng, {icon: icon}).addTo(this.map);
-                    if(!this.isCreatorMode) this.map.setView(latlng, 15);
+                    // Nur hinspringen wenn kein Creator Mode UND beim allerersten Mal
+                    if(!this.isCreatorMode && !localStorage.getItem('last_known_pos')) this.map.setView(latlng, 15);
                 } else {
                     this.userMarker.setLatLng(latlng);
                 }
@@ -69,37 +70,33 @@ window.PerfLogic = {
         }
     },
 
-    // === CREATOR MODE (DER FIX) ===
+    // === CREATOR MODE ===
 
     enterCreatorMode: function() {
         this.isCreatorMode = true;
         this.creatorPoints = []; 
 
-        // 1. STÖRENFRIEDE KOMPLETT ENTFERNEN (Display: none)
-        // Das ist der Unterschied: Wir verstecken sie nicht nur, wir nehmen sie aus dem Layout.
         document.querySelector('.perf-content-scroll').style.display = 'none';
         document.querySelector('.perf-map-fade').style.display = 'none';
-        document.querySelector('.perf-sub-nav').style.display = 'none'; // Leiste weg
+        document.querySelector('.perf-sub-nav').style.display = 'none';
         
-        // UI einblenden
         document.getElementById('perf-creator-ui').classList.remove('hidden');
-        document.getElementById('nav-perf').parentElement.classList.add('hidden'); // Main Nav weg
+        document.getElementById('nav-perf').parentElement.classList.add('hidden');
 
-        // 2. MAP AUF VOLLBILD ZWINGEN
         const mapContainer = document.getElementById('perf-map-container');
         mapContainer.style.height = "100vh"; 
-        mapContainer.style.zIndex = "0"; // Brutal nach vorne
-        mapContainer.style.position = "fixed"; // Sicherstellen dass es steht
+        mapContainer.style.zIndex = "0"; 
+        mapContainer.style.position = "fixed"; 
         
-        // 3. LEAFLET AUFWECKEN
         setTimeout(() => { 
             this.map.invalidateSize(); 
-            this.map.dragging.enable();
-            this.map.touchZoom.enable();
+            // Falls User Marker da ist, zentrieren
+            if(this.userMarker) this.map.setView(this.userMarker.getLatLng(), 16);
         }, 100);
 
         this.selectPinType('start');
         document.getElementById('ct-dist').innerText = "0.0 km";
+        document.getElementById('ct-time').innerText = "--:--";
     },
 
     leaveCreatorMode: function() {
@@ -113,7 +110,6 @@ window.PerfLogic = {
     quitCreator: function() {
         this.isCreatorMode = false;
 
-        // 1. ALLES WIEDERHERSTELLEN
         document.querySelector('.perf-content-scroll').style.display = 'block';
         document.querySelector('.perf-map-fade').style.display = 'block';
         document.querySelector('.perf-sub-nav').style.display = 'flex';
@@ -121,7 +117,6 @@ window.PerfLogic = {
         document.getElementById('perf-creator-ui').classList.add('hidden');
         document.getElementById('nav-perf').parentElement.classList.remove('hidden');
 
-        // 2. MAP ZURÜCKSETZEN
         const mapContainer = document.getElementById('perf-map-container');
         mapContainer.style.height = "50vh";
         mapContainer.style.zIndex = "0";
@@ -132,7 +127,7 @@ window.PerfLogic = {
         this.clearCreatorMap();
     },
 
-    // === PIN LOGIC (Bleibt gleich) ===
+    // === PIN & ROUTING LOGIC ===
 
     selectPinType: function(type) {
         this.selectedPin = type;
@@ -154,25 +149,55 @@ window.PerfLogic = {
         this.creatorPoints.push({ latlng: latlng, type: this.selectedPin, marker: marker });
 
         if(this.selectedPin === 'start') this.selectPinType('check');
-        this.drawCreatorPolyline();
+        
+        // ROUTE BERECHNEN (OSRM)
+        this.calculateRoute();
     },
 
-    drawCreatorPolyline: function() {
-        if(this.polyLine) this.map.removeLayer(this.polyLine);
-        const latlngs = this.creatorPoints.map(p => p.latlng);
-        if(latlngs.length > 1) {
-            this.polyLine = L.polyline(latlngs, {color: '#bf5af2', weight: 4, dashArray: '10, 10'}).addTo(this.map);
-            let dist = 0;
-            for(let i=0; i<latlngs.length-1; i++) dist += latlngs[i].distanceTo(latlngs[i+1]);
-            document.getElementById('ct-dist').innerText = (dist/1000).toFixed(2) + " km";
-        }
+    calculateRoute: function() {
+        if(this.creatorPoints.length < 2) return;
+
+        // Koordinaten String bauen (lng,lat;lng,lat...)
+        const coords = this.creatorPoints.map(p => `${p.latlng.lng},${p.latlng.lat}`).join(';');
+        
+        // OSRM API Call (Auto Profil)
+        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+
+        fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if(data.routes && data.routes.length > 0) {
+                const route = data.routes[0];
+                
+                // Alte Route löschen
+                if(this.routeLayer) this.map.removeLayer(this.routeLayer);
+                
+                // Neue Route zeichnen
+                const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]); // GeoJSON ist lng,lat -> Leaflet braucht lat,lng
+                this.routeLayer = L.polyline(latlngs, {color: '#bf5af2', weight: 5, opacity: 0.8}).addTo(this.map);
+
+                // Stats updaten
+                const distKm = (route.distance / 1000).toFixed(2);
+                const timeMin = Math.round(route.duration / 60);
+                
+                document.getElementById('ct-dist').innerText = distKm + " km";
+                document.getElementById('ct-time').innerText = timeMin + " min";
+                
+                // Merken der Geometrie für späteres Speichern
+                this.currentRouteGeo = latlngs;
+                this.currentRouteStats = { dist: distKm + " km", time: timeMin + " min" };
+            }
+        })
+        .catch(err => console.error("Routing Error:", err));
     },
 
     clearCreatorMap: function() {
         this.creatorPoints.forEach(p => this.map.removeLayer(p.marker));
-        if(this.polyLine) this.map.removeLayer(this.polyLine);
+        if(this.routeLayer) this.map.removeLayer(this.routeLayer);
         this.creatorPoints = [];
+        this.routeLayer = null;
         document.getElementById('ct-dist').innerText = "0.0 km";
+        document.getElementById('ct-time').innerText = "--:--";
     },
 
     saveTrack: function() {
@@ -180,7 +205,12 @@ window.PerfLogic = {
         const hasFinish = this.creatorPoints.some(p => p.type === 'finish');
         
         if(!hasStart || !hasFinish) {
-            alert("Track needs START (Green) and FINISH (Red)!");
+            alert("Track needs START and FINISH!");
+            return;
+        }
+        
+        if(!this.currentRouteGeo) {
+            alert("No valid route calculated yet.");
             return;
         }
 
@@ -189,26 +219,31 @@ window.PerfLogic = {
             const track = {
                 id: Date.now(),
                 name: name,
-                points: this.creatorPoints.map(p => ({lat: p.latlng.lat, lng: p.latlng.lng, type: p.type})),
-                dist: document.getElementById('ct-dist').innerText,
+                // Wir speichern jetzt die ECHTE Route (viele Punkte), nicht nur die Pins
+                routePath: this.currentRouteGeo, 
+                pins: this.creatorPoints.map(p => ({lat: p.latlng.lat, lng: p.latlng.lng, type: p.type})),
+                dist: this.currentRouteStats.dist,
+                estTime: this.currentRouteStats.time,
                 bestTime: '---'
             };
+            
             this.tracks.push(track);
             localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
             
-            this.isCreatorMode = false; // Flag resetten
+            this.isCreatorMode = false; 
             this.quitCreator();
             this.renderTrackList();
             this.updateGlobalStats();
         }
     },
 
+    // === RENDER & VIEW LOGIC ===
+
     renderTrackList: function() {
         const list = document.getElementById('perf-track-list');
-        const createBtn = list.querySelector('.add-track-card');
-        list.innerHTML = '';
-        list.appendChild(createBtn);
+        list.innerHTML = ''; // Alles leeren
 
+        // 1. Gespeicherte Tracks rendern
         this.tracks.forEach(t => {
             const div = document.createElement('div');
             div.className = 'track-card';
@@ -216,13 +251,58 @@ window.PerfLogic = {
                 <div class="tc-map-preview"></div>
                 <div class="tc-info">
                     <div class="tc-name">${t.name}</div>
-                    <div class="tc-stats"><span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span><span><i class="fa-solid fa-road"></i> ${t.dist}</span></div>
-                </div>`;
+                    <div class="tc-stats">
+                        <span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span>
+                        <span><i class="fa-solid fa-road"></i> ${t.dist}</span>
+                    </div>
+                </div>
+            `;
+            // Klick lädt den Track auf die Map
+            div.onclick = () => this.showTrackOnMap(t);
             list.appendChild(div);
         });
+
+        // 2. "Create Track" Button AM ENDE (Rechts)
+        const createDiv = document.createElement('div');
+        createDiv.className = 'track-card add-track-card';
+        createDiv.onclick = () => this.enterCreatorMode();
+        createDiv.innerHTML = `
+            <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+            <span>CREATE TRACK</span>
+        `;
+        list.appendChild(createDiv);
+        
+        // Spacer
         const spacer = document.createElement('div');
         spacer.style.width='20px'; spacer.style.flexShrink='0';
         list.appendChild(spacer);
+    },
+
+    // Track auf der Haupt-Karte anzeigen
+    showTrackOnMap: function(track) {
+        // Map bereinigen
+        this.map.eachLayer((layer) => { 
+            if (!layer._url && layer !== this.userMarker) this.map.removeLayer(layer); 
+        });
+
+        // Route zeichnen
+        if(track.routePath) {
+            const poly = L.polyline(track.routePath, {color: '#ff3b30', weight: 5}).addTo(this.map);
+            this.map.flyToBounds(poly.getBounds(), {padding: [50, 50], duration: 1.5});
+        }
+
+        // Pins setzen
+        if(track.pins) {
+            track.pins.forEach(p => {
+                let color = '#fff';
+                if(p.type === 'start') color = '#30d158';
+                if(p.type === 'finish') color = '#ff3b30';
+                
+                const iconHtml = `<div style="width:12px;height:12px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 0 10px ${color};"></div>`;
+                const icon = L.divIcon({ className: 'd', html: iconHtml, iconSize: [12,12] });
+                L.marker([p.lat, p.lng], {icon: icon}).addTo(this.map);
+            });
+        }
     },
 
     updateGlobalStats: function() {
