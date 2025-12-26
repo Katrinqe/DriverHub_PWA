@@ -736,7 +736,8 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 /* MAP & FADE */
 #perf-map-container {
     position: absolute; top: 0; left: 0;
-    width: 100%; height: 55vh; z-index: 0;
+    width: 100%; height: 55vh; 
+    z-index: 1 !important; /* Ganz unten */
 }
 #perf-map { width: 100%; height: 100%; background: #111; }
 .perf-map-fade {
@@ -752,9 +753,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     z-index: 11; animation: fadeIn 0.5s ease-out;
 }
 
-/* SUB NAV (GLASS) */
+/* SUB NAV (GLASS) - FIXED POSITION */
 .perf-sub-nav {
-    position: absolute; top: 52vh; /* Just below map center */
+    position: fixed; /* Fixiert, damit sie nicht wegscrollt */
+    bottom: 90px; /* Über der Main Nav */
+    top: auto;
     left: 50%; transform: translateX(-50%);
     width: 80%; height: 45px;
     background: rgba(20, 0, 0, 0.6);
@@ -762,8 +765,10 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     border: 1px solid rgba(255, 59, 48, 0.3);
     border-radius: 30px;
     display: flex; align-items: center; justify-content: space-between;
-    padding: 5px; z-index: 100;
+    padding: 5px; 
+    z-index: 100 !important; /* Sicher ganz oben */
     box-shadow: 0 0 20px rgba(255, 59, 48, 0.15);
+    pointer-events: auto !important; /* Immer klickbar */
 }
 .psn-item {
     flex: 1; text-align: center; color: #888; font-size: 0.7rem; font-weight: 800;
@@ -771,15 +776,28 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 .psn-item.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.6); }
 
-/* CONTENT SCROLL */
+/* CONTENT SCROLL (INTERACTION FIX) */
 .perf-content-scroll {
     position: absolute; top: 0; left: 0;
     width: 100%; height: 100%;
     overflow-y: auto; overflow-x: hidden;
-    z-index: 50; pointer-events: none; /* Klicks durchlassen zur Map oben */
+    z-index: 50 !important; 
+    pointer-events: none !important; /* WICHTIG: Klicks durchlassen zur Map */
 }
-.perf-content-scroll > * { pointer-events: auto; } /* Inhalt klickbar machen */
-.perf-content-scroll > div:first-child { pointer-events: none; } /* Spacer ist durchsichtig */
+
+/* Inhalte im Scrollbereich reaktivieren */
+.perf-stats-row, 
+.perf-section-title, 
+.track-list-horizontal {
+    pointer-events: auto !important; /* Hier Klicks wieder AN */
+    position: relative;
+    z-index: 101; /* Über allem */
+}
+
+/* Spacer (Erstes Div) muss durchsichtig bleiben */
+.perf-content-scroll > div:first-child {
+    pointer-events: none !important;
+}
 
 /* STATS */
 .perf-stats-row { display: flex; justify-content: space-around; padding: 0 20px; margin-bottom: 30px; margin-top: 50px; }
@@ -800,6 +818,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 .track-card:active { transform: scale(0.95); }
 .add-track-card { border: 1px dashed #444; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; }
+.add-track-card span { color: #666; font-weight: 800; margin-top: 5px; }
 .add-icon { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #444; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
 .tc-map-preview { height: 60%; width: 100%; background: #222; border-bottom: 1px solid #222; }
 .tc-info { padding: 8px; }
@@ -813,66 +832,11 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(48,209,88,0.7); } 70% { box-shadow: 0 0 0 10px rgba(48,209,88,0); } 100% { box-shadow: 0 0 0 0 rgba(48,209,88,0); } }
 @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255,59,48,0.7); } 70% { box-shadow: 0 0 0 10px rgba(255,59,48,0); } 100% { box-shadow: 0 0 0 0 rgba(255,59,48,0); } }
 
-/* === FIXES FÜR PERF SCREEN === */
-
-/* 1. Navbar Active State (ROT) */
+/* NAVBAR ACTIVE STATE (ROT) */
 .nav-item.active-perf {
     color: #ff3b30;
     text-shadow: 0 0 15px rgba(255, 59, 48, 0.6);
 }
 .nav-item.active-perf i {
     transform: translateY(-2px);
-}
-
-/* 2. Map Container sicher im Hintergrund */
-#perf-map-container {
-    z-index: 1 !important; /* Ganz unten */
-}
-
-/* 3. Sub-Navigation sicher im Vordergrund */
-.perf-sub-nav {
-    z-index: 100 !important; /* Ganz weit oben */
-    /* Position fixieren, damit sie nicht wegscrollt */
-    position: fixed; 
-    bottom: 90px; 
-    top: auto; 
-}
-
-/* === MAP INTERACTION FIX === */
-
-/* Der Scroll-Container liegt ÜBER der Map, muss aber Geister-Modus haben */
-.perf-content-scroll {
-    z-index: 50; 
-    pointer-events: none !important; /* WICHTIG: Lässt Klicks durch zur Map */
-}
-
-/* Aber die Inhalte IM Scroll-Container (Karten, Stats) müssen klickbar sein */
-.perf-content-scroll > * {
-    pointer-events: auto !important; /* Reaktiviert Klicks für Inhalt */
-}
-
-/* Der leere Platzhalter oben (Spacer) muss Klicks durchlassen */
-.perf-content-scroll > div:first-child {
-    pointer-events: none !important;
-}
-
-/* Die rote Nav-Leiste muss immer bedienbar sein */
-.perf-sub-nav {
-    pointer-events: auto !important;
-    z-index: 100;
-}
-/* Der Inhalt IN der Scroll-Area muss klickbar und sichtbar sein */
-.perf-stats-row, 
-.perf-section-title, 
-.track-list-horizontal {
-    pointer-events: auto; /* Hier wieder aktivieren */
-    position: relative;
-    z-index: 101; /* Über allem */
-}
-
-/* Add Track Card Text Fix */
-.add-track-card span {
-    color: #666; 
-    font-weight: 800;
-    margin-top: 5px;
 }
