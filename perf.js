@@ -173,6 +173,17 @@ window.PerfLogic = {
         else flySettings.classList.add('hidden');
     },
 
+
+    // Helper für die Stepper Buttons (+/-)
+    stepValue: function(inputId, step) {
+        const input = document.getElementById(inputId);
+        let val = parseInt(input.value) || 0;
+        val += step;
+        // Einfache Begrenzung (optional anpassbar)
+        if(val < 0) val = 0; 
+        input.value = val;
+    },
+    
     cancelSetup: function() {
         document.getElementById('track-setup-screen').classList.add('hidden');
     },
