@@ -118,7 +118,72 @@
             </div>
             <div style="height: 120px;"></div>
         </div>
+<div id="track-setup-screen" class="hidden">
+        
+        <div class="setup-map-wrapper">
+            <div id="setup-map"></div>
+            <div class="perf-map-fade"></div> </div>
+
+        <div class="setup-content-scroll">
+            
+            <div style="height: 40vh;"></div> <div class="setup-card">
+                <h2>TRACK CONFIGURATION</h2>
+                
+                <div class="input-group">
+                    <label>TRACK NAME</label>
+                    <input type="text" id="setup-name" placeholder="e.g. Nürnberg Ring">
+                </div>
+
+                <div class="input-group">
+                    <label>START TYPE</label>
+                    <div class="toggle-row">
+                        <button class="toggle-btn active" id="btn-standing" onclick="PerfLogic.setStartType('standing')">STANDING</button>
+                        <button class="toggle-btn" id="btn-flying" onclick="PerfLogic.setStartType('flying')">FLYING</button>
+                    </div>
+                </div>
+
+                <div id="flying-settings" class="hidden">
+                    <div class="input-row-3">
+                        <div class="input-box">
+                            <label>TARGET</label>
+                            <input type="number" id="fly-target" placeholder="km/h">
+                        </div>
+                        <div class="input-box">
+                            <label>MIN ENTRY</label>
+                            <input type="number" id="fly-min" placeholder="km/h">
+                        </div>
+                        <div class="input-box">
+                            <label>MAX ENTRY</label>
+                            <input type="number" id="fly-max" placeholder="km/h">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <label>SECTORS</label>
+                        <button class="btn-small-add" onclick="alert('Sector Editor coming in V2')"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div class="sector-list">
+                        <div class="sector-item"><span>Sector 1</span><small>Start - Finish</small></div>
+                    </div>
+                </div>
+
+                <button class="btn-prm" onclick="alert('PRM Simulation Engine will be integrated here.')">
+                    <i class="fa-solid fa-microchip"></i> PERFORMANCE REFERENCE MODEL (PRM)
+                </button>
+
+                <div class="setup-actions">
+                    <button class="btn-discard-text" onclick="PerfLogic.cancelSetup()">DISCARD</button>
+                    <button class="btn-save-final" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button>
+                </div>
+
+                <div style="height: 50px;"></div>
+            </div>
+        </div>
     </div>
+        
+ 
 
     <div id="perf-creator-ui" class="hidden">
         
