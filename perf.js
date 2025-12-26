@@ -1,4 +1,4 @@
-/* PERF.JS - FINAL MAP FIX */
+/* PERF.JS - FINAL MAP & PULSE FIX */
 
 window.PerfLogic = {
     map: null,
@@ -13,17 +13,14 @@ window.PerfLogic = {
         if (!this.map) {
             this.loadMap();
         } else {
-            // WICHTIG: Map reparieren, wenn sie wieder sichtbar wird
-            setTimeout(() => {
-                this.map.invalidateSize();
-            }, 200);
+            setTimeout(() => { this.map.invalidateSize(); }, 200);
         }
     },
 
     loadMap: function() {
         this.map = L.map('perf-map', {
             zoomControl: false, attributionControl: false
-        }).setView([49.4521, 11.0767], 13); // Nürnberg
+        }).setView([49.4521, 11.0767], 13);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19
@@ -53,31 +50,36 @@ window.PerfLogic = {
             const start = [49.4521, 11.0767]; 
             const end = [49.4600, 11.0800];
             
-            this.map.invalidateSize(); // Sicherheitshalber
-            this.map.flyTo(start, 14, { duration: 1.5 });
+            this.map.invalidateSize();
+            
+            // Animation sanfter machen
+            this.map.flyTo(start, 14, { duration: 1.0 });
 
             setTimeout(() => {
-                // Alte Layer weg
+                // Alte Layer entfernen
                 this.map.eachLayer((layer) => { if (!layer._url) this.map.removeLayer(layer); });
 
-                // DOTS ERSTELLEN (Inline Styles für Sicherheit)
+                // DOTS ERSTELLEN (Jetzt mit CSS Klasse für Animation!)
                 const greenIcon = L.divIcon({ 
-                    className: 'custom-div-icon',
-                    html: '<div style="width:15px;height:15px;background:#30d158;border-radius:50%;border:2px solid white;box-shadow:0 0 10px #30d158;"></div>',
-                    iconSize: [15,15], iconAnchor: [7,7]
+                    className: 'dummy', // Leaflet braucht eine Klasse, wir nutzen html
+                    html: '<div class="pulsing-dot-green"></div>',
+                    iconSize: [20,20], iconAnchor: [10,10]
                 });
+                
                 const redIcon = L.divIcon({ 
-                    className: 'custom-div-icon',
-                    html: '<div style="width:15px;height:15px;background:#ff3b30;border-radius:50%;border:2px solid white;box-shadow:0 0 10px #ff3b30;"></div>',
-                    iconSize: [15,15], iconAnchor: [7,7]
+                    className: 'dummy',
+                    html: '<div class="pulsing-dot-red"></div>',
+                    iconSize: [20,20], iconAnchor: [10,10]
                 });
 
                 L.marker(start, {icon: greenIcon}).addTo(this.map);
                 L.marker(end, {icon: redIcon}).addTo(this.map);
+                
+                // Linie
                 L.polyline([start, [49.455, 11.078], end], {color: '#ff3b30', weight: 4}).addTo(this.map);
 
                 overlay.innerText = "START YOUR RACE";
-            }, 1600);
+            }, 1100);
         }, 100);
     }
 };
