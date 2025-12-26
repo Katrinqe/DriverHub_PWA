@@ -812,3 +812,50 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .pulsing-dot-red { width: 15px; height: 15px; background: #ff3b30; border-radius: 50%; border: 2px solid white; animation: pulse-red 1.5s infinite; }
 @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(48,209,88,0.7); } 70% { box-shadow: 0 0 0 10px rgba(48,209,88,0); } 100% { box-shadow: 0 0 0 0 rgba(48,209,88,0); } }
 @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255,59,48,0.7); } 70% { box-shadow: 0 0 0 10px rgba(255,59,48,0); } 100% { box-shadow: 0 0 0 0 rgba(255,59,48,0); } }
+
+/* === FIXES FÜR PERF SCREEN === */
+
+/* 1. Navbar Active State (ROT) */
+.nav-item.active-perf {
+    color: #ff3b30;
+    text-shadow: 0 0 15px rgba(255, 59, 48, 0.6);
+}
+.nav-item.active-perf i {
+    transform: translateY(-2px);
+}
+
+/* 2. Map Container sicher im Hintergrund */
+#perf-map-container {
+    z-index: 1 !important; /* Ganz unten */
+}
+
+/* 3. Sub-Navigation sicher im Vordergrund */
+.perf-sub-nav {
+    z-index: 100 !important; /* Ganz weit oben */
+    /* Position fixieren, damit sie nicht wegscrollt */
+    position: fixed; 
+    bottom: 90px; 
+    top: auto; 
+}
+
+/* 4. Scroll-Bereich reparieren */
+.perf-content-scroll {
+    z-index: 50 !important; /* Über der Map */
+    pointer-events: none; /* Lässt Klicks zur Map durch */
+}
+
+/* Der Inhalt IN der Scroll-Area muss klickbar und sichtbar sein */
+.perf-stats-row, 
+.perf-section-title, 
+.track-list-horizontal {
+    pointer-events: auto; /* Hier wieder aktivieren */
+    position: relative;
+    z-index: 101; /* Über allem */
+}
+
+/* Add Track Card Text Fix */
+.add-track-card span {
+    color: #666; 
+    font-weight: 800;
+    margin-top: 5px;
+}
