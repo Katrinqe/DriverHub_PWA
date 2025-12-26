@@ -1,4 +1,4 @@
-/* PERF.JS - CREATOR MODE V2 */
+/* PERF.JS - V4 (INTERACTIVE MAP FIX) */
 
 window.PerfLogic = {
     map: null,
@@ -8,7 +8,8 @@ window.PerfLogic = {
     // Creator State
     isCreatorMode: false,
     selectedPin: 'start', // 'start', 'check', 'finish'
-    creatorPoints: [], // Array von Markern
+    creatorPoints: [], 
+    polyLine: null,
 
     init: function() {
         console.log("PerfLogic Init");
@@ -26,15 +27,22 @@ window.PerfLogic = {
     },
 
     loadMap: function() {
+        // Init mit expliziten Interaktions-Rechten
         this.map = L.map('perf-map', {
-            zoomControl: false, attributionControl: false
+            zoomControl: false, 
+            attributionControl: false,
+            dragging: true,      // WICHTIG
+            touchZoom: true,     // WICHTIG
+            doubleClickZoom: true,
+            scrollWheelZoom: true,
+            tap: false // Fix für manche Mobile-Browser
         }).setView([51.1657, 10.4515], 6);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19
         }).addTo(this.map);
 
-        // Klick auf Map -> Punkt setzen (nur im Creator Mode)
+        // Klick Handler
         this.map.on('click', (e) => {
             if(this.isCreatorMode) {
                 this.placePinOnMap(e.latlng);
@@ -47,20 +55,21 @@ window.PerfLogic = {
             navigator.geolocation.watchPosition(pos => {
                 const latlng = [pos.coords.latitude, pos.coords.longitude];
                 
-                // User Marker erstellen / updaten
+                // User Marker (Blauer Punkt)
                 if(!this.userMarker) {
                     const icon = L.divIcon({
-                        className: 'user-marker-wrap', // Nutzt dein existierendes CSS
+                        className: 'user-marker-wrap', 
                         html: '<div class="user-pulse"></div><div class="user-dot"></div>',
                         iconSize: [40,40], iconAnchor: [20,20]
                     });
                     this.userMarker = L.marker(latlng, {icon: icon}).addTo(this.map);
-                    // Nur beim ersten Mal hinzoomen, wenn nicht im Creator Mode
+                    
+                    // Nur hinspringen wenn wir nicht gerade eine Strecke bauen
                     if(!this.isCreatorMode) this.map.setView(latlng, 15);
                 } else {
                     this.userMarker.setLatLng(latlng);
                 }
-            }, err => {}, {enableHighAccuracy: true});
+            }, err => console.warn(err), {enableHighAccuracy: true});
         }
     },
 
@@ -68,27 +77,40 @@ window.PerfLogic = {
 
     enterCreatorMode: function() {
         this.isCreatorMode = true;
-        this.creatorPoints = []; // Reset
+        this.creatorPoints = []; 
 
-        // 1. UI Animation
+        // 1. UI Animation (Dashboard weg, Creator rein)
         document.getElementById('perf-dashboard-ui').classList.add('fade-out-ui');
         document.getElementById('perf-creator-ui').classList.remove('hidden');
-        document.getElementById('perf-fade-overlay').style.opacity = '0'; // Fade weg für klare Sicht
-        document.getElementById('nav-perf').parentElement.classList.add('hidden'); // Navbar weg
-
-        // 2. Map Interaktion freischalten
-        // Wir ändern die CSS Klasse des Map Containers temporär
-        document.getElementById('perf-map-container').style.height = "100vh"; // Vollbild
-        document.getElementById('perf-map-container').style.zIndex = "100"; // Nach vorne holen
+        document.getElementById('perf-creator-ui').classList.add('fade-in-ui'); // Sicherstellen dass es sichtbar ist
         
-        setTimeout(() => { this.map.invalidateSize(); }, 300);
+        // Navbar & Fade weg
+        document.getElementById('perf-fade-overlay').style.opacity = '0';
+        document.getElementById('nav-perf').parentElement.classList.add('hidden');
 
-        // Standard Pin
+        // 2. MAP FREISCHALTEN (Der wichtige Teil!)
+        const mapContainer = document.getElementById('perf-map-container');
+        mapContainer.style.height = "100vh"; // Vollbild
+        mapContainer.style.zIndex = "100";   // Nach ganz vorne holen
+        
+        // Leaflet zwingen aufzuwachen
+        setTimeout(() => { 
+            this.map.invalidateSize(); 
+            this.map.dragging.enable();
+            this.map.touchZoom.enable();
+        }, 300);
+
+        // Standard Pin wählen
         this.selectPinType('start');
+        
+        // Reset Text
+        document.getElementById('ct-dist').innerText = "0.0 km";
     },
 
     leaveCreatorMode: function() {
-        if(confirm("Discard Track?")) {
+        if(this.creatorPoints.length > 0) {
+            if(confirm("Discard Track?")) this.quitCreator();
+        } else {
             this.quitCreator();
         }
     },
@@ -99,22 +121,25 @@ window.PerfLogic = {
         // UI Reset
         document.getElementById('perf-dashboard-ui').classList.remove('fade-out-ui');
         document.getElementById('perf-creator-ui').classList.add('hidden');
+        document.getElementById('perf-creator-ui').classList.remove('fade-in-ui');
+        
         document.getElementById('perf-fade-overlay').style.opacity = '1';
         document.getElementById('nav-perf').parentElement.classList.remove('hidden');
 
         // Map Reset
-        document.getElementById('perf-map-container').style.height = "50vh";
-        document.getElementById('perf-map-container').style.zIndex = "0";
+        const mapContainer = document.getElementById('perf-map-container');
+        mapContainer.style.height = "50vh";
+        mapContainer.style.zIndex = "0"; // Wieder nach hinten
+        
         setTimeout(() => { this.map.invalidateSize(); }, 300);
 
-        // Marker löschen
         this.clearCreatorMap();
     },
 
     selectPinType: function(type) {
         this.selectedPin = type;
         
-        // UI Update (Buttons highlighten)
+        // UI Update
         document.querySelectorAll('.cb-pin').forEach(el => el.classList.remove('active'));
         if(type === 'start') document.getElementById('pin-start').classList.add('active');
         if(type === 'check') document.getElementById('pin-check').classList.add('active');
@@ -122,32 +147,39 @@ window.PerfLogic = {
     },
 
     placePinOnMap: function(latlng) {
-        // Welches Icon?
+        // Icon Logik
         let color = '#fff';
-        if(this.selectedPin === 'start') color = '#30d158';
-        if(this.selectedPin === 'finish') color = '#ff3b30';
+        let className = 'pin-dot white';
+        
+        if(this.selectedPin === 'start') { color = '#30d158'; className = 'pin-dot green'; }
+        if(this.selectedPin === 'finish') { color = '#ff3b30'; className = 'pin-dot red'; }
 
-        const iconHtml = `<div style="width:16px;height:16px;background:${color};border:2px solid white;border-radius:50%;box-shadow:0 0 10px ${color};"></div>`;
-        const icon = L.divIcon({ className: 'd', html: iconHtml, iconSize: [20,20], iconAnchor: [10,10] });
+        // Marker erstellen (Wir nutzen die CSS Klassen aus style.css)
+        const iconHtml = `<div class="${className}" style="width:16px;height:16px;"></div>`;
+        const icon = L.divIcon({ 
+            className: 'custom-pin-icon', // Dummy Klasse damit Leaflet nicht meckert
+            html: iconHtml, 
+            iconSize: [20,20], 
+            iconAnchor: [10,10] 
+        });
 
         const marker = L.marker(latlng, {icon: icon}).addTo(this.map);
         this.creatorPoints.push({ latlng: latlng, type: this.selectedPin, marker: marker });
 
-        // Automatisch weiter schalten
+        // Auto-Switch Logik (User Flow)
         if(this.selectedPin === 'start') this.selectPinType('check');
         
         this.drawCreatorPolyline();
     },
 
     drawCreatorPolyline: function() {
-        // Linie zwischen Punkten ziehen (Simuliert Routing für jetzt)
         if(this.polyLine) this.map.removeLayer(this.polyLine);
         
         const latlngs = this.creatorPoints.map(p => p.latlng);
         if(latlngs.length > 1) {
             this.polyLine = L.polyline(latlngs, {color: '#bf5af2', weight: 4, dashArray: '10, 10'}).addTo(this.map);
             
-            // Distanz berechnen (Luftlinie grob)
+            // Distanz berechnen
             let dist = 0;
             for(let i=0; i<latlngs.length-1; i++) {
                 dist += latlngs[i].distanceTo(latlngs[i+1]);
@@ -160,6 +192,7 @@ window.PerfLogic = {
         this.creatorPoints.forEach(p => this.map.removeLayer(p.marker));
         if(this.polyLine) this.map.removeLayer(this.polyLine);
         this.creatorPoints = [];
+        document.getElementById('ct-dist').innerText = "0.0 km";
     },
 
     saveTrack: function() {
@@ -168,16 +201,16 @@ window.PerfLogic = {
         const hasFinish = this.creatorPoints.some(p => p.type === 'finish');
         
         if(!hasStart || !hasFinish) {
-            alert("Track needs at least a START and FINISH point!");
+            alert("Track needs START (Green) and FINISH (Red)!");
             return;
         }
 
-        const name = prompt("Track Name:", "My Epic Track");
+        const name = prompt("Name your Track:", "My Track");
         if(name) {
             const track = {
                 id: Date.now(),
                 name: name,
-                // Speichere nur Koordinaten, nicht die Marker-Objekte
+                // Speichern als reines Daten-Objekt
                 points: this.creatorPoints.map(p => ({lat: p.latlng.lat, lng: p.latlng.lng, type: p.type})),
                 dist: document.getElementById('ct-dist').innerText,
                 bestTime: '---'
@@ -186,8 +219,7 @@ window.PerfLogic = {
             this.tracks.push(track);
             localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
             
-            // Clean Exit
-            this.isCreatorMode = false; // Flag resetten damit quitCreator nicht fragt
+            // Beenden ohne Confirm-Frage
             this.quitCreator();
             this.renderTrackList();
             this.updateGlobalStats();
@@ -198,7 +230,6 @@ window.PerfLogic = {
 
     renderTrackList: function() {
         const list = document.getElementById('perf-track-list');
-        // Behalte den Create Button
         const createBtn = list.querySelector('.add-track-card');
         list.innerHTML = '';
         list.appendChild(createBtn);
@@ -216,10 +247,11 @@ window.PerfLogic = {
                     </div>
                 </div>
             `;
+            // Wenn man hier klickt, soll später die Detail-Ansicht kommen
+            // div.onclick = () => this.showTrackDetails(t);
             list.appendChild(div);
         });
         
-        // Spacer
         const spacer = document.createElement('div');
         spacer.style.width='20px'; spacer.style.flexShrink='0';
         list.appendChild(spacer);
