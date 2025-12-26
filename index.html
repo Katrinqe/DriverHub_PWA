@@ -86,6 +86,78 @@
     </div>
 
 
+    <div id="performance-screen" class="hidden screen-container" style="background: #050505; position: relative; overflow: hidden;">
+    
+    <div id="perf-map-container">
+        <div id="perf-map"></div>
+        <div class="perf-map-fade"></div>
+        <div id="perf-map-overlay-text" class="hidden">START YOUR RACE</div>
+    </div>
+
+    <div class="perf-sub-nav">
+        <div class="psn-item active">TRACK</div>
+        <div class="psn-item">DRAG</div>
+        <div class="psn-item">ANALYTICS</div>
+    </div>
+
+    <div class="perf-content-scroll">
+        
+        <div style="height: 45vh;"></div>
+
+        <div class="perf-stats-row">
+            <div class="p-stat-box">
+                <label>TRACKS</label>
+                <span>3</span>
+            </div>
+            <div class="p-stat-box glow-text">
+                <label>SCORE</label>
+                <span>850</span>
+            </div>
+            <div class="p-stat-box">
+                <label>BEST TIME</label>
+                <span>1:12.4</span>
+            </div>
+        </div>
+
+        <div class="perf-section-title">YOUR TRACKS</div>
+        
+        <div class="track-list-horizontal" id="perf-track-list">
+            <div class="track-card add-track-card">
+                <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
+                <span>CREATE TRACK</span>
+            </div>
+
+            <div class="track-card" onclick="PerfLogic.selectTrack(1)">
+                <div class="tc-map-preview"></div> 
+                <div class="tc-info">
+                    <div class="tc-name">NÜRNBERG RING</div>
+                    <div class="tc-stats">
+                        <span><i class="fa-solid fa-trophy"></i> 1:12.4</span>
+                        <span><i class="fa-solid fa-road"></i> 4.2km</span>
+                    </div>
+                    <div class="tc-score">SCORE 920</div>
+                </div>
+            </div>
+
+            <div class="track-card" onclick="PerfLogic.selectTrack(2)">
+                <div class="tc-map-preview" style="background: linear-gradient(45deg, #222, #444);"></div>
+                <div class="tc-info">
+                    <div class="tc-name">HOME RUN</div>
+                    <div class="tc-stats">
+                        <span><i class="fa-solid fa-trophy"></i> --:--</span>
+                        <span><i class="fa-solid fa-road"></i> 2.1km</span>
+                    </div>
+                    <div class="tc-score">SCORE ---</div>
+                </div>
+            </div>
+             
+            <div style="width: 20px; flex-shrink:0;"></div>
+        </div>
+
+        <div style="height: 120px;"></div>
+    </div>
+</div>
+
 
     <div id="explore-screen" class="screen hidden">
 
@@ -828,77 +900,7 @@
 </div>
     
 
- <div id="performance-screen" class="hidden screen-container" style="background: #050505; position: relative; overflow: hidden;">
-    
-    <div id="perf-map-container">
-        <div id="perf-map"></div>
-        <div class="perf-map-fade"></div>
-        <div id="perf-map-overlay-text" class="hidden">START YOUR RACE</div>
-    </div>
 
-    <div class="perf-sub-nav">
-        <div class="psn-item active">TRACK</div>
-        <div class="psn-item">DRAG</div>
-        <div class="psn-item">ANALYTICS</div>
-    </div>
-
-    <div class="perf-content-scroll">
-        
-        <div style="height: 45vh;"></div>
-
-        <div class="perf-stats-row">
-            <div class="p-stat-box">
-                <label>TRACKS</label>
-                <span>3</span>
-            </div>
-            <div class="p-stat-box glow-text">
-                <label>SCORE</label>
-                <span>850</span>
-            </div>
-            <div class="p-stat-box">
-                <label>BEST TIME</label>
-                <span>1:12.4</span>
-            </div>
-        </div>
-
-        <div class="perf-section-title">YOUR TRACKS</div>
-        
-        <div class="track-list-horizontal" id="perf-track-list">
-            <div class="track-card add-track-card">
-                <div class="add-icon"><i class="fa-solid fa-plus"></i></div>
-                <span>CREATE TRACK</span>
-            </div>
-
-            <div class="track-card" onclick="PerfLogic.selectTrack(1)">
-                <div class="tc-map-preview"></div> 
-                <div class="tc-info">
-                    <div class="tc-name">NÜRNBERG RING</div>
-                    <div class="tc-stats">
-                        <span><i class="fa-solid fa-trophy"></i> 1:12.4</span>
-                        <span><i class="fa-solid fa-road"></i> 4.2km</span>
-                    </div>
-                    <div class="tc-score">SCORE 920</div>
-                </div>
-            </div>
-
-            <div class="track-card" onclick="PerfLogic.selectTrack(2)">
-                <div class="tc-map-preview" style="background: linear-gradient(45deg, #222, #444);"></div>
-                <div class="tc-info">
-                    <div class="tc-name">HOME RUN</div>
-                    <div class="tc-stats">
-                        <span><i class="fa-solid fa-trophy"></i> --:--</span>
-                        <span><i class="fa-solid fa-road"></i> 2.1km</span>
-                    </div>
-                    <div class="tc-score">SCORE ---</div>
-                </div>
-            </div>
-             
-            <div style="width: 20px; flex-shrink:0;"></div>
-        </div>
-
-        <div style="height: 120px;"></div>
-    </div>
-</div>
     
 </body>
 </html>
