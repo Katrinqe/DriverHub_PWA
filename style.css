@@ -730,3 +730,219 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     color: white;
     font-family: sans-serif;
 }
+
+/* === PERFORMANCE SCREEN === */
+#performance-screen {
+    background: #050505;
+    position: relative;
+    overflow: hidden; /* Scrollen passiert im inneren Container */
+}
+
+/* 1. MAP & FADE */
+#perf-map-container {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 55vh; /* Etwas mehr als die Hälfte */
+    z-index: 0;
+}
+#perf-map {
+    width: 100%; height: 100%;
+    background: #111;
+}
+.perf-map-fade {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%;
+    height: 150px; /* Die Höhe des Fades */
+    background: linear-gradient(to bottom, transparent 0%, #050505 90%);
+    pointer-events: none; /* Klicks gehen durch */
+    z-index: 10;
+}
+
+/* "START YOUR RACE" Text auf der Map */
+#perf-map-overlay-text {
+    position: absolute;
+    bottom: 40px; /* Im Fade Bereich */
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-weight: 900;
+    font-style: italic;
+    font-family: sans-serif;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px #ff3b30;
+    z-index: 11;
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* 2. SUB NAVIGATION (Glass & Red) */
+.perf-sub-nav {
+    position: absolute;
+    bottom: 100px; /* Über der Main Nav */
+    left: 50%; transform: translateX(-50%);
+    width: 80%;
+    height: 45px;
+    background: rgba(20, 0, 0, 0.6); /* Leicht rötlich schwarz */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 59, 48, 0.3); /* Roter Rand */
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px;
+    z-index: 100;
+    box-shadow: 0 0 20px rgba(255, 59, 48, 0.15); /* Roter Glow */
+}
+
+.psn-item {
+    flex: 1;
+    text-align: center;
+    color: #888;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 8px 0;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.psn-item.active {
+    background: #ff3b30;
+    color: white;
+    box-shadow: 0 0 15px rgba(255, 59, 48, 0.6);
+}
+
+/* 3. CONTENT SCROLL AREA */
+.perf-content-scroll {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 50; /* Über der Map */
+    /* Wichtig: Damit man die Map oben touchen kann */
+    pointer-events: none; 
+}
+/* Alles was im Content ist, muss wieder klickbar sein */
+.perf-content-scroll > * {
+    pointer-events: auto;
+}
+/* Der leere Spacer oben darf Klicks durchlassen zur Map */
+.perf-content-scroll > div:first-child {
+    pointer-events: none;
+}
+
+/* STATS ROW */
+.perf-stats-row {
+    display: flex;
+    justify-content: space-around;
+    padding: 0 20px;
+    margin-bottom: 30px;
+}
+.p-stat-box {
+    text-align: center;
+}
+.p-stat-box label {
+    display: block; font-size: 0.6rem; color: #666; font-weight: 800; margin-bottom: 2px;
+}
+.p-stat-box span {
+    font-size: 1.2rem; color: white; font-weight: 900; font-family: sans-serif;
+}
+.glow-text span {
+    color: #ff3b30;
+    text-shadow: 0 0 10px rgba(255, 59, 48, 0.5);
+}
+
+/* HORIZONTAL TRACK LIST */
+.perf-section-title {
+    padding: 0 20px;
+    font-size: 0.8rem;
+    color: #888;
+    font-weight: 800;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+.track-list-horizontal {
+    display: flex;
+    gap: 15px;
+    padding-left: 20px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 20px; /* Platz für Scrollbar (hidden) */
+}
+/* Hide Scrollbar */
+.track-list-horizontal::-webkit-scrollbar { display: none; }
+
+.track-card {
+    flex: 0 0 200px; /* Feste Breite */
+    height: 140px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 15px;
+    overflow: hidden;
+    scroll-snap-align: start;
+    position: relative;
+    transition: transform 0.2s;
+}
+.track-card:active { transform: scale(0.95); }
+
+/* Add Card Special Style */
+.add-track-card {
+    border: 1px dashed #444;
+    background: rgba(255,255,255,0.02);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    color: #666;
+}
+.add-icon {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 1px solid #444;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 10px;
+}
+.add-track-card span { font-size: 0.7rem; font-weight: 800; }
+
+/* Normal Track Card Content */
+.tc-map-preview {
+    height: 60%;
+    width: 100%;
+    background: #222; /* Später Screenshot der Map */
+    border-bottom: 1px solid #222;
+}
+.tc-info { padding: 8px; }
+.tc-name { font-size: 0.75rem; color: white; font-weight: 800; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-stats { display: flex; justify-content: space-between; font-size: 0.6rem; color: #888; }
+.tc-score { position: absolute; top: 5px; right: 5px; background: #ff3b30; color: white; font-size: 0.5rem; padding: 2px 5px; border-radius: 4px; font-weight: 800; }
+
+/* PULSING DOTS (Map Animation) */
+.pulsing-dot-green {
+    width: 15px; height: 15px;
+    background: #30d158;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.7);
+    animation: pulse-green 1.5s infinite;
+}
+.pulsing-dot-red {
+    width: 15px; height: 15px;
+    background: #ff3b30;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7);
+    animation: pulse-red 1.5s infinite;
+}
+
+@keyframes pulse-green {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(48, 209, 88, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(48, 209, 88, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(48, 209, 88, 0); }
+}
+@keyframes pulse-red {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 59, 48, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 59, 48, 0); }
+}
