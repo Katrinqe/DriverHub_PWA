@@ -732,23 +732,26 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 
 
-/* ======================================================= */
-/* === PERFORMANCE HUB (COMPLETE V12 - FINAL MASTER) === */
-/* ======================================================= */
+/* ================================================================ */
+/* === PERFORMANCE HUB (FULL MASTER V12.2 - COMPLETE & FIXED) === */
+/* ================================================================ */
 
-/* --- 1. BASE LAYOUT & MAIN MAP --- */
+/* --- 1. BASE LAYOUT & MAIN MAP LAYER --- */
 #perf-map-container {
     position: absolute; top: 0; left: 0;
     width: 100%; height: 50vh;
     z-index: 0 !important;
+    /* WICHTIG: Erlaubt Interaktion mit der Map (Zoom/Pan) */
+    pointer-events: auto !important; 
     touch-action: none;
 }
+
 #perf-map { 
     width: 100%; height: 100%; 
-    background: #0a0a0a; 
+    background: #0a0a0a; /* Fallback Farbe */
 }
 
-/* Fade Overlay */
+/* Der Fade von Schwarz zu Transparent über der Map */
 .perf-map-fade {
     position: absolute; bottom: 0; left: 0;
     width: 100%; height: 150px;
@@ -757,17 +760,21 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     z-index: 2 !important; 
 }
 
-/* --- 2. MAIN DASHBOARD UI --- */
+/* --- 2. MAIN DASHBOARD UI WRAPPER --- */
+/* Dieser Container liegt über der Map, lässt aber Klicks durch */
 #perf-dashboard-ui {
     transition: all 0.4s ease;
     width: 100%; height: 100%;
     position: absolute; top: 0; left: 0;
-    pointer-events: none; /* Klicks gehen durch leere Flächen */
+    z-index: 10;
+    pointer-events: none; /* WICHTIG: Lässt Klicks zur Map durch */
 }
 
-/* Sub Navigation (Track/Drag/Analytics) */
+/* --- 3. SUB NAVIGATION (Track/Drag/Analytics) --- */
 .perf-sub-nav {
-    position: fixed; bottom: 115px; left: 50%; transform: translateX(-50%);
+    position: fixed; 
+    bottom: 115px; /* Platz für Haupt-Nav */
+    left: 50%; transform: translateX(-50%);
     width: 80%; height: 45px;
     background: rgba(20, 0, 0, 0.6);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -777,67 +784,97 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     padding: 5px;
     z-index: 600 !important;
     box-shadow: 0 0 20px rgba(255, 59, 48, 0.15);
-    pointer-events: auto !important;
+    pointer-events: auto !important; /* Buttons müssen klickbar sein */
 }
-.psn-item { flex: 1; text-align: center; color: #888; font-size: 0.7rem; font-weight: 800; padding: 8px 0; border-radius: 25px; transition: all 0.3s ease; }
-.psn-item.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.6); }
 
-/* Scroll Container */
+.psn-item { 
+    flex: 1; text-align: center; 
+    color: #888; font-size: 0.7rem; font-weight: 800; 
+    padding: 8px 0; border-radius: 25px; 
+    transition: all 0.3s ease; cursor: pointer;
+}
+
+.psn-item.active { 
+    background: #ff3b30; color: white; 
+    box-shadow: 0 0 15px rgba(255, 59, 48, 0.6); 
+}
+
+/* --- 4. SCROLLABLE CONTENT AREA --- */
 .perf-content-scroll {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0; 
+    width: 100%; height: 100%;
     overflow-y: auto; overflow-x: hidden;
     z-index: 10 !important; 
-    pointer-events: none;
+    pointer-events: none; /* Standard: Durchklicken */
 }
-/* Inhalte wieder klickbar machen */
-.perf-content-scroll > * { pointer-events: auto; }
-.perf-content-scroll > div:first-child { height: 40vh !important; pointer-events: none !important; }
 
-/* --- 3. STATS & ACTION AREA --- */
+/* Alle Inhalte im Scroll-Container müssen wieder klickbar sein */
+.perf-content-scroll > * { pointer-events: auto; }
+
+/* Spacer oben, damit man die Map sieht */
+.perf-content-scroll > div:first-child { 
+    height: 40vh !important; 
+    pointer-events: none !important; 
+}
+
+/* --- 5. STATS ROW & ACTION BAR --- */
 .stats-container-wrapper {
     display: flex; align-items: center; justify-content: center;
     width: 100%; margin-bottom: 20px;
     pointer-events: auto;
 }
+
 .perf-stats-row {
     flex: 1; display: flex; justify-content: space-around;
     transition: all 0.3s;
 }
+
 .p-stat-box { text-align: center; }
 .p-stat-box label { display: block; font-size: 0.6rem; color: #666; font-weight: 800; margin-bottom: 2px; }
 .p-stat-box span { font-size: 1.2rem; color: white; font-weight: 900; font-family: sans-serif; }
 .glow-text span { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.5); }
 
-/* Start Button Area */
+/* Start Race Button Container */
 #track-action-bar {
-    height: 50px; /* Feste Höhe gegen Springen */
+    height: 50px; /* Feste Höhe verhindert Springen */
     margin-bottom: 10px;
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s ease; 
+    pointer-events: none;
 }
 #track-action-bar.visible { opacity: 1; pointer-events: auto; }
 
+/* Start Button Style (Glass & Glow) */
 .btn-start-race {
     position: relative;
     padding: 10px 40px;
     font-size: 1rem; font-weight: 900; font-style: italic; letter-spacing: 2px;
-    background: rgba(20, 0, 0, 0.7); 
+    color: white; 
+    background: rgba(20, 0, 0, 0.6); 
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 59, 48, 0.8);
-    color: white; 
     border-radius: 40px; overflow: hidden;
     box-shadow: 0 0 15px rgba(255, 59, 48, 0.3);
-    transition: all 0.2s;
+    transition: all 0.2s; cursor: pointer;
 }
 .btn-start-race:active { transform: scale(0.95); box-shadow: 0 0 5px rgba(255, 59, 48, 0.5); }
+
+/* Glow Animation Effect inside Button */
 .btn-glow {
     position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    transform: skewX(-20deg); animation: glowSweep 3s infinite; opacity: 0.6;
+    transform: skewX(-20deg); 
+    animation: glowSweep 3s infinite; 
+    opacity: 0.6;
+    pointer-events: none;
 }
-@keyframes glowSweep { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+@keyframes glowSweep { 
+    0% { left: -100%; } 
+    20% { left: 200%; } 
+    100% { left: 200%; } 
+}
 
-/* Side Icons (Info/Edit) */
+/* Side Icons (Info / Edit) */
 .side-icon {
     width: 35px; height: 35px;
     display: flex; align-items: center; justify-content: center;
@@ -848,56 +885,80 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .side-icon:active { color: white; border-color: white; }
 .side-icon.hidden { opacity: 0; pointer-events: none; }
 
-/* --- 4. TRACK LIST & CARDS --- */
-.perf-section-title { padding: 0 20px; font-size: 0.8rem; color: #888; font-weight: 800; margin-bottom: 15px; letter-spacing: 1px; }
+/* --- 6. TRACK LIST & CARDS --- */
+.perf-section-title { 
+    padding: 0 20px; font-size: 0.8rem; color: #888; 
+    font-weight: 800; margin-bottom: 15px; letter-spacing: 1px; 
+}
 
 .track-list-horizontal { 
     display: flex; gap: 15px; 
     overflow-x: auto; scroll-snap-type: x mandatory; 
-    padding-bottom: 120px; /* Platz für Navbar */
+    padding-bottom: 120px; /* Viel Platz für die Navbar unten */
     padding-left: 20px !important; /* Fixer Abstand links */
 }
 .track-list-horizontal::-webkit-scrollbar { display: none; }
+/* Extra Margin für die erste Karte */
 .track-list-horizontal > div:first-child { margin-left: 5px; }
 
 .track-card { 
-    flex: 0 0 200px; height: 140px; background: #111; border: 1px solid #333; 
-    border-radius: 15px; overflow: hidden; scroll-snap-align: start; position: relative; 
+    flex: 0 0 200px; height: 140px; 
+    background: #111; border: 1px solid #333; 
+    border-radius: 15px; overflow: hidden; 
+    scroll-snap-align: start; position: relative; 
     transition: transform 0.2s; 
+    cursor: pointer;
 }
 .track-card:active { transform: scale(0.95); }
-.track-card.active-card { border: 1px solid #ff3b30; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
+.track-card.active-card { 
+    border: 1px solid #ff3b30; 
+    box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); 
+}
 
-/* Mini Map Integration */
+/* Mini Map Integration (Leaflet) */
 .tc-map-preview { 
     height: 60%; width: 100%; 
-    background-color: #1a1a1a; border-bottom: 1px solid #333;
+    background-color: #1a1a1a; 
+    border-bottom: 1px solid #333;
     position: relative; z-index: 1;
-    background-image: none !important;
+    background-image: none !important; /* Altes Bild entfernen */
 }
-.tc-map-preview .leaflet-control-container { display: none; }
-.tc-map-preview svg { filter: drop-shadow(0 0 3px rgba(255,59,48,0.8)); }
+.tc-map-preview .leaflet-control-container { display: none; } /* Keine Controls */
+.tc-map-preview svg { 
+    width: auto !important; height: auto !important; /* Fix für Linien-Sichtbarkeit */
+    filter: drop-shadow(0 0 3px rgba(255,59,48,0.8)); 
+}
+.tc-map-preview .leaflet-pane { z-index: 1 !important; }
 
+/* Card Infos */
 .tc-info { padding: 8px; }
 .tc-name { font-size: 0.75rem; color: white; font-weight: 800; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tc-stats { display: flex; justify-content: space-between; font-size: 0.6rem; color: #888; }
 
-/* Create Button */
-.add-track-card { border: 1px dashed #444; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; }
-.add-icon { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #444; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+/* Add Track Card */
+.add-track-card { 
+    border: 1px dashed #444; background: rgba(255,255,255,0.02); 
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    color: #666; 
+}
+.add-track-card span { color: #666; font-weight: 800; margin-top: 5px; }
+.add-icon { 
+    width: 40px; height: 40px; border-radius: 50%; border: 1px solid #444; 
+    display: flex; align-items: center; justify-content: center; margin-bottom: 10px; 
+}
 
-/* Navbar Active State */
+/* Navbar Highlight */
 .nav-item.active-perf { color: #ff3b30; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6); } 
 .nav-item.active-perf i { transform: translateY(-2px); }
 
-/* --- 5. MARKERS & VISUALS --- */
-/* Pulsing Dots (Start/Finish) */
+/* --- 7. MARKERS & VISUALS (PULS & HUBS) --- */
 .pulsing-dot-green { width: 15px; height: 15px; background: #30d158; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px #30d158; animation: pulseG 1.5s infinite; }
 .pulsing-dot-red { width: 15px; height: 15px; background: #ff3b30; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px #ff3b30; animation: pulseR 1.5s infinite; }
+
 @keyframes pulseG { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes pulseR { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
 
-/* Hub Markers (Schilder) */
+/* Track Hub Marker (Schild auf der Map) */
 .custom-hub { background: transparent !important; border: none !important; }
 .track-hub-marker {
     background: rgba(10, 10, 10, 0.95);
@@ -910,6 +971,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     transition: transform 0.2s;
 }
 .track-hub-marker:active { transform: scale(0.9); }
+/* Pfeilspitze unten */
 .track-hub-marker::after {
     content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
     border-width: 5px 5px 0; border-style: solid; border-color: rgba(10,10,10,0.95) transparent transparent;
@@ -917,33 +979,46 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .thm-name { font-size: 0.65rem; color: white; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
 .thm-time { font-size: 0.6rem; color: #ff3b30; font-family: monospace; margin-top: 2px; display: block; }
 
-/* === 6. CREATOR MODE UI === */
+/* === 8. CREATOR MODE UI === */
 #perf-creator-ui {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 2000; pointer-events: none;
+    z-index: 2000; 
+    pointer-events: none; /* WICHTIG: Klicks gehen durch leere Bereiche */
 }
-/* Animation Helpers */
+
+/* Animationsklassen */
 .fade-out-ui { opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.4s ease; }
 .fade-in-ui { opacity: 1 !important; pointer-events: auto !important; transform: translateY(0); transition: all 0.4s ease; }
 
+/* Top HUD (Stats beim Erstellen) */
 .creator-top-hud {
     position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
     width: 90%;
     background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.1); border-radius: 15px;
     display: flex; justify-content: space-around; padding: 15px 0;
-    pointer-events: auto;
+    pointer-events: auto; z-index: 2005;
 }
 .cth-item { text-align: center; }
 .cth-item label { display: block; font-size: 0.6rem; color: #888; font-weight: 800; }
 .cth-item span { color: white; font-weight: 900; font-size: 1rem; }
 
+/* Crosshair (Fadenkreuz) - MITTE FIX */
+.creator-crosshair {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    color: rgba(255,255,255,0.5); font-size: 1.5rem; 
+    pointer-events: none; z-index: 2001;
+}
+
+/* Bottom Bar (Buttons) */
 .creator-bottom-bar {
     position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
     width: 95%; height: 70px;
     display: flex; align-items: center; justify-content: space-between;
-    pointer-events: auto;
+    pointer-events: auto; z-index: 2005;
 }
+
+/* Action Buttons (X / Check) */
 .cb-action-btn {
     width: 50px; height: 50px; border-radius: 50%; border: none;
     display: flex; align-items: center; justify-content: center;
@@ -952,6 +1027,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .cb-action-btn.cancel { background: rgba(255, 59, 48, 0.2); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.5); }
 .cb-action-btn.save { background: rgba(48, 209, 88, 0.2); color: #30d158; border: 1px solid rgba(48, 209, 88, 0.5); }
 
+/* Pins Container */
 .cb-pins-container {
     background: rgba(20,20,20,0.9); border: 1px solid #333;
     border-radius: 35px; height: 60px; width: 70%;
@@ -964,43 +1040,46 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .cb-pin.active { opacity: 1; transform: scale(1.1); }
 .cb-pin span { font-size: 0.5rem; font-weight: 800; color: white; margin-top: 4px; }
 
-/* Pin Dots Colors */
+/* Pin Dots Styles */
 .pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
 .pin-dot.green { background: #30d158; box-shadow: 0 0 10px #30d158; }
 .pin-dot.white { background: #fff; box-shadow: 0 0 10px #fff; }
 .pin-dot.red { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
 .pin-dot.purple { background: #bf5af2; box-shadow: 0 0 10px #bf5af2; }
 
-/* === 7. CONFIGURATOR (SPLIT SCREEN V12) === */
+/* === 9. CONFIGURATOR (SPLIT SCREEN V12) === */
 #track-setup-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #050505; z-index: 3000;
-    display: flex; flex-direction: column;
+    display: flex; flex-direction: column; /* Split Layout */
 }
+/* Wenn Setup versteckt ist, darf es keine Events klauen */
+#track-setup-screen.hidden { pointer-events: none !important; display: none !important; }
 
+/* Map Area (Oben fest) */
 .setup-map-wrapper {
-    width: 100%; height: 35vh; /* Fest 35% Map */
+    width: 100%; height: 35vh; /* 35% Höhe */
     position: relative; z-index: 1;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Fixiert */
     border-bottom: 1px solid rgba(255, 59, 48, 0.2);
+    /* Fade Effekt unten */
+    mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
 }
-#setup-map { width: 100%; height: 100%; pointer-events: none !important; }
-.setup-map-wrapper::after {
-    content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 60px;
-    background: linear-gradient(to bottom, transparent, #050505);
-    pointer-events: none;
-}
+#setup-map { width: 100%; height: 100%; pointer-events: none !important; } /* Statisch */
 
+/* Content Area (Unten scrollbar) */
 .setup-content-scroll {
-    position: relative; flex: 1; /* Rest 65% Content */
+    position: relative; 
+    flex: 1; /* Nimmt den Rest ein */
     overflow-y: auto; overflow-x: hidden;
     background: #050505; z-index: 2;
     padding-top: 0;
 }
 
+/* Card Container im Scrollbereich */
 .setup-card {
-    padding: 20px;
-    padding-bottom: 100px;
+    padding: 20px; padding-bottom: 100px;
     background: transparent; border: none; box-shadow: none;
 }
 .setup-card h2 {
@@ -1010,7 +1089,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 .setup-card h2 i { color: #ff3b30; margin-right: 10px; }
 
-/* Config Inputs */
+/* Config Inputs Styling */
 .config-group { margin-bottom: 25px; }
 .config-group label { display: block; color: #888; font-size: 0.7rem; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px; }
 .config-group label i { color: #ff3b30; margin-right: 8px; }
@@ -1026,6 +1105,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     box-shadow: 0 0 15px rgba(255, 59, 48, 0.2);
 }
 
+/* Toggles */
 .fancy-toggle-row {
     display: flex; background: rgba(255,255,255,0.03);
     border-radius: 15px; padding: 5px; border: 1px solid #222;
@@ -1037,7 +1117,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 .fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 20px rgba(255, 59, 48, 0.4); }
 
-/* Stepper / Flying UI */
+/* Stepper UI (Cockpit Design) */
 #flying-settings {
     background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.2);
     border-radius: 20px; padding: 15px; margin-bottom: 25px;
@@ -1049,18 +1129,27 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     display: flex; align-items: center; justify-content: space-between;
     background: #111; border: 1px solid #333; border-radius: 15px; padding: 5px;
 }
+/* Resize V12 */
 .step-btn { width: 40px; height: 40px; background: #222; border: none; color: white; font-size: 1.2rem; border-radius: 12px; transition: all 0.2s; }
 .step-btn:active { background: #ff3b30; transform: scale(0.95); }
+
 .step-display { flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; }
-.step-display input { background: transparent; border: none; color: white; font-size: 1.5rem !important; width: 80px !important; font-weight: 900; text-align: center; pointer-events: none; }
+/* Input Fix: Readonly Look & Size */
+.step-display input { 
+    background: transparent; border: none; color: white; 
+    font-size: 1.5rem !important; width: 80px !important; 
+    font-weight: 900; text-align: center; pointer-events: none; 
+}
 .step-display .unit { color: #ff3b30; font-weight: 800; margin-left: 5px; font-size: 0.7rem; }
 
+/* Min/Max Grid */
 .fly-grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .fly-col label { display: block; font-size: 0.6rem; color: #888; text-align: center; margin-bottom: 5px; font-weight: 800; }
+/* Kleine Stepper */
 .step-display.small input { font-size: 1.1rem !important; width: 50px !important; }
 .step-btn.small { width: 30px; height: 30px; font-size: 0.9rem; }
 
-/* PRM & Actions */
+/* PRM Button & Actions */
 .btn-prm-glow {
     width: 100%; padding: 15px; margin: 20px 0 30px 0;
     background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent);
@@ -1076,5 +1165,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     box-shadow: 0 0 20px rgba(255, 59, 48, 0.3);
 }
 .btn-save-final:active { transform: scale(0.98); }
+
+/* Entrance Animation */
 .entrance-animation { animation: slideUpFade 0.4s ease-out; }
 @keyframes slideUpFade { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); }}
