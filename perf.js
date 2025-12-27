@@ -137,28 +137,33 @@ window.PerfLogic = {
         this.openSetupScreen();
     },
 
-    openSetupScreen: function() {
+ openSetupScreen: function() {
         document.getElementById('track-setup-screen').classList.remove('hidden');
         
-        // Setup Map initialisieren
+        // Setup Map initialisieren (falls noch nicht da)
         if(!this.setupMap) {
             this.setupMap = L.map('setup-map', {
                 zoomControl: false, attributionControl: false,
                 dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false
             });
+            // Dunkle Karte
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.setupMap);
         }
 
-        // Aktuelle Route auf die Setup Map zeichnen
+        // WICHTIG: Verzögert rendern, damit CSS-Animation fertig ist
         setTimeout(() => {
-            this.setupMap.invalidateSize();
+            this.setupMap.invalidateSize(); // Zwingt Map zur korrekten Größe
+            
             // Alte Layer weg
             this.setupMap.eachLayer(l => { if(!l._url) this.setupMap.removeLayer(l); });
             
-            // Route
-            const poly = L.polyline(this.currentRouteGeo, {color: '#ff3b30', weight: 5}).addTo(this.setupMap);
-            this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
-        }, 200);
+            // Route zeichnen
+            if(this.currentRouteGeo) {
+                const poly = L.polyline(this.currentRouteGeo, {color: '#ff3b30', weight: 5}).addTo(this.setupMap);
+                // Padding sorgt dafür, dass die Strecke schön mittig im oberen Bereich sitzt
+                this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
+            }
+        }, 300); // 300ms warten
     },
 
     setStartType: function(type) {
