@@ -1047,11 +1047,25 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .pin-dot.red { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
 .pin-dot.purple { background: #bf5af2; box-shadow: 0 0 10px #bf5af2; }
 
-/* === 9. CONFIGURATOR (SPLIT SCREEN V12) === */
+/* === 9. CONFIGURATOR (SPLIT SCREEN V12 - RENDERING FIX) === */
 #track-setup-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #050505; z-index: 3000;
+    /* WICHTIG: Zwingend deckender Hintergrund */
+    background-color: #050505 !important; 
+    z-index: 3000;
     display: flex; flex-direction: column; /* Split Layout */
+
+    /* === RENDERING FIXES FÜR MOBILE === */
+    /* Zwingt den Browser, eine neue GPU-Ebene zu erstellen */
+    transform: translateZ(0); 
+    -webkit-transform: translateZ(0);
+    /* Verhindert Flackern auf der Rückseite der Ebene */
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    /* Isoliert diesen Bereich komplett vom Rest der Seite */
+    contain: strict; 
+    /* Sagt dem Browser, dass sich hier was ändert, optimiert das Rendering */
+    will-change: transform, opacity;
 }
 /* Wenn Setup versteckt ist, darf es keine Events klauen */
 #track-setup-screen.hidden { pointer-events: none !important; display: none !important; }
