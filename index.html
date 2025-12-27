@@ -90,19 +90,19 @@
     
     <div id="perf-map-container">
         <div id="perf-map"></div>
-        <div class="perf-map-fade" id="perf-fade-overlay"></div>
+        <div class="perf-map-fade"></div>
+        <div id="perf-map-overlay-text">
+            <div style="font-size: 0.7rem; opacity: 0.8;">TRACKS</div>
+            <div style="font-size: 2rem; line-height: 1;" id="perf-total-tracks">0</div>
         </div>
+    </div>
 
     <div id="perf-dashboard-ui">
         
-        <div class="perf-sub-nav">
-            <div class="psn-item active">TRACK</div>
-            <div class="psn-item">DRAG</div>
-            <div class="psn-item">ANALYTICS</div>
-        </div>
-
         <div class="perf-content-scroll">
-           <div style="height: 40vh;"></div> <div id="track-action-bar" class="hidden">
+            <div style="height: 50vh;"></div>
+
+            <div id="track-action-bar" class="hidden">
                 <button class="btn-start-race">
                     <span>START RACE</span>
                     <div class="btn-glow"></div>
@@ -110,105 +110,110 @@
             </div>
 
             <div class="stats-container-wrapper">
-                
-                <div id="btn-track-info" class="side-icon hidden" onclick="alert('Track Info coming soon')">
-                    <i class="fa-solid fa-circle-info"></i>
-                </div>
-
+                <div id="btn-track-info" class="side-icon hidden"><i class="fa-solid fa-circle-info"></i></div>
                 <div class="perf-stats-row" id="main-stats-row">
                     </div>
-
-                <div id="btn-track-edit" class="side-icon hidden" onclick="PerfLogic.editSelectedTrack()">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                </div>
+                <div id="btn-track-edit" class="side-icon hidden" onclick="PerfLogic.editSelectedTrack()"><i class="fa-solid fa-pen-to-square"></i></div>
             </div>
 
             <div class="perf-section-title">YOUR TRACKS</div>
             <div class="track-list-horizontal" id="perf-track-list">
                 </div>
-        </div>
-<div id="track-setup-screen" class="hidden">
-        
-        <div class="setup-map-wrapper">
-            <div id="setup-map"></div>
-            <div class="perf-map-fade"></div> </div>
             
-           
-                
-                <div class="config-group fa-input-group">
-                    <label><i class="fa-solid fa-signature"></i> TRACK NAME</label>
-                    <div class="fancy-input-wrap">
-                        <input type="text" id="setup-name" placeholder="e.g. Nürnberg Ring">
-                        <span class="focus-border"></span>
-                    </div>
+            <div style="height: 150px;"></div> </div>
+
+        <div class="perf-sub-nav">
+            <div class="psn-item active">TRACK</div>
+            <div class="psn-item">DRAG</div>
+            <div class="psn-item">ANALYTICS</div>
+        </div>
+    </div>
+
+    <div id="perf-creator-ui" class="hidden">
+        <div class="creator-top-hud">
+            <div class="cth-item"><label>DIST</label><span id="ct-dist">0.0 km</span></div>
+            <div class="cth-item"><label>EST. TIME</label><span id="ct-time">--:--</span></div>
+            <div class="cth-item"><label>ELEVATION</label><span id="ct-elev">0 m</span></div>
+        </div>
+        <div class="creator-crosshair">+</div>
+        <div class="creator-bottom-bar">
+            <button class="cb-action-btn cancel" onclick="PerfLogic.leaveCreatorMode()"><i class="fa-solid fa-xmark"></i></button>
+            <div class="cb-pins-container">
+                <div class="cb-pin active" id="pin-start" onclick="PerfLogic.selectPinType('start')"><div class="pin-dot green"></div><span>START</span></div>
+                <div class="cb-pin" id="pin-check" onclick="PerfLogic.selectPinType('check')"><div class="pin-dot white"></div><span>POINT</span></div>
+                <div class="cb-pin" id="pin-finish" onclick="PerfLogic.selectPinType('finish')"><div class="pin-dot red"></div><span>FINISH</span></div>
+                <div class="cb-pin" id="pin-remove" onclick="PerfLogic.selectPinType('remove')"><div class="pin-dot purple"></div><span>REMOVE</span></div>
+            </div>
+            <button class="cb-action-btn save" onclick="PerfLogic.saveTrack()"><i class="fa-solid fa-check"></i></button>
+        </div>
+    </div>
+
+    <div id="track-setup-screen" class="hidden">
+        <div class="setup-map-wrapper">
+            <div id="setup-map"></div> </div>
+        
+        <div class="setup-content-scroll">
+            <div class="setup-card">
+                <h2><i class="fa-solid fa-sliders"></i> TRACK CONFIGURATION</h2>
+
+                <div class="config-group fancy-input-wrap">
+                    <label>TRACK NAME</label>
+                    <input type="text" id="setup-name" placeholder="e.g. Nürnberg Ring">
                 </div>
 
                 <div class="config-group">
-                    <label><i class="fa-solid fa-flag-checkered"></i> START TYPE</label>
+                    <label>START TYPE</label>
                     <div class="fancy-toggle-row">
-                        <button class="fancy-toggle active" id="btn-standing" onclick="PerfLogic.setStartType('standing')">
-                            <i class="fa-solid fa-stopwatch"></i> STANDING
-                        </button>
-                        <button class="fancy-toggle" id="btn-flying" onclick="PerfLogic.setStartType('flying')">
-                            <i class="fa-solid fa-bolt"></i> FLYING
-                        </button>
+                        <button class="fancy-toggle active" id="btn-standing" onclick="PerfLogic.setStartType('standing')"><i class="fa-solid fa-stopwatch"></i> STANDING</button>
+                        <button class="fancy-toggle" id="btn-flying" onclick="PerfLogic.setStartType('flying')"><i class="fa-solid fa-bolt"></i> FLYING</button>
                     </div>
                 </div>
 
-           <div id="flying-settings" class="hidden entrance-animation">
-                    
+                <div id="flying-settings" class="hidden entrance-animation">
                     <div class="fly-grid-top">
-                        <label><i class="fa-solid fa-bullseye"></i> TARGET SPEED</label>
+                        <label>TARGET SPEED</label>
                         <div class="stepper-control huge">
-                            <button class="step-btn" type="button" onclick="PerfLogic.stepValue('fly-target', -5)">-</button>
-                            <div class="step-display">
-                                <input type="number" id="fly-target" value="120" readonly>
-                                <span class="unit">km/h</span>
-                            </div>
-                            <button class="step-btn" type="button" onclick="PerfLogic.stepValue('fly-target', 5)">+</button>
+                            <button class="step-btn" onclick="PerfLogic.stepValue('fly-target', -5)">-</button>
+                            <div class="step-display"><input type="number" id="fly-target" value="120" readonly><span class="unit">km/h</span></div>
+                            <button class="step-btn" onclick="PerfLogic.stepValue('fly-target', 5)">+</button>
                         </div>
                     </div>
-
                     <div class="fly-grid-row">
                         <div class="fly-col">
                             <label>MIN ENTRY</label>
                             <div class="stepper-control">
-                                <button class="step-btn small" type="button" onclick="PerfLogic.stepValue('fly-min', -5)">-</button>
+                                <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', -5)">-</button>
                                 <div class="step-display small"><input type="number" id="fly-min" value="80" readonly></div>
-                                <button class="step-btn small" type="button" onclick="PerfLogic.stepValue('fly-min', 5)">+</button>
+                                <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', 5)">+</button>
                             </div>
                         </div>
                         <div class="fly-col">
                             <label>MAX ENTRY</label>
                             <div class="stepper-control">
-                                <button class="step-btn small" type="button" onclick="PerfLogic.stepValue('fly-max', -5)">-</button>
+                                <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', -5)">-</button>
                                 <div class="step-display small"><input type="number" id="fly-max" value="120" readonly></div>
-                                <button class="step-btn small" type="button" onclick="PerfLogic.stepValue('fly-max', 5)">+</button>
+                                <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', 5)">+</button>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="config-group" style="margin-top: 30px;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-                        <label><i class="fa-solid fa-stopwatch-20"></i> SECTORS</label>
-                    </div>
+
+                <div class="config-group" style="margin-top: 20px;">
+                    <label>SECTORS</label>
                     <div class="sector-placeholder">
-                        <i class="fa-solid fa-route"></i>
-                        <span>Sector Analysis coming soon.</span>
+                        <div style="font-weight:bold; color:white;">Sector 1</div>
+                        <small>Start - Finish</small>
                     </div>
                 </div>
 
                 <button class="btn-prm-glow" onclick="alert('PRM Engine integrated in V2')">
-                    <i class="fa-solid fa-brain"></i> INITIALIZE PRM ENGINE
+                    <i class="fa-solid fa-microchip"></i> PERFORMANCE REFERENCE MODEL (PRM)
                 </button>
 
                 <div class="setup-actions">
                     <button class="btn-discard-text" onclick="PerfLogic.cancelSetup()">DISCARD</button>
-                    <button class="btn-save-final glow" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button>
+                    <button class="btn-save-final" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button>
                 </div>
-
-                <div style="height: 50px;"></div>
-                 </div>
             </div>
         </div>
     </div>
