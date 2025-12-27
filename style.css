@@ -733,7 +733,7 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 
 
 /* ================================================================ */
-/* === PERFORMANCE HUB (FULL MASTER V12.2 - COMPLETE & FIXED) === */
+/* === PERFORMANCE HUB (FINAL FIXED MASTER) === */
 /* ================================================================ */
 
 /* --- 1. BASE LAYOUT & MAIN MAP LAYER --- */
@@ -741,17 +741,16 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     position: absolute; top: 0; left: 0;
     width: 100%; height: 50vh;
     z-index: 0 !important;
-    /* WICHTIG: Erlaubt Interaktion mit der Map (Zoom/Pan) */
-    pointer-events: auto !important; 
+    pointer-events: auto !important; /* Map muss bedienbar sein */
     touch-action: none;
 }
 
 #perf-map { 
     width: 100%; height: 100%; 
-    background: #0a0a0a; /* Fallback Farbe */
+    background: #0a0a0a; 
 }
 
-/* Der Fade von Schwarz zu Transparent über der Map */
+/* FADE: Liegt unten im Map-Container */
 .perf-map-fade {
     position: absolute; bottom: 0; left: 0;
     width: 100%; height: 150px;
@@ -760,21 +759,44 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     z-index: 2 !important; 
 }
 
-/* --- 2. MAIN DASHBOARD UI WRAPPER --- */
-/* Dieser Container liegt über der Map, lässt aber Klicks durch */
+/* TEXT OVERLAY (Die "0" und "TRACKS") - DAS HAT GEFEHLT! */
+#perf-map-overlay-text {
+    position: absolute; bottom: 30px; left: 0; width: 100%;
+    text-align: center; 
+    z-index: 3 !important; /* Über dem Fade, unter dem UI */
+    pointer-events: none;
+    color: white; 
+    text-shadow: 0 0 20px black; /* Damit man es gut liest */
+}
+
+/* --- 2. DASHBOARD UI WRAPPER --- */
 #perf-dashboard-ui {
     transition: all 0.4s ease;
     width: 100%; height: 100%;
     position: absolute; top: 0; left: 0;
     z-index: 10;
-    pointer-events: none; /* WICHTIG: Lässt Klicks zur Map durch */
+    pointer-events: none; /* Klicks gehen durch leere Flächen zur Map */
 }
 
-/* --- 3. SUB NAVIGATION (Track/Drag/Analytics) --- */
+/* --- 3. SCROLL CONTENT AREA --- */
+.perf-content-scroll {
+    position: absolute; top: 0; left: 0; 
+    width: 100%; height: 100%;
+    overflow-y: auto; overflow-x: hidden;
+    z-index: 10 !important; 
+    pointer-events: none; 
+}
+/* Inhalte klickbar machen */
+.perf-content-scroll > * { pointer-events: auto; }
+/* Spacer oben (damit Map sichtbar bleibt) */
+.perf-content-scroll > div:first-child { 
+    height: 50vh !important; /* Passt genau zur Map-Höhe */
+    pointer-events: none !important; 
+}
+
+/* --- 4. SUB NAVIGATION --- */
 .perf-sub-nav {
-    position: fixed; 
-    bottom: 115px; /* Platz für Haupt-Nav */
-    left: 50%; transform: translateX(-50%);
+    position: fixed; bottom: 115px; left: 50%; transform: translateX(-50%);
     width: 80%; height: 45px;
     background: rgba(20, 0, 0, 0.6);
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -784,216 +806,111 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     padding: 5px;
     z-index: 600 !important;
     box-shadow: 0 0 20px rgba(255, 59, 48, 0.15);
-    pointer-events: auto !important; /* Buttons müssen klickbar sein */
+    pointer-events: auto !important;
 }
+.psn-item { flex: 1; text-align: center; color: #888; font-size: 0.7rem; font-weight: 800; padding: 8px 0; border-radius: 25px; transition: all 0.3s ease; cursor: pointer; }
+.psn-item.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.6); }
 
-.psn-item { 
-    flex: 1; text-align: center; 
-    color: #888; font-size: 0.7rem; font-weight: 800; 
-    padding: 8px 0; border-radius: 25px; 
-    transition: all 0.3s ease; cursor: pointer;
-}
-
-.psn-item.active { 
-    background: #ff3b30; color: white; 
-    box-shadow: 0 0 15px rgba(255, 59, 48, 0.6); 
-}
-
-/* --- 4. SCROLLABLE CONTENT AREA --- */
-.perf-content-scroll {
-    position: absolute; top: 0; left: 0; 
-    width: 100%; height: 100%;
-    overflow-y: auto; overflow-x: hidden;
-    z-index: 10 !important; 
-    pointer-events: none; /* Standard: Durchklicken */
-}
-
-/* Alle Inhalte im Scroll-Container müssen wieder klickbar sein */
-.perf-content-scroll > * { pointer-events: auto; }
-
-/* Spacer oben, damit man die Map sieht */
-.perf-content-scroll > div:first-child { 
-    height: 40vh !important; 
-    pointer-events: none !important; 
-}
-
-/* --- 5. STATS ROW & ACTION BAR --- */
+/* --- 5. STATS & ACTION BAR --- */
 .stats-container-wrapper {
     display: flex; align-items: center; justify-content: center;
-    width: 100%; margin-bottom: 20px;
-    pointer-events: auto;
+    width: 100%; margin-bottom: 20px; pointer-events: auto;
 }
-
-.perf-stats-row {
-    flex: 1; display: flex; justify-content: space-around;
-    transition: all 0.3s;
-}
-
+.perf-stats-row { flex: 1; display: flex; justify-content: space-around; transition: all 0.3s; }
 .p-stat-box { text-align: center; }
 .p-stat-box label { display: block; font-size: 0.6rem; color: #666; font-weight: 800; margin-bottom: 2px; }
 .p-stat-box span { font-size: 1.2rem; color: white; font-weight: 900; font-family: sans-serif; }
 .glow-text span { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.5); }
 
-/* Start Race Button Container */
 #track-action-bar {
-    height: 50px; /* Feste Höhe verhindert Springen */
-    margin-bottom: 10px;
+    height: 50px; margin-bottom: 10px;
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.3s ease; 
-    pointer-events: none;
+    opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
 }
 #track-action-bar.visible { opacity: 1; pointer-events: auto; }
 
-/* Start Button Style (Glass & Glow) */
 .btn-start-race {
-    position: relative;
-    padding: 10px 40px;
+    position: relative; padding: 10px 40px;
     font-size: 1rem; font-weight: 900; font-style: italic; letter-spacing: 2px;
-    color: white; 
-    background: rgba(20, 0, 0, 0.6); 
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 59, 48, 0.8);
-    border-radius: 40px; overflow: hidden;
-    box-shadow: 0 0 15px rgba(255, 59, 48, 0.3);
-    transition: all 0.2s; cursor: pointer;
+    color: white; background: rgba(20, 0, 0, 0.6); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 59, 48, 0.8); border-radius: 40px; overflow: hidden;
+    box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); transition: all 0.2s; cursor: pointer;
 }
-.btn-start-race:active { transform: scale(0.95); box-shadow: 0 0 5px rgba(255, 59, 48, 0.5); }
-
-/* Glow Animation Effect inside Button */
+.btn-start-race:active { transform: scale(0.95); }
 .btn-glow {
     position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-    transform: skewX(-20deg); 
-    animation: glowSweep 3s infinite; 
-    opacity: 0.6;
-    pointer-events: none;
+    transform: skewX(-20deg); animation: glowSweep 3s infinite; opacity: 0.6; pointer-events: none;
 }
-@keyframes glowSweep { 
-    0% { left: -100%; } 
-    20% { left: 200%; } 
-    100% { left: 200%; } 
-}
+@keyframes glowSweep { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
 
-/* Side Icons (Info / Edit) */
 .side-icon {
-    width: 35px; height: 35px;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 50%; border: 1px solid #333; color: #666;
+    width: 35px; height: 35px; border-radius: 50%; border: 1px solid #333; color: #666;
     background: rgba(255,255,255,0.05); font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
     cursor: pointer; transition: all 0.2s; margin: 0 15px;
 }
 .side-icon:active { color: white; border-color: white; }
 .side-icon.hidden { opacity: 0; pointer-events: none; }
 
 /* --- 6. TRACK LIST & CARDS --- */
-.perf-section-title { 
-    padding: 0 20px; font-size: 0.8rem; color: #888; 
-    font-weight: 800; margin-bottom: 15px; letter-spacing: 1px; 
-}
-
+.perf-section-title { padding: 0 20px; font-size: 0.8rem; color: #888; font-weight: 800; margin-bottom: 15px; letter-spacing: 1px; }
 .track-list-horizontal { 
-    display: flex; gap: 15px; 
-    overflow-x: auto; scroll-snap-type: x mandatory; 
-    padding-bottom: 120px; /* Viel Platz für die Navbar unten */
-    padding-left: 20px !important; /* Fixer Abstand links */
+    display: flex; gap: 15px; overflow-x: auto; scroll-snap-type: x mandatory; 
+    padding-bottom: 120px; padding-left: 20px !important; 
 }
 .track-list-horizontal::-webkit-scrollbar { display: none; }
-/* Extra Margin für die erste Karte */
 .track-list-horizontal > div:first-child { margin-left: 5px; }
 
 .track-card { 
-    flex: 0 0 200px; height: 140px; 
-    background: #111; border: 1px solid #333; 
-    border-radius: 15px; overflow: hidden; 
-    scroll-snap-align: start; position: relative; 
-    transition: transform 0.2s; 
-    cursor: pointer;
+    flex: 0 0 200px; height: 140px; background: #111; border: 1px solid #333; 
+    border-radius: 15px; overflow: hidden; scroll-snap-align: start; position: relative; 
+    transition: transform 0.2s; cursor: pointer;
 }
 .track-card:active { transform: scale(0.95); }
-.track-card.active-card { 
-    border: 1px solid #ff3b30; 
-    box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); 
-}
+.track-card.active-card { border: 1px solid #ff3b30; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 
-/* Mini Map Integration (Leaflet) */
+/* Mini Map Fixes */
 .tc-map-preview { 
-    height: 60%; width: 100%; 
-    background-color: #1a1a1a; 
-    border-bottom: 1px solid #333;
-    position: relative; z-index: 1;
-    background-image: none !important; /* Altes Bild entfernen */
+    height: 60%; width: 100%; background-color: #1a1a1a; 
+    border-bottom: 1px solid #333; position: relative; z-index: 1;
+    background-image: none !important;
 }
-.tc-map-preview .leaflet-control-container { display: none; } /* Keine Controls */
-.tc-map-preview svg { 
-    width: auto !important; height: auto !important; /* Fix für Linien-Sichtbarkeit */
-    filter: drop-shadow(0 0 3px rgba(255,59,48,0.8)); 
-}
+.tc-map-preview .leaflet-control-container { display: none; }
+.tc-map-preview svg { width: auto !important; height: auto !important; filter: drop-shadow(0 0 3px rgba(255,59,48,0.8)); }
 .tc-map-preview .leaflet-pane { z-index: 1 !important; }
 
-/* Card Infos */
 .tc-info { padding: 8px; }
 .tc-name { font-size: 0.75rem; color: white; font-weight: 800; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tc-stats { display: flex; justify-content: space-between; font-size: 0.6rem; color: #888; }
 
-/* Add Track Card */
-.add-track-card { 
-    border: 1px dashed #444; background: rgba(255,255,255,0.02); 
-    display: flex; flex-direction: column; align-items: center; justify-content: center; 
-    color: #666; 
-}
-.add-track-card span { color: #666; font-weight: 800; margin-top: 5px; }
-.add-icon { 
-    width: 40px; height: 40px; border-radius: 50%; border: 1px solid #444; 
-    display: flex; align-items: center; justify-content: center; margin-bottom: 10px; 
-}
+.add-track-card { border: 1px dashed #444; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #666; }
+.add-icon { width: 40px; height: 40px; border-radius: 50%; border: 1px solid #444; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
 
-/* Navbar Highlight */
-.nav-item.active-perf { color: #ff3b30; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6); } 
-.nav-item.active-perf i { transform: translateY(-2px); }
-
-/* --- 7. MARKERS & VISUALS (PULS & HUBS) --- */
+/* --- 7. MARKERS --- */
 .pulsing-dot-green { width: 15px; height: 15px; background: #30d158; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px #30d158; animation: pulseG 1.5s infinite; }
 .pulsing-dot-red { width: 15px; height: 15px; background: #ff3b30; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 15px #ff3b30; animation: pulseR 1.5s infinite; }
-
 @keyframes pulseG { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes pulseR { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
 
-/* Track Hub Marker (Schild auf der Map) */
 .custom-hub { background: transparent !important; border: none !important; }
 .track-hub-marker {
-    background: rgba(10, 10, 10, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-left: 3px solid #ff3b30;
-    border-radius: 4px;
-    padding: 5px 10px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.8);
-    min-width: 80px; text-align: center;
-    transition: transform 0.2s;
+    background: rgba(10, 10, 10, 0.95); border: 1px solid rgba(255, 255, 255, 0.15); border-left: 3px solid #ff3b30;
+    border-radius: 4px; padding: 5px 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+    min-width: 80px; text-align: center; transition: transform 0.2s;
 }
 .track-hub-marker:active { transform: scale(0.9); }
-/* Pfeilspitze unten */
-.track-hub-marker::after {
-    content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-    border-width: 5px 5px 0; border-style: solid; border-color: rgba(10,10,10,0.95) transparent transparent;
-}
+.track-hub-marker::after { content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); border-width: 5px 5px 0; border-style: solid; border-color: rgba(10,10,10,0.95) transparent transparent; }
 .thm-name { font-size: 0.65rem; color: white; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
 .thm-time { font-size: 0.6rem; color: #ff3b30; font-family: monospace; margin-top: 2px; display: block; }
 
 /* === 8. CREATOR MODE UI === */
 #perf-creator-ui {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 2000; 
-    pointer-events: none; /* WICHTIG: Klicks gehen durch leere Bereiche */
+    z-index: 2000; pointer-events: none; /* Klicks durchlassen */
 }
-
-/* Animationsklassen */
-.fade-out-ui { opacity: 0; pointer-events: none; transform: translateY(20px); transition: all 0.4s ease; }
-.fade-in-ui { opacity: 1 !important; pointer-events: auto !important; transform: translateY(0); transition: all 0.4s ease; }
-
-/* Top HUD (Stats beim Erstellen) */
 .creator-top-hud {
-    position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-    width: 90%;
+    position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 90%;
     background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.1); border-radius: 15px;
     display: flex; justify-content: space-around; padding: 15px 0;
@@ -1003,209 +920,119 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .cth-item label { display: block; font-size: 0.6rem; color: #888; font-weight: 800; }
 .cth-item span { color: white; font-weight: 900; font-size: 1rem; }
 
-/* Crosshair (Fadenkreuz) - MITTE FIX */
 .creator-crosshair {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     color: rgba(255,255,255,0.5); font-size: 1.5rem; 
     pointer-events: none; z-index: 2001;
 }
 
-/* Bottom Bar (Buttons) */
 .creator-bottom-bar {
-    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-    width: 95%; height: 70px;
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 95%; height: 70px;
     display: flex; align-items: center; justify-content: space-between;
     pointer-events: auto; z-index: 2005;
 }
-
-/* Action Buttons (X / Check) */
 .cb-action-btn {
-    width: 50px; height: 50px; border-radius: 50%; border: none;
-    display: flex; align-items: center; justify-content: center;
+    width: 50px; height: 50px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center;
     font-size: 1.2rem; cursor: pointer; backdrop-filter: blur(5px);
 }
 .cb-action-btn.cancel { background: rgba(255, 59, 48, 0.2); color: #ff3b30; border: 1px solid rgba(255, 59, 48, 0.5); }
 .cb-action-btn.save { background: rgba(48, 209, 88, 0.2); color: #30d158; border: 1px solid rgba(48, 209, 88, 0.5); }
 
-/* Pins Container */
 .cb-pins-container {
-    background: rgba(20,20,20,0.9); border: 1px solid #333;
-    border-radius: 35px; height: 60px; width: 70%;
+    background: rgba(20,20,20,0.9); border: 1px solid #333; border-radius: 35px; height: 60px; width: 70%;
     display: flex; align-items: center; justify-content: space-evenly;
 }
-.cb-pin {
-    display: flex; flex-direction: column; align-items: center;
-    opacity: 0.4; transition: all 0.2s; cursor: pointer;
-}
+.cb-pin { display: flex; flex-direction: column; align-items: center; opacity: 0.4; transition: all 0.2s; cursor: pointer; }
 .cb-pin.active { opacity: 1; transform: scale(1.1); }
 .cb-pin span { font-size: 0.5rem; font-weight: 800; color: white; margin-top: 4px; }
 
-/* Pin Dots Styles */
 .pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
 .pin-dot.green { background: #30d158; box-shadow: 0 0 10px #30d158; }
 .pin-dot.white { background: #fff; box-shadow: 0 0 10px #fff; }
 .pin-dot.red { background: #ff3b30; box-shadow: 0 0 10px #ff3b30; }
 .pin-dot.purple { background: #bf5af2; box-shadow: 0 0 10px #bf5af2; }
 
-/* === 9. CONFIGURATOR (PRO SHEET LOOK V13) === */
+/* === 9. CONFIGURATOR (SHEET LOOK & FIXES) === */
 #track-setup-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #050505 !important; 
     z-index: 3000;
     display: flex; flex-direction: column;
-    
-    /* Hardware Acceleration Fixes */
-    transform: translateZ(0); -webkit-transform: translateZ(0);
-    will-change: transform;
+    /* Rendering Fix */
+    transform: translateZ(0); -webkit-transform: translateZ(0); will-change: transform;
 }
+#track-setup-screen.hidden { pointer-events: none !important; display: none !important; }
 
-/* Obere Map (35%) */
 .setup-map-wrapper {
-    width: 100%; height: 35vh; 
-    position: relative; z-index: 1;
-    flex-shrink: 0;
+    width: 100%; height: 35vh; /* Fest 35% */
+    position: relative; z-index: 1; flex-shrink: 0;
+    background: #111; /* Fallback gegen schwarzes Loch */
 }
+#setup-map { width: 100%; height: 100%; z-index: 1; }
 
-/* Unterer Inhalt (65%) */
 .setup-content-scroll {
-    position: relative; 
-    flex: 1; 
-    background: #0a0a0a; /* Etwas heller als Schwarz für Kontrast */
-    z-index: 10;
+    position: relative; flex: 1; 
+    background: #0a0a0a; z-index: 10;
     overflow-y: auto; overflow-x: hidden;
-    
-    /* SHEET LOOK: Runde Ecken oben, damit es über der Map liegt */
-    border-top-left-radius: 25px;
-    border-top-right-radius: 25px;
-    margin-top: -20px; /* Zieht den Inhalt leicht über die Map */
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.8); /* Schatten nach oben */
-    border-top: 1px solid rgba(255,255,255,0.1);
+    /* Sheet Look */
+    margin-top: -20px; 
+    border-top-left-radius: 25px; border-top-right-radius: 25px;
+    border-top: 1px solid rgba(255, 59, 48, 0.2);
+    box-shadow: 0 -10px 40px rgba(0,0,0,1);
 }
 
-.setup-card {
-    padding: 25px; 
-    padding-bottom: 120px; /* Genug Platz unten */
-}
-
-/* Titel Styling Anpassung */
+.setup-card { padding: 25px; padding-bottom: 120px; }
 .setup-card h2 {
-    font-size: 0.9rem; color: white; font-weight: 900;
-    margin-bottom: 30px; text-align: center; letter-spacing: 2px;
-    text-transform: uppercase;
-    color: #ff3b30; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4);
+    font-size: 0.9rem; color: white; font-weight: 900; margin-bottom: 30px; text-align: center; letter-spacing: 2px;
+    text-transform: uppercase; color: #ff3b30; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4);
 }
-.setup-card h2 {
-    font-size: 1rem; color: white; font-weight: 900;
-    margin-bottom: 25px; text-align: center; letter-spacing: 2px;
-    text-shadow: 0 0 10px rgba(255, 59, 48, 0.3);
-}
-.setup-card h2 i { color: #ff3b30; margin-right: 10px; }
+.setup-card h2 i { margin-right: 10px; }
 
-/* Config Inputs Styling */
+/* Inputs */
 .config-group { margin-bottom: 25px; }
 .config-group label { display: block; color: #888; font-size: 0.7rem; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px; }
 .config-group label i { color: #ff3b30; margin-right: 8px; }
 
 .fancy-input-wrap input {
-    width: 100%; background: rgba(255,255,255,0.05);
-    border: 1px solid #333; color: white; padding: 15px;
-    border-radius: 12px; font-weight: bold; font-size: 1rem;
-    transition: all 0.3s;
+    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid #333; color: white; padding: 15px;
+    border-radius: 12px; font-weight: bold; font-size: 1rem; transition: all 0.3s;
 }
-.fancy-input-wrap input:focus {
-    background: rgba(20,0,0,0.8); border-color: #ff3b30; outline: none;
-    box-shadow: 0 0 15px rgba(255, 59, 48, 0.2);
-}
+.fancy-input-wrap input:focus { background: rgba(20,0,0,0.8); border-color: #ff3b30; outline: none; box-shadow: 0 0 15px rgba(255, 59, 48, 0.2); }
 
-/* Toggles */
-.fancy-toggle-row {
-    display: flex; background: rgba(255,255,255,0.03);
-    border-radius: 15px; padding: 5px; border: 1px solid #222;
-}
+.fancy-toggle-row { display: flex; background: rgba(255,255,255,0.03); border-radius: 15px; padding: 5px; border: 1px solid #222; }
 .fancy-toggle {
-    flex: 1; background: transparent; border: none; color: #666;
-    padding: 12px; font-weight: 800; font-size: 0.8rem; border-radius: 12px;
+    flex: 1; background: transparent; border: none; color: #666; padding: 12px; font-weight: 800; font-size: 0.8rem; border-radius: 12px;
     transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 10px;
 }
 .fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 20px rgba(255, 59, 48, 0.4); }
 
-/* Stepper UI (Cockpit Design) */
-#flying-settings {
-    background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.2);
-    border-radius: 20px; padding: 15px; margin-bottom: 25px;
-}
+/* Stepper UI */
+#flying-settings { background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.2); border-radius: 20px; padding: 15px; margin-bottom: 25px; }
 .stepper-main { margin-bottom: 15px; text-align: center; }
 .stepper-main label { display: block; font-size: 0.8rem; color: #ff3b30; font-weight: 900; margin-bottom: 10px; }
-
-.stepper-control {
-    display: flex; align-items: center; justify-content: space-between;
-    background: #111; border: 1px solid #333; border-radius: 15px; padding: 5px;
-}
-/* Resize V12 */
+.stepper-control { display: flex; align-items: center; justify-content: space-between; background: #111; border: 1px solid #333; border-radius: 15px; padding: 5px; }
 .step-btn { width: 40px; height: 40px; background: #222; border: none; color: white; font-size: 1.2rem; border-radius: 12px; transition: all 0.2s; }
 .step-btn:active { background: #ff3b30; transform: scale(0.95); }
-
 .step-display { flex: 1; text-align: center; display: flex; align-items: center; justify-content: center; }
-/* Input Fix: Readonly Look & Size */
-.step-display input { 
-    background: transparent; border: none; color: white; 
-    font-size: 1.5rem !important; width: 80px !important; 
-    font-weight: 900; text-align: center; pointer-events: none; 
-}
+.step-display input { background: transparent; border: none; color: white; font-size: 1.5rem !important; width: 80px !important; font-weight: 900; text-align: center; pointer-events: none; }
 .step-display .unit { color: #ff3b30; font-weight: 800; margin-left: 5px; font-size: 0.7rem; }
 
-/* Min/Max Grid */
 .fly-grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .fly-col label { display: block; font-size: 0.6rem; color: #888; text-align: center; margin-bottom: 5px; font-weight: 800; }
-/* Kleine Stepper */
 .step-display.small input { font-size: 1.1rem !important; width: 50px !important; }
 .step-btn.small { width: 30px; height: 30px; font-size: 0.9rem; }
 
-/* PRM Button & Actions */
 .btn-prm-glow {
     width: 100%; padding: 15px; margin: 20px 0 30px 0;
-    background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent);
-    border: 1px solid rgba(191, 90, 242, 0.5); color: #bf5af2;
-    border-radius: 15px; font-weight: 900; font-size: 0.8rem; letter-spacing: 1px;
-    box-shadow: 0 0 20px rgba(191, 90, 242, 0.1);
+    background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent); border: 1px solid rgba(191, 90, 242, 0.5); color: #bf5af2;
+    border-radius: 15px; font-weight: 900; font-size: 0.8rem; letter-spacing: 1px; box-shadow: 0 0 20px rgba(191, 90, 242, 0.1);
 }
 .setup-actions { display: flex; gap: 15px; align-items: center; }
 .btn-discard-text { flex: 1; background: none; border: none; color: #666; font-weight: bold; }
 .btn-save-final {
     flex: 2; background: #ff3b30; color: white; border: none; padding: 15px;
-    border-radius: 30px; font-weight: 900; font-size: 1rem; letter-spacing: 1px;
-    box-shadow: 0 0 20px rgba(255, 59, 48, 0.3);
+    border-radius: 30px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; box-shadow: 0 0 20px rgba(255, 59, 48, 0.3);
 }
 .btn-save-final:active { transform: scale(0.98); }
-
-/* Entrance Animation */
 .entrance-animation { animation: slideUpFade 0.4s ease-out; }
 @keyframes slideUpFade { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); }}
-
-/* === V14 FINAL VISUAL FIXES === */
-
-/* 1. HAUPTANSICHT FADE REPARATUR */
-.perf-map-fade {
-    /* Jetzt relativ zum Map-Container (50vh), nicht zum Screen */
-    bottom: 0; 
-    height: 150px;
-    z-index: 1000 !important; /* Muss HOCH sein, über der Map (Leaflet z=1-600) */
-    background: linear-gradient(to bottom, rgba(10,10,10,0) 0%, #0a0a0a 100%);
-}
-
-/* 2. KONFIGURATOR MAP (Damit sie nicht schwarz ist) */
-#setup-map {
-    background: #111; /* Fallback Farbe, falls Map langsam lädt */
-    z-index: 1;
-}
-
-/* 3. KONFIGURATOR SHEET (Runde Ecken) */
-.setup-content-scroll {
-    /* Zieht das Sheet über die Map */
-    margin-top: -20px; 
-    border-top-left-radius: 25px;
-    border-top-right-radius: 25px;
-    background: #050505;
-    border-top: 1px solid rgba(255, 59, 48, 0.2);
-    box-shadow: 0 -10px 40px rgba(0,0,0,1); /* Starker Schatten */
-}
