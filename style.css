@@ -1036,3 +1036,40 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 .btn-save-final:active { transform: scale(0.98); }
 .entrance-animation { animation: slideUpFade 0.4s ease-out; }
 @keyframes slideUpFade { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); }}
+
+/* === V15 FINAL INTERACTION & VISUAL FIXES === */
+
+/* 1. INTERAKTION RETTEN (Damit du tippen kannst) */
+#track-setup-screen,
+.setup-content-scroll,
+.setup-card,
+.setup-card input,
+.setup-card button {
+    /* Zwingt den Browser, Berührungen hier zu akzeptieren */
+    pointer-events: auto !important; 
+    /* Erlaubt Textauswahl in Eingabefeldern */
+    user-select: auto !important; 
+    -webkit-user-select: auto !important;
+}
+
+/* Sicherstellen, dass das Setup ganz oben liegt */
+#track-setup-screen {
+    z-index: 5000 !important;
+}
+
+/* 2. HAUPTANSICHT FADE (Sichtbar machen) */
+.perf-map-fade {
+    /* Muss extrem hoch sein, damit er über der Karte liegt */
+    z-index: 1000 !important; 
+    /* Erhöhe die Höhe etwas, damit der Übergang weicher ist */
+    height: 180px !important; 
+    /* Ein stärkerer Verlauf von Transparent zu Schwarz */
+    background: linear-gradient(to bottom, rgba(5,5,5,0) 0%, #050505 90%) !important;
+    pointer-events: none !important; /* Klicks gehen durch den Fade durch */
+}
+
+/* 3. INPUT FELD FIX (Damit man sieht, dass man tippt) */
+.setup-card input:focus {
+    border-color: #ff3b30 !important;
+    background: rgba(255,255,255,0.1) !important;
+}
