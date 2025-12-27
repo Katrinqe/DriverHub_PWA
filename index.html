@@ -135,22 +135,38 @@
             <div class="cth-item"><label>EST. TIME</label><span id="ct-time">--:--</span></div>
             <div class="cth-item"><label>ELEVATION</label><span id="ct-elev">0 m</span></div>
         </div>
-        <div class="creator-crosshair">+</div>
+        
+        <div class="creator-crosshair"><i class="fa-solid fa-plus"></i></div>
+        
         <div class="creator-bottom-bar">
-            <button class="cb-action-btn cancel" onclick="PerfLogic.leaveCreatorMode()"><i class="fa-solid fa-xmark"></i></button>
+            <button class="cb-action-btn cancel" onclick="PerfLogic.leaveCreatorMode()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
             <div class="cb-pins-container">
-                <div class="cb-pin active" id="pin-start" onclick="PerfLogic.selectPinType('start')"><div class="pin-dot green"></div><span>START</span></div>
-                <div class="cb-pin" id="pin-check" onclick="PerfLogic.selectPinType('check')"><div class="pin-dot white"></div><span>POINT</span></div>
-                <div class="cb-pin" id="pin-finish" onclick="PerfLogic.selectPinType('finish')"><div class="pin-dot red"></div><span>FINISH</span></div>
-                <div class="cb-pin" id="pin-remove" onclick="PerfLogic.selectPinType('remove')"><div class="pin-dot purple"></div><span>REMOVE</span></div>
+                <div class="cb-pin active" id="pin-start" onclick="PerfLogic.selectPinType('start')">
+                    <div class="pin-dot green"></div><span>START</span>
+                </div>
+                <div class="cb-pin" id="pin-check" onclick="PerfLogic.selectPinType('check')">
+                    <div class="pin-dot white"></div><span>POINT</span>
+                </div>
+                <div class="cb-pin" id="pin-finish" onclick="PerfLogic.selectPinType('finish')">
+                    <div class="pin-dot red"></div><span>FINISH</span>
+                </div>
+                <div class="cb-pin" id="pin-remove" onclick="PerfLogic.selectPinType('remove')">
+                    <div class="pin-dot purple"></div><span>REMOVE</span>
+                </div>
             </div>
-            <button class="cb-action-btn save" onclick="PerfLogic.saveTrack()"><i class="fa-solid fa-check"></i></button>
+            <button class="cb-action-btn save" onclick="PerfLogic.saveTrack()">
+                <i class="fa-solid fa-check"></i>
+            </button>
         </div>
     </div>
 
     <div id="track-setup-screen" class="hidden">
+        
         <div class="setup-map-wrapper">
-            <div id="setup-map"></div> </div>
+            <div id="setup-map"></div> 
+        </div>
         
         <div class="setup-content-scroll">
             <div class="setup-card">
@@ -217,44 +233,8 @@
             </div>
         </div>
     </div>
-        
- 
 
-    <div id="perf-creator-ui" class="hidden">
-        
-        <div class="creator-top-hud">
-            <div class="cth-item"><label>DIST</label><span id="ct-dist">0.0 km</span></div>
-            <div class="cth-item"><label>EST. TIME</label><span id="ct-time">--:--</span></div>
-            <div class="cth-item"><label>ELEVATION</label><span id="ct-elev">0 m</span></div>
-        </div>
-<div class="creator-bottom-bar">
-            <button class="cb-action-btn cancel" onclick="PerfLogic.leaveCreatorMode()">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-
-            <div class="cb-pins-container">
-                <div class="cb-pin active" id="pin-start" onclick="PerfLogic.selectPinType('start')">
-                    <div class="pin-dot green"></div><span>START</span>
-                </div>
-                <div class="cb-pin" id="pin-check" onclick="PerfLogic.selectPinType('check')">
-                    <div class="pin-dot white"></div><span>POINT</span>
-                </div>
-                <div class="cb-pin" id="pin-finish" onclick="PerfLogic.selectPinType('finish')">
-                    <div class="pin-dot red"></div><span>FINISH</span>
-                </div>
-                <div class="cb-pin" id="pin-remove" onclick="PerfLogic.selectPinType('remove')">
-                    <div class="pin-dot purple"></div><span>REMOVE</span>
-                </div>
-            </div>
-
-            <button class="cb-action-btn save" onclick="PerfLogic.saveTrack()">
-                <i class="fa-solid fa-check"></i>
-            </button>
-        </div>
-
-        <div class="creator-crosshair"><i class="fa-solid fa-plus"></i></div>
-    </div>
-
+</div>
 </div>
     <div id="explore-screen" class="screen hidden">
 
