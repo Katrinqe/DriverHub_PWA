@@ -224,10 +224,15 @@ window.PerfLogic = {
         });
     },
 
-    // === SETUP SCREEN ===
     openSetupScreen: function() {
-        document.getElementById('track-setup-screen').classList.remove('hidden');
+        // 1. Creator UI AUSBLENDEN (Das fehlte!)
+        document.getElementById('perf-creator-ui').classList.add('hidden');
         
+        // 2. Setup Screen ANZEIGEN
+        const setupScreen = document.getElementById('track-setup-screen');
+        setupScreen.classList.remove('hidden');
+        
+        // 3. Map Initialisieren (Falls noch nicht da)
         if(!this.setupMap) {
             this.setupMap = L.map('setup-map', {
                 zoomControl: false, attributionControl: false,
@@ -236,11 +241,13 @@ window.PerfLogic = {
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.setupMap);
         }
 
+        // 4. Map Zeichnen (Verzögert für Stabilität)
         setTimeout(() => {
             this.setupMap.invalidateSize();
-            // Map Reset
+            // Alte Layer weg
             this.setupMap.eachLayer(l => { if(!l._url) this.setupMap.removeLayer(l); });
             
+            // Route zeichnen
             if(this.currentRouteGeo) {
                 const poly = L.polyline(this.currentRouteGeo, {color: '#ff3b30', weight: 5}).addTo(this.setupMap);
                 this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
@@ -248,8 +255,18 @@ window.PerfLogic = {
         }, 200);
     },
 
+  cancelSetup: function() {
+        // Setup zu
+        document.getElementById('track-setup-screen').classList.add('hidden');
+        // Zurück zum Creator Modus (damit man korrigieren kann)
+        document.getElementById('perf-creator-ui').classList.remove('hidden');
+    },
+
     finalizeSave: function() {
-        const name = document.getElementById('setup-name').value.trim() || "Unnamed Track";
+        // ... (Daten sammeln Code bleibt gleich, siehe unten) ...
+        const nameInput = document.getElementById('setup-name').value;
+        const name = nameInput.trim() || "Unnamed Track";
+
         const track = {
             id: Date.now(),
             name: name,
@@ -258,14 +275,23 @@ window.PerfLogic = {
             dist: this.currentRouteStats.dist,
             elevUp: this.currentRouteStats.elevUp || "0m",
             elevDown: this.currentRouteStats.elevDown || "0m",
-            bestTime: '---'
+            bestTime: '---',
+            config: {
+                type: this.startType,
+                flyTarget: document.getElementById('fly-target').value,
+                flyMin: document.getElementById('fly-min').value,
+                flyMax: document.getElementById('fly-max').value
+            }
         };
 
         this.tracks.push(track);
         localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
         
+        // ALLES ZU & RESET
         document.getElementById('track-setup-screen').classList.add('hidden');
+        // WICHTIG: quitCreator ruft intern das UI Reset auf
         this.quitCreator(); 
+        
         this.renderTrackList();
         this.renderMapHubs(); 
         this.updateStatsDisplay(null);
@@ -293,7 +319,12 @@ window.PerfLogic = {
     showTrackOnMap: function(track) { if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer); this.map.eachLayer(layer => { if(layer instanceof L.Marker && layer !== this.userMarker && !this.hubMarkers.includes(layer)) { this.map.removeLayer(layer); } }); if(track.routePath) { this.selectedTrackLayer = L.polyline(track.routePath, {color: '#ff3b30', weight: 6}).addTo(this.map); this.map.flyToBounds(this.selectedTrackLayer.getBounds(), { paddingTopLeft: [30, 30], paddingBottomRight: [30, 180], duration: 1.0 }); } if(track.pins) { track.pins.forEach(p => { if(p.type === 'start' || p.type === 'finish') { const iconHtml = `<div class="pulsing-dot-${p.type === 'start' ? 'green' : 'red'}"></div>`; const icon = L.divIcon({ className: 'd', html: iconHtml, iconSize: [15,15] }); L.marker([p.lat, p.lng], {icon: icon}).addTo(this.map); } }); } },
     stepValue: function(inputId, step) { const input = document.getElementById(inputId); let val = parseInt(input.value) || 0; val += step; if(val < 0) val = 0; input.value = val; },
     setStartType: function(type) { /* ... (Toggle Logik aus V10) ... */ },
-    cancelSetup: function() { document.getElementById('track-setup-screen').classList.add('hidden'); }
-};
+   cancelSetup: function() {
+        // Setup zu
+        document.getElementById('track-setup-screen').classList.add('hidden');
+        // Zurück zum Creator Modus (damit man korrigieren kann)
+        document.getElementById('perf-creator-ui').classList.remove('hidden');
+    },
+
 
 PerfLogic.init();
