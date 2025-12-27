@@ -158,9 +158,9 @@
                     </div>
                 </div>
 
-             <div id="flying-settings" class="hidden entrance-animation">
+           <div id="flying-settings" class="hidden entrance-animation">
                     
-                    <div class="stepper-main">
+                    <div class="fly-grid-top">
                         <label><i class="fa-solid fa-bullseye"></i> TARGET SPEED</label>
                         <div class="stepper-control huge">
                             <button class="step-btn" type="button" onclick="PerfLogic.stepValue('fly-target', -5)">-</button>
@@ -172,24 +172,20 @@
                         </div>
                     </div>
 
-                    <div class="stepper-row">
-                        <div class="stepper-small">
+                    <div class="fly-grid-row">
+                        <div class="fly-col">
                             <label>MIN ENTRY</label>
                             <div class="stepper-control">
                                 <button class="step-btn small" type="button" onclick="PerfLogic.stepValue('fly-min', -5)">-</button>
-                                <div class="step-display small">
-                                    <input type="number" id="fly-min" value="80" readonly>
-                                </div>
+                                <div class="step-display small"><input type="number" id="fly-min" value="80" readonly></div>
                                 <button class="step-btn small" type="button" onclick="PerfLogic.stepValue('fly-min', 5)">+</button>
                             </div>
                         </div>
-                        <div class="stepper-small">
+                        <div class="fly-col">
                             <label>MAX ENTRY</label>
                             <div class="stepper-control">
                                 <button class="step-btn small" type="button" onclick="PerfLogic.stepValue('fly-max', -5)">-</button>
-                                <div class="step-display small">
-                                    <input type="number" id="fly-max" value="120" readonly>
-                                </div>
+                                <div class="step-display small"><input type="number" id="fly-max" value="120" readonly></div>
                                 <button class="step-btn small" type="button" onclick="PerfLogic.stepValue('fly-max', 5)">+</button>
                             </div>
                         </div>
