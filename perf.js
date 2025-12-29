@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - V5 (BACK TO BASICS & STABLE) === */
+/* === PERF.JS - RESTORED STABLE VERSION === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -7,7 +7,7 @@ window.PerfLogic = {
     map: null,
     setupMap: null,
     userMarker: null,
-
+    
     // --- DATA ---
     tracks: JSON.parse(localStorage.getItem('driverhub_tracks') || '[]'),
     
@@ -26,17 +26,12 @@ window.PerfLogic = {
     currentRouteStats: { dist: "0 km", time: "--:--", elevUp: "0m", elevDown: "0m" },
     currentRouteGeo: null,
     startType: 'standing',
-    
-    // --- GPS SETTINGS ---
-    watchId: null,
-    currentPolyline: null,
-    hasInitialZoom: false,
 
     // =================================================
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - V5 Back to Basics");
+        console.log("PerfLogic Init - RESTORED");
         this.renderTrackList();
         this.updateStatsDisplay(null);
     },
@@ -77,46 +72,27 @@ window.PerfLogic = {
     },
 
     startUserTracking: function() {
-        if (!navigator.geolocation) return;
-        const options = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
-
-        if (!this.currentPolyline && this.isCreatorMode) {
-            this.currentPolyline = L.polyline([], {color: '#bf5af2', weight: 5}).addTo(this.map);
-        }
-
-        if (this.watchId) navigator.geolocation.clearWatch(this.watchId);
-
-        this.watchId = navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const latlng = [lat, lng];
-
-            if (!this.userMarker) {
-                const icon = L.divIcon({ 
-                    className: 'user-marker-wrap', 
-                    html: '<div class="user-pulse"></div><div class="user-dot"></div>', 
-                    iconSize: [40,40], iconAnchor: [20,20] 
-                });
-                this.userMarker = L.marker(latlng, {icon: icon, zIndexOffset: 1000}).addTo(this.map);
-            } else {
-                this.userMarker.setLatLng(latlng);
-            }
-
-            if(!this.hasInitialZoom && !this.selectedTrackId) {
-                this.map.setView(latlng, 17);
-                this.hasInitialZoom = true;
-            }
-
-            if (this.isCreatorMode) {
-                this.creatorPoints.push({
-                    lat: lat, lng: lng, alt: pos.coords.altitude, 
-                    speed: pos.coords.speed, time: pos.timestamp, acc: pos.coords.accuracy
-                });
-                if (this.creatorPoints.length % 50 === 0) {
-                    localStorage.setItem('driverhub_temp_track', JSON.stringify(this.creatorPoints));
+        if(navigator.geolocation) {
+            navigator.geolocation.watchPosition(pos => {
+                const latlng = [pos.coords.latitude, pos.coords.longitude];
+                
+                if(!this.userMarker) {
+                    const icon = L.divIcon({
+                        className: 'user-marker-wrap', 
+                        html: '<div class="user-pulse"></div><div class="user-dot"></div>',
+                        iconSize: [40,40], iconAnchor: [20,20]
+                    });
+                    this.userMarker = L.marker(latlng, {icon: icon, zIndexOffset: 1000}).addTo(this.map);
+                    
+                    // Zoom Logik: Nur zoomen wenn noch kein Track ausgewählt ist
+                    if(!this.isCreatorMode && !this.selectedTrackId) {
+                        this.map.setView(latlng, 16); // Moderate Zoomstufe
+                    }
+                } else {
+                    this.userMarker.setLatLng(latlng);
                 }
-            }
-        }, err => console.warn("GPS Error:", err), options);
+            }, err => console.warn("GPS Error:", err), {enableHighAccuracy: true});
+        }
     },
 
     // =================================================
@@ -124,13 +100,17 @@ window.PerfLogic = {
     // =================================================
 
     toggleTrackSelection: function(track) {
-        if(this.selectedTrackId === track.id) this.deselectTrack(); 
-        else this.selectTrack(track);
+        if(this.selectedTrackId === track.id) {
+            this.deselectTrack(); 
+        } else {
+            this.selectTrack(track);
+        }
     },
 
     selectTrack: function(track) {
         this.selectedTrackId = track.id;
         this.showTrackOnMap(track);
+        
         document.querySelectorAll('.track-card').forEach(c => c.classList.remove('active-card'));
         const card = document.getElementById(`track-card-${track.id}`);
         if(card) {
@@ -143,12 +123,15 @@ window.PerfLogic = {
     deselectTrack: function() {
         if(!this.selectedTrackId) return;
         this.selectedTrackId = null;
+
         if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer);
+        
         this.map.eachLayer(layer => {
             if(layer instanceof L.Marker && layer !== this.userMarker && !this.hubMarkers.includes(layer)) {
                 this.map.removeLayer(layer);
             }
         });
+
         document.querySelectorAll('.track-card').forEach(c => c.classList.remove('active-card'));
         this.updateStatsDisplay(null);
     },
@@ -164,6 +147,7 @@ window.PerfLogic = {
             setTimeout(() => actionBar.classList.add('visible'), 10);
             btnInfo.classList.remove('hidden');
             btnEdit.classList.remove('hidden');
+
             statsRow.innerHTML = `
                 <div class="p-stat-box"><label>LENGTH</label><span>${track.dist}</span></div>
                 <div class="p-stat-box glow-text"><label>BEST TIME</label><span>${track.bestTime}</span></div>
@@ -204,7 +188,7 @@ window.PerfLogic = {
         
         setTimeout(() => { 
             this.map.invalidateSize(); 
-            if(this.userMarker) this.map.setView(this.userMarker.getLatLng(), 17);
+            if(this.userMarker) this.map.setView(this.userMarker.getLatLng(), 16);
         }, 100);
 
         this.selectPinType('start');
@@ -222,8 +206,8 @@ window.PerfLogic = {
 
     quitCreator: function() {
         this.isCreatorMode = false;
-        this.clearCreatorMap(); 
-
+        
+        // UI Wiederherstellen
         document.querySelector('.perf-content-scroll').style.display = 'block';
         document.querySelector('.perf-map-fade').style.display = 'block';
         document.querySelector('.perf-sub-nav').style.display = 'flex';
@@ -236,12 +220,14 @@ window.PerfLogic = {
         mapContainer.style.position = "absolute";
         
         setTimeout(() => { this.map.invalidateSize(); }, 300);
+
+        this.clearCreatorMap();
         this.hubMarkers.forEach(m => m.setOpacity(1)); 
         this.renderMapHubs();
     },
 
     // =================================================
-    // 4. PIN & ROUTING SYSTEM (SIMPLE & DIRECT)
+    // 4. PIN & ROUTING SYSTEM (RESTORED)
     // =================================================
 
     selectPinType: function(type) {
@@ -254,17 +240,19 @@ window.PerfLogic = {
     },
 
     placePinOnMap: function(latlng) {
-        // Logik: Nur ein Start/Ziel
+        // Logik: Nur ein Start/Ziel Punkt erlauben
         if(this.selectedPin === 'start' || this.selectedPin === 'finish') {
             const existing = this.creatorPoints.find(p => p.type === this.selectedPin);
-            if(existing) this.removePoint(existing, false); // false = noch nicht neu berechnen
+            if(existing) this.removePoint(existing, false); // false = kein Recalc hier, passiert gleich
         }
 
         let className = 'pin-dot white';
         if(this.selectedPin === 'start') className = 'pin-dot green';
         if(this.selectedPin === 'finish') className = 'pin-dot red';
 
-        const icon = L.divIcon({ className: 'custom-pin-icon', html: `<div class="${className}" style="width:16px;height:16px;"></div>`, iconSize: [20,20], iconAnchor: [10,10] });
+        const iconHtml = `<div class="${className}" style="width:16px;height:16px;"></div>`;
+        const icon = L.divIcon({ className: 'custom-pin-icon', html: iconHtml, iconSize: [20,20], iconAnchor: [10,10] });
+
         const marker = L.marker(latlng, {icon: icon, interactive: true}).addTo(this.map);
         
         const pointData = { latlng: latlng, type: this.selectedPin, marker: marker };
@@ -276,91 +264,65 @@ window.PerfLogic = {
 
         if(this.selectedPin === 'start' && this.creatorPoints.length === 1) this.selectPinType('check');
         
-        // DIREKT BERECHNEN (Kein Timer, kein Schnickschnack)
         this.calculateRoute();
     },
 
-    removePoint: function(pointObj, recalculate = true) {
-        if(pointObj.marker) this.map.removeLayer(pointObj.marker);
+    removePoint: function(pointObj, shouldCalc = true) {
+        this.map.removeLayer(pointObj.marker);
         this.creatorPoints = this.creatorPoints.filter(p => p !== pointObj);
         
-        if(recalculate) this.calculateRoute();
-    },
-
-    calculateRoute: function() {
-        // 1. DAS IST DER WICHTIGE FIX: ALTE ROUTE SOFORT WEG
+        // WICHTIG: Hier löschen wir die alte Route sofort, damit nichts "hängt"
         if(this.routeLayer) {
             this.map.removeLayer(this.routeLayer);
             this.routeLayer = null;
         }
 
+        if(shouldCalc) this.calculateRoute();
+    },
+
+    calculateRoute: function() {
         if(this.creatorPoints.length < 2) {
+            if(this.routeLayer) this.map.removeLayer(this.routeLayer);
             document.getElementById('ct-dist').innerText = "0.0 km";
             return;
         }
 
-        document.getElementById('ct-dist').innerText = "Calc...";
-
-        // Standard API Call - so wie es früher ging
         const coords = this.creatorPoints.map(p => `${p.latlng.lng},${p.latlng.lat}`).join(';');
         const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
 
-        fetch(url)
-        .then(r => r.json())
-        .then(data => {
+        // UI Feedback
+        document.getElementById('ct-dist').innerText = "Calc...";
+
+        fetch(url).then(r => r.json()).then(data => {
             if(data.routes && data.routes.length > 0) {
                 const route = data.routes[0];
-                this.drawRoute(route.geometry.coordinates.map(c => [c[1], c[0]]));
+                
+                // Alte Route löschen (Sicherheits-Check)
+                if(this.routeLayer) this.map.removeLayer(this.routeLayer);
+                
+                const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
+                this.routeLayer = L.polyline(latlngs, {color: '#bf5af2', weight: 5, opacity: 0.8}).addTo(this.map);
+
                 const distKm = (route.distance / 1000).toFixed(2);
                 const timeMin = Math.round(route.duration / 60);
-                this.updateRouteUI(distKm, timeMin);
-            } else {
-                console.warn("OSRM: No route found.");
-                this.drawFallbackRoute();
+                
+                document.getElementById('ct-dist').innerText = distKm + " km";
+                document.getElementById('ct-time').innerText = timeMin + " min";
+                
+                this.currentRouteGeo = latlngs;
+                this.currentRouteStats.dist = distKm + " km";
+                this.currentRouteStats.time = timeMin + " min";
+
+                this.fetchElevationForCreator(latlngs);
             }
-        })
-        .catch(err => {
-            console.error("OSRM Error:", err);
-            this.drawFallbackRoute();
+        }).catch(err => {
+            console.log(err);
+            document.getElementById('ct-dist').innerText = "Error";
         });
     },
 
-    drawRoute: function(latlngs) {
-        // Doppelte Sicherheit
-        if(this.routeLayer) this.map.removeLayer(this.routeLayer);
-        
-        this.routeLayer = L.polyline(latlngs, {color: '#bf5af2', weight: 5, opacity: 0.8}).addTo(this.map);
-        this.currentRouteGeo = latlngs;
-        this.fetchElevationForCreator(latlngs);
-    },
-
-    drawFallbackRoute: function() {
-        if(this.routeLayer) this.map.removeLayer(this.routeLayer);
-        const simpleLine = this.creatorPoints.map(p => p.latlng);
-        this.routeLayer = L.polyline(simpleLine, {
-            color: '#bf5af2', weight: 4, dashArray: '10, 10', opacity: 0.7
-        }).addTo(this.map);
-        
-        this.currentRouteGeo = simpleLine;
-        
-        let totalDist = 0;
-        for(let i=0; i<simpleLine.length-1; i++) {
-            totalDist += this.map.distance(simpleLine[i], simpleLine[i+1]);
-        }
-        const distKm = (totalDist / 1000).toFixed(2);
-        this.updateRouteUI(distKm, "??");
-    },
-
-    updateRouteUI: function(dist, time) {
-        document.getElementById('ct-dist').innerText = dist + " km";
-        document.getElementById('ct-time').innerText = time + " min";
-        this.currentRouteStats.dist = dist + " km";
-        this.currentRouteStats.time = time + " min";
-    },
-
     fetchElevationForCreator: function(latlngs) {
-        if(!latlngs || latlngs.length === 0) return;
-        const step = Math.ceil(latlngs.length / 15);
+        const step = Math.ceil(latlngs.length / 10);
         const samplePoints = latlngs.filter((_, i) => i % step === 0);
         const latStr = samplePoints.map(p => p[0].toFixed(4)).join(',');
         const lngStr = samplePoints.map(p => p[1].toFixed(4)).join(',');
@@ -380,21 +342,14 @@ window.PerfLogic = {
                 const hudEl = document.getElementById('ct-elev');
                 if(hudEl) hudEl.innerText = `+${Math.round(up)} / -${Math.round(down)}`;
             }
-        }).catch(e => console.log("Elev Error", e));
+        });
     },
 
     clearCreatorMap: function() {
-        if(this.creatorPoints) {
-            this.creatorPoints.forEach(p => {
-                if(p.marker) this.map.removeLayer(p.marker);
-            });
-        }
+        this.creatorPoints.forEach(p => this.map.removeLayer(p.marker));
         if(this.routeLayer) this.map.removeLayer(this.routeLayer);
-        
         this.creatorPoints = [];
         this.routeLayer = null;
-        this.currentRouteGeo = null;
-        
         document.getElementById('ct-dist').innerText = "0.0 km";
         document.getElementById('ct-elev').innerText = "0 m";
     },
@@ -406,8 +361,10 @@ window.PerfLogic = {
     saveTrack: function() {
         const hasStart = this.creatorPoints.some(p => p.type === 'start');
         const hasFinish = this.creatorPoints.some(p => p.type === 'finish');
+        
         if(!hasStart || !hasFinish) { alert("Start & Finish required!"); return; }
         if(!this.currentRouteGeo) { alert("No route found."); return; }
+
         this.openSetupScreen();
     },
 
@@ -476,7 +433,8 @@ window.PerfLogic = {
         document.getElementById('btn-standing').classList.toggle('active', type === 'standing');
         document.getElementById('btn-flying').classList.toggle('active', type === 'flying');
         const flySettings = document.getElementById('flying-settings');
-        if(type === 'flying') flySettings.classList.remove('hidden'); else flySettings.classList.add('hidden');
+        if(type === 'flying') flySettings.classList.remove('hidden');
+        else flySettings.classList.add('hidden');
     },
 
     stepValue: function(inputId, step) {
@@ -493,6 +451,7 @@ window.PerfLogic = {
     renderTrackList: function() {
         const list = document.getElementById('perf-track-list');
         list.innerHTML = ''; 
+
         this.tracks.forEach(t => {
             const div = document.createElement('div');
             div.className = 'track-card';
@@ -501,9 +460,15 @@ window.PerfLogic = {
                 <div class="tc-map-preview" id="mini-map-${t.id}"></div>
                 <div class="tc-info">
                     <div class="tc-name">${t.name}</div>
-                    <div class="tc-stats"><span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span><span><i class="fa-solid fa-road"></i> ${t.dist}</span></div>
+                    <div class="tc-stats">
+                        <span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span>
+                        <span><i class="fa-solid fa-road"></i> ${t.dist}</span>
+                    </div>
                 </div>`;
-            div.onclick = (e) => { e.stopPropagation(); this.toggleTrackSelection(t); };
+            div.onclick = (e) => {
+                e.stopPropagation();
+                this.toggleTrackSelection(t);
+            };
             list.appendChild(div);
             setTimeout(() => this.renderMiniMap(t), 200);
         });
@@ -522,42 +487,65 @@ window.PerfLogic = {
     renderMiniMap: function(track) {
         const container = document.getElementById(`mini-map-${track.id}`);
         if(!container || container._leaflet_id) return; 
+
         const miniMap = L.map(container, {
-            zoomControl: false, attributionControl: false, dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false, boxZoom: false, keyboard: false, tap: false
+            zoomControl: false, attributionControl: false,
+            dragging: false, touchZoom: false, doubleClickZoom: false, 
+            scrollWheelZoom: false, boxZoom: false, keyboard: false, tap: false
         });
+
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(miniMap);
+
         if(track.routePath && track.routePath.length > 0) {
             const poly = L.polyline(track.routePath, {color: '#ff3b30', weight: 6}).addTo(miniMap);
-            setTimeout(() => { miniMap.invalidateSize(); miniMap.fitBounds(poly.getBounds(), {padding: [10, 10]}); }, 300);
+            setTimeout(() => {
+                miniMap.invalidateSize();
+                miniMap.fitBounds(poly.getBounds(), {padding: [10, 10]});
+            }, 300);
         }
     },
 
     renderMapHubs: function() {
         this.hubMarkers.forEach(m => this.map.removeLayer(m));
         this.hubMarkers = [];
+
         this.tracks.forEach(track => {
             if(!track.pins || track.pins.length === 0) return;
             const start = track.pins.find(p => p.type === 'start') || track.pins[0];
+            
             const icon = L.divIcon({
                 className: 'custom-hub',
                 html: `<div class="track-hub-marker"><span class="thm-name">${track.name}</span></div>`,
                 iconSize: [80, 30], iconAnchor: [40, 35]
             });
+
             const marker = L.marker([start.lat, start.lng], {icon: icon}).addTo(this.map);
-            marker.on('click', (e) => { L.DomEvent.stopPropagation(e); this.toggleTrackSelection(track); });
+            marker.on('click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                this.toggleTrackSelection(track);
+            });
             this.hubMarkers.push(marker);
         });
     },
 
     showTrackOnMap: function(track) {
         if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer);
+        
         this.map.eachLayer(layer => {
-            if(layer instanceof L.Marker && layer !== this.userMarker && !this.hubMarkers.includes(layer)) this.map.removeLayer(layer);
+            if(layer instanceof L.Marker && layer !== this.userMarker && !this.hubMarkers.includes(layer)) {
+                this.map.removeLayer(layer);
+            }
         });
+
         if(track.routePath) {
             this.selectedTrackLayer = L.polyline(track.routePath, {color: '#ff3b30', weight: 6}).addTo(this.map);
-            this.map.flyToBounds(this.selectedTrackLayer.getBounds(), { paddingTopLeft: [30, 30], paddingBottomRight: [30, 180], duration: 1.0 });
+            this.map.flyToBounds(this.selectedTrackLayer.getBounds(), {
+                paddingTopLeft: [30, 30],
+                paddingBottomRight: [30, 180], 
+                duration: 1.0
+            });
         }
+
         if(track.pins) {
             track.pins.forEach(p => {
                 if(p.type === 'start' || p.type === 'finish') {
