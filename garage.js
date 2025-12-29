@@ -1,7 +1,9 @@
-/* GARAGE.JS - FINAL V26 (THE VAULT - DATA SAFETY FIX) */
+/* ========================================== */
+/* === GARAGE.JS - FINAL V26 (THE VAULT) === */
+/* ========================================== */
 
 window.GarageLogic = {
-    // === 1. DATA & SAFETY LOAD ===
+    // === 1. DATA & VARIABLES ===
     drives: [],
     cars: [],
     activeDriveIndex: -1,
@@ -13,39 +15,47 @@ window.GarageLogic = {
         { name: "Honda EG", file: "car3.glb" }
     ],
 
-
-   
-// Starten
-GarageManager.init();
-
-    // === 2. INIT ===
+    // === 2. INIT (DER SAFE START) ===
     init: function() {
-        console.log("Garage V26 Init - Safety Mode");
+        console.log("Garage V26 Init - Safety Mode Active");
         
-        // SICHERES LADEN (Verhindert Datenverlust)
+        // --- A. DRIVES LADEN ---
         try {
             const rawDrives = localStorage.getItem('driverhub_drives');
             this.drives = rawDrives ? JSON.parse(rawDrives) : [];
-            
+        } catch (e) {
+            console.error("Drives Load Error:", e);
+            this.drives = [];
+        }
+
+        // --- B. CARS LADEN (MIT RETTUNGS-LOGIK) ---
+        try {
             const rawCars = localStorage.getItem('driverhub_cars');
             let loadedCars = rawCars ? JSON.parse(rawCars) : [];
+
+            // SAFETY FILTER: Entfernt "null" oder kaputte Objekte, behält aber echte Autos
+            this.cars = loadedCars.filter(c => c && typeof c === 'object' && c.name);
             
-            // CLEANER: Entferne kaputte/leere Einträge ("null"), aber behalte den Rest!
-            this.cars = loadedCars.filter(c => c && typeof c === 'object');
-            
-            // Wenn wir gefiltert haben, speichern wir die saubere Version sofort zurück
-            if(this.cars.length !== loadedCars.length) {
-                localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
+            console.log(`Garage loaded: ${this.cars.length} cars found.`);
+
+            // Wenn wir Müll gefiltert haben, speichern wir die saubere Liste sofort zurück
+            if(loadedCars.length !== this.cars.length) {
+                console.warn("Garage cleanup performed. Saving clean list.");
+                this.saveCarsToStorage();
             }
             
         } catch (e) {
-            console.error("Data Corruption prevented:", e);
+            console.error("CRITICAL: Garage Data Corrupt. Safety fallback.", e);
+            // Im Fehlerfall NICHTS überschreiben, damit Daten bei Reload evtl. gerettet werden können
             this.cars = []; 
         }
 
+        // --- C. UI STARTEN ---
         this.renderCars();
+        // Falls wir auf der History Page sind:
+        if(document.getElementById('drive-history-list')) this.renderHistoryList();
 
-        // Button Bindings
+        // Button Bindings (Verzögert, damit DOM sicher da ist)
         setTimeout(() => {
             const carBtn = document.querySelector('#card-car-profile .card-header-btn');
             if(carBtn) {
@@ -57,20 +67,25 @@ GarageManager.init();
                 driveBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.openHistoryScreen(); };
                 driveBtn.style.cursor = "pointer";
             }
-        }, 1000);
+        }, 500);
+    },
+
+    // Zentraler Speicher-Helfer (Verhindert Schreibfehler)
+    saveCarsToStorage: function() {
+        if(!this.cars) return; 
+        localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
     },
 
     // Alias Bridge
     showHistory: function() { this.openHistoryScreen(); },
     showCarDetails: function() { this.openDetailScreen(); },
 
-    // Core Save
+    // Core Save Drive
     save: function(driveData) {
         if(!driveData) return;
-        const GL = window.GarageLogic; 
-        GL.drives.unshift(driveData);
-        localStorage.setItem('driverhub_drives', JSON.stringify(GL.drives));
-        if(document.getElementById('drive-card-content')) GL.renderDriveCard();
+        this.drives.unshift(driveData);
+        localStorage.setItem('driverhub_drives', JSON.stringify(this.drives));
+        if(document.getElementById('drive-card-content')) this.renderDriveCard();
     },
 
     // ==========================================
@@ -96,7 +111,6 @@ GarageManager.init();
         container.innerHTML = '';
 
         this.cars.forEach((car, index) => {
-            // Safety Fallback für fehlende Werte
             const name = car.name || "Unknown Car";
             const isActive = (index === 0);
             const col = car.color || '#bf5af2';
@@ -121,10 +135,6 @@ GarageManager.init();
                     <span class="detail-label">RECORDS</span>
                     <span style="font-size:0.8rem; color:#555;">NO RECORDS YET</span>
                 </div>
-                <div class="detail-extra-box" style="border-bottom:none;">
-                    <span class="detail-label">ACCELERATION GRAPH</span>
-                    <div class="detail-graph-placeholder">Coming Soon</div>
-                </div>
                 <div class="detail-actions">
                     <button class="action-btn ${isActive ? 'is-active' : ''}" onclick="GarageLogic.setActiveCar(${index})">
                         <i class="fa-solid fa-check"></i>
@@ -148,19 +158,14 @@ GarageManager.init();
     },
 
     setActiveCar: function(index) {
-        // SAFETY CHECK: Existiert das Auto überhaupt?
-        if(!this.cars[index]) {
-            console.error("Garage Error: Auto nicht gefunden an Index", index);
-            return;
-        }
-        if(index === 0) return; // Ist schon oben
+        if(!this.cars[index]) return;
+        if(index === 0) return; // Ist schon aktiv
 
         const selectedCar = this.cars[index];
         this.cars.splice(index, 1); // Rausnehmen
         this.cars.unshift(selectedCar); // Vorne einfügen
         
-        // Sofort speichern
-        localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
+        this.saveCarsToStorage();
         this.renderDetailList();
     },
 
@@ -178,7 +183,6 @@ GarageManager.init();
         this.renderColorList();
         
         let carToEdit = null;
-        // Safety Check
         if(index > -1 && this.cars[index]) {
             carToEdit = this.cars[index];
             this.editingCarIndex = index;
@@ -196,6 +200,7 @@ GarageManager.init();
             
             this.highlightColor(carToEdit.color || "#bf5af2");
             
+            // Model Highlight
             const list = document.getElementById('final-model-list');
             if(list) Array.from(list.children).forEach(btn => {
                 if(btn.getAttribute('data-file') === carToEdit.model) {
@@ -205,13 +210,13 @@ GarageManager.init();
                 }
             });
         } else {
-            // Reset
+            // Reset Fields
             document.getElementById('final-name').value = '';
             document.getElementById('final-hp').value = '';
             document.getElementById('final-weight').value = '';
             document.getElementById('final-engine').value = '';
             document.getElementById('final-color-input').value = '#bf5af2';
-            if(document.getElementById('final-preview')) document.getElementById('final-preview').src = '';
+            if(document.getElementById('final-preview')) document.getElementById('final-preview').src = this.availableModels[0].file;
             this.highlightColor('#bf5af2');
         }
     },
@@ -227,11 +232,11 @@ GarageManager.init();
         const selected = document.querySelector('.selected-model');
         if(selected) modelFile = selected.getAttribute('data-file');
         else if(this.editingCarIndex > -1 && this.cars[this.editingCarIndex]) modelFile = this.cars[this.editingCarIndex].model;
-        else if(this.cars.length > 0) modelFile = this.cars[0].model;
+        else if(this.availableModels.length > 0) modelFile = this.availableModels[0].file;
 
         let currentAcc = '-';
-        if(this.editingCarIndex > -1 && this.cars[this.editingCarIndex] && this.cars[this.editingCarIndex].acceleration) {
-            currentAcc = this.cars[this.editingCarIndex].acceleration;
+        if(this.editingCarIndex > -1 && this.cars[this.editingCarIndex]) {
+            currentAcc = this.cars[this.editingCarIndex].acceleration || '-';
         }
 
         const newCar = {
@@ -245,15 +250,12 @@ GarageManager.init();
         };
         
         if(this.editingCarIndex > -1) {
-            // Update existierendes Auto
             this.cars[this.editingCarIndex] = newCar;
         } else {
-            // Neues Auto
             this.cars.push(newCar);
         }
 
-        // Sicher speichern
-        localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
+        this.saveCarsToStorage();
         
         document.getElementById('final-overlay').style.display = 'none';
         this.renderCars();
@@ -267,10 +269,10 @@ GarageManager.init();
             if(this.editingCarIndex > -1) {
                 this.cars.splice(this.editingCarIndex, 1);
             } else {
-                this.cars = [];
+                this.cars = []; // Fallback bei Neuerstellung abbrechen
             }
             
-            localStorage.setItem('driverhub_cars', JSON.stringify(this.cars));
+            this.saveCarsToStorage();
             document.getElementById('final-overlay').style.display = 'none';
             this.renderCars();
             if(!document.getElementById('car-details-screen').classList.contains('hidden')) {
@@ -496,10 +498,11 @@ GarageManager.init();
                 carCont.innerHTML = `<div onclick="GarageLogic.openEditor(-1)" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;"><div style="font-size:2rem; color:#555; border:2px dashed #444; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;"><i class="fa-solid fa-plus"></i></div><span style="color:#888; font-weight:800; font-size:0.8rem; letter-spacing:1px;">ADD YOUR CAR</span></div>`;
             } else {
                 if(headerBtn) headerBtn.style.display='flex';
-                // Hier auch Safety Fallback
+                // Safety Fallback für UI
                 const c = this.cars[0] || {name: 'Error', model:'car.glb', color:'#bf5af2'};
                 const col = c.color || '#bf5af2';
                 const acc = c.acceleration || '---';
+                
                 carCont.innerHTML = `
                 <div class="card-split-left" style="border-right-color:${col}30;">
                     <div style="width:100%; height:80%;"><model-viewer src="${c.model}" auto-rotate camera-controls disable-zoom style="width:100%; height:100%;" shadow-intensity="1" interaction-prompt="none"></model-viewer></div>
@@ -550,3 +553,7 @@ GarageManager.init();
         }
     }
 };
+
+// === WICHTIG: STARTEN AM ENDE ===
+// Hier wird die Logik erst ausgeführt, wenn alles geladen ist.
+window.GarageLogic.init();
