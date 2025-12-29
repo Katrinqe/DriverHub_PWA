@@ -14,43 +14,7 @@ window.GarageLogic = {
     ],
 
 
-    /* === SAFE GARAGE MANAGER === */
-const GarageManager = {
-    // Key im Speicher
-    STORAGE_KEY: 'driverhub_garage_v1', 
-
-    loadCar: function() {
-        const raw = localStorage.getItem(this.STORAGE_KEY);
-        if (raw) {
-            try {
-                return JSON.parse(raw);
-            } catch (e) {
-                console.error("Garage Data corrupt", e);
-                return null;
-            }
-        }
-        return null; // Kein Auto da
-    },
-
-    saveCar: function(carData) {
-        if(!carData) return; // Nicht leeres speichern
-        console.log("Saving Car safely:", carData.model);
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(carData));
-    },
-
-    // WICHTIG: Aufrufen wenn App startet
-    init: function() {
-        const car = this.loadCar();
-        if(car) {
-            // Hier Code einfügen, um das Auto im UI anzuzeigen
-            // z.B. document.getElementById('garage-car-name').innerText = car.model;
-            console.log("Garage loaded:", car);
-        } else {
-            console.log("Garage empty.");
-        }
-    }
-};
-
+   
 // Starten
 GarageManager.init();
 
