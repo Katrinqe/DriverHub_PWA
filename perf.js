@@ -81,29 +81,76 @@ window.PerfLogic = {
         this.renderMapHubs();
     },
 
-    startUserTracking: function() {
-        if(navigator.geolocation) {
-            navigator.geolocation.watchPosition(pos => {
-                const latlng = [pos.coords.latitude, pos.coords.longitude];
-                
-                if(!this.userMarker) {
-                    // Erstelle den User-Puls-Marker
-                    const icon = L.divIcon({
-                        className: 'user-marker-wrap', 
-                        html: '<div class="user-pulse"></div><div class="user-dot"></div>',
-                        iconSize: [40,40], iconAnchor: [20,20]
-                    });
-                    this.userMarker = L.marker(latlng, {icon: icon, zIndexOffset: 1000}).addTo(this.map);
-                    
-                    // Zoom zum User nur beim ersten Mal und wenn kein Creator Mode aktiv
-                    if(!this.isCreatorMode && !this.selectedTrackId) {
-                        this.map.setView(latlng, 15);
-                    }
-                } else {
-                    this.userMarker.setLatLng(latlng);
-                }
-            }, err => console.warn("GPS Error:", err), {enableHighAccuracy: true});
+ startUserTracking: function() {
+        if (!navigator.geolocation) return;
+
+        // WICHTIG: Maximale Genauigkeit anfordern
+        const options = { 
+            enableHighAccuracy: true, 
+            maximumAge: 0, 
+            timeout: 5000 
+        };
+
+        // Track-Line initialisieren (falls wir aufzeichnen)
+        if (!this.currentPolyline && this.isCreatorMode) {
+            this.currentPolyline = L.polyline([], {color: '#bf5af2', weight: 5}).addTo(this.map);
         }
+
+        this.watchId = navigator.geolocation.watchPosition(pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            // Hier holen wir alles raus: Höhe, Genauigkeit, Speed, Zeit
+            const alt = pos.coords.altitude; 
+            const acc = pos.coords.accuracy; 
+            const speed = pos.coords.speed; // m/s
+            const timestamp = pos.timestamp;
+
+            const latlng = [lat, lng];
+
+            // 1. VISUALISIERUNG (Nur User Marker bewegen - kostet fast nix)
+            if (!this.userMarker) {
+                const icon = L.divIcon({ 
+                    className: 'user-marker-wrap', 
+                    html: '<div class="user-pulse"></div><div class="user-dot"></div>', 
+                    iconSize: [40,40], iconAnchor: [20,20] 
+                });
+                this.userMarker = L.marker(latlng, {icon: icon, zIndexOffset: 1000}).addTo(this.map);
+            } else {
+                this.userMarker.setLatLng(latlng);
+            }
+
+            // 2. AUFZEICHNUNG (Nur im Creator Mode oder wenn Recording läuft)
+            if (this.isCreatorMode) {
+                // A) Wir speichern ALLES (Full Raw Data) für die Physik-Engine
+                // Das Array ist rein im RAM und super schnell.
+                this.creatorPoints.push({
+                    lat: lat,
+                    lng: lng,
+                    alt: alt,
+                    speed: speed,
+                    time: timestamp,
+                    acc: acc // Wichtig, um später schlechte Punkte rauszufiltern
+                });
+
+                // B) Karte effizient updaten (nicht neu malen, nur anhängen)
+                // Wir malen nur Punkte, die GPS-technisch "gut" sind (>20m Genauigkeit ignorieren wir optisch, speichern sie aber)
+                if (acc < 20) { 
+                     // Trick: addLatLng ist viel schneller als setLatLngs
+                    if (!this.currentPolyline) {
+                         this.currentPolyline = L.polyline([latlng], {color: '#bf5af2', weight: 5}).addTo(this.map);
+                    } else {
+                         this.currentPolyline.addLatLng(latlng); 
+                    }
+                }
+                
+                // C) NOTFALL-SPEICHERUNG (Alle 50 Punkte)
+                // Falls der Browser doch crasht, ist die Strecke im LocalStorage
+                if (this.creatorPoints.length % 50 === 0) {
+                    localStorage.setItem('driverhub_temp_track', JSON.stringify(this.creatorPoints));
+                }
+            }
+
+        }, err => console.warn("GPS Error:", err), options);
     },
 
     // =================================================
