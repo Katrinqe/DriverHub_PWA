@@ -1112,3 +1112,34 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     color: #ff3b30 !important;
     text-shadow: 0 0 15px rgba(255, 59, 48, 0.6) !important;
 }
+
+/* === V6 FINAL VISUAL FIXES === */
+
+/* 1. KARTEN ABSTAND (Minimal mehr Luft links) */
+.track-list-horizontal {
+    padding-left: 30px !important; /* War vorher ca 20px */
+    padding-right: 30px !important;
+}
+
+/* 2. LAYOUT STABILISIEREN (Kein Springen/Rutschen mehr) */
+/* Wir geben dem oberen Info-Bereich eine feste Höhe */
+.perf-info-container {
+    min-height: 160px !important; /* Reserviert Platz */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Inhalt unten ausrichten */
+    transition: none !important; /* Keine Animation der Höhe */
+}
+
+/* Der Action Bar (Start Button) soll keinen Platz verdrängen */
+#track-action-bar {
+    margin-top: 10px !important;
+    height: 50px !important; /* Feste Höhe für den Button-Bereich */
+    margin-bottom: 0 !important;
+    position: relative; /* Bleibt im Fluss, aber kontrolliert */
+}
+
+/* Verhindert, dass die Liste beim Klick "wackelt" */
+#perf-track-list {
+    margin-top: 10px !important; /* Fester Abstand nach oben */
+}
