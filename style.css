@@ -1073,3 +1073,32 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     border-color: #ff3b30 !important;
     background: rgba(255,255,255,0.1) !important;
 }
+
+/* === COMEBACK FIXES (Cards & Nav) === */
+
+/* 1. TRACK CARDS POSITION */
+.track-list-horizontal {
+    padding-left: 40px !important; /* Mehr Luft links */
+    padding-right: 40px !important; /* Damit man auch rechts Platz hat */
+    gap: 20px !important; /* Etwas mehr Luft zwischen den Karten */
+}
+
+.track-card, 
+.add-track-card {
+    /* Optimale Größe */
+    flex: 0 0 220px !important; 
+    width: 220px !important; 
+    height: 140px !important;
+}
+
+/* 2. NAV BAR GLOW FIX */
+/* Wir sprechen den Button direkt mit ID an -> Maximale Priorität */
+#nav-perf.active-perf {
+    color: #ff3b30 !important;
+    text-shadow: 0 0 15px rgba(255, 59, 48, 0.8) !important;
+}
+
+#nav-perf.active-perf i {
+    transform: translateY(-4px) scale(1.1); /* Kleiner Pop-Effekt */
+    color: #ff3b30 !important;
+}
