@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - V4 (DEBOUNCE / FINAL STABLE) === */
+/* === PERF.JS - V5 (BACK TO BASICS & STABLE) === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -27,19 +27,16 @@ window.PerfLogic = {
     currentRouteGeo: null,
     startType: 'standing',
     
-    // --- SYSTEM VARIABLES ---
+    // --- GPS SETTINGS ---
     watchId: null,
     currentPolyline: null,
     hasInitialZoom: false,
-    
-    // --- DER FIX (TIMER) ---
-    calcTimer: null, // Speichert die Verzögerung
 
     // =================================================
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - V4 Debounce Loaded");
+        console.log("PerfLogic Init - V5 Back to Basics");
         this.renderTrackList();
         this.updateStatsDisplay(null);
     },
@@ -244,7 +241,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 4. PIN & ROUTING SYSTEM (DEBOUNCED)
+    // 4. PIN & ROUTING SYSTEM (SIMPLE & DIRECT)
     // =================================================
 
     selectPinType: function(type) {
@@ -257,11 +254,10 @@ window.PerfLogic = {
     },
 
     placePinOnMap: function(latlng) {
-        // --- 1. ERST AUFRÄUMEN OHNE BERECHNUNG ---
-        // (False am Ende heißt: Nicht berechnen, wir machen das gleich am Ende einmal)
+        // Logik: Nur ein Start/Ziel
         if(this.selectedPin === 'start' || this.selectedPin === 'finish') {
             const existing = this.creatorPoints.find(p => p.type === this.selectedPin);
-            if(existing) this.removePoint(existing, false); 
+            if(existing) this.removePoint(existing, false); // false = noch nicht neu berechnen
         }
 
         let className = 'pin-dot white';
@@ -280,33 +276,19 @@ window.PerfLogic = {
 
         if(this.selectedPin === 'start' && this.creatorPoints.length === 1) this.selectPinType('check');
         
-        // --- 2. JETZT BERECHNEN (Verzögert) ---
-        this.triggerRouteCalculation();
+        // DIREKT BERECHNEN (Kein Timer, kein Schnickschnack)
+        this.calculateRoute();
     },
 
-    removePoint: function(pointObj, shouldCalc = true) {
+    removePoint: function(pointObj, recalculate = true) {
         if(pointObj.marker) this.map.removeLayer(pointObj.marker);
         this.creatorPoints = this.creatorPoints.filter(p => p !== pointObj);
         
-        if(shouldCalc) this.triggerRouteCalculation();
+        if(recalculate) this.calculateRoute();
     },
 
-    // --- DER NEUE TRIGGER: Wartet 300ms bevor er loslegt ---
-    triggerRouteCalculation: function() {
-        // Wenn schon ein Timer läuft: STOPPEN (Abbrechen)
-        if(this.calcTimer) clearTimeout(this.calcTimer);
-
-        // UI Feedback sofort:
-        document.getElementById('ct-dist').innerText = "Wait...";
-
-        // Neuen Timer setzen
-        this.calcTimer = setTimeout(() => {
-            this.executeRouteCalculation();
-        }, 400); // 400ms warten
-    },
-
-    executeRouteCalculation: function() {
-        // 1. Alte Route löschen
+    calculateRoute: function() {
+        // 1. DAS IST DER WICHTIGE FIX: ALTE ROUTE SOFORT WEG
         if(this.routeLayer) {
             this.map.removeLayer(this.routeLayer);
             this.routeLayer = null;
@@ -319,6 +301,7 @@ window.PerfLogic = {
 
         document.getElementById('ct-dist').innerText = "Calc...";
 
+        // Standard API Call - so wie es früher ging
         const coords = this.creatorPoints.map(p => `${p.latlng.lng},${p.latlng.lat}`).join(';');
         const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
 
@@ -332,7 +315,7 @@ window.PerfLogic = {
                 const timeMin = Math.round(route.duration / 60);
                 this.updateRouteUI(distKm, timeMin);
             } else {
-                console.warn("No route found. Fallback.");
+                console.warn("OSRM: No route found.");
                 this.drawFallbackRoute();
             }
         })
@@ -343,7 +326,9 @@ window.PerfLogic = {
     },
 
     drawRoute: function(latlngs) {
+        // Doppelte Sicherheit
         if(this.routeLayer) this.map.removeLayer(this.routeLayer);
+        
         this.routeLayer = L.polyline(latlngs, {color: '#bf5af2', weight: 5, opacity: 0.8}).addTo(this.map);
         this.currentRouteGeo = latlngs;
         this.fetchElevationForCreator(latlngs);
@@ -409,7 +394,6 @@ window.PerfLogic = {
         this.creatorPoints = [];
         this.routeLayer = null;
         this.currentRouteGeo = null;
-        if(this.calcTimer) clearTimeout(this.calcTimer); // Timer stoppen
         
         document.getElementById('ct-dist').innerText = "0.0 km";
         document.getElementById('ct-elev').innerText = "0 m";
