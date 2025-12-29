@@ -1145,55 +1145,67 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 
 /* ========================================= */
-/* === V7 FINAL LAYOUT FIX (STATIC & PAD) === */
+/* === V8 FINAL LAYOUT FIX (COMPACT & STATIC) === */
 /* ========================================= */
 
-/* 1. KARTEN ABSTAND (Die Grüne Linie) */
-/* Wir schieben die erste Karte ordentlich nach rechts */
-.track-list-horizontal {
-    padding-left: 55px !important; /* Deutlich mehr Platz am Anfang */
-    padding-right: 30px !important;
-    scroll-padding-left: 55px !important; /* Damit das Snapping auch stimmt */
+/* 1. MAP HÖHE ANPASSEN (Mehr Platz für unten schaffen) */
+/* Wir verkleinern die Karte im Normalmodus leicht, damit unten nichts überlappt */
+#perf-map-container:not(.fullscreen) {
+    height: 40vh !important; /* War vorher oft 50vh */
+    min-height: 250px; /* Mindesthöhe zur Sicherheit */
 }
 
-/* 2. STATISCHER BEREICH (Die Orange Zone) */
-/* Wir zwingen den Bereich zwischen Map und "Your Tracks" auf eine feste Größe */
+/* 2. STATISCHER BEREICH (Die Orange Zone - KOMPAKTER) */
+/* Wir geben eine kleinere, feste Höhe, damit es nicht springt, aber auch nicht zu viel Platz frisst */
 .perf-info-container {
-    /* WICHTIG: Das ist die feste Höhe für Stats + Button */
-    height: 190px !important; 
-    min-height: 190px !important;
-    max-height: 190px !important;
+    /* Feste Höhe für Stats + Button (kompakter als vorher) */
+    height: 130px !important; 
+    min-height: 130px !important;
+    max-height: 130px !important;
     
-    /* Flexbox Settings damit es gut aussieht */
     display: flex;
     flex-direction: column;
-    justify-content: flex-end; /* Drückt Inhalt nach unten */
-    flex-shrink: 0 !important; /* Verhindert Schrumpfen */
-    
-    /* Animation aus, damit nichts wabbelt */
+    justify-content: flex-end; 
+    flex-shrink: 0 !important;
     transition: none !important;
-    padding-bottom: 10px; /* Kleiner Abstand zum Text "Your Tracks" */
+    padding-bottom: 5px; /* Abstand zum "YOUR TRACKS" Text */
+    overflow: hidden; /* Sicherheitshalber */
 }
 
-/* Der Container für die Stats oben drüber */
+/* Der Container für die Stats */
 #main-stats-row {
-    flex-grow: 1; /* Nimmt den restlichen Platz ein */
+    flex-grow: 1;
     display: flex;
-    align-items: center; /* Vertikal mittig */
-    padding-bottom: 5px;
+    align-items: center;
+    padding-top: 5px;
 }
 
 /* Der Start-Button Container */
 #track-action-bar {
-    height: 60px !important; /* Feste Höhe für den Button-Platz */
-    min-height: 60px !important;
+    height: 55px !important; /* Leicht kompakter */
+    min-height: 55px !important;
     margin-top: 5px !important;
-    margin-bottom: 5px !important;
-    /* Wenn er "hidden" ist, sorgt der .perf-info-container (oben) trotzdem dafür,
-       dass der Platz reserviert bleibt. */
+    margin-bottom: 0px !important;
 }
 
-/* Verhindert seitliches Wackeln der Scroll-Leiste */
+/* 3. KARTEN ABSTAND HORIZONTAL (Die Grüne Linie - KORRIGIERT) */
+/* Nicht zu nah (20px), nicht übertrieben (55px) -> Goldene Mitte (35px) */
+.track-list-horizontal {
+    padding-left: 35px !important; 
+    padding-right: 30px !important;
+    scroll-padding-left: 35px !important;
+    margin-top: 5px !important; /* Kleiner Abstand nach oben zum Text */
+}
+
+/* Stellt sicher, dass der Titel "YOUR TRACKS" nicht klebt */
+.perf-section-title {
+    margin-top: 10px !important;
+    margin-bottom: 5px !important;
+    padding-left: 35px !important; /* Titel auch bündig mit Karten */
+}
+
+/* WICHTIG: Damit die untere Leiste nicht überdeckt wird */
 .perf-content-scroll {
+    padding-bottom: 20px !important; /* Puffer nach unten */
     overflow-x: hidden;
 }
