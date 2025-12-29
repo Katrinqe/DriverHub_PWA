@@ -1143,3 +1143,57 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 #perf-track-list {
     margin-top: 10px !important; /* Fester Abstand nach oben */
 }
+
+/* ========================================= */
+/* === V7 FINAL LAYOUT FIX (STATIC & PAD) === */
+/* ========================================= */
+
+/* 1. KARTEN ABSTAND (Die Grüne Linie) */
+/* Wir schieben die erste Karte ordentlich nach rechts */
+.track-list-horizontal {
+    padding-left: 55px !important; /* Deutlich mehr Platz am Anfang */
+    padding-right: 30px !important;
+    scroll-padding-left: 55px !important; /* Damit das Snapping auch stimmt */
+}
+
+/* 2. STATISCHER BEREICH (Die Orange Zone) */
+/* Wir zwingen den Bereich zwischen Map und "Your Tracks" auf eine feste Größe */
+.perf-info-container {
+    /* WICHTIG: Das ist die feste Höhe für Stats + Button */
+    height: 190px !important; 
+    min-height: 190px !important;
+    max-height: 190px !important;
+    
+    /* Flexbox Settings damit es gut aussieht */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Drückt Inhalt nach unten */
+    flex-shrink: 0 !important; /* Verhindert Schrumpfen */
+    
+    /* Animation aus, damit nichts wabbelt */
+    transition: none !important;
+    padding-bottom: 10px; /* Kleiner Abstand zum Text "Your Tracks" */
+}
+
+/* Der Container für die Stats oben drüber */
+#main-stats-row {
+    flex-grow: 1; /* Nimmt den restlichen Platz ein */
+    display: flex;
+    align-items: center; /* Vertikal mittig */
+    padding-bottom: 5px;
+}
+
+/* Der Start-Button Container */
+#track-action-bar {
+    height: 60px !important; /* Feste Höhe für den Button-Platz */
+    min-height: 60px !important;
+    margin-top: 5px !important;
+    margin-bottom: 5px !important;
+    /* Wenn er "hidden" ist, sorgt der .perf-info-container (oben) trotzdem dafür,
+       dass der Platz reserviert bleibt. */
+}
+
+/* Verhindert seitliches Wackeln der Scroll-Leiste */
+.perf-content-scroll {
+    overflow-x: hidden;
+}
