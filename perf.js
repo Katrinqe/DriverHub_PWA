@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - RESTORED STABLE VERSION === */
+/* === PERF.JS - STABLE LOGIC + FIXED SCROLL === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -31,7 +31,7 @@ window.PerfLogic = {
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - RESTORED");
+        console.log("PerfLogic Init - Stable UI Fix");
         this.renderTrackList();
         this.updateStatsDisplay(null);
     },
@@ -84,9 +84,8 @@ window.PerfLogic = {
                     });
                     this.userMarker = L.marker(latlng, {icon: icon, zIndexOffset: 1000}).addTo(this.map);
                     
-                    // Zoom Logik: Nur zoomen wenn noch kein Track ausgewählt ist
                     if(!this.isCreatorMode && !this.selectedTrackId) {
-                        this.map.setView(latlng, 16); // Moderate Zoomstufe
+                        this.map.setView(latlng, 15);
                     }
                 } else {
                     this.userMarker.setLatLng(latlng);
@@ -96,7 +95,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 2. INTERACTION LOGIC
+    // 2. INTERACTION LOGIC (SCROLL FIX HERE)
     // =================================================
 
     toggleTrackSelection: function(track) {
@@ -109,14 +108,17 @@ window.PerfLogic = {
 
     selectTrack: function(track) {
         this.selectedTrackId = track.id;
+        
         this.showTrackOnMap(track);
         
         document.querySelectorAll('.track-card').forEach(c => c.classList.remove('active-card'));
         const card = document.getElementById(`track-card-${track.id}`);
         if(card) {
             card.classList.add('active-card');
-            card.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            // === FIX: Nur horizontal scrollen, nicht vertikal springen ===
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
+
         this.updateStatsDisplay(track);
     },
 
@@ -143,25 +145,39 @@ window.PerfLogic = {
         const btnEdit = document.getElementById('btn-track-edit');
 
         if(track) {
+            // === TRACK SPECIFIC VIEW ===
             actionBar.classList.remove('hidden'); 
             setTimeout(() => actionBar.classList.add('visible'), 10);
+            
             btnInfo.classList.remove('hidden');
             btnEdit.classList.remove('hidden');
 
             statsRow.innerHTML = `
                 <div class="p-stat-box"><label>LENGTH</label><span>${track.dist}</span></div>
                 <div class="p-stat-box glow-text"><label>BEST TIME</label><span>${track.bestTime}</span></div>
-                <div class="p-stat-box"><label>ELEVATION</label><span style="font-size:0.8rem"><i class="fa-solid fa-arrow-trend-up" style="color:#30d158"></i> ${track.elevUp || '0m'} <i class="fa-solid fa-arrow-trend-down" style="color:#ff3b30; margin-left:5px"></i> ${track.elevDown || '0m'}</span></div>`;
+                <div class="p-stat-box">
+                    <label>ELEVATION</label>
+                    <span style="font-size:0.8rem">
+                        <i class="fa-solid fa-arrow-trend-up" style="color:#30d158"></i> ${track.elevUp || '0m'} 
+                        <i class="fa-solid fa-arrow-trend-down" style="color:#ff3b30; margin-left:5px"></i> ${track.elevDown || '0m'}
+                    </span>
+                </div>
+            `;
         } else {
+            // === GLOBAL VIEW ===
             actionBar.classList.remove('visible');
             setTimeout(() => actionBar.classList.add('hidden'), 300);
+            
             btnInfo.classList.add('hidden');
             btnEdit.classList.add('hidden');
+
             const totalScore = this.tracks.length * 150; 
+            
             statsRow.innerHTML = `
                 <div class="p-stat-box"><label>TRACKS</label><span id="perf-total-tracks">${this.tracks.length}</span></div>
                 <div class="p-stat-box glow-text"><label>SCORE</label><span id="perf-global-score">${totalScore}</span></div>
-                <div class="p-stat-box"><label>BEST TIME</label><span id="perf-best-time">--:--</span></div>`;
+                <div class="p-stat-box"><label>BEST TIME</label><span id="perf-best-time">--:--</span></div>
+            `;
         }
     },
 
@@ -172,14 +188,16 @@ window.PerfLogic = {
     enterCreatorMode: function() {
         this.isCreatorMode = true;
         this.creatorPoints = []; 
-        this.deselectTrack(); 
+        this.deselectTrack();
+        
         this.hubMarkers.forEach(m => m.setOpacity(0));
 
         document.querySelector('.perf-content-scroll').style.display = 'none';
         document.querySelector('.perf-map-fade').style.display = 'none';
         document.querySelector('.perf-sub-nav').style.display = 'none';
+        
         document.getElementById('perf-creator-ui').classList.remove('hidden');
-        document.getElementById('nav-perf').parentElement.classList.add('hidden'); 
+        document.getElementById('nav-perf').parentElement.classList.add('hidden');
 
         const mapContainer = document.getElementById('perf-map-container');
         mapContainer.style.height = "100vh"; 
@@ -198,7 +216,9 @@ window.PerfLogic = {
 
     leaveCreatorMode: function() {
         if(this.creatorPoints.length > 0) {
-            if(confirm("Discard Track creation?")) this.quitCreator();
+            if(confirm("Discard Track creation?")) {
+                this.quitCreator();
+            }
         } else {
             this.quitCreator();
         }
@@ -207,10 +227,10 @@ window.PerfLogic = {
     quitCreator: function() {
         this.isCreatorMode = false;
         
-        // UI Wiederherstellen
         document.querySelector('.perf-content-scroll').style.display = 'block';
         document.querySelector('.perf-map-fade').style.display = 'block';
         document.querySelector('.perf-sub-nav').style.display = 'flex';
+        
         document.getElementById('perf-creator-ui').classList.add('hidden');
         document.getElementById('nav-perf').parentElement.classList.remove('hidden');
 
@@ -227,12 +247,14 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 4. PIN & ROUTING SYSTEM (RESTORED)
+    // 4. PIN & ROUTING SYSTEM
     // =================================================
 
     selectPinType: function(type) {
         this.selectedPin = type;
+        
         document.querySelectorAll('.cb-pin').forEach(el => el.classList.remove('active'));
+        
         if(type === 'start') document.getElementById('pin-start').classList.add('active');
         if(type === 'check') document.getElementById('pin-check').classList.add('active');
         if(type === 'finish') document.getElementById('pin-finish').classList.add('active');
@@ -240,12 +262,6 @@ window.PerfLogic = {
     },
 
     placePinOnMap: function(latlng) {
-        // Logik: Nur ein Start/Ziel Punkt erlauben
-        if(this.selectedPin === 'start' || this.selectedPin === 'finish') {
-            const existing = this.creatorPoints.find(p => p.type === this.selectedPin);
-            if(existing) this.removePoint(existing, false); // false = kein Recalc hier, passiert gleich
-        }
-
         let className = 'pin-dot white';
         if(this.selectedPin === 'start') className = 'pin-dot green';
         if(this.selectedPin === 'finish') className = 'pin-dot red';
@@ -259,25 +275,18 @@ window.PerfLogic = {
         this.creatorPoints.push(pointData);
 
         marker.on('click', () => {
-            if(this.selectedPin === 'remove') this.removePoint(pointData, true);
+            if(this.selectedPin === 'remove') this.removePoint(pointData);
         });
 
-        if(this.selectedPin === 'start' && this.creatorPoints.length === 1) this.selectPinType('check');
+        if(this.selectedPin === 'start') this.selectPinType('check');
         
         this.calculateRoute();
     },
 
-    removePoint: function(pointObj, shouldCalc = true) {
+    removePoint: function(pointObj) {
         this.map.removeLayer(pointObj.marker);
         this.creatorPoints = this.creatorPoints.filter(p => p !== pointObj);
-        
-        // WICHTIG: Hier löschen wir die alte Route sofort, damit nichts "hängt"
-        if(this.routeLayer) {
-            this.map.removeLayer(this.routeLayer);
-            this.routeLayer = null;
-        }
-
-        if(shouldCalc) this.calculateRoute();
+        this.calculateRoute();
     },
 
     calculateRoute: function() {
@@ -290,14 +299,10 @@ window.PerfLogic = {
         const coords = this.creatorPoints.map(p => `${p.latlng.lng},${p.latlng.lat}`).join(';');
         const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
 
-        // UI Feedback
-        document.getElementById('ct-dist').innerText = "Calc...";
-
         fetch(url).then(r => r.json()).then(data => {
             if(data.routes && data.routes.length > 0) {
                 const route = data.routes[0];
                 
-                // Alte Route löschen (Sicherheits-Check)
                 if(this.routeLayer) this.map.removeLayer(this.routeLayer);
                 
                 const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
@@ -315,15 +320,13 @@ window.PerfLogic = {
 
                 this.fetchElevationForCreator(latlngs);
             }
-        }).catch(err => {
-            console.log(err);
-            document.getElementById('ct-dist').innerText = "Error";
-        });
+        }).catch(err => console.log(err));
     },
 
     fetchElevationForCreator: function(latlngs) {
         const step = Math.ceil(latlngs.length / 10);
         const samplePoints = latlngs.filter((_, i) => i % step === 0);
+        
         const latStr = samplePoints.map(p => p[0].toFixed(4)).join(',');
         const lngStr = samplePoints.map(p => p[1].toFixed(4)).join(',');
 
@@ -333,12 +336,16 @@ window.PerfLogic = {
             if(data.elevation) {
                 let up = 0, down = 0;
                 let elevs = data.elevation;
+                
                 for(let i=1; i<elevs.length; i++) {
                     let diff = elevs[i] - elevs[i-1];
-                    if(diff > 0) up += diff; else down += Math.abs(diff);
+                    if(diff > 0) up += diff;
+                    else down += Math.abs(diff);
                 }
+                
                 this.currentRouteStats.elevUp = Math.round(up) + "m";
                 this.currentRouteStats.elevDown = Math.round(down) + "m";
+                
                 const hudEl = document.getElementById('ct-elev');
                 if(hudEl) hudEl.innerText = `+${Math.round(up)} / -${Math.round(down)}`;
             }
@@ -355,7 +362,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 5. SETUP & SAVE LOGIC
+    // 5. SETUP & SAVE LOGIC (FIXED OVERLAP)
     // =================================================
 
     saveTrack: function() {
@@ -384,6 +391,7 @@ window.PerfLogic = {
         setTimeout(() => {
             this.setupMap.invalidateSize();
             this.setupMap.eachLayer(l => { if(!l._url) this.setupMap.removeLayer(l); });
+            
             if(this.currentRouteGeo) {
                 const poly = L.polyline(this.currentRouteGeo, {color: '#ff3b30', weight: 5}).addTo(this.setupMap);
                 this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
@@ -421,7 +429,7 @@ window.PerfLogic = {
         localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
         
         document.getElementById('track-setup-screen').classList.add('hidden');
-        this.quitCreator(); 
+        this.quitCreator();
         
         this.renderTrackList();
         this.renderMapHubs(); 
@@ -432,6 +440,7 @@ window.PerfLogic = {
         this.startType = type;
         document.getElementById('btn-standing').classList.toggle('active', type === 'standing');
         document.getElementById('btn-flying').classList.toggle('active', type === 'flying');
+        
         const flySettings = document.getElementById('flying-settings');
         if(type === 'flying') flySettings.classList.remove('hidden');
         else flySettings.classList.add('hidden');
@@ -441,7 +450,8 @@ window.PerfLogic = {
         const input = document.getElementById(inputId);
         let val = parseInt(input.value) || 0;
         val += step;
-        if(val < 0) val = 0; input.value = val;
+        if(val < 0) val = 0; 
+        input.value = val;
     },
 
     // =================================================
@@ -470,6 +480,7 @@ window.PerfLogic = {
                 this.toggleTrackSelection(t);
             };
             list.appendChild(div);
+
             setTimeout(() => this.renderMiniMap(t), 200);
         });
 
@@ -515,7 +526,9 @@ window.PerfLogic = {
             
             const icon = L.divIcon({
                 className: 'custom-hub',
-                html: `<div class="track-hub-marker"><span class="thm-name">${track.name}</span></div>`,
+                html: `<div class="track-hub-marker">
+                        <span class="thm-name">${track.name}</span>
+                       </div>`,
                 iconSize: [80, 30], iconAnchor: [40, 35]
             });
 
