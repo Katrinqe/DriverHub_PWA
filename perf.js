@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - FINAL MASTER (FIXED V2) === */
+/* === PERF.JS - FINAL "CLEAN ROUTE" EDITION === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -30,12 +30,13 @@ window.PerfLogic = {
     // --- GPS SETTINGS ---
     watchId: null,
     currentPolyline: null,
+    hasInitialZoom: false,
 
     // =================================================
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - V2 Fixed Loaded");
+        console.log("PerfLogic Init - Clean Route Version");
         this.renderTrackList();
         this.updateStatsDisplay(null);
     },
@@ -75,7 +76,6 @@ window.PerfLogic = {
         this.renderMapHubs();
     },
 
-    // --- FIX 1: ZOOM PROBLEM BEHOBEN ---
     startUserTracking: function() {
         if (!navigator.geolocation) return;
 
@@ -89,19 +89,13 @@ window.PerfLogic = {
             this.currentPolyline = L.polyline([], {color: '#bf5af2', weight: 5}).addTo(this.map);
         }
 
-        // Alten Watcher löschen falls vorhanden
         if (this.watchId) navigator.geolocation.clearWatch(this.watchId);
 
         this.watchId = navigator.geolocation.watchPosition(pos => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
-            const alt = pos.coords.altitude; 
-            const acc = pos.coords.accuracy; 
-            const speed = pos.coords.speed;
-            const timestamp = pos.timestamp;
             const latlng = [lat, lng];
 
-            // 1. VISUALISIERUNG & ZOOM
             if (!this.userMarker) {
                 const icon = L.divIcon({ 
                     className: 'user-marker-wrap', 
@@ -109,28 +103,23 @@ window.PerfLogic = {
                     iconSize: [40,40], iconAnchor: [20,20] 
                 });
                 this.userMarker = L.marker(latlng, {icon: icon, zIndexOffset: 1000}).addTo(this.map);
-                
-                // === FIX: HIER WIRD GEZOOMT WENN NOCH KEIN TRACK AUSGEWÄHLT IST ===
-                if(!this.selectedTrackId) {
-                    this.map.setView(latlng, 17); // Nah dran
-                }
             } else {
                 this.userMarker.setLatLng(latlng);
             }
 
-            // 2. AUFZEICHNUNG (Nur im Creator Mode)
+            if(!this.hasInitialZoom && !this.selectedTrackId) {
+                this.map.setView(latlng, 17);
+                this.hasInitialZoom = true;
+            }
+
             if (this.isCreatorMode) {
                 this.creatorPoints.push({
-                    lat: lat, lng: lng, alt: alt, speed: speed, time: timestamp, acc: acc
+                    lat: lat, lng: lng, 
+                    alt: pos.coords.altitude, 
+                    speed: pos.coords.speed, 
+                    time: pos.timestamp, 
+                    acc: pos.coords.accuracy
                 });
-
-                if (acc < 20) { 
-                    if (!this.currentPolyline) {
-                         this.currentPolyline = L.polyline([latlng], {color: '#bf5af2', weight: 5}).addTo(this.map);
-                    } else {
-                         this.currentPolyline.addLatLng(latlng); 
-                    }
-                }
                 
                 if (this.creatorPoints.length % 50 === 0) {
                     localStorage.setItem('driverhub_temp_track', JSON.stringify(this.creatorPoints));
@@ -242,7 +231,7 @@ window.PerfLogic = {
         
         setTimeout(() => { 
             this.map.invalidateSize(); 
-            if(this.userMarker) this.map.setView(this.userMarker.getLatLng(), 16);
+            if(this.userMarker) this.map.setView(this.userMarker.getLatLng(), 17);
         }, 100);
 
         this.selectPinType('start');
@@ -262,9 +251,7 @@ window.PerfLogic = {
 
     quitCreator: function() {
         this.isCreatorMode = false;
-        
-        // --- FIX 4: GHOST MARKERS CLEANUP ---
-        this.clearCreatorMap(); 
+        this.clearCreatorMap();
 
         document.querySelector('.perf-content-scroll').style.display = 'block';
         document.querySelector('.perf-map-fade').style.display = 'block';
@@ -285,7 +272,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 4. PIN & ROUTING SYSTEM
+    // 4. PIN & ROUTING SYSTEM (CLEAN ROUTE FIX)
     // =================================================
 
     selectPinType: function(type) {
@@ -298,11 +285,16 @@ window.PerfLogic = {
     },
 
     placePinOnMap: function(latlng) {
-        // --- FIX 3: NUR EIN START UND EIN ZIEL ERLAUBT ---
+        // --- CLEANUP: Alte Linie sofort löschen ---
+        if(this.routeLayer) {
+            this.map.removeLayer(this.routeLayer);
+            this.routeLayer = null;
+        }
+
         if(this.selectedPin === 'start' || this.selectedPin === 'finish') {
             const existing = this.creatorPoints.find(p => p.type === this.selectedPin);
             if(existing) {
-                this.removePoint(existing); // Alten löschen
+                this.removePoint(existing); 
             }
         }
 
@@ -322,22 +314,28 @@ window.PerfLogic = {
             if(this.selectedPin === 'remove') this.removePoint(pointData);
         });
 
-        // Automatisch weiterschalten nur beim ersten Mal
-        if(this.selectedPin === 'start' && this.creatorPoints.length === 1) this.selectPinType('check');
+        if(this.selectedPin === 'start' && this.creatorPoints.length === 1) {
+            this.selectPinType('check');
+        }
         
         this.calculateRoute();
     },
 
     removePoint: function(pointObj) {
-        this.map.removeLayer(pointObj.marker);
+        if(pointObj.marker) this.map.removeLayer(pointObj.marker);
         this.creatorPoints = this.creatorPoints.filter(p => p !== pointObj);
+        
+        // --- CLEANUP: Alte Linie löschen bevor neu berechnet wird ---
+        if(this.routeLayer) {
+            this.map.removeLayer(this.routeLayer);
+            this.routeLayer = null;
+        }
+
         this.calculateRoute();
     },
 
-    // --- FIX 2: ROUTE CALCULATION & DEBUG ---
     calculateRoute: function() {
         if(this.creatorPoints.length < 2) {
-            if(this.routeLayer) this.map.removeLayer(this.routeLayer);
             document.getElementById('ct-dist').innerText = "0.0 km";
             return;
         }
@@ -345,44 +343,71 @@ window.PerfLogic = {
         const coords = this.creatorPoints.map(p => `${p.latlng.lng},${p.latlng.lat}`).join(';');
         const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
 
-        console.log("Fetching Route:", url); // DEBUGGING
+        document.getElementById('ct-dist').innerText = "Calc...";
 
-        fetch(url).then(r => r.json()).then(data => {
+        fetch(url)
+        .then(r => r.json())
+        .then(data => {
             if(data.routes && data.routes.length > 0) {
                 const route = data.routes[0];
+                this.drawRoute(route.geometry.coordinates.map(c => [c[1], c[0]]));
                 
-                if(this.routeLayer) this.map.removeLayer(this.routeLayer);
-                
-                const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
-                this.routeLayer = L.polyline(latlngs, {color: '#bf5af2', weight: 5, opacity: 0.8}).addTo(this.map);
-
                 const distKm = (route.distance / 1000).toFixed(2);
                 const timeMin = Math.round(route.duration / 60);
                 
-                document.getElementById('ct-dist').innerText = distKm + " km";
-                document.getElementById('ct-time').innerText = timeMin + " min";
-                
-                this.currentRouteGeo = latlngs;
-                this.currentRouteStats.dist = distKm + " km";
-                this.currentRouteStats.time = timeMin + " min";
-
-                this.fetchElevationForCreator(latlngs);
+                this.updateRouteUI(distKm, timeMin);
             } else {
-                console.warn("No route found in API response");
+                console.warn("OSRM: No route found. Switching to manual line.");
+                this.drawFallbackRoute();
             }
-        }).catch(err => {
-            console.error("Routing Error (Server might be down):", err);
-            // Fallback: Gerade Linie zeichnen, wenn Server spinnt
-            if(this.routeLayer) this.map.removeLayer(this.routeLayer);
-            const simpleLine = this.creatorPoints.map(p => p.latlng);
-            this.routeLayer = L.polyline(simpleLine, {color: '#bf5af2', weight: 5, dashArray: '10, 10'}).addTo(this.map);
-            document.getElementById('ct-dist').innerText = "CALC ERROR";
-            this.currentRouteGeo = simpleLine; // Fallback Speichern
+        })
+        .catch(err => {
+            console.error("OSRM Error:", err);
+            this.drawFallbackRoute();
         });
     },
 
+    drawRoute: function(latlngs) {
+        if(this.routeLayer) this.map.removeLayer(this.routeLayer);
+        this.routeLayer = L.polyline(latlngs, {color: '#bf5af2', weight: 5, opacity: 0.8}).addTo(this.map);
+        this.currentRouteGeo = latlngs;
+        this.fetchElevationForCreator(latlngs);
+    },
+
+    drawFallbackRoute: function() {
+        if(this.routeLayer) this.map.removeLayer(this.routeLayer);
+        
+        const simpleLine = this.creatorPoints.map(p => p.latlng);
+        
+        this.routeLayer = L.polyline(simpleLine, {
+            color: '#bf5af2', 
+            weight: 4, 
+            dashArray: '10, 10', 
+            opacity: 0.7
+        }).addTo(this.map);
+        
+        this.currentRouteGeo = simpleLine;
+        
+        let totalDist = 0;
+        for(let i=0; i<simpleLine.length-1; i++) {
+            totalDist += this.map.distance(simpleLine[i], simpleLine[i+1]);
+        }
+        const distKm = (totalDist / 1000).toFixed(2);
+        this.updateRouteUI(distKm, "??");
+    },
+
+    updateRouteUI: function(dist, time) {
+        document.getElementById('ct-dist').innerText = dist + " km";
+        document.getElementById('ct-time').innerText = time + " min";
+        
+        this.currentRouteStats.dist = dist + " km";
+        this.currentRouteStats.time = time + " min";
+    },
+
     fetchElevationForCreator: function(latlngs) {
-        const step = Math.ceil(latlngs.length / 10);
+        if(!latlngs || latlngs.length === 0) return;
+        
+        const step = Math.ceil(latlngs.length / 15);
         const samplePoints = latlngs.filter((_, i) => i % step === 0);
         
         const latStr = samplePoints.map(p => p[0].toFixed(4)).join(',');
@@ -414,8 +439,11 @@ window.PerfLogic = {
             });
         }
         if(this.routeLayer) this.map.removeLayer(this.routeLayer);
+        
         this.creatorPoints = [];
         this.routeLayer = null;
+        this.currentRouteGeo = null;
+        
         document.getElementById('ct-dist').innerText = "0.0 km";
         document.getElementById('ct-elev').innerText = "0 m";
     },
