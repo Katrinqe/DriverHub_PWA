@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - V3 (STABILITY MASTER) === */
+/* === PERF.JS - V4 (DEBOUNCE / FINAL STABLE) === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -27,17 +27,19 @@ window.PerfLogic = {
     currentRouteGeo: null,
     startType: 'standing',
     
-    // --- STABILITY SYSTEM (DER FIX) ---
+    // --- SYSTEM VARIABLES ---
     watchId: null,
     currentPolyline: null,
     hasInitialZoom: false,
-    lastRequestId: 0, // Ticket-Nummer für Berechnungen
+    
+    // --- DER FIX (TIMER) ---
+    calcTimer: null, // Speichert die Verzögerung
 
     // =================================================
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - V3 Stability Loaded");
+        console.log("PerfLogic Init - V4 Debounce Loaded");
         this.renderTrackList();
         this.updateStatsDisplay(null);
     },
@@ -79,7 +81,6 @@ window.PerfLogic = {
 
     startUserTracking: function() {
         if (!navigator.geolocation) return;
-
         const options = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
 
         if (!this.currentPolyline && this.isCreatorMode) {
@@ -243,7 +244,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 4. PIN & ROUTING SYSTEM (STABLE VERSION)
+    // 4. PIN & ROUTING SYSTEM (DEBOUNCED)
     // =================================================
 
     selectPinType: function(type) {
@@ -256,15 +257,11 @@ window.PerfLogic = {
     },
 
     placePinOnMap: function(latlng) {
-        // --- CLEANUP: Nur die Daten löschen, Berechnung pausieren ---
+        // --- 1. ERST AUFRÄUMEN OHNE BERECHNUNG ---
+        // (False am Ende heißt: Nicht berechnen, wir machen das gleich am Ende einmal)
         if(this.selectedPin === 'start' || this.selectedPin === 'finish') {
-            const existingIndex = this.creatorPoints.findIndex(p => p.type === this.selectedPin);
-            if(existingIndex > -1) {
-                // Nur Marker entfernen, nicht Route neu berechnen (das machen wir gleich)
-                const oldP = this.creatorPoints[existingIndex];
-                if(oldP.marker) this.map.removeLayer(oldP.marker);
-                this.creatorPoints.splice(existingIndex, 1);
-            }
+            const existing = this.creatorPoints.find(p => p.type === this.selectedPin);
+            if(existing) this.removePoint(existing, false); 
         }
 
         let className = 'pin-dot white';
@@ -278,23 +275,38 @@ window.PerfLogic = {
         this.creatorPoints.push(pointData);
 
         marker.on('click', () => {
-            if(this.selectedPin === 'remove') this.removePoint(pointData);
+            if(this.selectedPin === 'remove') this.removePoint(pointData, true);
         });
 
         if(this.selectedPin === 'start' && this.creatorPoints.length === 1) this.selectPinType('check');
         
-        this.calculateRoute();
+        // --- 2. JETZT BERECHNEN (Verzögert) ---
+        this.triggerRouteCalculation();
     },
 
-    removePoint: function(pointObj) {
+    removePoint: function(pointObj, shouldCalc = true) {
         if(pointObj.marker) this.map.removeLayer(pointObj.marker);
         this.creatorPoints = this.creatorPoints.filter(p => p !== pointObj);
-        this.calculateRoute();
+        
+        if(shouldCalc) this.triggerRouteCalculation();
     },
 
-    // --- DER STABILITÄTS-FIX ---
-    calculateRoute: function() {
-        // 1. Alte Route optisch SOFORT löschen, damit nichts hängt
+    // --- DER NEUE TRIGGER: Wartet 300ms bevor er loslegt ---
+    triggerRouteCalculation: function() {
+        // Wenn schon ein Timer läuft: STOPPEN (Abbrechen)
+        if(this.calcTimer) clearTimeout(this.calcTimer);
+
+        // UI Feedback sofort:
+        document.getElementById('ct-dist').innerText = "Wait...";
+
+        // Neuen Timer setzen
+        this.calcTimer = setTimeout(() => {
+            this.executeRouteCalculation();
+        }, 400); // 400ms warten
+    },
+
+    executeRouteCalculation: function() {
+        // 1. Alte Route löschen
         if(this.routeLayer) {
             this.map.removeLayer(this.routeLayer);
             this.routeLayer = null;
@@ -305,10 +317,6 @@ window.PerfLogic = {
             return;
         }
 
-        // 2. Ticket ziehen (Neue Request ID)
-        this.lastRequestId++;
-        const myRequestId = this.lastRequestId;
-
         document.getElementById('ct-dist').innerText = "Calc...";
 
         const coords = this.creatorPoints.map(p => `${p.latlng.lng},${p.latlng.lat}`).join(';');
@@ -317,12 +325,6 @@ window.PerfLogic = {
         fetch(url)
         .then(r => r.json())
         .then(data => {
-            // 3. SICHERHEITS-CHECK: Ist dieses Ticket noch gültig?
-            if(this.lastRequestId !== myRequestId) {
-                console.log("Ignoriere alte Routen-Berechnung (User hat weiter geklickt).");
-                return; // STOPP, nichts machen!
-            }
-
             if(data.routes && data.routes.length > 0) {
                 const route = data.routes[0];
                 this.drawRoute(route.geometry.coordinates.map(c => [c[1], c[0]]));
@@ -330,21 +332,18 @@ window.PerfLogic = {
                 const timeMin = Math.round(route.duration / 60);
                 this.updateRouteUI(distKm, timeMin);
             } else {
-                console.warn("OSRM: No route found.");
+                console.warn("No route found. Fallback.");
                 this.drawFallbackRoute();
             }
         })
         .catch(err => {
-            if(this.lastRequestId !== myRequestId) return; // Auch bei Fehler prüfen
             console.error("OSRM Error:", err);
             this.drawFallbackRoute();
         });
     },
 
     drawRoute: function(latlngs) {
-        // Doppelte Sicherheit: Layer entfernen falls da
         if(this.routeLayer) this.map.removeLayer(this.routeLayer);
-        
         this.routeLayer = L.polyline(latlngs, {color: '#bf5af2', weight: 5, opacity: 0.8}).addTo(this.map);
         this.currentRouteGeo = latlngs;
         this.fetchElevationForCreator(latlngs);
@@ -352,7 +351,6 @@ window.PerfLogic = {
 
     drawFallbackRoute: function() {
         if(this.routeLayer) this.map.removeLayer(this.routeLayer);
-        
         const simpleLine = this.creatorPoints.map(p => p.latlng);
         this.routeLayer = L.polyline(simpleLine, {
             color: '#bf5af2', weight: 4, dashArray: '10, 10', opacity: 0.7
@@ -382,8 +380,6 @@ window.PerfLogic = {
         const latStr = samplePoints.map(p => p[0].toFixed(4)).join(',');
         const lngStr = samplePoints.map(p => p[1].toFixed(4)).join(',');
 
-        // Auch hier: Wir brauchen eigentlich Ticket-Logik, aber Elevation ist nur Optik,
-        // daher nicht so kritisch. Wir lassen es simpel.
         fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latStr}&longitude=${lngStr}`)
         .then(r => r.json())
         .then(data => {
@@ -413,7 +409,7 @@ window.PerfLogic = {
         this.creatorPoints = [];
         this.routeLayer = null;
         this.currentRouteGeo = null;
-        this.lastRequestId++; // Alle laufenden Requests entwerten
+        if(this.calcTimer) clearTimeout(this.calcTimer); // Timer stoppen
         
         document.getElementById('ct-dist').innerText = "0.0 km";
         document.getElementById('ct-elev').innerText = "0 m";
