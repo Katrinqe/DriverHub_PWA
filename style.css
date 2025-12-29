@@ -1102,3 +1102,13 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     transform: translateY(-4px) scale(1.1); /* Kleiner Pop-Effekt */
     color: #ff3b30 !important;
 }
+
+/* === NAV FIX: KEIN AUFSTEIGEN MEHR === */
+#nav-perf.active-perf i {
+    /* Zwingt das Icon, unten zu bleiben */
+    transform: none !important; 
+    
+    /* Nur Farbe & Leuchten */
+    color: #ff3b30 !important;
+    text-shadow: 0 0 15px rgba(255, 59, 48, 0.6) !important;
+}
