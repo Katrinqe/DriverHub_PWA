@@ -733,16 +733,17 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 
 
 /* ================================================================ */
-/* === PERFORMANCE HUB (FINAL REPAIR - NO GREY BARS) === */
+/* === PERFORMANCE HUB (FINAL FULL RESTORE) === */
 /* ================================================================ */
 
-/* --- 1. MAP & FADE --- */
+/* --- 1. BASE LAYOUT & MAIN MAP LAYER --- */
 #perf-map-container {
     position: absolute; top: 0; left: 0;
     width: 100%; 
     height: 50vh; 
     z-index: 0 !important;
-    pointer-events: auto !important; /* WICHTIG: Map muss bedienbar sein */
+    pointer-events: auto !important;
+    touch-action: none;
     transition: height 0.3s ease;
 }
 
@@ -751,31 +752,32 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 
 #perf-map { width: 100%; height: 100%; background: #000000; }
 
-/* FADE: Z-Index erhöht, damit er sichtbar ist */
+/* FADE: Z-Index erhöht, damit er SICHTBAR über der Map liegt */
 .perf-map-fade {
     position: absolute; bottom: 0; left: 0;
-    width: 100%; height: 150px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000000 100%);
+    width: 100%; height: 180px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000000 95%);
     pointer-events: none !important;
-    z-index: 20 !important; /* Muss HOCH sein */
+    z-index: 2 !important; 
 }
 
-/* TEXT OVERLAY */
+/* TEXT OVERLAY (Die "0" und "Tracks") */
 #perf-map-overlay-text {
     position: absolute; bottom: 40px; left: 0; width: 100%;
-    text-align: center; z-index: 25 !important; pointer-events: none;
+    text-align: center; z-index: 3 !important; pointer-events: none;
     color: white; text-shadow: 0 0 20px black;
     transition: opacity 0.2s;
 }
+/* Wenn Creator Mode an ist -> Text weg */
 body.creator-active #perf-map-overlay-text { opacity: 0; }
 
 
-/* --- 2. SCROLL CONTAINER --- */
+/* --- 2. SCROLL CONTENT AREA --- */
 .perf-content-scroll {
     position: absolute; top: 0; left: 0; 
     width: 100%; height: 100%;
     overflow-y: auto; overflow-x: hidden;
-    z-index: 30 !important; /* Über der Map */
+    z-index: 10 !important; 
     pointer-events: none; 
     padding-bottom: 90px !important;
 }
@@ -788,22 +790,25 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 }
 
 
-/* --- 3. STATISCHER INFO-BEREICH (KEIN GRAUER BALKEN MEHR) --- */
+/* --- 3. STATISCHER INFO-BEREICH (BETON-FIX) --- */
 .perf-info-container {
-    /* Feste Höhe gegen Springen */
-    min-height: 160px;
+    /* FIX: Exakte Pixel-Höhe, damit NICHTS springt */
+    height: 150px !important;
+    min-height: 150px !important;
+    
     display: flex; 
     flex-direction: column; 
     justify-content: flex-end; 
     flex-shrink: 0 !important;
-    /* FIX: Transparent oder Schwarz, kein Grau */
+    
     background: #000000; 
-    position: relative; z-index: 40;
-    padding-bottom: 10px;
+    position: relative; z-index: 20;
+    overflow: hidden; 
+    padding-bottom: 5px;
 }
 
 .stats-container-wrapper {
-    width: 100%; display: flex; justify-content: center; margin-bottom: 5px;
+    width: 100%; display: flex; justify-content: center; margin-bottom: 2px;
 }
 .perf-stats-row { flex: 1; display: flex; justify-content: space-around; }
 .p-stat-box { text-align: center; }
@@ -813,39 +818,35 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 
 /* Start Button Platzhalter */
 #track-action-bar {
-    height: 60px !important;
-    min-height: 60px !important;
+    height: 55px !important;
+    min-height: 55px !important;
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.2s; 
-    margin-top: 5px;
+    opacity: 0; transition: opacity 0.2s ease; 
+    margin-top: 5px; margin-bottom: 5px;
 }
 #track-action-bar.visible { opacity: 1; pointer-events: auto; }
 
 .btn-start-race {
     padding: 12px 50px; font-size: 1rem; font-weight: 900; font-style: italic; letter-spacing: 1px;
-    color: white; background: rgba(0,0,0,0.8); border: 1px solid #ff3b30; border-radius: 40px;
+    color: white; background: rgba(10,10,10,0.9); border: 1px solid #ff3b30; border-radius: 40px;
     box-shadow: 0 0 20px rgba(255, 59, 48, 0.2); transition: transform 0.1s; cursor: pointer;
 }
 .btn-start-race:active { transform: scale(0.96); background: #ff3b30; }
 
 
-/* --- 4. TRACK LISTE (POSITION KORRIGIERT) --- */
+/* --- 4. TRACK LISTE & CARDS --- */
 .perf-section-title { 
-    /* FIX: Padding korrigiert */
     padding-left: 20px; 
     font-size: 0.8rem; color: #666; font-weight: 800; 
-    margin-top: 10px; margin-bottom: 10px; 
+    margin-top: 15px; margin-bottom: 10px; 
     letter-spacing: 1px; text-transform: uppercase;
-    background: transparent;
 }
 
 .track-list-horizontal { 
     display: flex; gap: 15px; overflow-x: auto; scroll-snap-type: x mandatory; 
-    /* FIX: Hier wieder 20px statt 35px */
-    padding-left: 20px !important; 
+    padding-left: 20px !important; /* Korrekter Abstand */
     padding-right: 20px !important;
     padding-bottom: 140px; 
-    background: transparent; /* FIX: Grauen Balken entfernt */
 }
 .track-list-horizontal::-webkit-scrollbar { display: none; }
 
@@ -857,7 +858,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .track-card.active-card { border: 1px solid #ff3b30; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 
 .tc-map-preview { height: 60%; width: 100%; background: #151515; border-bottom: 1px solid #222; position: relative; z-index: 1; }
-.tc-map-preview .leaflet-control-container { display: none; } /* Controls weg für saubere Optik */
+.tc-map-preview .leaflet-control-container { display: none; }
 .tc-info { padding: 8px 12px; }
 .tc-name { font-size: 0.8rem; color: white; font-weight: 800; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tc-stats { display: flex; justify-content: space-between; font-size: 0.65rem; color: #888; }
@@ -923,6 +924,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .cb-pin.active { opacity: 1; transform: scale(1.1); }
 .cb-pin span { font-size: 0.5rem; font-weight: 800; color: white; margin-top: 4px; }
 
+/* DOTS */
 .pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
 .pin-dot.green { background: #30d158; box-shadow: 0 0 10px #30d158; }
 .pin-dot.white { background: #fff; box-shadow: 0 0 10px #fff; }
@@ -931,7 +933,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .custom-pin-icon { background: none; border: none; }
 
 
-/* --- 7. CONFIGURATOR & INPUTS --- */
+/* --- 7. CONFIGURATOR & INPUTS (DESIGN WIEDERHERGESTELLT) --- */
 #track-setup-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #050505 !important; 
@@ -961,6 +963,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
     text-transform: uppercase; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4);
 }
 
+/* FANCY INPUTS */
 .config-group { margin-bottom: 25px; }
 .config-group label { display: block; color: #888; font-size: 0.7rem; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px; }
 
@@ -985,26 +988,25 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .step-display input { background: transparent; border: none; color: white; font-size: 1.5rem !important; width: 80px !important; font-weight: 900; text-align: center; }
 .step-display .unit { color: #ff3b30; font-weight: 800; }
 
+/* DIESE HABEN GEFEHLT - JETZT WIEDER DA */
+.btn-prm-glow {
+    width: 100%; padding: 15px; margin: 20px 0 30px 0;
+    background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent); 
+    border: 1px solid rgba(191, 90, 242, 0.5); color: #bf5af2;
+    border-radius: 15px; font-weight: 900; font-size: 0.8rem; letter-spacing: 1px; 
+    box-shadow: 0 0 20px rgba(191, 90, 242, 0.1); cursor: pointer;
+}
+
+.setup-actions { display: flex; gap: 15px; align-items: center; }
+.btn-discard-text { flex: 1; background: none; border: none; color: #666; font-weight: bold; cursor: pointer; }
+
 .btn-save-final {
-    width: 100%; background: #ff3b30; color: white; border: none; padding: 16px;
-    border-radius: 12px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; margin-top: 20px;
-    box-shadow: 0 5px 20px rgba(255, 59, 48, 0.3);
+    flex: 2; background: #ff3b30; color: white; border: none; padding: 15px;
+    border-radius: 30px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; 
+    box-shadow: 0 0 20px rgba(255, 59, 48, 0.3); cursor: pointer;
 }
+.btn-save-final:active { transform: scale(0.98); }
 
-/* === 8. MARKERS & NAV BUTTON === */
-.pulsing-dot-green { width: 15px; height: 15px; background: #30d158; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #30d158; animation: pulseG 1.5s infinite; }
-.pulsing-dot-red { width: 15px; height: 15px; background: #ff3b30; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #ff3b30; animation: pulseR 1.5s infinite; }
-@keyframes pulseG { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes pulseR { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
-
-.custom-hub { background: transparent !important; border: none !important; }
-.track-hub-marker {
-    background: rgba(10, 10, 10, 0.95); border: 1px solid rgba(255, 255, 255, 0.15); border-left: 3px solid #ff3b30;
-    border-radius: 4px; padding: 5px 10px; box-shadow: 0 5px 20px rgba(0,0,0,0.8);
-    min-width: 80px; text-align: center; transition: transform 0.2s;
-}
-.track-hub-marker::after { content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); border-width: 5px 5px 0; border-style: solid; border-color: rgba(10,10,10,0.95) transparent transparent; }
-.thm-name { font-size: 0.65rem; color: white; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
-
+/* === NAV FIX === */
 #nav-perf.active-perf { color: #ff3b30 !important; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6) !important; }
 #nav-perf.active-perf i { transform: none !important; color: #ff3b30 !important; }
