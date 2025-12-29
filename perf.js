@@ -7,6 +7,7 @@ window.PerfLogic = {
     map: null,
     setupMap: null,
     userMarker: null,
+
     
     // --- DATA ---
     // Lädt Tracks aus dem Speicher oder startet mit leerer Liste
