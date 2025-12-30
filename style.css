@@ -733,42 +733,43 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 
 
 /* ================================================================ */
-/* === PERFORMANCE HUB (ORIGINAL DESIGN + LAYOUT FIXES) === */
+/* === PERFORMANCE HUB (FINAL STABLE - FADE VISIBLE FIX) === */
 /* ================================================================ */
 
 /* --- 1. BASE LAYOUT & MAIN MAP LAYER --- */
 #perf-map-container {
     position: absolute; top: 0; left: 0;
-    width: 100%; height: 50vh; /* Standard Höhe */
+    width: 100%; 
+    height: 50vh; 
     z-index: 0 !important;
     pointer-events: auto !important;
     touch-action: none;
     transition: height 0.3s ease;
 }
 
-/* FIX: Creator Mode wieder Vollbild */
-body.creator-active #perf-map-container {
-    height: 100vh !important;
-    z-index: 0 !important;
-}
+/* Creator Mode: Vollbild */
+body.creator-active #perf-map-container { height: 100vh !important; }
 
 #perf-map { width: 100%; height: 100%; background: #000000; }
 
-/* FIX: FADE - Aggressiver und höherer Z-Index */
+/* --- FIX: FADE (JETZT SICHTBAR) --- */
 .perf-map-fade {
     position: absolute; bottom: 0; left: 0;
     width: 100%; 
-    height: 250px !important; /* Deutlich höher */
-    /* Harter Verlauf für Sichtbarkeit */
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000000 80%) !important;
+    height: 200px; /* Schön hochziehen */
+    /* Verlauf von Transparent zu Schwarz */
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000000 100%);
     pointer-events: none !important;
-    z-index: 5 !important; /* Über der Map, unter dem UI */
+    /* WICHTIG: Muss höher sein als die Leaflet-Map-Tiles (die sind ca. 400) */
+    z-index: 1000 !important; 
 }
 
 /* TEXT OVERLAY */
 #perf-map-overlay-text {
     position: absolute; bottom: 40px; left: 0; width: 100%;
-    text-align: center; z-index: 6 !important; pointer-events: none;
+    text-align: center; 
+    z-index: 1001 !important; /* Über dem Fade */
+    pointer-events: none;
     color: white; text-shadow: 0 0 20px black;
     transition: opacity 0.2s;
 }
@@ -786,33 +787,32 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 }
 .perf-content-scroll > * { pointer-events: auto; }
 
-/* Spacer: Hält den Platz oben frei */
+/* Spacer: Hält die Map frei */
 .perf-content-scroll > div:first-child { 
     height: 50vh !important; 
     pointer-events: none !important; 
 }
 
 
-/* --- 3. INFO AREA (ANTI-SPRING-FIX & POSITION) --- */
+/* --- 3. STATISCHER INFO-BEREICH (BETON-FIX) --- */
 .perf-info-container {
-    /* FIX: Betonierte Höhe. Reserviert Platz für Button + Stats. */
-    height: 160px !important;
-    min-height: 160px !important;
-    max-height: 160px !important;
+    /* Exakte Höhe gegen Springen */
+    height: 150px !important;
+    min-height: 150px !important;
     
     display: flex; 
     flex-direction: column; 
-    justify-content: flex-end; /* Inhalt unten */
+    justify-content: flex-end; 
     flex-shrink: 0 !important;
     
-    background: #000000; /* WICHTIG: Deckt die Karte ab */
+    background: #000000; 
     position: relative; z-index: 20;
     overflow: hidden; 
-    padding-bottom: 10px;
+    padding-bottom: 5px;
 }
 
 .stats-container-wrapper {
-    width: 100%; display: flex; justify-content: center; margin-bottom: 5px;
+    width: 100%; display: flex; justify-content: center; margin-bottom: 2px;
 }
 .perf-stats-row { flex: 1; display: flex; justify-content: space-around; }
 .p-stat-box { text-align: center; }
@@ -820,40 +820,37 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .p-stat-box span { font-size: 1.1rem; color: white; font-weight: 900; font-family: sans-serif; }
 .glow-text span { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.5); }
 
-/* FIX: Button Container ist immer da, nur unsichtbar */
+/* Start Button: Unsichtbarer Platzhalter */
 #track-action-bar {
     height: 55px !important;
     min-height: 55px !important;
-    margin-top: 5px; margin-bottom: 5px;
     display: flex; align-items: center; justify-content: center;
     opacity: 0; transition: opacity 0.2s ease; 
+    margin-top: 5px; margin-bottom: 5px;
 }
 #track-action-bar.visible { opacity: 1; pointer-events: auto; }
 
 .btn-start-race {
     padding: 12px 50px; font-size: 1rem; font-weight: 900; font-style: italic; letter-spacing: 1px;
-    color: white; background: rgba(20,20,20,0.9); border: 1px solid #ff3b30; border-radius: 40px;
+    color: white; background: rgba(10,10,10,0.9); border: 1px solid #ff3b30; border-radius: 40px;
     box-shadow: 0 0 20px rgba(255, 59, 48, 0.2); transition: transform 0.1s; cursor: pointer;
 }
 .btn-start-race:active { transform: scale(0.96); background: #ff3b30; }
 
 
-/* --- 4. TRACK LISTE (LAYOUT FIX) --- */
+/* --- 4. TRACK LISTE (POSITION FIX) --- */
 .perf-section-title { 
-    padding-left: 20px; /* Dein gewünschter Abstand */
+    padding-left: 20px; 
     font-size: 0.8rem; color: #666; font-weight: 800; 
-    margin-top: 20px; /* FIX: Mehr Abstand nach oben */
-    margin-bottom: 10px; 
+    margin-top: 15px; margin-bottom: 10px; 
     letter-spacing: 1px; text-transform: uppercase;
-    background: transparent;
 }
 
 .track-list-horizontal { 
     display: flex; gap: 15px; overflow-x: auto; scroll-snap-type: x mandatory; 
-    padding-left: 20px !important; 
+    padding-left: 20px !important; /* Abstand links korrigiert */
     padding-right: 20px !important;
-    padding-bottom: 140px; /* Platz unten */
-    background: transparent;
+    padding-bottom: 140px; 
 }
 .track-list-horizontal::-webkit-scrollbar { display: none; }
 
@@ -891,7 +888,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .psn-item.active { background: #ff3b30; color: white; }
 
 
-/* --- 6. CREATOR MODE (ORIGINAL DESIGN) --- */
+/* --- 6. CREATOR MODE (INPUTS & BUTTONS FIX) --- */
 #perf-creator-ui {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 2000; pointer-events: none; 
@@ -940,7 +937,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .custom-pin-icon { background: none; border: none; }
 
 
-/* --- 7. CONFIGURATOR (MODERN LOOK WIEDER DRIN) --- */
+/* --- 7. CONFIGURATOR (MODERN LOOK FIXED) --- */
 #track-setup-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #050505 !important; 
@@ -970,22 +967,24 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
     text-transform: uppercase; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4);
 }
 
-/* FANCY INPUTS & TOGGLES (WICHTIG!) */
+/* EXCEL-LOOK ENTFERNUNG (WICHTIG!) */
 .config-group { margin-bottom: 25px; }
 .config-group label { display: block; color: #888; font-size: 0.7rem; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px; }
 
 .fancy-input-wrap input {
-    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid #333; color: white; padding: 15px;
-    border-radius: 12px; font-weight: bold; font-size: 1rem; outline: none; transition: all 0.3s;
+    width: 100%; background: rgba(255,255,255,0.05) !important; border: 1px solid #333 !important; 
+    color: white !important; padding: 15px !important;
+    border-radius: 12px !important; font-weight: bold !important; font-size: 1rem !important; 
+    outline: none !important; transition: all 0.3s;
 }
-.fancy-input-wrap input:focus { border-color: #ff3b30; background: rgba(20,0,0,0.5); }
+.fancy-input-wrap input:focus { border-color: #ff3b30 !important; background: rgba(20,0,0,0.5) !important; }
 
-.fancy-toggle-row { display: flex; background: rgba(255,255,255,0.03); border-radius: 15px; padding: 5px; border: 1px solid #222; }
+.fancy-toggle-row { display: flex; background: rgba(255,255,255,0.03) !important; border-radius: 15px; padding: 5px; border: 1px solid #222; }
 .fancy-toggle {
     flex: 1; background: transparent; border: none; color: #666; padding: 12px; font-weight: 800; font-size: 0.8rem; border-radius: 12px;
     transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
 }
-.fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
+.fancy-toggle.active { background: #ff3b30 !important; color: white !important; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 
 /* STEPPER */
 #flying-settings { background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.2); border-radius: 20px; padding: 15px; margin-bottom: 25px; }
@@ -995,7 +994,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .step-display input { background: transparent; border: none; color: white; font-size: 1.5rem !important; width: 80px !important; font-weight: 900; text-align: center; }
 .step-display .unit { color: #ff3b30; font-weight: 800; }
 
-/* BUTTON STYLES (WICHTIG!) */
+/* PRM BUTTON & SAVE BUTTON STYLE (WIEDER DA) */
 .btn-prm-glow {
     width: 100%; padding: 15px; margin: 20px 0 30px 0;
     background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent); 
