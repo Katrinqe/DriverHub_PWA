@@ -347,7 +347,7 @@ window.PerfLogic = {
                 this.currentRouteStats.elevDown = Math.round(down) + "m";
                 
                 const hudEl = document.getElementById('ct-elev');
-                if(hudEl) hudEl.innerText = `+${Math.round(up)} / -${Math.round(down)}`;
+               if(hudEl) hudEl.innerHTML = `<span style="color:#30d158"><i class="fa-solid fa-caret-up"></i> ${Math.round(up)}</span> <span style="color:#666">|</span> <span style="color:#ff3b30"><i class="fa-solid fa-caret-down"></i> ${Math.round(down)}</span>`;
             }
         });
     },
