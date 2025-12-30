@@ -187,31 +187,37 @@
 
                 <div id="flying-settings" class="hidden entrance-animation">
                     <div class="fly-grid-top">
-                        <label>TARGET SPEED</label>
-                        <div class="stepper-control huge">
-                            <button class="step-btn" onclick="PerfLogic.stepValue('fly-target', -5)">-</button>
-                            <div class="step-display"><input type="number" id="fly-target" value="120" readonly><span class="unit">km/h</span></div>
-                            <button class="step-btn" onclick="PerfLogic.stepValue('fly-target', 5)">+</button>
-                        </div>
-                    </div>
-                    <div class="fly-grid-row">
-                        <div class="fly-col">
-                            <label>MIN ENTRY</label>
-                            <div class="stepper-control">
-                                <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', -5)">-</button>
-                                <div class="step-display small"><input type="number" id="fly-min" value="80" readonly></div>
-                                <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', 5)">+</button>
-                            </div>
-                        </div>
-                        <div class="fly-col">
-                            <label>MAX ENTRY</label>
-                            <div class="stepper-control">
-                                <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', -5)">-</button>
-                                <div class="step-display small"><input type="number" id="fly-max" value="120" readonly></div>
-                                <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', 5)">+</button>
-                            </div>
-                        </div>
-                    </div>
+                     <div class="stepper-main">
+    <label>TARGET ENTRY SPEED</label>
+    
+    <div class="tacho-container">
+        <div class="tacho-arc" id="tacho-visual-arc"></div>
+        <div class="tacho-ticks"></div>
+        <div class="tacho-value-display">
+            <div class="tacho-val" id="tacho-val-text">120</div>
+            <span class="tacho-unit">km/h</span>
+        </div>
+        <input type="range" min="0" max="300" value="120" class="tacho-input-overlay" id="fly-target" oninput="PerfLogic.updateTacho(this.value)">
+    </div>
+</div>
+<div class="fly-grid-row">
+    <div class="fly-col">
+        <label>MIN</label>
+        <div class="stepper-control">
+            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', -1)">-</button>
+            <div class="step-display small"><input type="number" id="fly-min" value="115" readonly></div>
+            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', 1)">+</button>
+        </div>
+    </div>
+    <div class="fly-col">
+        <label>MAX</label>
+        <div class="stepper-control">
+            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', -1)">-</button>
+            <div class="step-display small"><input type="number" id="fly-max" value="125" readonly></div>
+            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', 1)">+</button>
+        </div>
+    </div>
+</div>
                 </div>
 
                 <div class="config-group" style="margin-top: 20px;">
