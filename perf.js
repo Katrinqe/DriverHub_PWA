@@ -375,11 +375,12 @@ window.PerfLogic = {
         this.openSetupScreen();
     },
 
-    openSetupScreen: function() {
+   openSetupScreen: function() {
         document.getElementById('perf-creator-ui').classList.add('hidden');
         const setupScreen = document.getElementById('track-setup-screen');
         setupScreen.classList.remove('hidden');
         
+        // Setup Map initialisieren (falls noch nicht da)
         if(!this.setupMap) {
             this.setupMap = L.map('setup-map', {
                 zoomControl: false, attributionControl: false,
@@ -390,15 +391,38 @@ window.PerfLogic = {
 
         setTimeout(() => {
             this.setupMap.invalidateSize();
+            // Alte Layer entfernen (außer Tiles)
             this.setupMap.eachLayer(l => { if(!l._url) this.setupMap.removeLayer(l); });
             
+            // 1. Route zeichnen
             if(this.currentRouteGeo) {
                 const poly = L.polyline(this.currentRouteGeo, {color: '#ff3b30', weight: 5}).addTo(this.setupMap);
                 this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
             }
+
+            // 2. --- NEU: START & FINISH PUNKTE ZEICHNEN ---
+            if(this.creatorPoints) {
+                this.creatorPoints.forEach(p => {
+                    if(p.type === 'start' || p.type === 'finish') {
+                        const colorClass = p.type === 'start' ? 'green' : 'red';
+                        const glowColor = p.type === 'start' ? '#30d158' : '#ff3b30';
+                        
+                        // Kleinerer, leuchtender Dot für die Preview
+                        const iconHtml = `<div class="pin-dot ${colorClass}" style="width:12px; height:12px; box-shadow: 0 0 8px ${glowColor};"></div>`;
+                        
+                        const icon = L.divIcon({ 
+                            className: 'custom-pin-icon', 
+                            html: iconHtml, 
+                            iconSize: [12,12], 
+                            iconAnchor: [6,6] 
+                        });
+                        L.marker(p.latlng, {icon: icon}).addTo(this.setupMap);
+                    }
+                });
+            }
+
         }, 200);
     },
-
     cancelSetup: function() {
         document.getElementById('track-setup-screen').classList.add('hidden');
         document.getElementById('perf-creator-ui').classList.remove('hidden');
