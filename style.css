@@ -755,10 +755,14 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 /* FADE: Z-Index erhöht, damit er SICHTBAR über der Map liegt */
 .perf-map-fade {
     position: absolute; bottom: 0; left: 0;
-    width: 100%; height: 180px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000000 95%);
+    width: 100%; 
+    height: 250px !important; /* Viel höher ziehen */
+    
+    /* Harter Verlauf von Transparent zu Schwarz */
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 60%, #000000 100%);
+    
     pointer-events: none !important;
-    z-index: 2 !important; 
+    z-index: 5 !important; 
 }
 
 /* TEXT OVERLAY (Die "0" und "Tracks") */
@@ -791,20 +795,23 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 
 
 /* --- 3. STATISCHER INFO-BEREICH (BETON-FIX) --- */
-.perf-info-container {
     /* FIX: Exakte Pixel-Höhe, damit NICHTS springt */
-    height: 150px !important;
-    min-height: 150px !important;
+   .perf-info-container {
+    /* WICHTIG: Das ist der Beton-Block. */
+    height: 160px !important; 
+    min-height: 160px !important;
+    max-height: 160px !important;
     
     display: flex; 
     flex-direction: column; 
     justify-content: flex-end; 
-    flex-shrink: 0 !important;
     
+    /* Hintergrund schwarz, damit er die Map unten sauber abschließt */
     background: #000000; 
-    position: relative; z-index: 20;
-    overflow: hidden; 
+    position: relative; 
+    z-index: 20;
     padding-bottom: 5px;
+    overflow: hidden; /* Nichts darf hier raus- oder reinrutschen */
 }
 
 .stats-container-wrapper {
@@ -818,12 +825,19 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 
 /* Start Button Platzhalter */
 #track-action-bar {
-    height: 55px !important;
-    min-height: 55px !important;
+    height: 60px !important;
+    min-height: 60px !important;
+    margin-top: 5px; 
+    margin-bottom: 5px;
+    
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.2s ease; 
-    margin-top: 5px; margin-bottom: 5px;
+    
+    /* Der Trick: Er ist IMMER da, nur unsichtbar. */
+    opacity: 0; 
+    pointer-events: none;
+    transition: opacity 0.2s ease;
 }
+/* Wenn Klasse .visible kommt, wird er nur sichtbar, braucht aber keinen neuen Platz */
 #track-action-bar.visible { opacity: 1; pointer-events: auto; }
 
 .btn-start-race {
@@ -891,9 +905,14 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 }
 .creator-top-hud {
     position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: 90%;
-    background: rgba(10,10,10,0.9); backdrop-filter: blur(10px);
-    border: 1px solid #333; border-radius: 12px;
-    display: flex; justify-content: space-around; padding: 12px 0;
+    /* Der moderne Look: */
+    background: rgba(15, 15, 15, 0.85); 
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.15); 
+    border-radius: 20px; /* Runder */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    
+    display: flex; justify-content: space-around; padding: 15px 0;
     pointer-events: auto; z-index: 2005;
 }
 .cth-item label { display: block; font-size: 0.6rem; color: #666; font-weight: 800; }
@@ -1010,3 +1029,27 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 /* === NAV FIX === */
 #nav-perf.active-perf { color: #ff3b30 !important; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6) !important; }
 #nav-perf.active-perf i { transform: none !important; color: #ff3b30 !important; }
+
+/* === REPARATUR FLYING START & INPUTS === */
+/* Macht die Inputs wieder fancy */
+.fancy-input-wrap input {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 12px !important;
+    color: white !important;
+    font-weight: 800 !important;
+    padding: 15px !important;
+}
+
+/* Macht die Toggle-Buttons (Standing/Flying) wieder modern */
+.fancy-toggle-row {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-radius: 15px !important;
+    padding: 5px !important;
+}
+.fancy-toggle.active {
+    background: #ff3b30 !important;
+    color: white !important;
+    box-shadow: 0 5px 15px rgba(255, 59, 48, 0.4) !important;
+}
