@@ -1052,30 +1052,15 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 }
 
 /* Das "Tacho-Gehäuse" (Der schwarze Kasten) */
-.stepper-control { 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    background: #000000; /* Tiefschwarz */
-    border: 1px solid #222; 
-    border-radius: 16px; 
-    padding: 6px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* Schatten nach außen */
-    height: 60px; /* Feste Höhe für Einheitlichkeit */
+.stepper-control {
+    padding: 2px !important;
+    height: 50px !important; /* Etwas flacher */
 }
 
 /* Die Plus/Minus Buttons */
-.step-btn { 
-    width: 48px; 
-    height: 100%; /* Füllt die Höhe aus */
-    background: #151515; 
-    border: 1px solid #333; 
-    color: #666; /* Standard Grau */
-    font-size: 1.2rem; 
-    border-radius: 12px; 
-    cursor: pointer;
-    transition: all 0.1s ease;
-    display: flex; align-items: center; justify-content: center;
+.step-btn.small {
+    width: 35px !important; /* Schmaler */
+    font-size: 1rem !important;
 }
 
 /* Button Active State (Neon Glow) */
@@ -1099,22 +1084,10 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 }
 
 /* Die Zahl selbst */
-.step-display input { 
-    background: transparent !important; 
-    border: none !important; 
-    color: white !important; 
-    font-family: sans-serif; /* System Font für Schärfe */
-    font-size: 1.8rem !important; /* RIESIG */
-    font-weight: 900 !important; 
-    font-style: italic; /* Speed Look */
-    width: 80px !important; 
-    text-align: right; /* Rechtsbündig zur Einheit */
-    padding: 0 !important;
-    margin: 0 !important;
-    pointer-events: none; /* Keine Eingabe, nur Anzeige */
-    font-variant-numeric: tabular-nums; /* Verhindert Wackeln der Zahlen */
+.step-display.small input {
+    font-size: 1.2rem !important;
+    width: 40px !important; /* Nimmt weniger Platz weg */
 }
-
 /* Die Einheit (km/h) */
 .step-display .unit { 
     color: #ff3b30; 
@@ -1126,13 +1099,11 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 }
 
 /* Grid für Min/Max Entry (Unten) */
-.fly-grid-row { 
+.fly-grid-row {
     display: grid; 
     grid-template-columns: 1fr 1fr; 
-    gap: 15px; 
+    gap: 8px !important; /* Weniger Lücke */
     margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.05); /* Feine Trennlinie */
 }
 
 /* Kleinere Version für Min/Max */
@@ -1166,11 +1137,9 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 
 /* === NEU: DER TACHO (HALBKREIS) === */
 .tacho-container {
-    position: relative; width: 220px; height: 110px; /* Halbkreis-Größe */
-    margin: 20px auto 30px auto; /* Zentriert */
-    overflow: hidden;
+    /* Damit man beim Scrollen nicht versehentlich verstellt: */
+    touch-action: pan-y; 
 }
-
 /* Der Bogen */
 .tacho-arc {
     width: 200px; height: 200px;
@@ -1207,6 +1176,12 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 
 /* Unsichtbarer Slider darüber für die Steuerung */
 .tacho-input-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    opacity: 0; cursor: ew-resize; z-index: 10;
+    /* Wir machen ihn etwas höher, damit man ihn trifft */
+    height: 120% !important; 
+    top: -10% !important;
+    cursor: grab;
+}
+
+.tacho-input-overlay:active {
+    cursor: grabbing;
 }
