@@ -163,81 +163,83 @@
     </div>
 
     <div id="track-setup-screen" class="hidden">
-        
-        <div class="setup-map-wrapper">
-            <div id="setup-map"></div> 
-        </div>
-        
-        <div class="setup-content-scroll">
-            <div class="setup-card">
-                <h2><i class="fa-solid fa-sliders"></i> TRACK CONFIGURATION</h2>
-
-                <div class="config-group fancy-input-wrap">
-                    <label>TRACK NAME</label>
-                    <input type="text" id="setup-name" placeholder="e.g. Nürnberg Ring">
-                </div>
-
-                <div class="config-group">
-                    <label>START TYPE</label>
-                    <div class="fancy-toggle-row">
-                        <button class="fancy-toggle active" id="btn-standing" onclick="PerfLogic.setStartType('standing')"><i class="fa-solid fa-stopwatch"></i> STANDING</button>
-                        <button class="fancy-toggle" id="btn-flying" onclick="PerfLogic.setStartType('flying')"><i class="fa-solid fa-bolt"></i> FLYING</button>
-                    </div>
-                </div>
-
-                <div id="flying-settings" class="hidden entrance-animation">
-                    <div class="fly-grid-top">
-                     <div class="stepper-main">
-    <label>TARGET ENTRY SPEED</label>
     
-    <div class="tacho-container">
-        <div class="tacho-arc" id="tacho-visual-arc"></div>
-        <div class="tacho-ticks"></div>
-        <div class="tacho-value-display">
-            <div class="tacho-val" id="tacho-val-text">120</div>
-            <span class="tacho-unit">km/h</span>
-        </div>
-        <input type="range" min="0" max="300" value="120" class="tacho-input-overlay" id="fly-target" oninput="PerfLogic.updateTacho(this.value)">
+    <div class="setup-map-wrapper">
+        <div id="setup-map"></div> 
     </div>
-</div>
-<div class="fly-grid-row">
-    <div class="fly-col">
-        <label>MIN</label>
-        <div class="stepper-control">
-            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', -1)">-</button>
-            <div class="step-display small"><input type="number" id="fly-min" value="115" readonly></div>
-            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', 1)">+</button>
-        </div>
-    </div>
-    <div class="fly-col">
-        <label>MAX</label>
-        <div class="stepper-control">
-            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', -1)">-</button>
-            <div class="step-display small"><input type="number" id="fly-max" value="125" readonly></div>
-            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', 1)">+</button>
-        </div>
-    </div>
-</div>
-                </div>
+    
+    <div class="setup-content-scroll">
+        <div class="setup-card">
+            
+            <h2><i class="fa-solid fa-sliders"></i> TRACK CONFIGURATION</h2>
 
-                <div class="config-group" style="margin-top: 20px;">
-                    <label>SECTORS</label>
-                    <div class="sector-placeholder">
-                        <div style="font-weight:bold; color:white;">Sector 1</div>
-                        <small>Start - Finish</small>
-                    </div>
-                </div>
+            <div class="config-group fancy-input-wrap">
+                <label>TRACK NAME</label>
+                <input type="text" id="setup-name" placeholder="e.g. Nürnberg Ring">
+            </div>
 
-                <button class="btn-prm-glow" onclick="alert('PRM Engine integrated in V2')">
-                    <i class="fa-solid fa-microchip"></i> PERFORMANCE REFERENCE MODEL (PRM)
-                </button>
-
-                <div class="setup-actions">
-                    <button class="btn-discard-text" onclick="PerfLogic.cancelSetup()">DISCARD</button>
-                    <button class="btn-save-final" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button>
+            <div class="config-group">
+                <label>START TYPE</label>
+                <div class="fancy-toggle-row">
+                    <button class="fancy-toggle active" id="btn-standing" onclick="PerfLogic.setStartType('standing')"><i class="fa-solid fa-stopwatch"></i> STANDING</button>
+                    <button class="fancy-toggle" id="btn-flying" onclick="PerfLogic.setStartType('flying')"><i class="fa-solid fa-bolt"></i> FLYING</button>
                 </div>
             </div>
+
+            <div id="flying-settings" class="hidden entrance-animation">
+                
+                <div class="stepper-main">
+                    <label>TARGET ENTRY SPEED</label>
+                    <div class="tacho-container">
+                        <div class="tacho-arc" id="tacho-visual-arc"></div>
+                        <div class="tacho-ticks"></div>
+                        <div class="tacho-value-display">
+                            <div class="tacho-val" id="tacho-val-text">120</div>
+                            <span class="tacho-unit">km/h</span>
+                        </div>
+                        <input type="range" min="0" max="300" value="120" class="tacho-input-overlay" id="fly-target" oninput="PerfLogic.updateTacho(this.value)">
+                    </div>
+                </div>
+
+                <div class="fly-grid-row">
+                    <div class="fly-col">
+                        <label>MIN</label>
+                        <div class="stepper-control">
+                            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', -1)">-</button>
+                            <div class="step-display small"><input type="number" id="fly-min" value="115" readonly></div>
+                            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-min', 1)">+</button>
+                        </div>
+                    </div>
+                    <div class="fly-col">
+                        <label>MAX</label>
+                        <div class="stepper-control">
+                            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', -1)">-</button>
+                            <div class="step-display small"><input type="number" id="fly-max" value="125" readonly></div>
+                            <button class="step-btn small" onclick="PerfLogic.stepValue('fly-max', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div> 
+            <div class="config-group" style="margin-top: 20px;">
+                <label>SECTORS</label>
+                <div class="sector-placeholder">
+                    <div style="font-weight:bold; color:white;">Sector 1</div>
+                    <small>Start - Finish</small>
+                </div>
+            </div>
+
+            <button class="btn-prm-glow" onclick="alert('PRM Engine integrated in V2')">
+                <i class="fa-solid fa-microchip"></i> PERFORMANCE REFERENCE MODEL (PRM)
+            </button>
+
+            <div class="setup-actions">
+                <button class="btn-discard-text" onclick="PerfLogic.cancelSetup()">DISCARD</button>
+                <button class="btn-save-final" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button>
+            </div>
+
         </div>
+    </div>
     </div>
 
 </div>
