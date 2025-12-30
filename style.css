@@ -1144,3 +1144,69 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 /* === NAV FIX === */
 #nav-perf.active-perf { color: #ff3b30 !important; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6) !important; }
 #nav-perf.active-perf i { transform: none !important; color: #ff3b30 !important; }
+
+/* === REPARATUR: UNTERE BUTTONS === */
+.btn-save-final {
+    width: 100%; background: #ff3b30; color: white; border: none; padding: 16px;
+    border-radius: 30px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; margin-top: 15px;
+    box-shadow: 0 5px 20px rgba(255, 59, 48, 0.3); cursor: pointer;
+}
+.btn-save-final:active { transform: scale(0.98); }
+
+.setup-actions { display: flex; gap: 15px; align-items: center; width: 100%; margin-top: 10px; }
+.btn-discard-text { flex: 1; background: none; border: none; color: #666; font-weight: bold; cursor: pointer; padding: 10px; }
+
+.btn-prm-glow {
+    width: 100%; padding: 12px; margin-top: 20px;
+    background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent); 
+    border: 1px solid rgba(191, 90, 242, 0.5); color: #bf5af2;
+    border-radius: 12px; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; 
+    box-shadow: 0 0 15px rgba(191, 90, 242, 0.1); cursor: pointer; text-align: center;
+}
+
+/* === NEU: DER TACHO (HALBKREIS) === */
+.tacho-container {
+    position: relative; width: 220px; height: 110px; /* Halbkreis-Größe */
+    margin: 20px auto 30px auto; /* Zentriert */
+    overflow: hidden;
+}
+
+/* Der Bogen */
+.tacho-arc {
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    border: 10px solid #222; /* Leerer Bogen */
+    border-top-color: #ff3b30; /* Voller Bogen (wird per JS gedreht) */
+    position: absolute; top: 0; left: 10px;
+    box-sizing: border-box;
+    transform: rotate(-90deg); /* Startposition */
+    transition: transform 0.1s linear;
+    box-shadow: 0 0 20px rgba(255,59,48,0.2);
+}
+
+/* Die Striche (Ticks) */
+.tacho-ticks {
+    position: absolute; top: 0; left: 0; width: 100%; height: 200%;
+    background: repeating-conic-gradient(
+        from 270deg,
+        rgba(255,255,255,0.1) 0deg 1deg,
+        transparent 1deg 10deg
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    mask-image: radial-gradient(transparent 65%, black 66%); -webkit-mask-image: radial-gradient(transparent 65%, black 66%);
+}
+
+/* Die Zahl in der Mitte */
+.tacho-value-display {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    text-align: center; width: 100%;
+}
+.tacho-val { font-size: 2.5rem; font-weight: 900; color: white; font-style: italic; font-family: sans-serif; line-height: 1; }
+.tacho-unit { font-size: 0.8rem; color: #ff3b30; font-weight: 800; text-transform: uppercase; margin-top: 5px; display: block;}
+
+/* Unsichtbarer Slider darüber für die Steuerung */
+.tacho-input-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: ew-resize; z-index: 10;
+}
