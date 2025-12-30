@@ -1024,164 +1024,170 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 }
 .fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 
-/* ========================================= */
-/* === FLYING START COCKPIT UI (MODERN) === */
-/* ========================================= */
+/* ================================================================ */
+/* === FLYING START & TACHO COCKPIT (FINAL FIXED DESIGN) === */
+/* ================================================================ */
 
-/* Der Haupt-Container für den Flying-Bereich */
+/* 1. DER HAUPT-CONTAINER (Glas-Optik & Layout-Schutz) */
 #flying-settings {
-    background: rgba(20, 20, 20, 0.6); /* Dunkler, glasiger Hintergrund */
-    border: 1px solid rgba(255, 255, 255, 0.08); /* Sehr feiner Rahmen */
-    border-radius: 24px; 
-    padding: 20px; 
-    margin-bottom: 25px;
-    box-shadow: inset 0 0 20px rgba(0,0,0,0.5); /* Tiefe nach innen */
+    background: rgba(15, 15, 15, 0.6); /* Dunkles Glas */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    margin-top: 10px;
+    
+    /* WICHTIG: Damit Elemente nicht rausfliegen */
+    position: relative; 
+    overflow: hidden; 
+    
+    /* Animation beim Einblenden */
+    animation: fadeInFly 0.3s ease-out;
 }
+@keyframes fadeInFly { from { opacity:0; transform: translateY(-10px); } to { opacity:1; transform: translateY(0); }}
 
-/* Die Labels über den Tachos */
-.stepper-main label, 
-.fly-col label { 
-    display: block; 
-    font-size: 0.65rem; 
-    color: #888; 
-    font-weight: 800; 
-    margin-bottom: 8px; 
-    text-align: center; 
-    text-transform: uppercase; 
-    letter-spacing: 1.5px; /* Breiter für den Tech-Look */
-}
 
-/* Das "Tacho-Gehäuse" (Der schwarze Kasten) */
-.stepper-control {
-    padding: 2px !important;
-    height: 50px !important; /* Etwas flacher */
-}
-
-/* Die Plus/Minus Buttons */
-.step-btn.small {
-    width: 35px !important; /* Schmaler */
-    font-size: 1rem !important;
-}
-
-/* Button Active State (Neon Glow) */
-.step-btn:active { 
-    background: #ff3b30; 
-    color: white; 
-    border-color: #ff3b30;
-    box-shadow: 0 0 15px rgba(255, 59, 48, 0.4);
-    transform: scale(0.95);
-}
-
-/* Die Digitale Anzeige in der Mitte */
-.step-display { 
-    flex: 1; 
-    text-align: center; 
-    display: flex; 
-    align-items: baseline; /* Text auf einer Linie ausrichten */
-    justify-content: center;
-    position: relative;
-    top: -1px; /* Optische Korrektur */
-}
-
-/* Die Zahl selbst */
-.step-display.small input {
-    font-size: 1.2rem !important;
-    width: 40px !important; /* Nimmt weniger Platz weg */
-}
-/* Die Einheit (km/h) */
-.step-display .unit { 
-    color: #ff3b30; 
-    font-weight: 800; 
-    font-size: 0.8rem; 
-    margin-left: 6px;
-    text-transform: lowercase;
-    opacity: 0.9;
-}
-
-/* Grid für Min/Max Entry (Unten) */
-.fly-grid-row {
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 8px !important; /* Weniger Lücke */
-    margin-top: 15px;
-}
-
-/* Kleinere Version für Min/Max */
-.step-display.small input { 
-    font-size: 1.4rem !important; 
-    width: 60px !important; 
-}
-
-/* === NAV FIX === */
-#nav-perf.active-perf { color: #ff3b30 !important; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6) !important; }
-#nav-perf.active-perf i { transform: none !important; color: #ff3b30 !important; }
-
-/* === REPARATUR: UNTERE BUTTONS === */
-.btn-save-final {
-    width: 100%; background: #ff3b30; color: white; border: none; padding: 16px;
-    border-radius: 30px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; margin-top: 15px;
-    box-shadow: 0 5px 20px rgba(255, 59, 48, 0.3); cursor: pointer;
-}
-.btn-save-final:active { transform: scale(0.98); }
-
-.setup-actions { display: flex; gap: 15px; align-items: center; width: 100%; margin-top: 10px; }
-.btn-discard-text { flex: 1; background: none; border: none; color: #666; font-weight: bold; cursor: pointer; padding: 10px; }
-
-.btn-prm-glow {
-    width: 100%; padding: 12px; margin-top: 20px;
-    background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent); 
-    border: 1px solid rgba(191, 90, 242, 0.5); color: #bf5af2;
-    border-radius: 12px; font-weight: 800; font-size: 0.75rem; letter-spacing: 1px; 
-    box-shadow: 0 0 15px rgba(191, 90, 242, 0.1); cursor: pointer; text-align: center;
-}
-
-/* === NEU: DER TACHO (HALBKREIS) === */
+/* 2. TACHO CONTAINER (Zentrierung) */
 .tacho-container {
-    /* Damit man beim Scrollen nicht versehentlich verstellt: */
-    touch-action: pan-y; 
+    position: relative; /* WICHTIG: Damit der Bogen hier drin bleibt */
+    width: 220px; 
+    height: 120px; /* Halbkreis Höhe + Puffer */
+    margin: 10px auto 0 auto; /* Zentriert */
+    display: flex;
+    justify-content: center;
+    
+    /* Verhindert Scrollen beim Bedienen */
+    touch-action: none; 
 }
-/* Der Bogen */
+
+
+/* 3. DER VISUELLE BOGEN */
 .tacho-arc {
+    width: 200px; 
+    height: 200px; /* Vollkreis, wird durch overflow abgeschnitten */
+    border-radius: 50%;
+    
+    /* Der Style des Bogens */
+    border: 12px solid #1a1a1a; /* Dunkler Pfad */
+    border-top-color: #ff3b30;  /* Aktiver Pfad (Farbe wird per JS geändert) */
+    
+    position: absolute; 
+    top: 0; 
+    left: 10px; /* Zentrierungs-Korrektur */
+    box-sizing: border-box;
+    
+    /* Startposition (leer) */
+    transform: rotate(-135deg); 
+    transition: transform 0.1s linear, border-color 0.3s;
+    
+    /* Glow Effekt */
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    z-index: 1;
+}
+
+/* Die Ticks (Striche) im Hintergrund */
+.tacho-ticks {
+    position: absolute; top: 0; left: 10px; 
     width: 200px; height: 200px;
     border-radius: 50%;
-    border: 10px solid #222; /* Leerer Bogen */
-    border-top-color: #ff3b30; /* Voller Bogen (wird per JS gedreht) */
-    position: absolute; top: 0; left: 10px;
-    box-sizing: border-box;
-    transform: rotate(-90deg); /* Startposition */
-    transition: transform 0.1s linear;
-    box-shadow: 0 0 20px rgba(255,59,48,0.2);
-}
-
-/* Die Striche (Ticks) */
-.tacho-ticks {
-    position: absolute; top: 0; left: 0; width: 100%; height: 200%;
     background: repeating-conic-gradient(
         from 270deg,
         rgba(255,255,255,0.1) 0deg 1deg,
         transparent 1deg 10deg
     );
-    border-radius: 50%;
+    z-index: 0;
+    mask-image: radial-gradient(transparent 65%, black 66%); 
+    -webkit-mask-image: radial-gradient(transparent 65%, black 66%);
     pointer-events: none;
-    mask-image: radial-gradient(transparent 65%, black 66%); -webkit-mask-image: radial-gradient(transparent 65%, black 66%);
 }
 
-/* Die Zahl in der Mitte */
+
+/* 4. TEXT DISPLAY (MITTE) */
 .tacho-value-display {
-    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-    text-align: center; width: 100%;
+    position: absolute; 
+    bottom: 20px; /* Position im Halbkreis */
+    left: 50%; 
+    transform: translateX(-50%);
+    text-align: center; 
+    width: 100%;
+    z-index: 2;
+    pointer-events: none;
 }
-.tacho-val { font-size: 2.5rem; font-weight: 900; color: white; font-style: italic; font-family: sans-serif; line-height: 1; }
-.tacho-unit { font-size: 0.8rem; color: #ff3b30; font-weight: 800; text-transform: uppercase; margin-top: 5px; display: block;}
 
-/* Unsichtbarer Slider darüber für die Steuerung */
+.tacho-val { 
+    font-size: 3rem; 
+    font-weight: 900; 
+    color: white; 
+    font-style: italic; 
+    font-family: sans-serif; 
+    line-height: 1; 
+    text-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
+}
+
+.tacho-unit { 
+    font-size: 0.8rem; 
+    color: #ff3b30; 
+    font-weight: 800; 
+    text-transform: uppercase; 
+    letter-spacing: 2px;
+    display: block;
+    margin-top: 5px;
+}
+
+
+/* 5. DER UNSICHTBARE REGLER (DAS WICHTIGSTE!) */
+/* Das ist der Slider, den man anfasst. Er muss unsichtbar über allem liegen. */
 .tacho-input-overlay {
-    /* Wir machen ihn etwas höher, damit man ihn trifft */
-    height: 120% !important; 
-    top: -10% !important;
+    position: absolute;
+    top: -50px; left: -50px; /* Größer als der Container */
+    width: 320px; height: 200px;
+    
+    opacity: 0 !important; /* MUSS 0 SEIN - KEIN BLAUER BALKEN! */
+    z-index: 50; /* Ganz oben */
     cursor: grab;
+    margin: 0; padding: 0;
+}
+.tacho-input-overlay:active { cursor: grabbing; }
+
+
+/* 6. MIN / MAX INPUTS (KOMPAKT) */
+.fly-grid-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 10px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.05);
 }
 
-.tacho-input-overlay:active {
-    cursor: grabbing;
+.fly-col label {
+    display: block; font-size: 0.65rem; color: #888; font-weight: 800; 
+    text-align: center; margin-bottom: 5px; letter-spacing: 1px;
+}
+
+/* Stepper Container */
+.stepper-control {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 2px;
+    height: 45px;
+}
+
+/* Buttons +/- */
+.step-btn.small {
+    width: 35px; height: 100%;
+    background: #151515; border: none; border-radius: 10px;
+    color: #666; font-size: 1rem; font-weight: bold;
+    cursor: pointer;
+}
+.step-btn.small:active { background: #333; color: white; }
+
+/* Input Feld Zahl */
+.step-display.small input {
+    background: transparent !important; border: none !important;
+    color: white !important; font-size: 1.2rem !important; font-weight: bold !important;
+    text-align: center; width: 50px !important; padding: 0 !important;
 }
