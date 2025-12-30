@@ -470,12 +470,49 @@ window.PerfLogic = {
         else flySettings.classList.add('hidden');
     },
 
+   // --- TACHO & FLYING LOGIC ---
+    
+    updateTacho: function(val) {
+        val = parseInt(val);
+        
+        // 1. Text Update
+        document.getElementById('tacho-val-text').innerText = val;
+        
+        // 2. Bogen drehen (Visueller Effekt)
+        // 0 kmh = -135deg, 300 kmh = 135deg -> Range 270deg
+        const maxSpeed = 300;
+        const rotation = (val / maxSpeed) * 180 - 135; // Einfache Halbkreis-Berechnung
+        // Bessere Berechnung für CSS Clip/Rotate wäre komplexer, 
+        // aber wir nutzen hier border-rotation trick:
+        const arc = document.getElementById('tacho-visual-arc');
+        if(arc) {
+            // Wir drehen den ganzen Bogen leicht
+            const percentage = val / 300;
+            const deg = -45 + (percentage * 180); 
+            arc.style.transform = `rotate(${deg}deg)`;
+            // Farbe ändern je nach Speed
+            arc.style.borderTopColor = val > 200 ? '#ff3b30' : (val > 100 ? '#bf5af2' : '#30d158');
+        }
+
+        // 3. Automatik für Min/Max (+/- 5 km/h)
+        document.getElementById('fly-min').value = Math.max(0, val - 5);
+        document.getElementById('fly-max').value = val + 5;
+
+        // 4. Haptisches Feedback (Vibration)
+        // Checkt, ob sich der Wert in 5er Schritten geändert hat oder einfach bei jedem Input
+        if (navigator.vibrate) {
+            navigator.vibrate(5); // Kurzer, knackiger Impuls
+        }
+    },
+
     stepValue: function(inputId, step) {
         const input = document.getElementById(inputId);
         let val = parseInt(input.value) || 0;
         val += step;
         if(val < 0) val = 0; 
         input.value = val;
+        // Vibration auch hier
+        if (navigator.vibrate) navigator.vibrate(5);
     },
 
     // =================================================
