@@ -1191,3 +1191,63 @@ body.creator-active #perf-map-container { height: 100vh !important; }
     color: white !important; font-size: 1.2rem !important; font-weight: bold !important;
     text-align: center; width: 50px !important; padding: 0 !important;
 }
+
+/* === REPARATUR: BUTTONS GANZ UNTEN === */
+
+/* PRM Button (Lila Glow) */
+.btn-prm-glow {
+    display: block; width: 100%; 
+    padding: 15px; margin: 20px 0 15px 0;
+    background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent); 
+    border: 1px solid rgba(191, 90, 242, 0.5); 
+    color: #bf5af2;
+    border-radius: 15px; 
+    font-weight: 900; font-size: 0.8rem; letter-spacing: 1px; 
+    box-shadow: 0 0 15px rgba(191, 90, 242, 0.1); 
+    cursor: pointer; text-transform: uppercase;
+}
+
+/* Container für Discard & Save */
+.setup-actions { 
+    display: flex; gap: 15px; align-items: center; width: 100%; 
+    margin-bottom: 20px; /* Platz zum unteren Rand */
+}
+
+/* Discard Button (Dezent) */
+.btn-discard-text { 
+    flex: 1; 
+    background: transparent; 
+    border: 1px solid #333; 
+    color: #888; 
+    padding: 15px; border-radius: 30px;
+    font-weight: 800; font-size: 0.8rem;
+    cursor: pointer;
+}
+
+/* Save Button (Rot & Fett) */
+.btn-save-final {
+    flex: 2; 
+    background: #ff3b30; 
+    color: white; 
+    border: none; 
+    padding: 15px; border-radius: 30px; 
+    font-weight: 900; font-size: 1rem; letter-spacing: 1px; 
+    box-shadow: 0 5px 20px rgba(255, 59, 48, 0.3); 
+    cursor: pointer; text-transform: uppercase;
+}
+.btn-save-final:active { transform: scale(0.98); }
+
+/* === REPARATUR: TACHO ABSTAND === */
+
+/* Mehr Platz für den Tacho reservieren */
+.tacho-container {
+    height: 150px !important; /* Erhöht, damit der Bogen Platz hat */
+    margin-bottom: 10px !important;
+}
+
+/* Die Min/Max Zeile nach unten schieben */
+.fly-grid-row {
+    margin-top: 10px !important; 
+    padding-top: 20px !important; /* Extra Abstand zum Tacho */
+    border-top: 1px solid rgba(255,255,255,0.05); /* Feine Linie zur Trennung */
+}
