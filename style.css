@@ -1024,31 +1024,122 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 }
 .fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 
-/* Stepper */
-#flying-settings { background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.2); border-radius: 20px; padding: 15px; margin-bottom: 25px; }
-.stepper-main label { display: block; font-size: 0.8rem; color: #ff3b30; font-weight: 900; margin-bottom: 10px; text-align: center; }
-.stepper-control { display: flex; align-items: center; justify-content: space-between; background: #111; border: 1px solid #333; border-radius: 15px; padding: 5px; }
-.step-btn { width: 40px; height: 40px; background: #222; border: none; color: white; font-size: 1.2rem; border-radius: 12px; }
-.step-display input { background: transparent; border: none; color: white; font-size: 1.5rem !important; width: 80px !important; font-weight: 900; text-align: center; }
-.step-display .unit { color: #ff3b30; font-weight: 800; }
+/* ========================================= */
+/* === FLYING START COCKPIT UI (MODERN) === */
+/* ========================================= */
 
-.btn-prm-glow {
-    width: 100%; padding: 15px; margin: 20px 0 30px 0;
-    background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent); 
-    border: 1px solid rgba(191, 90, 242, 0.5); color: #bf5af2;
-    border-radius: 15px; font-weight: 900; font-size: 0.8rem; letter-spacing: 1px; 
-    box-shadow: 0 0 20px rgba(191, 90, 242, 0.1); cursor: pointer;
+/* Der Haupt-Container für den Flying-Bereich */
+#flying-settings {
+    background: rgba(20, 20, 20, 0.6); /* Dunkler, glasiger Hintergrund */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* Sehr feiner Rahmen */
+    border-radius: 24px; 
+    padding: 20px; 
+    margin-bottom: 25px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5); /* Tiefe nach innen */
 }
 
-.setup-actions { display: flex; gap: 15px; align-items: center; }
-.btn-discard-text { flex: 1; background: none; border: none; color: #666; font-weight: bold; cursor: pointer; }
-
-.btn-save-final {
-    flex: 2; background: #ff3b30; color: white; border: none; padding: 15px;
-    border-radius: 30px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; 
-    box-shadow: 0 0 20px rgba(255, 59, 48, 0.3); cursor: pointer;
+/* Die Labels über den Tachos */
+.stepper-main label, 
+.fly-col label { 
+    display: block; 
+    font-size: 0.65rem; 
+    color: #888; 
+    font-weight: 800; 
+    margin-bottom: 8px; 
+    text-align: center; 
+    text-transform: uppercase; 
+    letter-spacing: 1.5px; /* Breiter für den Tech-Look */
 }
-.btn-save-final:active { transform: scale(0.98); }
+
+/* Das "Tacho-Gehäuse" (Der schwarze Kasten) */
+.stepper-control { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    background: #000000; /* Tiefschwarz */
+    border: 1px solid #222; 
+    border-radius: 16px; 
+    padding: 6px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* Schatten nach außen */
+    height: 60px; /* Feste Höhe für Einheitlichkeit */
+}
+
+/* Die Plus/Minus Buttons */
+.step-btn { 
+    width: 48px; 
+    height: 100%; /* Füllt die Höhe aus */
+    background: #151515; 
+    border: 1px solid #333; 
+    color: #666; /* Standard Grau */
+    font-size: 1.2rem; 
+    border-radius: 12px; 
+    cursor: pointer;
+    transition: all 0.1s ease;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* Button Active State (Neon Glow) */
+.step-btn:active { 
+    background: #ff3b30; 
+    color: white; 
+    border-color: #ff3b30;
+    box-shadow: 0 0 15px rgba(255, 59, 48, 0.4);
+    transform: scale(0.95);
+}
+
+/* Die Digitale Anzeige in der Mitte */
+.step-display { 
+    flex: 1; 
+    text-align: center; 
+    display: flex; 
+    align-items: baseline; /* Text auf einer Linie ausrichten */
+    justify-content: center;
+    position: relative;
+    top: -1px; /* Optische Korrektur */
+}
+
+/* Die Zahl selbst */
+.step-display input { 
+    background: transparent !important; 
+    border: none !important; 
+    color: white !important; 
+    font-family: sans-serif; /* System Font für Schärfe */
+    font-size: 1.8rem !important; /* RIESIG */
+    font-weight: 900 !important; 
+    font-style: italic; /* Speed Look */
+    width: 80px !important; 
+    text-align: right; /* Rechtsbündig zur Einheit */
+    padding: 0 !important;
+    margin: 0 !important;
+    pointer-events: none; /* Keine Eingabe, nur Anzeige */
+    font-variant-numeric: tabular-nums; /* Verhindert Wackeln der Zahlen */
+}
+
+/* Die Einheit (km/h) */
+.step-display .unit { 
+    color: #ff3b30; 
+    font-weight: 800; 
+    font-size: 0.8rem; 
+    margin-left: 6px;
+    text-transform: lowercase;
+    opacity: 0.9;
+}
+
+/* Grid für Min/Max Entry (Unten) */
+.fly-grid-row { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 15px; 
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.05); /* Feine Trennlinie */
+}
+
+/* Kleinere Version für Min/Max */
+.step-display.small input { 
+    font-size: 1.4rem !important; 
+    width: 60px !important; 
+}
 
 /* === NAV FIX === */
 #nav-perf.active-perf { color: #ff3b30 !important; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6) !important; }
