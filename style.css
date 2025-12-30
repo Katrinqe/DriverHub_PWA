@@ -733,46 +733,45 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 
 
 /* ================================================================ */
-/* === PERFORMANCE HUB (FINAL FULL RESTORE) === */
+/* === PERFORMANCE HUB (ORIGINAL DESIGN + LAYOUT FIXES) === */
 /* ================================================================ */
 
 /* --- 1. BASE LAYOUT & MAIN MAP LAYER --- */
 #perf-map-container {
     position: absolute; top: 0; left: 0;
-    width: 100%; 
-    height: 50vh; 
+    width: 100%; height: 50vh; /* Standard Höhe */
     z-index: 0 !important;
     pointer-events: auto !important;
     touch-action: none;
     transition: height 0.3s ease;
 }
 
-/* Creator Mode: Vollbild */
-body.creator-active #perf-map-container { height: 100vh !important; }
+/* FIX: Creator Mode wieder Vollbild */
+body.creator-active #perf-map-container {
+    height: 100vh !important;
+    z-index: 0 !important;
+}
 
 #perf-map { width: 100%; height: 100%; background: #000000; }
 
-/* FADE: Z-Index erhöht, damit er SICHTBAR über der Map liegt */
+/* FIX: FADE - Aggressiver und höherer Z-Index */
 .perf-map-fade {
     position: absolute; bottom: 0; left: 0;
     width: 100%; 
-    height: 250px !important; /* Viel höher ziehen */
-    
-    /* Harter Verlauf von Transparent zu Schwarz */
-    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.8) 60%, #000000 100%);
-    
+    height: 250px !important; /* Deutlich höher */
+    /* Harter Verlauf für Sichtbarkeit */
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000000 80%) !important;
     pointer-events: none !important;
-    z-index: 5 !important; 
+    z-index: 5 !important; /* Über der Map, unter dem UI */
 }
 
-/* TEXT OVERLAY (Die "0" und "Tracks") */
+/* TEXT OVERLAY */
 #perf-map-overlay-text {
     position: absolute; bottom: 40px; left: 0; width: 100%;
-    text-align: center; z-index: 3 !important; pointer-events: none;
+    text-align: center; z-index: 6 !important; pointer-events: none;
     color: white; text-shadow: 0 0 20px black;
     transition: opacity 0.2s;
 }
-/* Wenn Creator Mode an ist -> Text weg */
 body.creator-active #perf-map-overlay-text { opacity: 0; }
 
 
@@ -787,35 +786,33 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 }
 .perf-content-scroll > * { pointer-events: auto; }
 
-/* Spacer */
+/* Spacer: Hält den Platz oben frei */
 .perf-content-scroll > div:first-child { 
     height: 50vh !important; 
     pointer-events: none !important; 
 }
 
 
-/* --- 3. STATISCHER INFO-BEREICH (BETON-FIX) --- */
-    /* FIX: Exakte Pixel-Höhe, damit NICHTS springt */
-   .perf-info-container {
-    /* WICHTIG: Das ist der Beton-Block. */
-    height: 160px !important; 
+/* --- 3. INFO AREA (ANTI-SPRING-FIX & POSITION) --- */
+.perf-info-container {
+    /* FIX: Betonierte Höhe. Reserviert Platz für Button + Stats. */
+    height: 160px !important;
     min-height: 160px !important;
     max-height: 160px !important;
     
     display: flex; 
     flex-direction: column; 
-    justify-content: flex-end; 
+    justify-content: flex-end; /* Inhalt unten */
+    flex-shrink: 0 !important;
     
-    /* Hintergrund schwarz, damit er die Map unten sauber abschließt */
-    background: #000000; 
-    position: relative; 
-    z-index: 20;
-    padding-bottom: 5px;
-    overflow: hidden; /* Nichts darf hier raus- oder reinrutschen */
+    background: #000000; /* WICHTIG: Deckt die Karte ab */
+    position: relative; z-index: 20;
+    overflow: hidden; 
+    padding-bottom: 10px;
 }
 
 .stats-container-wrapper {
-    width: 100%; display: flex; justify-content: center; margin-bottom: 2px;
+    width: 100%; display: flex; justify-content: center; margin-bottom: 5px;
 }
 .perf-stats-row { flex: 1; display: flex; justify-content: space-around; }
 .p-stat-box { text-align: center; }
@@ -823,44 +820,40 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .p-stat-box span { font-size: 1.1rem; color: white; font-weight: 900; font-family: sans-serif; }
 .glow-text span { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.5); }
 
-/* Start Button Platzhalter */
+/* FIX: Button Container ist immer da, nur unsichtbar */
 #track-action-bar {
-    height: 60px !important;
-    min-height: 60px !important;
-    margin-top: 5px; 
-    margin-bottom: 5px;
-    
+    height: 55px !important;
+    min-height: 55px !important;
+    margin-top: 5px; margin-bottom: 5px;
     display: flex; align-items: center; justify-content: center;
-    
-    /* Der Trick: Er ist IMMER da, nur unsichtbar. */
-    opacity: 0; 
-    pointer-events: none;
-    transition: opacity 0.2s ease;
+    opacity: 0; transition: opacity 0.2s ease; 
 }
-/* Wenn Klasse .visible kommt, wird er nur sichtbar, braucht aber keinen neuen Platz */
 #track-action-bar.visible { opacity: 1; pointer-events: auto; }
 
 .btn-start-race {
     padding: 12px 50px; font-size: 1rem; font-weight: 900; font-style: italic; letter-spacing: 1px;
-    color: white; background: rgba(10,10,10,0.9); border: 1px solid #ff3b30; border-radius: 40px;
+    color: white; background: rgba(20,20,20,0.9); border: 1px solid #ff3b30; border-radius: 40px;
     box-shadow: 0 0 20px rgba(255, 59, 48, 0.2); transition: transform 0.1s; cursor: pointer;
 }
 .btn-start-race:active { transform: scale(0.96); background: #ff3b30; }
 
 
-/* --- 4. TRACK LISTE & CARDS --- */
+/* --- 4. TRACK LISTE (LAYOUT FIX) --- */
 .perf-section-title { 
-    padding-left: 20px; 
+    padding-left: 20px; /* Dein gewünschter Abstand */
     font-size: 0.8rem; color: #666; font-weight: 800; 
-    margin-top: 15px; margin-bottom: 10px; 
+    margin-top: 20px; /* FIX: Mehr Abstand nach oben */
+    margin-bottom: 10px; 
     letter-spacing: 1px; text-transform: uppercase;
+    background: transparent;
 }
 
 .track-list-horizontal { 
     display: flex; gap: 15px; overflow-x: auto; scroll-snap-type: x mandatory; 
-    padding-left: 20px !important; /* Korrekter Abstand */
+    padding-left: 20px !important; 
     padding-right: 20px !important;
-    padding-bottom: 140px; 
+    padding-bottom: 140px; /* Platz unten */
+    background: transparent;
 }
 .track-list-horizontal::-webkit-scrollbar { display: none; }
 
@@ -898,21 +891,16 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .psn-item.active { background: #ff3b30; color: white; }
 
 
-/* --- 6. CREATOR MODE --- */
+/* --- 6. CREATOR MODE (ORIGINAL DESIGN) --- */
 #perf-creator-ui {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 2000; pointer-events: none; 
 }
 .creator-top-hud {
     position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: 90%;
-    /* Der moderne Look: */
-    background: rgba(15, 15, 15, 0.85); 
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255,255,255,0.15); 
-    border-radius: 20px; /* Runder */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    
-    display: flex; justify-content: space-around; padding: 15px 0;
+    background: rgba(10,10,10,0.9); backdrop-filter: blur(10px);
+    border: 1px solid #333; border-radius: 12px;
+    display: flex; justify-content: space-around; padding: 12px 0;
     pointer-events: auto; z-index: 2005;
 }
 .cth-item label { display: block; font-size: 0.6rem; color: #666; font-weight: 800; }
@@ -952,7 +940,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .custom-pin-icon { background: none; border: none; }
 
 
-/* --- 7. CONFIGURATOR & INPUTS (DESIGN WIEDERHERGESTELLT) --- */
+/* --- 7. CONFIGURATOR (MODERN LOOK WIEDER DRIN) --- */
 #track-setup-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #050505 !important; 
@@ -982,7 +970,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
     text-transform: uppercase; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4);
 }
 
-/* FANCY INPUTS */
+/* FANCY INPUTS & TOGGLES (WICHTIG!) */
 .config-group { margin-bottom: 25px; }
 .config-group label { display: block; color: #888; font-size: 0.7rem; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px; }
 
@@ -999,7 +987,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 }
 .fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 
-/* Stepper */
+/* STEPPER */
 #flying-settings { background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.2); border-radius: 20px; padding: 15px; margin-bottom: 25px; }
 .stepper-main label { display: block; font-size: 0.8rem; color: #ff3b30; font-weight: 900; margin-bottom: 10px; text-align: center; }
 .stepper-control { display: flex; align-items: center; justify-content: space-between; background: #111; border: 1px solid #333; border-radius: 15px; padding: 5px; }
@@ -1007,7 +995,7 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 .step-display input { background: transparent; border: none; color: white; font-size: 1.5rem !important; width: 80px !important; font-weight: 900; text-align: center; }
 .step-display .unit { color: #ff3b30; font-weight: 800; }
 
-/* DIESE HABEN GEFEHLT - JETZT WIEDER DA */
+/* BUTTON STYLES (WICHTIG!) */
 .btn-prm-glow {
     width: 100%; padding: 15px; margin: 20px 0 30px 0;
     background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent); 
@@ -1029,27 +1017,3 @@ body.creator-active #perf-map-overlay-text { opacity: 0; }
 /* === NAV FIX === */
 #nav-perf.active-perf { color: #ff3b30 !important; text-shadow: 0 0 15px rgba(255, 59, 48, 0.6) !important; }
 #nav-perf.active-perf i { transform: none !important; color: #ff3b30 !important; }
-
-/* === REPARATUR FLYING START & INPUTS === */
-/* Macht die Inputs wieder fancy */
-.fancy-input-wrap input {
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 12px !important;
-    color: white !important;
-    font-weight: 800 !important;
-    padding: 15px !important;
-}
-
-/* Macht die Toggle-Buttons (Standing/Flying) wieder modern */
-.fancy-toggle-row {
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
-    border-radius: 15px !important;
-    padding: 5px !important;
-}
-.fancy-toggle.active {
-    background: #ff3b30 !important;
-    color: white !important;
-    box-shadow: 0 5px 15px rgba(255, 59, 48, 0.4) !important;
-}
