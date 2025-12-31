@@ -1301,3 +1301,89 @@ body.creator-active #perf-map-container { height: 100vh !important; }
     /* Wir geben dem unteren Bereich wieder Farbe, aber lassen oben offen */
     background: linear-gradient(to top, #000 80%, transparent 100%) !important;
 }
+
+/* ================================================= */
+/* === REPARATUR KIT: TACHO TOUCH & MIN/MAX STYLE === */
+/* ================================================= */
+
+/* 1. TACHO BEDIENBAR MACHEN */
+.tacho-container {
+    /* WICHTIG: Erlaubt, dass Elemente absolut darin positioniert werden */
+    position: relative; 
+    z-index: 10;
+}
+
+/* Der unsichtbare Slider - RIESIG machen & nach vorne holen */
+.tacho-input-overlay {
+    position: absolute;
+    top: -20%; left: -10%; /* Überlappt den Container */
+    width: 120%; height: 140%;
+    
+    opacity: 0; 
+    z-index: 999 !important; /* GANZ OBEN - Über allem anderen */
+    cursor: ew-resize;
+    margin: 0; padding: 0;
+    
+    /* Touch Action Fix für Handys */
+    touch-action: none; 
+}
+
+
+/* 2. MIN / MAX BUTTONS REPARIEREN (Waren weiß und kaputt) */
+.fly-grid-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Zwei gleich große Spalten */
+    gap: 15px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.fly-col label {
+    display: block; 
+    font-size: 0.7rem; color: #888; font-weight: 800; 
+    text-align: center; margin-bottom: 5px; 
+    letter-spacing: 1px;
+}
+
+/* Der schwarze Kasten um die Zahlen */
+.stepper-control {
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    background: #000000 !important; /* Schwarz erzwingen */
+    border: 1px solid #333 !important;
+    border-radius: 12px;
+    padding: 4px;
+    height: 50px;
+}
+
+/* Die +/- Buttons */
+.step-btn {
+    width: 40px !important; height: 100%;
+    background: #151515 !important; 
+    border: 1px solid #333 !important;
+    border-radius: 8px;
+    color: #888 !important; 
+    font-size: 1.2rem; font-weight: bold;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+}
+.step-btn:active { background: #333 !important; color: white !important; }
+
+/* Das Eingabefeld (Zahl) */
+.step-display input {
+    background: transparent !important; /* Kein Weiß mehr! */
+    border: none !important;
+    color: white !important; 
+    font-size: 1.3rem !important; 
+    font-weight: 900 !important;
+    text-align: center; 
+    width: 100% !important;
+    outline: none !important;
+}
+
+/* Layout Container für die Zahl */
+.step-display {
+    flex: 1; display: flex; justify-content: center;
+}
