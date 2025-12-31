@@ -1251,3 +1251,105 @@ body.creator-active #perf-map-container { height: 100vh !important; }
     padding-top: 20px !important; /* Extra Abstand zum Tacho */
     border-top: 1px solid rgba(255,255,255,0.05); /* Feine Linie zur Trennung */
 }
+
+/* ========================================= */
+/* === TACHO FIX: HALBKREIS & STRICHE === */
+/* ========================================= */
+
+.tacho-container {
+    position: relative;
+    width: 240px; 
+    height: 120px; /* Exakt die Hälfte der Breite -> Halbkreis */
+    margin: 20px auto 10px auto;
+    overflow: hidden; /* SCHNEIDET ALLES UNTEN AB */
+    display: flex; justify-content: center;
+}
+
+/* 1. Hintergrund-Striche (Grau) */
+.tacho-ticks {
+    position: absolute; top: 0; left: 0; 
+    width: 240px; height: 240px; /* Vollkreis, wird aber durch Container halbiert */
+    border-radius: 50%;
+    
+    /* Erzeugt die Striche */
+    background: repeating-conic-gradient(
+        from 270deg,
+        rgba(255,255,255,0.15) 0deg 2deg,
+        transparent 2deg 6deg
+    );
+    
+    /* Macht ein Loch in die Mitte -> Ring-Optik */
+    mask-image: radial-gradient(transparent 65%, black 66%);
+    -webkit-mask-image: radial-gradient(transparent 65%, black 66%);
+    
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* 2. Aktiver Bogen (Farbiger Balken/Striche) */
+.tacho-arc {
+    position: absolute; top: 0; left: 0;
+    width: 240px; height: 240px;
+    border-radius: 50%;
+    
+    /* Der farbige Verlauf (Rot/Orange) */
+    background: conic-gradient(
+        from 270deg,
+        #ff3b30 0deg,
+        #ff9f0a 180deg
+    );
+    
+    /* Zwingt ihn auch in Strich-Optik */
+    mask-image: radial-gradient(transparent 65%, black 66%), repeating-conic-gradient(black 0deg 2deg, transparent 2deg 6deg);
+    -webkit-mask-image: radial-gradient(transparent 65%, black 66%), repeating-conic-gradient(black 0deg 2deg, transparent 2deg 6deg);
+    /* WICHTIG: Composite damit beides wirkt (Ring + Striche) */
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+
+    /* Start-Rotation (wird per JS gedreht um Fortschritt zu zeigen) */
+    transform: rotate(-180deg); 
+    transition: transform 0.1s linear;
+    
+    opacity: 0.8;
+    z-index: 1;
+}
+
+/* Text & Einheit */
+.tacho-value-display {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    text-align: center;
+    z-index: 5;
+}
+.tacho-val { 
+    font-size: 3.5rem; font-weight: 900; color: white; font-style: italic; 
+    line-height: 1; text-shadow: 0 0 20px rgba(255,59,48,0.5);
+}
+
+/* Touch-Bereich (Unsichtbar, aber riesig) */
+.tacho-input-overlay {
+    position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    opacity: 0; cursor: ew-resize; z-index: 50;
+}
+
+
+/* ========================================= */
+/* === NAV FIX: PERF MUSS LEUCHTEN === */
+/* ========================================= */
+
+/* Wir erzwingen den Style, egal was sonst passiert */
+#nav-perf {
+    transition: all 0.3s ease;
+}
+
+/* Wenn die Klasse 'active-perf' drauf ist (wird per JS gesetzt) */
+#nav-perf.active-perf,
+.nav-item.active-perf {
+    color: #ff3b30 !important;
+    text-shadow: 0 0 15px rgba(255, 59, 48, 0.8) !important;
+}
+
+#nav-perf.active-perf i,
+.nav-item.active-perf i {
+    color: #ff3b30 !important;
+    transform: scale(1.1);
+}
