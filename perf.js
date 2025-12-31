@@ -489,11 +489,12 @@ window.PerfLogic = {
             // Wir drehen den ganzen Bogen leicht
             const percentage = val / 300;
             const deg = -45 + (percentage * 180); 
+            arc.style.transform = const arc = document.getElementById('tacho-visual-arc');
+        if(arc) {
+            const percentage = val / 300; // 0.0 bis 1.0
+            const deg = -180 + (percentage * 180); 
             arc.style.transform = `rotate(${deg}deg)`;
-            // Farbe ändern je nach Speed
-            arc.style.borderTopColor = val > 200 ? '#ff3b30' : (val > 100 ? '#bf5af2' : '#30d158');
         }
-
         // 3. Automatik für Min/Max (+/- 5 km/h)
         document.getElementById('fly-min').value = Math.max(0, val - 5);
         document.getElementById('fly-max').value = val + 5;
