@@ -1353,3 +1353,14 @@ body.creator-active #perf-map-container { height: 100vh !important; }
     color: #ff3b30 !important;
     transform: scale(1.1);
 }
+
+/* NOTFALL FIX: Map sichtbar machen */
+#perf-map-container {
+    z-index: 1 !important; /* Etwas höher */
+    background: transparent !important;
+}
+.perf-info-container {
+    background: transparent !important; /* Falls das Schwarz alles verdeckt */
+    /* Wir geben dem unteren Bereich wieder Farbe, aber lassen oben offen */
+    background: linear-gradient(to top, #000 80%, transparent 100%) !important;
+}
