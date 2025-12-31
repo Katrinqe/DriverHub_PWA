@@ -472,29 +472,43 @@ window.PerfLogic = {
 
    // --- TACHO & FLYING LOGIC ---
     
-    updateTacho: function(val) {
+   updateTacho: function(val) {
         val = parseInt(val);
         
         // 1. Text Update
-        document.getElementById('tacho-val-text').innerText = val;
+        const textEl = document.getElementById('tacho-val-text');
+        if(textEl) textEl.innerText = val;
         
-        // 2. Bogen drehen (Visueller Effekt)
-        // 0 kmh = -135deg, 300 kmh = 135deg -> Range 270deg
-        const maxSpeed = 300;
-        const rotation = (val / maxSpeed) * 180 - 135; // Einfache Halbkreis-Berechnung
-        // Bessere Berechnung für CSS Clip/Rotate wäre komplexer, 
-        // aber wir nutzen hier border-rotation trick:
+        // 2. Bogen drehen (HIER WAR DER FEHLER)
+        // Erst die Variable holen...
         const arc = document.getElementById('tacho-visual-arc');
+        
+        // ...dann prüfen und benutzen
         if(arc) {
-            // Wir drehen den ganzen Bogen leicht
+            // 0 bis 300 kmh auf -180 bis 0 Grad mappen
             const percentage = val / 300;
-            const deg = -45 + (percentage * 180); 
-            arc.style.transform = const arc = document.getElementById('tacho-visual-arc');
-        if(arc) {
-            const percentage = val / 300; // 0.0 bis 1.0
             const deg = -180 + (percentage * 180); 
+            
+            // Jetzt den Style setzen (sauber getrennt)
             arc.style.transform = `rotate(${deg}deg)`;
+            
+            // Farbe je nach Speed ändern
+            if(val > 200) arc.style.borderTopColor = '#ff3b30'; // Rot
+            else if(val > 100) arc.style.borderTopColor = '#ff9f0a'; // Orange
+            else arc.style.borderTopColor = '#30d158'; // Grün
         }
+
+        // 3. Min/Max Automatik (+/- 5 km/h)
+        const minInput = document.getElementById('fly-min');
+        const maxInput = document.getElementById('fly-max');
+        if(minInput) minInput.value = Math.max(0, val - 5);
+        if(maxInput) maxInput.value = val + 5;
+
+        // 4. Haptik (Vibration)
+        if (window.navigator && window.navigator.vibrate) {
+             window.navigator.vibrate(5); 
+        }
+    },
         // 3. Automatik für Min/Max (+/- 5 km/h)
         document.getElementById('fly-min').value = Math.max(0, val - 5);
         document.getElementById('fly-max').value = val + 5;
