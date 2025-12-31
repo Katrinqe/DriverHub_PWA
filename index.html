@@ -190,16 +190,20 @@
                 
                 <div class="stepper-main">
                     <label>TARGET ENTRY SPEED</label>
-                    <div class="tacho-container">
-                        <div class="tacho-arc" id="tacho-visual-arc"></div>
-                        <div class="tacho-ticks"></div>
-                        <div class="tacho-value-display">
-                            <div class="tacho-val" id="tacho-val-text">120</div>
-                            <span class="tacho-unit">km/h</span>
-                        </div>
-                        <input type="range" min="0" max="300" value="120" class="tacho-input-overlay" id="fly-target" oninput="PerfLogic.updateTacho(this.value)">
-                    </div>
-                </div>
+                   <div class="tacho-container" 
+     ontouchstart="PerfLogic.handleTachoTouch(event)" 
+     ontouchmove="PerfLogic.handleTachoTouch(event)"
+     onclick="PerfLogic.handleTachoTouch(event)">
+    
+    <div class="tacho-arc" id="tacho-visual-arc"></div>
+    <div class="tacho-ticks"></div>
+    
+    <div class="tacho-value-display">
+        <div class="tacho-val" id="tacho-val-text">120</div>
+        <span class="tacho-unit">km/h</span>
+    </div>
+
+    </div>
 
                 <div class="fly-grid-row">
                     <div class="fly-col">
