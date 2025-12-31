@@ -518,6 +518,32 @@ window.PerfLogic = {
         if (navigator.vibrate) navigator.vibrate(5);
     },
 
+    
+    // --- NEUE TOUCH FUNKTION (FÜR DAS IPHONE) ---
+    handleTachoTouch: function(event) {
+        // Verhindert, dass die Seite beim Wischen scrollt
+        if(event.type !== 'click') event.preventDefault();
+        
+        const container = event.currentTarget;
+        const rect = container.getBoundingClientRect();
+        
+        // Wo ist der Finger (oder die Maus)?
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        
+        // Berechnung: Position im Container (0.0 bis 1.0)
+        let percent = (clientX - rect.left) / rect.width;
+        
+        // Begrenzen, damit man nicht unter 0 oder über 100 kommt
+        if(percent < 0) percent = 0;
+        if(percent > 1) percent = 1;
+        
+        // Umrechnen in 0 - 300 km/h
+        const val = Math.round(percent * 300);
+        
+        // Tacho updaten
+        this.updateTacho(val);
+    },
+    
     // =================================================
     // 6. RENDER FUNCTIONS
     // =================================================
