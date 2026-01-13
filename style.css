@@ -1387,3 +1387,33 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 .step-display {
     flex: 1; display: flex; justify-content: center;
 }
+
+/* === FEHLENDER STYLE FÜR STANDING START === */
+.sector-placeholder {
+    border: 1px dashed #444;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+}
+
+.sector-placeholder div {
+    font-size: 1rem;
+    color: white;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.sector-placeholder small {
+    color: #666;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
