@@ -464,16 +464,25 @@ window.PerfLogic = {
         this.updateStatsDisplay(null);
     },
 
-    setStartType: function(type) {
+setStartType: function(type) {
         this.startType = type;
+        
+        // Buttons umschalten
         document.getElementById('btn-standing').classList.toggle('active', type === 'standing');
         document.getElementById('btn-flying').classList.toggle('active', type === 'flying');
         
+        // Container holen
         const flySettings = document.getElementById('flying-settings');
-        if(type === 'flying') flySettings.classList.remove('hidden');
-        else flySettings.classList.add('hidden');
-    },
+        const standSettings = document.getElementById('standing-info'); // Das ist neu!
 
+        if(type === 'flying') {
+            flySettings.classList.remove('hidden');
+            if(standSettings) standSettings.classList.add('hidden'); // Standing ausblenden
+        } else {
+            flySettings.classList.add('hidden');
+            if(standSettings) standSettings.classList.remove('hidden'); // Standing einblenden
+        }
+    },
    // --- TACHO & FLYING LOGIC ---
     
   updateTacho: function(val) {
