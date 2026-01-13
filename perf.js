@@ -428,9 +428,13 @@ window.PerfLogic = {
         document.getElementById('perf-creator-ui').classList.remove('hidden');
     },
 
-    finalizeSave: function() {
+  finalizeSave: function() {
         const nameInput = document.getElementById('setup-name').value;
         const name = nameInput.trim() || "Unnamed Track";
+
+        // FIX: Wert direkt aus dem Tacho-Text holen, da es kein Input-Feld mehr gibt
+        const tachoElement = document.getElementById('tacho-val-text');
+        const targetSpeed = tachoElement ? tachoElement.innerText : "0";
 
         const track = {
             id: Date.now(),
@@ -443,7 +447,7 @@ window.PerfLogic = {
             bestTime: '---',
             config: {
                 type: this.startType,
-                flyTarget: document.getElementById('fly-target').value,
+                flyTarget: targetSpeed, // <--- HIER WAR DER FEHLER (jetzt gefixt)
                 flyMin: document.getElementById('fly-min').value,
                 flyMax: document.getElementById('fly-max').value
             }
