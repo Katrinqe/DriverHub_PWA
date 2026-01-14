@@ -1010,25 +1010,36 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 
 /* 3. Scroll Bereich (Reihe 2) */
 .setup-content-scroll {
-    grid-row: 2; /* Sitzt in der zweiten Reihe */
+    grid-row: 2;
     width: 100%;
-    height: 100%; /* Füllt den Rest komplett aus */
+    height: 100%;
     
     background: #0a0a0a;
     position: relative;
     z-index: 10;
     
-    /* SCROLLEN AKTIVIEREN */
+    /* === DER SCHLÜSSEL ZUM SCROLLEN === */
     overflow-y: auto !important; 
-    -webkit-overflow-scrolling: touch; 
     
-    /* Styling */
+    /* 1. Sagt dem Browser: Vertikales Wischen ist ERLAUBT */
+    touch-action: pan-y !important; 
+    
+    /* 2. Text/Inhalt darf wieder "angefasst" werden (wichtig für Scroll-Events) */
+    user-select: auto !important; 
+    -webkit-user-select: auto !important;
+    
+    /* 3. iPhone Schwung-Effekt */
+    -webkit-overflow-scrolling: touch !important; 
+    
+    /* 4. Verhindert, dass der Hintergrund mitscrollt */
+    overscroll-behavior: contain; 
+    
+    /* Optik */
     border-top: 1px solid rgba(255, 59, 48, 0.2);
     box-shadow: 0 -10px 40px rgba(0,0,0,1);
-    
-    /* WICHTIG: Kein negativer Margin mehr, damit nichts verschwindet! */
-    margin-top: 0 !important; 
-    border-radius: 0 !important; /* Ecken oben erstmal eckig, damit Layout sitzt */
+    margin-top: 0 !important;
+    border-radius: 0 !important;
+    pointer-events: auto !important;
 }
 
 /* 4. Der Inhalt */
