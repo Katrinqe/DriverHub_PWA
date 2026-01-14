@@ -1473,3 +1473,38 @@ body.creator-active #perf-map-container { height: 100vh !important; }
     text-transform: uppercase;
     letter-spacing: 1px;
 }
+
+/* === NOTFALL FIX: INTERACTION RESET === */
+
+/* 1. EINGABE FIX: Erlaubt Tippen in ALLE Textfelder */
+input, textarea {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important; /* Erlaubt Tippen und Scrollen */
+    z-index: 10000 !important; /* Holt Inputs nach ganz vorne */
+}
+
+/* 2. SCROLL FIX: Die harte Methode für den Scroll-Container */
+.setup-content-scroll {
+    /* Erlaubt explizit vertikales Wischen */
+    touch-action: pan-y !important; 
+    
+    /* Aktiviert native Scroll-Physik */
+    -webkit-overflow-scrolling: touch !important; 
+    overflow-y: scroll !important;
+    
+    /* Stellt sicher, dass man den Text/Inhalt anfassen kann */
+    pointer-events: auto !important;
+    user-select: auto !important;
+    -webkit-user-select: auto !important;
+}
+
+/* 3. TACHO OVERLAY FIX: Verhindert, dass der Tacho alles blockiert */
+.tacho-input-overlay {
+    /* Nur so groß wie nötig, nicht größer */
+    width: 100% !important; 
+    height: 100% !important; 
+    top: 0 !important; 
+    left: 0 !important;
+}
