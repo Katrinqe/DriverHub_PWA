@@ -1044,9 +1044,17 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 
 /* 4. Der Inhalt */
 .setup-card {
-    padding: 20px;
-    padding-bottom: 200px !important; /* Platz für Buttons unten */
-    min-height: auto !important;
+    padding: 25px;
+    
+    /* 1. ZWINGENDE HÖHE: Wir machen den Inhalt absichtlich 150% so hoch wie den Bildschirm */
+    min-height: 150vh !important; 
+    
+    /* 2. Platz unten */
+    padding-bottom: 200px !important;
+    
+    /* 3. Sicherstellen, dass Berührungen hier registriert werden */
+    pointer-events: auto !important;
+    touch-action: pan-y !important;
 }
 
 .setup-card h2 {
@@ -1487,19 +1495,24 @@ input, textarea {
 
 /* 2. SCROLL FIX: Die harte Methode für den Scroll-Container */
 .setup-content-scroll {
-    /* Erlaubt explizit vertikales Wischen */
-    touch-action: pan-y !important; 
+    grid-row: 2;
+    width: 100%;
+    height: 100%;
+    background: #0a0a0a;
+    z-index: 10;
+    position: relative;
     
-    /* Aktiviert native Scroll-Physik */
-    -webkit-overflow-scrolling: touch !important; 
-    overflow-y: scroll !important;
+    /* SCROLL ENGINE */
+    overflow-y: scroll !important; /* "scroll" statt "auto" erzwingt die Funktion */
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain; /* Verhindert, dass die ganze Seite wackelt */
+    touch-action: pan-y !important;
     
-    /* Stellt sicher, dass man den Text/Inhalt anfassen kann */
-    pointer-events: auto !important;
-    user-select: auto !important;
-    -webkit-user-select: auto !important;
+    /* Design */
+    border-top: 1px solid rgba(255, 59, 48, 0.2);
+    margin-top: 0 !important;
+    border-radius: 0 !important;
 }
-
 /* 3. TACHO OVERLAY FIX: Verhindert, dass der Tacho alles blockiert */
 .tacho-input-overlay {
     /* Nur so groß wie nötig, nicht größer */
