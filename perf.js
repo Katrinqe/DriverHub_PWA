@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - STABLE LOGIC + FIXED SCROLL === */
+/* === PERF.JS - FINAL COMPLETE V75 === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -31,7 +31,7 @@ window.PerfLogic = {
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - Stable UI Fix");
+        console.log("PerfLogic Init - Full Version");
         this.renderTrackList();
         this.updateStatsDisplay(null);
     },
@@ -95,7 +95,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 2. INTERACTION LOGIC (SCROLL FIX HERE)
+    // 2. INTERACTION LOGIC
     // =================================================
 
     toggleTrackSelection: function(track) {
@@ -115,7 +115,6 @@ window.PerfLogic = {
         const card = document.getElementById(`track-card-${track.id}`);
         if(card) {
             card.classList.add('active-card');
-            // === FIX: Nur horizontal scrollen, nicht vertikal springen ===
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         }
 
@@ -145,7 +144,6 @@ window.PerfLogic = {
         const btnEdit = document.getElementById('btn-track-edit');
 
         if(track) {
-            // === TRACK SPECIFIC VIEW ===
             actionBar.classList.remove('hidden'); 
             setTimeout(() => actionBar.classList.add('visible'), 10);
             
@@ -164,7 +162,6 @@ window.PerfLogic = {
                 </div>
             `;
         } else {
-            // === GLOBAL VIEW ===
             actionBar.classList.remove('visible');
             setTimeout(() => actionBar.classList.add('hidden'), 300);
             
@@ -252,9 +249,7 @@ window.PerfLogic = {
 
     selectPinType: function(type) {
         this.selectedPin = type;
-        
         document.querySelectorAll('.cb-pin').forEach(el => el.classList.remove('active'));
-        
         if(type === 'start') document.getElementById('pin-start').classList.add('active');
         if(type === 'check') document.getElementById('pin-check').classList.add('active');
         if(type === 'finish') document.getElementById('pin-finish').classList.add('active');
@@ -270,7 +265,6 @@ window.PerfLogic = {
         const icon = L.divIcon({ className: 'custom-pin-icon', html: iconHtml, iconSize: [20,20], iconAnchor: [10,10] });
 
         const marker = L.marker(latlng, {icon: icon, interactive: true}).addTo(this.map);
-        
         const pointData = { latlng: latlng, type: this.selectedPin, marker: marker };
         this.creatorPoints.push(pointData);
 
@@ -279,7 +273,6 @@ window.PerfLogic = {
         });
 
         if(this.selectedPin === 'start') this.selectPinType('check');
-        
         this.calculateRoute();
     },
 
@@ -302,7 +295,6 @@ window.PerfLogic = {
         fetch(url).then(r => r.json()).then(data => {
             if(data.routes && data.routes.length > 0) {
                 const route = data.routes[0];
-                
                 if(this.routeLayer) this.map.removeLayer(this.routeLayer);
                 
                 const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
@@ -326,7 +318,6 @@ window.PerfLogic = {
     fetchElevationForCreator: function(latlngs) {
         const step = Math.ceil(latlngs.length / 10);
         const samplePoints = latlngs.filter((_, i) => i % step === 0);
-        
         const latStr = samplePoints.map(p => p[0].toFixed(4)).join(',');
         const lngStr = samplePoints.map(p => p[1].toFixed(4)).join(',');
 
@@ -336,33 +327,22 @@ window.PerfLogic = {
             if(data.elevation) {
                 let up = 0, down = 0;
                 let elevs = data.elevation;
-                
                 for(let i=1; i<elevs.length; i++) {
                     let diff = elevs[i] - elevs[i-1];
                     if(diff > 0) up += diff;
                     else down += Math.abs(diff);
                 }
-                
                 this.currentRouteStats.elevUp = Math.round(up) + "m";
                 this.currentRouteStats.elevDown = Math.round(down) + "m";
                 
                 const hudEl = document.getElementById('ct-elev');
-               if(hudEl) hudEl.innerHTML = `<span style="color:#30d158"><i class="fa-solid fa-caret-up"></i> ${Math.round(up)}</span> <span style="color:#666">|</span> <span style="color:#ff3b30"><i class="fa-solid fa-caret-down"></i> ${Math.round(down)}</span>`;
+                if(hudEl) hudEl.innerHTML = `<span style="color:#30d158"><i class="fa-solid fa-caret-up"></i> ${Math.round(up)}</span> <span style="color:#666">|</span> <span style="color:#ff3b30"><i class="fa-solid fa-caret-down"></i> ${Math.round(down)}</span>`;
             }
         });
     },
 
-    clearCreatorMap: function() {
-        this.creatorPoints.forEach(p => this.map.removeLayer(p.marker));
-        if(this.routeLayer) this.map.removeLayer(this.routeLayer);
-        this.creatorPoints = [];
-        this.routeLayer = null;
-        document.getElementById('ct-dist').innerText = "0.0 km";
-        document.getElementById('ct-elev').innerText = "0 m";
-    },
-
     // =================================================
-    // 5. SETUP & SAVE LOGIC (FIXED OVERLAP)
+    // 5. SETUP & SAVE LOGIC (SCROLL ENABLER)
     // =================================================
 
     saveTrack: function() {
@@ -375,12 +355,21 @@ window.PerfLogic = {
         this.openSetupScreen();
     },
 
-   openSetupScreen: function() {
+    openSetupScreen: function() {
         document.getElementById('perf-creator-ui').classList.add('hidden');
         const setupScreen = document.getElementById('track-setup-screen');
         setupScreen.classList.remove('hidden');
         
-        // Setup Map initialisieren (falls noch nicht da)
+        // === SCROLL FIX: Verhindert, dass Touches an den Body gehen ===
+        const scrollBox = document.querySelector('.setup-content-scroll');
+        if(scrollBox) {
+            scrollBox.addEventListener('touchmove', (e) => {
+                e.stopPropagation(); // Stoppt Bubbling zum Body
+            }, { passive: true });
+        }
+        // ============================================================
+
+        // Setup Map initialisieren
         if(!this.setupMap) {
             this.setupMap = L.map('setup-map', {
                 zoomControl: false, attributionControl: false,
@@ -391,44 +380,33 @@ window.PerfLogic = {
 
         setTimeout(() => {
             this.setupMap.invalidateSize();
-            // Alte Layer entfernen (außer Tiles)
             this.setupMap.eachLayer(l => { if(!l._url) this.setupMap.removeLayer(l); });
             
-            // 1. Route zeichnen
             if(this.currentRouteGeo) {
                 const poly = L.polyline(this.currentRouteGeo, {color: '#ff3b30', weight: 5}).addTo(this.setupMap);
                 this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
             }
 
-            // 2. --- NEU: START & FINISH PUNKTE ZEICHNEN ---
             if(this.creatorPoints) {
                 this.creatorPoints.forEach(p => {
                     if(p.type === 'start' || p.type === 'finish') {
                         const colorClass = p.type === 'start' ? 'green' : 'red';
                         const glowColor = p.type === 'start' ? '#30d158' : '#ff3b30';
-                        
-                        // Kleinerer, leuchtender Dot für die Preview
                         const iconHtml = `<div class="pin-dot ${colorClass}" style="width:12px; height:12px; box-shadow: 0 0 8px ${glowColor};"></div>`;
-                        
-                        const icon = L.divIcon({ 
-                            className: 'custom-pin-icon', 
-                            html: iconHtml, 
-                            iconSize: [12,12], 
-                            iconAnchor: [6,6] 
-                        });
+                        const icon = L.divIcon({ className: 'custom-pin-icon', html: iconHtml, iconSize: [12,12], iconAnchor: [6,6] });
                         L.marker(p.latlng, {icon: icon}).addTo(this.setupMap);
                     }
                 });
             }
-
         }, 200);
     },
+
     cancelSetup: function() {
         document.getElementById('track-setup-screen').classList.add('hidden');
         document.getElementById('perf-creator-ui').classList.remove('hidden');
     },
 
-  finalizeSave: function() {
+    finalizeSave: function() {
         const nameInput = document.getElementById('setup-name').value;
         const name = nameInput.trim() || "Unnamed Track";
 
@@ -447,7 +425,7 @@ window.PerfLogic = {
             bestTime: '---',
             config: {
                 type: this.startType,
-                flyTarget: targetSpeed, // <--- HIER WAR DER FEHLER (jetzt gefixt)
+                flyTarget: targetSpeed,
                 flyMin: document.getElementById('fly-min').value,
                 flyMax: document.getElementById('fly-max').value
             }
@@ -464,62 +442,49 @@ window.PerfLogic = {
         this.updateStatsDisplay(null);
     },
 
-setStartType: function(type) {
+    setStartType: function(type) {
         this.startType = type;
         
-        // Buttons umschalten
         document.getElementById('btn-standing').classList.toggle('active', type === 'standing');
         document.getElementById('btn-flying').classList.toggle('active', type === 'flying');
         
-        // Container holen
         const flySettings = document.getElementById('flying-settings');
-        const standSettings = document.getElementById('standing-info'); // Das ist neu!
+        const standSettings = document.getElementById('standing-info'); 
 
         if(type === 'flying') {
             flySettings.classList.remove('hidden');
-            if(standSettings) standSettings.classList.add('hidden'); // Standing ausblenden
+            if(standSettings) standSettings.classList.add('hidden');
         } else {
             flySettings.classList.add('hidden');
-            if(standSettings) standSettings.classList.remove('hidden'); // Standing einblenden
+            if(standSettings) standSettings.classList.remove('hidden');
         }
     },
-   // --- TACHO & FLYING LOGIC ---
-    
-  updateTacho: function(val) {
-        // Sicherstellen, dass es eine Zahl ist
+
+    // --- TACHO LOGIC ---
+    updateTacho: function(val) {
         val = parseInt(val);
-        
-        // 1. TEXT UPDATE
         const textEl = document.getElementById('tacho-val-text');
         if(textEl) textEl.innerText = val;
         
-        // 2. BOGEN DREHEN (VISUAL)
         const arc = document.getElementById('tacho-visual-arc');
         if(arc) {
             const percentage = val / 300;
             const deg = -180 + (percentage * 180); 
             arc.style.transform = `rotate(${deg}deg)`;
-            
-            // Farben Logik
-            if(val > 200) arc.style.borderTopColor = '#ff3b30';      // Rot
-            else if(val > 100) arc.style.borderTopColor = '#ff9f0a'; // Orange
-            else arc.style.borderTopColor = '#30d158';               // Grün
+            if(val > 200) arc.style.borderTopColor = '#ff3b30';      
+            else if(val > 100) arc.style.borderTopColor = '#ff9f0a'; 
+            else arc.style.borderTopColor = '#30d158';               
         }
 
-        // 3. MIN/MAX AUTOMATIK
-        // Das muss INNERHALB der Funktion stehen (vor der letzten Klammer)
         const minInput = document.getElementById('fly-min');
         const maxInput = document.getElementById('fly-max');
-        
         if(minInput) minInput.value = Math.max(0, val - 5);
         if(maxInput) maxInput.value = val + 5;
 
-        // 4. VIBRATION
         if (window.navigator && window.navigator.vibrate) {
              window.navigator.vibrate(5); 
         }
-
-    }, // <--- WICHTIG: Hier endet die Funktion updateTacho. Komma nicht vergessen!
+    },
 
     stepValue: function(inputId, step) {
         const input = document.getElementById(inputId);
@@ -527,36 +492,24 @@ setStartType: function(type) {
         val += step;
         if(val < 0) val = 0; 
         input.value = val;
-        // Vibration auch hier
         if (navigator.vibrate) navigator.vibrate(5);
     },
 
-    
-    // --- NEUE TOUCH FUNKTION (FÜR DAS IPHONE) ---
     handleTachoTouch: function(event) {
-        // Verhindert, dass die Seite beim Wischen scrollt
-        if(event.type !== 'click') event.preventDefault();
+        if(event.type !== 'click') event.preventDefault(); 
         
         const container = event.currentTarget;
         const rect = container.getBoundingClientRect();
-        
-        // Wo ist der Finger (oder die Maus)?
         const clientX = event.touches ? event.touches[0].clientX : event.clientX;
         
-        // Berechnung: Position im Container (0.0 bis 1.0)
         let percent = (clientX - rect.left) / rect.width;
-        
-        // Begrenzen, damit man nicht unter 0 oder über 100 kommt
         if(percent < 0) percent = 0;
         if(percent > 1) percent = 1;
         
-        // Umrechnen in 0 - 300 km/h
         const val = Math.round(percent * 300);
-        
-        // Tacho updaten
         this.updateTacho(val);
     },
-    
+
     // =================================================
     // 6. RENDER FUNCTIONS
     // =================================================
