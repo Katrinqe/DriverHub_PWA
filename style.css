@@ -979,61 +979,55 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 .custom-pin-icon { background: none; border: none; }
 
 
-/* --- 7. CONFIGURATOR & INPUTS (FINAL FLEX FIX) --- */
+/* --- 7. CONFIGURATOR & INPUTS (CALCULATED HEIGHT FIX) --- */
 
-/* 1. Haupt-Container: Nimmt 100% des Bildschirms ein */
+/* 1. Container: Nimmt den ganzen Screen ein */
 #track-setup-screen {
     position: fixed !important;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh; /* Volle Höhe erzwingen */
+    top: 0; left: 0; width: 100%; height: 100%;
     background-color: #050505 !important;
     z-index: 5000 !important;
-    
-    /* WICHTIG: Flexbox Layout */
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important; /* Verhindert, dass der ganze Screen wackelt */
-    pointer-events: auto !important;
+    display: block !important; /* Einfaches Block-Layout */
+    overflow: hidden !important; /* Kein Scrollen auf dem Haupt-Layer */
 }
 
 #track-setup-screen.hidden { display: none !important; }
 
-/* 2. Map-Bereich: Fest oben, schrumpft nicht */
+/* 2. Map: Nimmt exakt die oberen 35% */
 .setup-map-wrapper {
-    width: 100%;
-    height: 35vh; /* 35% der Bildschirmhöhe */
-    flex-shrink: 0; /* WICHTIG: Darf nicht kleiner werden */
-    background: #111;
-    position: relative;
+    position: absolute;
+    top: 0; left: 0; width: 100%;
+    height: 35vh !important; /* 35% der Höhe */
     z-index: 1;
+    background: #111;
 }
 #setup-map { width: 100%; height: 100%; }
 
-/* 3. Scroll-Bereich: Nimmt den REST des Platzes ein */
+/* 3. Scroll-Bereich: Nimmt exakt die unteren 65% */
 .setup-content-scroll {
-    flex: 1; /* Füllt alles unter der Map aus */
-    width: 100%;
+    position: absolute;
+    bottom: 0; left: 0; width: 100%;
+    height: 65vh !important; /* 65% der Höhe (Rest) */
     
     background: #0a0a0a;
-    position: relative;
     z-index: 10;
     
-    /* HIER IST DIE SCROLL-MAGIE */
-    overflow-y: auto !important; /* Aktiviert Scrollbalken */
-    -webkit-overflow-scrolling: touch; /* Weiches Scrollen auf iPhone */
+    /* SCROLL ERZWINGEN */
+    overflow-y: scroll !important; 
+    -webkit-overflow-scrolling: touch !important; /* Wichtig für iPhone */
     
-    /* Optik: Zieht es leicht über die Map */
-    margin-top: -20px;
+    /* Optik */
     border-top-left-radius: 25px;
     border-top-right-radius: 25px;
     border-top: 1px solid rgba(255, 59, 48, 0.2);
     box-shadow: 0 -10px 40px rgba(0,0,0,1);
 }
 
-/* 4. Der Inhalt: Hat Platz zum Atmen */
+/* 4. Inhalt: Viel Platz unten lassen */
 .setup-card {
-    padding: 30px 25px; /* Oben/Unten 30px, Links/Rechts 25px */
-    padding-bottom: 150px !important; /* Viel Platz unten für Buttons */
+    padding: 25px;
+    padding-top: 30px;
+    padding-bottom: 300px !important; /* Extra Platz für Buttons */
 }
 
 .setup-card h2 {
@@ -1042,6 +1036,7 @@ body.creator-active #perf-map-container { height: 100vh !important; }
     text-transform: uppercase; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4);
 }
 
+/* --- HIERUNTER BLEIBEN DEINE INPUTS (.config-group usw.) UNVERÄNDERT --- */
 /* --- Hierunter kommen deine Inputs (.config-group usw.) --- */
 /* (Die lässt du einfach stehen, wie sie sind) */
 
