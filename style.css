@@ -979,62 +979,73 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 .custom-pin-icon { background: none; border: none; }
 
 
-/* --- 7. CONFIGURATOR & INPUTS (CALCULATED HEIGHT FIX) --- */
+/* --- 7. CONFIGURATOR & INPUTS (GRID LAYOUT FIX) --- */
 
-/* 1. Container: Nimmt den ganzen Screen ein */
+/* 1. Das Gitter: Teilt den Screen hart auf */
 #track-setup-screen {
     position: fixed !important;
     top: 0; left: 0; width: 100%; height: 100%;
     background-color: #050505 !important;
     z-index: 5000 !important;
-    display: block !important; /* Einfaches Block-Layout */
-    overflow: hidden !important; /* Kein Scrollen auf dem Haupt-Layer */
+    
+    /* GRID DEFINITION */
+    display: grid !important;
+    grid-template-rows: 35vh 1fr; /* Oben 35%, Unten der Rest (1fr) */
+    overflow: hidden !important;
+    pointer-events: auto !important;
 }
 
 #track-setup-screen.hidden { display: none !important; }
 
-/* 2. Map: Nimmt exakt die oberen 35% */
+/* 2. Map Bereich (Reihe 1) */
 .setup-map-wrapper {
-    position: absolute;
-    top: 0; left: 0; width: 100%;
-    height: 35vh !important; /* 35% der Höhe */
-    z-index: 1;
+    grid-row: 1; /* Sitzt in der ersten Reihe */
+    width: 100%;
+    height: 100%; /* Füllt die 35vh komplett aus */
     background: #111;
+    position: relative;
+    z-index: 1;
 }
 #setup-map { width: 100%; height: 100%; }
 
-/* 3. Scroll-Bereich: Nimmt exakt die unteren 65% */
+/* 3. Scroll Bereich (Reihe 2) */
 .setup-content-scroll {
-    position: absolute;
-    bottom: 0; left: 0; width: 100%;
-    height: 65vh !important; /* 65% der Höhe (Rest) */
+    grid-row: 2; /* Sitzt in der zweiten Reihe */
+    width: 100%;
+    height: 100%; /* Füllt den Rest komplett aus */
     
     background: #0a0a0a;
+    position: relative;
     z-index: 10;
     
-    /* SCROLL ERZWINGEN */
-    overflow-y: scroll !important; 
-    -webkit-overflow-scrolling: touch !important; /* Wichtig für iPhone */
+    /* SCROLLEN AKTIVIEREN */
+    overflow-y: auto !important; 
+    -webkit-overflow-scrolling: touch; 
     
-    /* Optik */
-    border-top-left-radius: 25px;
-    border-top-right-radius: 25px;
+    /* Styling */
     border-top: 1px solid rgba(255, 59, 48, 0.2);
     box-shadow: 0 -10px 40px rgba(0,0,0,1);
+    
+    /* WICHTIG: Kein negativer Margin mehr, damit nichts verschwindet! */
+    margin-top: 0 !important; 
+    border-radius: 0 !important; /* Ecken oben erstmal eckig, damit Layout sitzt */
 }
 
-/* 4. Inhalt: Viel Platz unten lassen */
+/* 4. Der Inhalt */
 .setup-card {
-    padding: 25px;
-    padding-top: 30px;
-    padding-bottom: 300px !important; /* Extra Platz für Buttons */
+    padding: 20px;
+    padding-bottom: 200px !important; /* Platz für Buttons unten */
+    min-height: auto !important;
 }
 
 .setup-card h2 {
     font-size: 0.9rem; color: #ff3b30; font-weight: 900; 
-    margin-bottom: 25px; text-align: center; letter-spacing: 2px;
+    margin-bottom: 20px; text-align: center; letter-spacing: 2px;
     text-transform: uppercase; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4);
+    margin-top: 10px;
 }
+
+/* --- HIERUNTER BLEIBEN DEINE INPUTS (.config-group usw.) UNVERÄNDERT --- */
 
 /* --- HIERUNTER BLEIBEN DEINE INPUTS (.config-group usw.) UNVERÄNDERT --- */
 /* --- Hierunter kommen deine Inputs (.config-group usw.) --- */
