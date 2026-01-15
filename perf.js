@@ -584,32 +584,31 @@ window.PerfLogic = {
         this.updateStatsDisplay(null);
     },
 
-    setStartType: function(type) {
+   setStartType: function(type) {
         this.startType = type;
         
-        // Buttons
         document.getElementById('btn-standing').classList.toggle('active', type === 'standing');
         document.getElementById('btn-flying').classList.toggle('active', type === 'flying');
         
         const flySettings = document.getElementById('flying-settings');
-        // Standing Info ignorieren wir -> Bleibt immer sichtbar!
 
         if(type === 'flying') {
-            flySettings.classList.remove('hidden'); // Tacho an
+            flySettings.classList.remove('hidden'); 
+            // NEU: Damit er sich sofort aufbaut!
+            // Hol den aktuellen Wert oder Standard 120
+            const currentVal = document.getElementById('tacho-val-text') ? document.getElementById('tacho-val-text').innerText : 120;
+            setTimeout(() => this.updateTacho(currentVal), 50); 
         } else {
-            flySettings.classList.add('hidden'); // Tacho aus
+            flySettings.classList.add('hidden'); 
         }
     },
+// --- TACHO LOGIC V4 (SYNCED & GPU) ---
 
-// --- TACHO LOGIC (V3: SNAPPING & CLEAN UI) ---
-
-    // Baut das neue HTML Design automatisch auf
     _initTachoHTML: function() {
         const container = document.querySelector('.tacho-container');
-        if (container && !container.querySelector('.tacho-track')) {
-            container.innerHTML = ''; // Alles alte raus
-            container.classList.add('ready');
-
+        // Wir bauen es nur auf, wenn es leer ist
+        if (container && container.innerHTML.trim() === '') {
+            
             // 1. Hintergrund Spur
             const track = document.createElement('div');
             track.className = 'tacho-track';
@@ -633,62 +632,53 @@ window.PerfLogic = {
             knobCont.id = 'tacho-knob-rotator';
             knobCont.innerHTML = '<div class="tacho-knob"></div>';
             container.appendChild(knobCont);
+            
+            // WICHTIG: Sofort einmal updaten mit Startwert
+            this.updateTacho(120); 
         }
     },
 
     updateTacho: function(val) {
-        this._initTachoHTML();
+        // Sicherstellen, dass HTML existiert
+        if(!document.querySelector('.tacho-track')) {
+            this._initTachoHTML();
+        }
 
-        // LOGIK UPDATE: Auf 5er Schritte runden!
+        // Snapping auf 5er Schritte
         val = parseInt(val);
-        val = Math.round(val / 5) * 5; // <--- DAS IST DER FIX FÜR "49/51"
-        
-        // Begrenzen
+        val = Math.round(val / 5) * 5; 
         val = Math.max(0, Math.min(300, val));
 
         // Text Update
         const textEl = document.getElementById('tacho-val-text');
         if(textEl) textEl.innerText = val;
         
-        // Berechnungen für Visuelles
+        // Mathematik: 0 bis 1.0
         const percentage = val / 300; 
         
-        // HSL Farbe: Von Grün (120) zu Rot (0)
+        // HSL Farbe berechnen (120=Grün -> 0=Rot)
         const hue = 120 - (percentage * 120);
         const color = `hsl(${hue}, 100%, 50%)`;
-        const container = document.querySelector('.tacho-container');
-        if(container) container.style.setProperty('--tacho-color', color);
-
-        // Rotation Bogen: CSS Clip-Trick
-        // Wir nutzen hier einfaches Rotieren des Bogens
-        // -135deg ist Start (Links unten), 45deg ist Ende (Rechts unten) -> 180deg Spanne
-        const startDeg = -135;
-        const range = 180; 
-        const currentDeg = startDeg + (percentage * range);
-
-        // Bogen Maskierung simulieren (etwas komplexer CSS Trick vereinfacht)
-        // Wir rotieren einfach den Knopf, der Bogen ist schwieriger perfekt zu machen mit reinem CSS Border,
-        // aber wir nutzen hier einen simplen Rotationstrick.
         
-        // UPDATE BOGEN:
-        const arc = document.getElementById('tacho-visual-arc');
-        // Wir nutzen conic-gradient hier doch wieder, weil es für Halbkreise am stabilsten ist
-        // Überschreibt den Border-Style von oben für die Füllung
-        if(arc) {
-             arc.style.border = 'none';
-             arc.style.background = `conic-gradient(from 270deg, transparent 0%, var(--tacho-color) 0%, var(--tacho-color) ${percentage * 50}%, transparent ${percentage * 50}%)`;
-             arc.style.transform = 'rotate(-90deg)'; // Fixiert
+        const container = document.querySelector('.tacho-container');
+        if(container) {
+            // 1. Farbe setzen
+            container.style.setProperty('--tacho-color', color);
+            
+            // 2. Prozent für den Conic-Gradient setzen (TRICK: Wir nutzen 50%, da Halbkreis!)
+            // Wenn 100% Speed = 180 Grad Rotation = 50% vom Kreis
+            const cssPercent = percentage * 50; 
+            container.style.setProperty('--tacho-percent', cssPercent + '%');
         }
 
-        // UPDATE KNOB (Das ist das Wichtigste für die Optik)
+        // Knob Rotation (-90 bis +90)
         const knob = document.getElementById('tacho-knob-rotator');
         if(knob) {
-            // -90deg ist Links, +90deg ist Rechts
             const knobDeg = -90 + (percentage * 180);
             knob.style.transform = `rotate(${knobDeg}deg)`;
         }
 
-        // Inputs
+        // Inputs synchronisieren
         const minInput = document.getElementById('fly-min');
         const maxInput = document.getElementById('fly-max');
         if(minInput && document.activeElement !== minInput) minInput.value = Math.max(0, val - 5);
@@ -701,6 +691,16 @@ window.PerfLogic = {
         val += step;
         if(val < 0) val = 0; 
         input.value = val;
+        
+        // Wenn man die Buttons drückt, muss sich der Tacho auch bewegen!
+        // Wir nehmen den Mittelwert zwischen Min und Max als neuen Tachowert
+        if(inputId === 'fly-min' || inputId === 'fly-max') {
+             const min = parseInt(document.getElementById('fly-min').value);
+             const max = parseInt(document.getElementById('fly-max').value);
+             const mid = Math.round((min + max) / 2);
+             this.updateTacho(mid);
+        }
+
         if (navigator.vibrate) navigator.vibrate(5);
     },
 
@@ -709,24 +709,22 @@ window.PerfLogic = {
         
         const container = event.currentTarget;
         const rect = container.getBoundingClientRect();
+        
+        // X Position im Container
         const clientX = event.touches ? event.touches[0].clientX : event.clientX;
         
-        // Position berechnen
         let percent = (clientX - rect.left) / rect.width;
         if(percent < 0) percent = 0;
         if(percent > 1) percent = 1;
         
         const rawVal = percent * 300;
-        
-        // HIER AUCH RUNDEN, damit das Feedback direkt stimmt
         const snappedVal = Math.round(rawVal / 5) * 5;
 
-        this.updateTacho(snappedVal);
-        
-        // Vibration nur bei Änderung
-        if (window.lastVibeVal !== snappedVal && window.navigator && window.navigator.vibrate) {
-             window.navigator.vibrate(4); 
-             window.lastVibeVal = snappedVal;
+        // Nur updaten wenn sich was geändert hat (Performance!)
+        const currentText = document.getElementById('tacho-val-text');
+        if(currentText && parseInt(currentText.innerText) !== snappedVal) {
+            this.updateTacho(snappedVal);
+            if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(2);
         }
     },
     // =================================================
