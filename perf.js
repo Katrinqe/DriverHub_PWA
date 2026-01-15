@@ -182,7 +182,7 @@ window.PerfLogic = {
         }
     },
 
-    // Zeichnet NUR die Labels (Namen) für alle Strecken
+// Zeichnet die FANCY Labels für alle Strecken
     renderMapHubs: function() {
         // Erstmal alle alten weg
         this.hubMarkers.forEach(m => this.map.removeLayer(m));
@@ -190,20 +190,31 @@ window.PerfLogic = {
 
         this.tracks.forEach(track => {
             if(!track.pins || track.pins.length === 0) return;
-            // Wir nehmen den Startpunkt für das Label
             const start = track.pins.find(p => p.type === 'start') || track.pins[0];
             
+            // Neues HTML Design
+            const iconHtml = `
+                <div class="hub-fancy-wrapper">
+                    <div class="hub-icon-box">
+                        <i class="fa-solid fa-flag-checkered"></i>
+                    </div>
+                    <div class="hub-info-box">
+                        <span class="hub-label">TRACK</span>
+                        <span class="hub-name">${track.name}</span>
+                    </div>
+                    <div class="hub-arrow-down"></div>
+                </div>
+            `;
+
             const icon = L.divIcon({
-                className: 'custom-hub',
-                html: `<div class="track-hub-marker">
-                        <span class="thm-name">${track.name}</span>
-                       </div>`,
-                iconSize: [80, 30], iconAnchor: [40, 35]
+                className: 'custom-hub-icon', // Wichtig für CSS Override
+                html: iconHtml,
+                iconSize: [140, 42], // Etwas breiter und höher für das Design
+                iconAnchor: [70, 48] // Spitze des Pfeils genau auf den Koordinaten (Mitte Breite, Unten + Pfeilhöhe)
             });
 
             const marker = L.marker([start.lat, start.lng], {icon: icon}).addTo(this.map);
             
-            // Beim Klick auf das Label -> Strecke auswählen
             marker.on('click', (e) => {
                 L.DomEvent.stopPropagation(e);
                 this.toggleTrackSelection(track);
