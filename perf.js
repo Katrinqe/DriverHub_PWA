@@ -442,21 +442,23 @@ window.PerfLogic = {
         this.updateStatsDisplay(null);
     },
 
-    setStartType: function(type) {
+   setStartType: function(type) {
         this.startType = type;
         
+        // Buttons umschalten
         document.getElementById('btn-standing').classList.toggle('active', type === 'standing');
         document.getElementById('btn-flying').classList.toggle('active', type === 'flying');
         
+        // Container holen
         const flySettings = document.getElementById('flying-settings');
-        const standSettings = document.getElementById('standing-info'); 
+        // Wir ignorieren jetzt "standing-info", damit es IMMER sichtbar bleibt!
 
         if(type === 'flying') {
-            flySettings.classList.remove('hidden');
-            if(standSettings) standSettings.classList.add('hidden');
+            flySettings.classList.remove('hidden'); // Tacho zeigen
+            // Sektoren bleiben da!
         } else {
-            flySettings.classList.add('hidden');
-            if(standSettings) standSettings.classList.remove('hidden');
+            flySettings.classList.add('hidden'); // Tacho weg
+            // Sektoren bleiben da!
         }
     },
 
