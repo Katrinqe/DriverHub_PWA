@@ -146,23 +146,22 @@ window.PerfLogic = {
         this.updateStatsDisplay(null);
     },
 
-    // Zeigt die Route ROT an (wenn ausgewählt)
-    showTrackOnMap: function(track) {
+showTrackOnMap: function(track) {
         // Alte Linie weg
         if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer);
         
-        // Alte Punkte weg
+        // Alte Marker aufräumen (Start/Ziel)
         this.map.eachLayer(layer => {
+            // Lösche alles, was ein Marker ist, ABER NICHT der User und NICHT die Labels (Hubs)
             if(layer instanceof L.Marker && layer !== this.userMarker && !this.hubMarkers.includes(layer)) {
                 this.map.removeLayer(layer);
             }
         });
 
-        // 1. Linie zeichnen
+        // 1. Rote Linie zeichnen
         if(track.routePath) {
             this.selectedTrackLayer = L.polyline(track.routePath, {color: '#ff3b30', weight: 6}).addTo(this.map);
             
-            // Kamerafahrt zur Strecke
             this.map.flyToBounds(this.selectedTrackLayer.getBounds(), {
                 paddingTopLeft: [30, 30],
                 paddingBottomRight: [30, 180], 
@@ -170,29 +169,44 @@ window.PerfLogic = {
             });
         }
 
-        // 2. Start/Ziel Dots zeichnen
+        // 2. Start & Ziel Icons zeichnen (Endlich sichtbar!)
         if(track.pins) {
             track.pins.forEach(p => {
-                if(p.type === 'start' || p.type === 'finish') {
-                    const iconHtml = `<div class="pulsing-dot-${p.type === 'start' ? 'green' : 'red'}"></div>`;
-                    const icon = L.divIcon({ className: 'd', html: iconHtml, iconSize: [15,15] });
+                if(p.type === 'start') {
+                    // START MARKER (Grün)
+                    const icon = L.divIcon({ 
+                        className: 'custom-marker-wrap', 
+                        html: `<div class="tm-marker tm-start"><i class="fa-solid fa-play" style="margin-left:2px;"></i></div>`, 
+                        iconSize: [30,30], iconAnchor: [15,15] 
+                    });
+                    L.marker([p.lat, p.lng], {icon: icon}).addTo(this.map);
+                }
+                
+                if(p.type === 'finish') {
+                    // ZIEL MARKER (Rot)
+                    const icon = L.divIcon({ 
+                        className: 'custom-marker-wrap', 
+                        html: `<div class="tm-marker tm-finish"><i class="fa-solid fa-flag-checkered"></i></div>`, 
+                        iconSize: [30,30], iconAnchor: [15,15] 
+                    });
                     L.marker([p.lat, p.lng], {icon: icon}).addTo(this.map);
                 }
             });
         }
-    },
+    }
 
-// Zeichnet die FANCY Labels für alle Strecken
-    renderMapHubs: function() {
-        // Erstmal alle alten weg
+renderMapHubs: function() {
         this.hubMarkers.forEach(m => this.map.removeLayer(m));
         this.hubMarkers = [];
 
         this.tracks.forEach(track => {
-            if(!track.pins || track.pins.length === 0) return;
-            const start = track.pins.find(p => p.type === 'start') || track.pins[0];
+            // Sicherheitscheck: Hat die Strecke Koordinaten?
+            if(!track.routePath || track.routePath.length === 0) return;
             
-            // Neues HTML Design
+            // TRICK: Wir nehmen den Punkt genau in der Mitte des Arrays!
+            const midIndex = Math.floor(track.routePath.length / 2);
+            const midPoint = track.routePath[midIndex]; // [lat, lng]
+            
             const iconHtml = `
                 <div class="hub-fancy-wrapper">
                     <div class="hub-icon-box">
@@ -207,13 +221,14 @@ window.PerfLogic = {
             `;
 
             const icon = L.divIcon({
-                className: 'custom-hub-icon', // Wichtig für CSS Override
+                className: 'custom-hub-icon',
                 html: iconHtml,
-                iconSize: [140, 42], // Etwas breiter und höher für das Design
-                iconAnchor: [70, 48] // Spitze des Pfeils genau auf den Koordinaten (Mitte Breite, Unten + Pfeilhöhe)
+                iconSize: [140, 42],
+                iconAnchor: [70, 48] 
             });
 
-            const marker = L.marker([start.lat, start.lng], {icon: icon}).addTo(this.map);
+            // Marker an der MITTLEREN Position erstellen
+            const marker = L.marker(midPoint, {icon: icon}).addTo(this.map);
             
             marker.on('click', (e) => {
                 L.DomEvent.stopPropagation(e);
