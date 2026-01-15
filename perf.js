@@ -601,30 +601,63 @@ window.PerfLogic = {
         }
     },
 
-    // --- TACHO LOGIC ---
+   // --- TACHO LOGIC (IMPROVED V2) ---
+
+    // Hilfsfunktion: Repariert das HTML für das neue Design (einmalig)
+    _initTachoHTML: function() {
+        const container = document.querySelector('.tacho-container');
+        if (container && !container.querySelector('.tacho-inner-mask')) {
+            // Maske einfügen für den Ring-Look
+            const mask = document.createElement('div');
+            mask.className = 'tacho-inner-mask';
+            container.appendChild(mask);
+            
+            // Text muss NACH der Maske kommen (z-index)
+            const display = container.querySelector('.tacho-value-display');
+            if(display) container.appendChild(display); // Verschiebt es ans Ende
+        }
+    },
+
     updateTacho: function(val) {
+        this._initTachoHTML(); // Sicherstellen, dass HTML stimmt
+
         val = parseInt(val);
+        // Begrenzen auf 0 - 300
+        val = Math.max(0, Math.min(300, val));
+
+        // 1. Text Update
         const textEl = document.getElementById('tacho-val-text');
         if(textEl) textEl.innerText = val;
         
+        // 2. Visuelle Rotation (-180deg bis 0deg)
         const arc = document.getElementById('tacho-visual-arc');
+        const container = document.querySelector('.tacho-container');
+        const valEl = document.querySelector('.tacho-val');
+
         if(arc) {
-            const percentage = val / 300;
-            const deg = -180 + (percentage * 180); 
-            arc.style.transform = `rotate(${deg}deg)`;
-            if(val > 200) arc.style.borderTopColor = '#ff3b30';      
-            else if(val > 100) arc.style.borderTopColor = '#ff9f0a'; 
-            else arc.style.borderTopColor = '#30d158';               
+            const percentage = val / 300; // 0.0 bis 1.0
+            
+            // Rotation: Start bei -180 (leer), Ende bei 0 (voll)
+            const deg = -180 + (percentage * 180);
+            arc.style.transform = `translate(-50%, -100%) rotate(${deg}deg)`;
+            
+            // 3. SMOOTH COLOR (HSL Berechnung)
+            // 120 = Grün, 0 = Rot. Wir gehen von 120 runter auf 0.
+            const hue = 120 - (percentage * 120);
+            const color = `hsl(${hue}, 100%, 50%)`;
+            
+            // Farbe per CSS Variable setzen (für Glow und Hintergrund)
+            if(container) container.style.setProperty('--tacho-color', color);
+            
+            // Bogen einfärben
+            arc.style.background = `conic-gradient(from 270deg, transparent 0%, transparent 50%, ${color} 50%, transparent 100%)`;
         }
 
+        // 4. Input Felder synchronisieren
         const minInput = document.getElementById('fly-min');
         const maxInput = document.getElementById('fly-max');
-        if(minInput) minInput.value = Math.max(0, val - 5);
-        if(maxInput) maxInput.value = val + 5;
-
-        if (window.navigator && window.navigator.vibrate) {
-             window.navigator.vibrate(5); 
-        }
+        if(minInput && document.activeElement !== minInput) minInput.value = Math.max(0, val - 5);
+        if(maxInput && document.activeElement !== maxInput) maxInput.value = val + 5;
     },
 
     stepValue: function(inputId, step) {
@@ -634,21 +667,41 @@ window.PerfLogic = {
         if(val < 0) val = 0; 
         input.value = val;
         if (navigator.vibrate) navigator.vibrate(5);
+        
+        // Wenn wir Min/Max ändern, passen wir den Tacho grob an die Mitte an
+        if(inputId === 'fly-min' || inputId === 'fly-max') {
+            const currentTacho = parseInt(document.getElementById('tacho-val-text').innerText);
+            // Optional: Tacho nachziehen, wenn er aus dem Bereich läuft
+        }
     },
 
     handleTachoTouch: function(event) {
-        if(event.type !== 'click') event.preventDefault(); 
+        // Verhindert Scrollen und Zoom
+        if(event.cancelable) event.preventDefault();
         
         const container = event.currentTarget;
         const rect = container.getBoundingClientRect();
+        
+        // Support für Touch und Maus
         const clientX = event.touches ? event.touches[0].clientX : event.clientX;
         
+        // Berechnung: Position von Links (0) nach Rechts (1)
         let percent = (clientX - rect.left) / rect.width;
+        
+        // Begrenzung (Clamping) damit es nicht springt
         if(percent < 0) percent = 0;
         if(percent > 1) percent = 1;
         
+        // Umrechnung in km/h (0 bis 300)
         const val = Math.round(percent * 300);
+        
+        // Direktes Update
         this.updateTacho(val);
+        
+        // Leichtes haptisches Feedback beim Ziehen (nur alle 10 Schritte)
+        if (val % 10 === 0 && window.navigator && window.navigator.vibrate) {
+             window.navigator.vibrate(2); 
+        }
     },
 
     // =================================================
