@@ -1605,3 +1605,30 @@ input, textarea {
     background: transparent !important;
     border: none !important;
 }
+
+/* === START & FINISH MARKERS (AUF DER ROTEN LINIE) === */
+
+.tm-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: white;
+    font-size: 0.9rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.8);
+    border: 2px solid white;
+}
+
+/* Start: Grün mit Play-Icon */
+.tm-start {
+    background: #30d158;
+    box-shadow: 0 0 15px #30d158;
+}
+
+/* Finish: Rot/Schwarz Karo (oder einfach Rot) mit Flagge */
+.tm-finish {
+    background: #ff3b30;
+    box-shadow: 0 0 15px #ff3b30;
+}
