@@ -601,59 +601,94 @@ window.PerfLogic = {
         }
     },
 
-   // --- TACHO LOGIC (IMPROVED V2) ---
+// --- TACHO LOGIC (V3: SNAPPING & CLEAN UI) ---
 
-    // Hilfsfunktion: Repariert das HTML für das neue Design (einmalig)
+    // Baut das neue HTML Design automatisch auf
     _initTachoHTML: function() {
         const container = document.querySelector('.tacho-container');
-        if (container && !container.querySelector('.tacho-inner-mask')) {
-            // Maske einfügen für den Ring-Look
-            const mask = document.createElement('div');
-            mask.className = 'tacho-inner-mask';
-            container.appendChild(mask);
-            
-            // Text muss NACH der Maske kommen (z-index)
-            const display = container.querySelector('.tacho-value-display');
-            if(display) container.appendChild(display); // Verschiebt es ans Ende
+        if (container && !container.querySelector('.tacho-track')) {
+            container.innerHTML = ''; // Alles alte raus
+            container.classList.add('ready');
+
+            // 1. Hintergrund Spur
+            const track = document.createElement('div');
+            track.className = 'tacho-track';
+            container.appendChild(track);
+
+            // 2. Farbiger Bogen
+            const arc = document.createElement('div');
+            arc.className = 'tacho-arc';
+            arc.id = 'tacho-visual-arc';
+            container.appendChild(arc);
+
+            // 3. Text Display
+            const display = document.createElement('div');
+            display.className = 'tacho-value-display';
+            display.innerHTML = `<div class="tacho-val" id="tacho-val-text">0</div><span class="tacho-unit">TARGET KM/H</span>`;
+            container.appendChild(display);
+
+            // 4. Der Anfasser (Knob)
+            const knobCont = document.createElement('div');
+            knobCont.className = 'tacho-knob-container';
+            knobCont.id = 'tacho-knob-rotator';
+            knobCont.innerHTML = '<div class="tacho-knob"></div>';
+            container.appendChild(knobCont);
         }
     },
 
     updateTacho: function(val) {
-        this._initTachoHTML(); // Sicherstellen, dass HTML stimmt
+        this._initTachoHTML();
 
+        // LOGIK UPDATE: Auf 5er Schritte runden!
         val = parseInt(val);
-        // Begrenzen auf 0 - 300
+        val = Math.round(val / 5) * 5; // <--- DAS IST DER FIX FÜR "49/51"
+        
+        // Begrenzen
         val = Math.max(0, Math.min(300, val));
 
-        // 1. Text Update
+        // Text Update
         const textEl = document.getElementById('tacho-val-text');
         if(textEl) textEl.innerText = val;
         
-        // 2. Visuelle Rotation (-180deg bis 0deg)
-        const arc = document.getElementById('tacho-visual-arc');
+        // Berechnungen für Visuelles
+        const percentage = val / 300; 
+        
+        // HSL Farbe: Von Grün (120) zu Rot (0)
+        const hue = 120 - (percentage * 120);
+        const color = `hsl(${hue}, 100%, 50%)`;
         const container = document.querySelector('.tacho-container');
-        const valEl = document.querySelector('.tacho-val');
+        if(container) container.style.setProperty('--tacho-color', color);
 
+        // Rotation Bogen: CSS Clip-Trick
+        // Wir nutzen hier einfaches Rotieren des Bogens
+        // -135deg ist Start (Links unten), 45deg ist Ende (Rechts unten) -> 180deg Spanne
+        const startDeg = -135;
+        const range = 180; 
+        const currentDeg = startDeg + (percentage * range);
+
+        // Bogen Maskierung simulieren (etwas komplexer CSS Trick vereinfacht)
+        // Wir rotieren einfach den Knopf, der Bogen ist schwieriger perfekt zu machen mit reinem CSS Border,
+        // aber wir nutzen hier einen simplen Rotationstrick.
+        
+        // UPDATE BOGEN:
+        const arc = document.getElementById('tacho-visual-arc');
+        // Wir nutzen conic-gradient hier doch wieder, weil es für Halbkreise am stabilsten ist
+        // Überschreibt den Border-Style von oben für die Füllung
         if(arc) {
-            const percentage = val / 300; // 0.0 bis 1.0
-            
-            // Rotation: Start bei -180 (leer), Ende bei 0 (voll)
-            const deg = -180 + (percentage * 180);
-            arc.style.transform = `translate(-50%, -100%) rotate(${deg}deg)`;
-            
-            // 3. SMOOTH COLOR (HSL Berechnung)
-            // 120 = Grün, 0 = Rot. Wir gehen von 120 runter auf 0.
-            const hue = 120 - (percentage * 120);
-            const color = `hsl(${hue}, 100%, 50%)`;
-            
-            // Farbe per CSS Variable setzen (für Glow und Hintergrund)
-            if(container) container.style.setProperty('--tacho-color', color);
-            
-            // Bogen einfärben
-            arc.style.background = `conic-gradient(from 270deg, transparent 0%, transparent 50%, ${color} 50%, transparent 100%)`;
+             arc.style.border = 'none';
+             arc.style.background = `conic-gradient(from 270deg, transparent 0%, var(--tacho-color) 0%, var(--tacho-color) ${percentage * 50}%, transparent ${percentage * 50}%)`;
+             arc.style.transform = 'rotate(-90deg)'; // Fixiert
         }
 
-        // 4. Input Felder synchronisieren
+        // UPDATE KNOB (Das ist das Wichtigste für die Optik)
+        const knob = document.getElementById('tacho-knob-rotator');
+        if(knob) {
+            // -90deg ist Links, +90deg ist Rechts
+            const knobDeg = -90 + (percentage * 180);
+            knob.style.transform = `rotate(${knobDeg}deg)`;
+        }
+
+        // Inputs
         const minInput = document.getElementById('fly-min');
         const maxInput = document.getElementById('fly-max');
         if(minInput && document.activeElement !== minInput) minInput.value = Math.max(0, val - 5);
@@ -667,43 +702,33 @@ window.PerfLogic = {
         if(val < 0) val = 0; 
         input.value = val;
         if (navigator.vibrate) navigator.vibrate(5);
-        
-        // Wenn wir Min/Max ändern, passen wir den Tacho grob an die Mitte an
-        if(inputId === 'fly-min' || inputId === 'fly-max') {
-            const currentTacho = parseInt(document.getElementById('tacho-val-text').innerText);
-            // Optional: Tacho nachziehen, wenn er aus dem Bereich läuft
-        }
     },
 
     handleTachoTouch: function(event) {
-        // Verhindert Scrollen und Zoom
         if(event.cancelable) event.preventDefault();
         
         const container = event.currentTarget;
         const rect = container.getBoundingClientRect();
-        
-        // Support für Touch und Maus
         const clientX = event.touches ? event.touches[0].clientX : event.clientX;
         
-        // Berechnung: Position von Links (0) nach Rechts (1)
+        // Position berechnen
         let percent = (clientX - rect.left) / rect.width;
-        
-        // Begrenzung (Clamping) damit es nicht springt
         if(percent < 0) percent = 0;
         if(percent > 1) percent = 1;
         
-        // Umrechnung in km/h (0 bis 300)
-        const val = Math.round(percent * 300);
+        const rawVal = percent * 300;
         
-        // Direktes Update
-        this.updateTacho(val);
+        // HIER AUCH RUNDEN, damit das Feedback direkt stimmt
+        const snappedVal = Math.round(rawVal / 5) * 5;
+
+        this.updateTacho(snappedVal);
         
-        // Leichtes haptisches Feedback beim Ziehen (nur alle 10 Schritte)
-        if (val % 10 === 0 && window.navigator && window.navigator.vibrate) {
-             window.navigator.vibrate(2); 
+        // Vibration nur bei Änderung
+        if (window.lastVibeVal !== snappedVal && window.navigator && window.navigator.vibrate) {
+             window.navigator.vibrate(4); 
+             window.lastVibeVal = snappedVal;
         }
     },
-
     // =================================================
     // 6. RENDER FUNCTIONS
     // =================================================
