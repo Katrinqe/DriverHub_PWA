@@ -1091,107 +1091,79 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 /* === FINAL TACHO FIX (LAYOUT & TOUCH) === */
 /* ========================================= */
 
+/* === VERBESSERTER TACHO (SMOOTH CONTROL) === */
+
 .tacho-container {
+    width: 280px;
+    height: 140px; /* Halbkreis */
     position: relative;
-    width: 260px; /* Etwas breiter */
-    height: 130px; /* Exakt die Hälfte */
-    margin: 10px auto; /* Zentriert */
-    overflow: hidden; /* Schneidet unten ab -> Halbkreis */
-    display: flex; 
-    justify-content: center;
-    align-items: flex-end; /* Inhalt unten ausrichten */
-    
-    /* WICHTIG: Damit der Slider funktioniert */
-    touch-action: none; 
-    z-index: 10; 
+    margin: 20px auto;
+    overflow: hidden; /* Wichtig für den Halbkreis-Look */
+    cursor: pointer;
+    /* Hintergrund-Spur (dunkelgrau) */
+    background: radial-gradient(circle at 50% 100%, #222 0%, #222 55%, #111 56%, #111 100%);
+    border-top-left-radius: 140px;
+    border-top-right-radius: 140px;
+    border: 1px solid #333;
+    border-bottom: none;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    touch-action: none !important; /* WICHTIG: Verhindert Scrollen beim Ziehen */
 }
 
-/* 1. Hintergrund-Striche (Grau) */
-.tacho-ticks {
-    position: absolute; top: 0; left: 0; 
-    width: 260px; height: 260px; /* Vollkreis */
-    border-radius: 50%;
-    
-    background: repeating-conic-gradient(
-        from 270deg,
-        rgba(255,255,255,0.1) 0deg 2deg,
-        transparent 2deg 6deg
-    );
-    
-    /* Maske für Ring-Optik */
-    mask-image: radial-gradient(transparent 64%, black 65%);
-    -webkit-mask-image: radial-gradient(transparent 64%, black 65%);
-    
-    pointer-events: none;
-    z-index: 1;
-}
-
-/* 2. Aktiver Bogen (Farbe) */
+/* Der aktive farbige Bogen */
 .tacho-arc {
-    position: absolute; top: 0; left: 0;
-    width: 260px; height: 260px;
+    position: absolute;
+    top: 100%; left: 50%;
+    width: 100%; height: 100%;
+    background: conic-gradient(from 270deg, transparent 0%, transparent 50%, var(--tacho-color, #30d158) 50%, transparent 100%);
+    transform-origin: 50% 0;
+    transform: translate(-50%, -100%) rotate(-180deg); /* Startposition */
+    transition: transform 0.1s linear, background 0.3s; /* Kurze Transition für Smoothness */
     border-radius: 50%;
-    
-    background: conic-gradient(
-        from 270deg,
-        #ff3b30 0deg,
-        #ff9f0a 180deg
-    );
-    
-    /* Gleiche Maske + Striche */
-    mask-image: radial-gradient(transparent 64%, black 65%), repeating-conic-gradient(black 0deg 2deg, transparent 2deg 6deg);
-    -webkit-mask-image: radial-gradient(transparent 64%, black 65%), repeating-conic-gradient(black 0deg 2deg, transparent 2deg 6deg);
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
+    opacity: 0.8;
+    z-index: 1;
+    pointer-events: none;
+}
 
-    transform: rotate(-180deg); 
-    transition: transform 0.1s linear;
-    
-    opacity: 1;
+/* Der innere Kreis (deckt die Mitte ab) */
+.tacho-inner-mask {
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 180px; /* Dicke des Bogens bestimmen */
+    height: 90px;
+    background: #0a0a0a; /* Farbe des Hintergrunds */
+    border-top-left-radius: 90px;
+    border-top-right-radius: 90px;
     z-index: 2;
+    border-top: 1px solid #333;
+    box-shadow: inset 0 5px 15px rgba(0,0,0,0.8);
 }
 
-/* 3. Text & Einheit (Zentrierung gefixt) */
+/* Der Text in der Mitte */
 .tacho-value-display {
-    position: absolute; 
-    bottom: 0; /* Klebt unten */
-    left: 0; width: 100%; /* Volle Breite für center-align */
+    position: absolute;
+    bottom: 0; left: 0; width: 100%;
     text-align: center;
-    z-index: 5;
-    pointer-events: none; /* Klicks gehen durch zum Slider */
-    padding-bottom: 5px;
+    z-index: 3;
+    padding-bottom: 10px;
+    pointer-events: none;
 }
 
-.tacho-val { 
-    font-size: 3rem; /* Etwas kleiner, damit es passt */
-    font-weight: 900; 
-    color: white; 
-    font-style: italic; 
-    font-family: sans-serif; 
-    line-height: 1; 
-    text-shadow: 0 0 20px rgba(255,59,48,0.5);
-    display: block;
+.tacho-val {
+    font-size: 3rem;
+    font-weight: 900;
+    color: white;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 20px var(--tacho-color, #30d158);
 }
 
 .tacho-unit {
-    font-size: 0.75rem;
-    color: #ff3b30;
-    font-weight: 800;
-    letter-spacing: 2px;
     display: block;
-    margin-top: 2px;
-}
-
-/* 4. Der Slider (Bedienbarkeit FIX) */
-.tacho-input-overlay {
-    position: absolute; 
-    top: 0; left: 0; 
-    width: 100%; height: 100%; /* Deckt alles ab */
-    
-    opacity: 0; 
-    cursor: ew-resize; 
-    z-index: 100; /* GANZ OBEN -> Damit man ihn greifen kann */
-    margin: 0; padding: 0;
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 700;
+    margin-top: -5px;
 }
 /* === REPARATUR: BUTTONS GANZ UNTEN === */
 
