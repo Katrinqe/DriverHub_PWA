@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - FINAL FIXED V78 (CLEANUP & LABELS) === */
+/* === PERF.JS - FINAL FIXED V79 (SYNTAX FIX) === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -146,7 +146,7 @@ window.PerfLogic = {
         this.updateStatsDisplay(null);
     },
 
-showTrackOnMap: function(track) {
+    showTrackOnMap: function(track) {
         // Alte Linie weg
         if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer);
         
@@ -193,9 +193,9 @@ showTrackOnMap: function(track) {
                 }
             });
         }
-    }
+    }, // <--- HIER HAT DAS KOMMA GEFEHLT!
 
-renderMapHubs: function() {
+    renderMapHubs: function() {
         this.hubMarkers.forEach(m => this.map.removeLayer(m));
         this.hubMarkers = [];
 
