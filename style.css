@@ -1093,103 +1093,60 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 
 /* === VERBESSERTER TACHO (SMOOTH CONTROL) === */
 
-/* === TACHO V3: PRECISE NEON RING === */
+/* === TACHO V4: GPU ACCELERATED RING === */
 
 .tacho-container {
     width: 260px;
-    height: 130px; /* Halbkreis */
+    height: 130px; /* Exakter Halbkreis */
     position: relative;
     margin: 25px auto;
     overflow: hidden; 
     cursor: crosshair;
-    /* Clean background, keine wilden Verläufe mehr */
     background: transparent;
     touch-action: none !important;
+    /* GPU Layer erzwingen gegen Ruckeln */
+    transform: translateZ(0);
 }
 
-/* Der graue Hintergrund-Pfad (die "Straße") */
+/* Der Hintergrund-Ring (Dunkelgrau) */
 .tacho-track {
     position: absolute;
     top: 0; left: 0;
-    width: 260px; height: 260px; /* Vollkreis, wird unten abgeschnitten */
+    width: 260px; height: 260px; /* Vollkreis Box */
     border-radius: 50%;
-    border: 12px solid #222; /* Dunkle Spur */
-    box-sizing: border-box;
+    background: #222; /* Farbe der Spur */
+    
+    /* Wir stanzen die Mitte aus -> Ring entsteht */
+    -webkit-mask-image: radial-gradient(transparent 58%, black 60%);
+    mask-image: radial-gradient(transparent 58%, black 60%);
+    
     z-index: 1;
 }
 
-/* Der farbige aktive Bogen */
+/* Der aktive farbige Bogen */
 .tacho-arc {
     position: absolute;
     top: 0; left: 0;
     width: 260px; height: 260px;
     border-radius: 50%;
-    /* Wir nutzen einen transparenten Border, nur der obere Teil wird gefärbt */
-    border: 12px solid transparent; 
-    border-top-color: var(--tacho-color, #30d158); /* Die aktive Farbe */
-    border-left-color: var(--tacho-color, #30d158); /* Trick für Halbkreis-Füllung */
-    box-sizing: border-box;
     z-index: 2;
     
-    /* Rotation Logik */
-    transform-origin: 50% 50%;
-    transform: rotate(-135deg); /* Startposition (leer) */
-    transition: transform 0.1s cubic-bezier(0.1, 0.9, 0.2, 1); /* Snappy aber smooth */
-    
-    /* Neon Glow */
-    filter: drop-shadow(0 0 5px var(--tacho-color, #30d158));
-    pointer-events: none;
-    opacity: 0; /* Unsichtbar bis JS übernimmt */
-}
-/* Sichtbar machen, wenn JS läuft */
-/* === TACHO V3: PRECISE NEON RING (FINAL) === */
+    /* Der Farbverlauf (wird per JS rotiert/gesteuert) */
+    background: conic-gradient(
+        from 270deg, 
+        var(--tacho-color, #30d158) 0%, 
+        var(--tacho-color, #30d158) var(--tacho-percent, 0%), 
+        transparent var(--tacho-percent, 0%), 
+        transparent 100%
+    );
 
-.tacho-container {
-    width: 260px;
-    height: 130px; /* Halbkreis */
-    position: relative;
-    margin: 25px auto;
-    overflow: hidden; 
-    cursor: crosshair;
-    /* Clean background */
-    background: transparent;
-    touch-action: none !important;
-}
+    /* Auch hier die Mitte ausstanzen */
+    -webkit-mask-image: radial-gradient(transparent 58%, black 60%);
+    mask-image: radial-gradient(transparent 58%, black 60%);
 
-/* Der graue Hintergrund-Pfad */
-.tacho-track {
-    position: absolute;
-    top: 0; left: 0;
-    width: 260px; height: 260px; /* Vollkreis */
-    border-radius: 50%;
-    border: 12px solid #222; /* Dunkle Spur */
-    box-sizing: border-box;
-    z-index: 1;
+    /* Performance Booster */
+    will-change: background;
 }
-
-/* Der farbige aktive Bogen */
-.tacho-arc {
-    position: absolute;
-    top: 0; left: 0;
-    width: 260px; height: 260px;
-    border-radius: 50%;
-    /* Wir nutzen einen transparenten Border, nur der obere Teil wird gefärbt */
-    border: 12px solid transparent; 
-    border-top-color: var(--tacho-color, #30d158); 
-    border-left-color: var(--tacho-color, #30d158); 
-    box-sizing: border-box;
-    z-index: 2;
-    
-    transform-origin: 50% 50%;
-    transform: rotate(-135deg); /* Startposition */
-    transition: transform 0.1s cubic-bezier(0.1, 0.9, 0.2, 1);
-    
-    /* Neon Glow */
-    filter: drop-shadow(0 0 5px var(--tacho-color, #30d158));
-    pointer-events: none;
-    opacity: 0;
-}
-.tacho-container.ready .tacho-arc { opacity: 1; }
 
 /* Der weiße Knopf */
 .tacho-knob-container {
@@ -1197,25 +1154,26 @@ body.creator-active #perf-map-container { height: 100vh !important; }
     top: 0; left: 0;
     width: 100%; height: 200%; 
     transform-origin: 50% 50%;
-    transform: rotate(-90deg);
+    transform: rotate(-90deg); /* Start links */
     pointer-events: none;
     z-index: 4;
-    transition: transform 0.1s cubic-bezier(0.1, 0.9, 0.2, 1);
+    will-change: transform; /* Ruckeln verhindern */
+    transition: transform 0.05s linear; /* Sehr kurze Transition für Smoothness */
 }
 
 .tacho-knob {
-    width: 24px; height: 24px;
+    width: 28px; height: 28px;
     background: white;
     border-radius: 50%;
     position: absolute;
-    top: 6px; 
+    top: 10px; /* Positioniert auf dem Ring */
     left: 50%;
     transform: translateX(-50%);
-    box-shadow: 0 0 10px rgba(255,255,255,0.8);
-    border: 2px solid #111;
+    box-shadow: 0 0 15px var(--tacho-color, #30d158); /* Glow in Wagenfarbe */
+    border: 3px solid #111;
 }
 
-/* Text in der Mitte */
+/* Text Display */
 .tacho-value-display {
     position: absolute;
     bottom: 0; left: 0; width: 100%;
@@ -1229,59 +1187,13 @@ body.creator-active #perf-map-container { height: 100vh !important; }
     color: white;
     line-height: 0.9;
     font-family: monospace; 
+    text-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 .tacho-unit {
     display: block;
-    color: #666; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;
-    margin-top: 5px;
+    color: #888; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;
+    margin-top: 5px; letter-spacing: 1px;
 }
-/* === REPARATUR: BUTTONS GANZ UNTEN === */
-
-/* PRM Button (Lila Glow) */
-.btn-prm-glow {
-    display: block; width: 100%; 
-    padding: 15px; margin: 20px 0 15px 0;
-    background: linear-gradient(45deg, rgba(191, 90, 242, 0.1), transparent); 
-    border: 1px solid rgba(191, 90, 242, 0.5); 
-    color: #bf5af2;
-    border-radius: 15px; 
-    font-weight: 900; font-size: 0.8rem; letter-spacing: 1px; 
-    box-shadow: 0 0 15px rgba(191, 90, 242, 0.1); 
-    cursor: pointer; text-transform: uppercase;
-}
-
-/* Container für Discard & Save */
-.setup-actions { 
-    display: flex; gap: 15px; align-items: center; width: 100%; 
-    margin-bottom: 20px; /* Platz zum unteren Rand */
-}
-
-/* Discard Button (Dezent) */
-.btn-discard-text { 
-    flex: 1; 
-    background: transparent; 
-    border: 1px solid #333; 
-    color: #888; 
-    padding: 15px; border-radius: 30px;
-    font-weight: 800; font-size: 0.8rem;
-    cursor: pointer;
-}
-
-/* Save Button (Rot & Fett) */
-.btn-save-final {
-    flex: 2; 
-    background: #ff3b30; 
-    color: white; 
-    border: none; 
-    padding: 15px; border-radius: 30px; 
-    font-weight: 900; font-size: 1rem; letter-spacing: 1px; 
-    box-shadow: 0 5px 20px rgba(255, 59, 48, 0.3); 
-    cursor: pointer; text-transform: uppercase;
-}
-.btn-save-final:active { transform: scale(0.98); }
-
-/* === REPARATUR: TACHO ABSTAND === */
-
 /* Mehr Platz für den Tacho reservieren */
 .tacho-container {
     height: 150px !important; /* Erhöht, damit der Bogen Platz hat */
