@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - FINAL COMPLETE V75 === */
+/* === PERF.JS - FINAL FIXED V78 (CLEANUP & LABELS) === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -15,12 +15,12 @@ window.PerfLogic = {
     isCreatorMode: false,
     selectedPin: 'start', 
     creatorPoints: [], 
-    routeLayer: null,
+    routeLayer: null,         // Die lila Linie beim Erstellen
+    selectedTrackLayer: null, // Die rote Linie beim Anschauen
     selectedTrackId: null,
     
     // --- CACHE & LAYERS ---
-    hubMarkers: [],
-    selectedTrackLayer: null, 
+    hubMarkers: [], // Die Labels auf der Karte
     
     // --- TEMP DATA ---
     currentRouteStats: { dist: "0 km", time: "--:--", elevUp: "0m", elevDown: "0m" },
@@ -31,7 +31,7 @@ window.PerfLogic = {
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - Full Version");
+        console.log("PerfLogic Init - Clean & Hubs");
         this.renderTrackList();
         this.updateStatsDisplay(null);
     },
@@ -64,10 +64,12 @@ window.PerfLogic = {
                     this.placePinOnMap(e.latlng);
                 }
             } else {
+                // Wenn man ins Leere klickt -> Auswahl aufheben
                 this.deselectTrack();
             }
         });
 
+        // WICHTIG: Labels zeichnen
         this.renderMapHubs();
     },
 
@@ -95,7 +97,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 2. INTERACTION LOGIC
+    // 2. INTERACTION LOGIC (LABEL & ROUTE HANDLING)
     // =================================================
 
     toggleTrackSelection: function(track) {
@@ -109,8 +111,10 @@ window.PerfLogic = {
     selectTrack: function(track) {
         this.selectedTrackId = track.id;
         
+        // HIER: Jetzt erst die Linie zeichnen!
         this.showTrackOnMap(track);
         
+        // Karte in der Liste markieren
         document.querySelectorAll('.track-card').forEach(c => c.classList.remove('active-card'));
         const card = document.getElementById(`track-card-${track.id}`);
         if(card) {
@@ -125,8 +129,13 @@ window.PerfLogic = {
         if(!this.selectedTrackId) return;
         this.selectedTrackId = null;
 
-        if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer);
+        // Linie entfernen!
+        if(this.selectedTrackLayer) {
+            this.map.removeLayer(this.selectedTrackLayer);
+            this.selectedTrackLayer = null;
+        }
         
+        // Start/Ziel Punkte auch wegräumen (außer User & Hubs)
         this.map.eachLayer(layer => {
             if(layer instanceof L.Marker && layer !== this.userMarker && !this.hubMarkers.includes(layer)) {
                 this.map.removeLayer(layer);
@@ -135,6 +144,73 @@ window.PerfLogic = {
 
         document.querySelectorAll('.track-card').forEach(c => c.classList.remove('active-card'));
         this.updateStatsDisplay(null);
+    },
+
+    // Zeigt die Route ROT an (wenn ausgewählt)
+    showTrackOnMap: function(track) {
+        // Alte Linie weg
+        if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer);
+        
+        // Alte Punkte weg
+        this.map.eachLayer(layer => {
+            if(layer instanceof L.Marker && layer !== this.userMarker && !this.hubMarkers.includes(layer)) {
+                this.map.removeLayer(layer);
+            }
+        });
+
+        // 1. Linie zeichnen
+        if(track.routePath) {
+            this.selectedTrackLayer = L.polyline(track.routePath, {color: '#ff3b30', weight: 6}).addTo(this.map);
+            
+            // Kamerafahrt zur Strecke
+            this.map.flyToBounds(this.selectedTrackLayer.getBounds(), {
+                paddingTopLeft: [30, 30],
+                paddingBottomRight: [30, 180], 
+                duration: 1.0
+            });
+        }
+
+        // 2. Start/Ziel Dots zeichnen
+        if(track.pins) {
+            track.pins.forEach(p => {
+                if(p.type === 'start' || p.type === 'finish') {
+                    const iconHtml = `<div class="pulsing-dot-${p.type === 'start' ? 'green' : 'red'}"></div>`;
+                    const icon = L.divIcon({ className: 'd', html: iconHtml, iconSize: [15,15] });
+                    L.marker([p.lat, p.lng], {icon: icon}).addTo(this.map);
+                }
+            });
+        }
+    },
+
+    // Zeichnet NUR die Labels (Namen) für alle Strecken
+    renderMapHubs: function() {
+        // Erstmal alle alten weg
+        this.hubMarkers.forEach(m => this.map.removeLayer(m));
+        this.hubMarkers = [];
+
+        this.tracks.forEach(track => {
+            if(!track.pins || track.pins.length === 0) return;
+            // Wir nehmen den Startpunkt für das Label
+            const start = track.pins.find(p => p.type === 'start') || track.pins[0];
+            
+            const icon = L.divIcon({
+                className: 'custom-hub',
+                html: `<div class="track-hub-marker">
+                        <span class="thm-name">${track.name}</span>
+                       </div>`,
+                iconSize: [80, 30], iconAnchor: [40, 35]
+            });
+
+            const marker = L.marker([start.lat, start.lng], {icon: icon}).addTo(this.map);
+            
+            // Beim Klick auf das Label -> Strecke auswählen
+            marker.on('click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                this.toggleTrackSelection(track);
+            });
+            
+            this.hubMarkers.push(marker);
+        });
     },
 
     updateStatsDisplay: function(track) {
@@ -187,6 +263,7 @@ window.PerfLogic = {
         this.creatorPoints = []; 
         this.deselectTrack();
         
+        // Hubs ausblenden, damit sie nicht stören
         this.hubMarkers.forEach(m => m.setOpacity(0));
 
         document.querySelector('.perf-content-scroll').style.display = 'none';
@@ -221,9 +298,11 @@ window.PerfLogic = {
         }
     },
 
+    // === WICHTIG: CLEANUP FUNKTION ===
     quitCreator: function() {
         this.isCreatorMode = false;
         
+        // UI zurücksetzen
         document.querySelector('.perf-content-scroll').style.display = 'block';
         document.querySelector('.perf-map-fade').style.display = 'block';
         document.querySelector('.perf-sub-nav').style.display = 'flex';
@@ -232,15 +311,38 @@ window.PerfLogic = {
         document.getElementById('nav-perf').parentElement.classList.remove('hidden');
 
         const mapContainer = document.getElementById('perf-map-container');
-        mapContainer.style.height = "50vh";
+        mapContainer.style.height = "50vh"; // Zurück zur halben Höhe
         mapContainer.style.zIndex = "0";
         mapContainer.style.position = "absolute";
         
         setTimeout(() => { this.map.invalidateSize(); }, 300);
 
+        // ALLE Temp-Zeichnungen löschen!
         this.clearCreatorMap();
+        
+        // Hubs wieder anzeigen
         this.hubMarkers.forEach(m => m.setOpacity(1)); 
-        this.renderMapHubs();
+        this.renderMapHubs(); // Labels neu malen
+    },
+    
+    clearCreatorMap: function() {
+        // 1. Alle Creator Marker weg
+        if(this.creatorPoints) {
+            this.creatorPoints.forEach(p => {
+                if(p.marker) this.map.removeLayer(p.marker);
+            });
+        }
+        this.creatorPoints = [];
+        
+        // 2. Die lila Route weg
+        if(this.routeLayer) {
+            this.map.removeLayer(this.routeLayer);
+            this.routeLayer = null;
+        }
+        
+        // Reset Text
+        document.getElementById('ct-dist').innerText = "0.0 km";
+        document.getElementById('ct-elev').innerText = "0 m";
     },
 
     // =================================================
@@ -285,6 +387,7 @@ window.PerfLogic = {
     calculateRoute: function() {
         if(this.creatorPoints.length < 2) {
             if(this.routeLayer) this.map.removeLayer(this.routeLayer);
+            this.routeLayer = null;
             document.getElementById('ct-dist').innerText = "0.0 km";
             return;
         }
@@ -295,6 +398,8 @@ window.PerfLogic = {
         fetch(url).then(r => r.json()).then(data => {
             if(data.routes && data.routes.length > 0) {
                 const route = data.routes[0];
+                
+                // Alte Route weg
                 if(this.routeLayer) this.map.removeLayer(this.routeLayer);
                 
                 const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
@@ -342,7 +447,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 5. SETUP & SAVE LOGIC (SCROLL ENABLER)
+    // 5. SETUP & SAVE LOGIC
     // =================================================
 
     saveTrack: function() {
@@ -360,16 +465,17 @@ window.PerfLogic = {
         const setupScreen = document.getElementById('track-setup-screen');
         setupScreen.classList.remove('hidden');
         
-        // === SCROLL FIX: Verhindert, dass Touches an den Body gehen ===
+        // MAP KILLER: Hintergrundkarte ausblenden, damit Scrollen geht
+        const bgMap = document.getElementById('perf-map-container');
+        if(bgMap) bgMap.style.display = 'none';
+
+        // Scroll Fix Listener
         const scrollBox = document.querySelector('.setup-content-scroll');
         if(scrollBox) {
-            scrollBox.addEventListener('touchmove', (e) => {
-                e.stopPropagation(); // Stoppt Bubbling zum Body
-            }, { passive: true });
+            scrollBox.addEventListener('touchmove', (e) => { e.stopPropagation(); }, { passive: true });
         }
-        // ============================================================
 
-        // Setup Map initialisieren
+        // Setup Map (Vorschau)
         if(!this.setupMap) {
             this.setupMap = L.map('setup-map', {
                 zoomControl: false, attributionControl: false,
@@ -402,6 +508,9 @@ window.PerfLogic = {
     },
 
     cancelSetup: function() {
+        // Map wieder zeigen!
+        document.getElementById('perf-map-container').style.display = 'block';
+        
         document.getElementById('track-setup-screen').classList.add('hidden');
         document.getElementById('perf-creator-ui').classList.remove('hidden');
     },
@@ -410,10 +519,11 @@ window.PerfLogic = {
         const nameInput = document.getElementById('setup-name').value;
         const name = nameInput.trim() || "Unnamed Track";
 
-        // FIX: Wert direkt aus dem Tacho-Text holen, da es kein Input-Feld mehr gibt
+        // Tacho-Wert holen
         const tachoElement = document.getElementById('tacho-val-text');
         const targetSpeed = tachoElement ? tachoElement.innerText : "0";
 
+        // 1. Objekt bauen
         const track = {
             id: Date.now(),
             name: name,
@@ -431,34 +541,37 @@ window.PerfLogic = {
             }
         };
 
+        // 2. Speichern
         this.tracks.push(track);
         localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
         
+        // 3. UI Schließen & Map wiederherstellen
+        document.getElementById('perf-map-container').style.display = 'block';
         document.getElementById('track-setup-screen').classList.add('hidden');
-        this.quitCreator();
         
-        this.renderTrackList();
-        this.renderMapHubs(); 
+        // 4. WICHTIG: Erstellmodus beenden und Karte putzen
+        this.quitCreator(); // Das löscht die lila Linie und Punkte
+        
+        // 5. Alles neu rendern
+        this.renderTrackList(); // Neue Karte in der Liste
+        this.renderMapHubs();   // Neues Label auf der Map
         this.updateStatsDisplay(null);
     },
 
-   setStartType: function(type) {
+    setStartType: function(type) {
         this.startType = type;
         
-        // Buttons umschalten
+        // Buttons
         document.getElementById('btn-standing').classList.toggle('active', type === 'standing');
         document.getElementById('btn-flying').classList.toggle('active', type === 'flying');
         
-        // Container holen
         const flySettings = document.getElementById('flying-settings');
-        // Wir ignorieren jetzt "standing-info", damit es IMMER sichtbar bleibt!
+        // Standing Info ignorieren wir -> Bleibt immer sichtbar!
 
         if(type === 'flying') {
-            flySettings.classList.remove('hidden'); // Tacho zeigen
-            // Sektoren bleiben da!
+            flySettings.classList.remove('hidden'); // Tacho an
         } else {
-            flySettings.classList.add('hidden'); // Tacho weg
-            // Sektoren bleiben da!
+            flySettings.classList.add('hidden'); // Tacho aus
         }
     },
 
@@ -518,6 +631,7 @@ window.PerfLogic = {
 
     renderTrackList: function() {
         const list = document.getElementById('perf-track-list');
+        if(!list) return; // Sicherheits-Check
         list.innerHTML = ''; 
 
         this.tracks.forEach(t => {
@@ -571,60 +685,6 @@ window.PerfLogic = {
                 miniMap.invalidateSize();
                 miniMap.fitBounds(poly.getBounds(), {padding: [10, 10]});
             }, 300);
-        }
-    },
-
-    renderMapHubs: function() {
-        this.hubMarkers.forEach(m => this.map.removeLayer(m));
-        this.hubMarkers = [];
-
-        this.tracks.forEach(track => {
-            if(!track.pins || track.pins.length === 0) return;
-            const start = track.pins.find(p => p.type === 'start') || track.pins[0];
-            
-            const icon = L.divIcon({
-                className: 'custom-hub',
-                html: `<div class="track-hub-marker">
-                        <span class="thm-name">${track.name}</span>
-                       </div>`,
-                iconSize: [80, 30], iconAnchor: [40, 35]
-            });
-
-            const marker = L.marker([start.lat, start.lng], {icon: icon}).addTo(this.map);
-            marker.on('click', (e) => {
-                L.DomEvent.stopPropagation(e);
-                this.toggleTrackSelection(track);
-            });
-            this.hubMarkers.push(marker);
-        });
-    },
-
-    showTrackOnMap: function(track) {
-        if(this.selectedTrackLayer) this.map.removeLayer(this.selectedTrackLayer);
-        
-        this.map.eachLayer(layer => {
-            if(layer instanceof L.Marker && layer !== this.userMarker && !this.hubMarkers.includes(layer)) {
-                this.map.removeLayer(layer);
-            }
-        });
-
-        if(track.routePath) {
-            this.selectedTrackLayer = L.polyline(track.routePath, {color: '#ff3b30', weight: 6}).addTo(this.map);
-            this.map.flyToBounds(this.selectedTrackLayer.getBounds(), {
-                paddingTopLeft: [30, 30],
-                paddingBottomRight: [30, 180], 
-                duration: 1.0
-            });
-        }
-
-        if(track.pins) {
-            track.pins.forEach(p => {
-                if(p.type === 'start' || p.type === 'finish') {
-                    const iconHtml = `<div class="pulsing-dot-${p.type === 'start' ? 'green' : 'red'}"></div>`;
-                    const icon = L.divIcon({ className: 'd', html: iconHtml, iconSize: [15,15] });
-                    L.marker([p.lat, p.lng], {icon: icon}).addTo(this.map);
-                }
-            });
         }
     }
 };
