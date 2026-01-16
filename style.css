@@ -734,40 +734,41 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 
 
-/* ============================================================== */
-/* === PERFORMANCE HUB (FINAL MASTER: CAROUSEL & CREATOR) === */
-/* ============================================================== */
-
 /* --- 1. BASE CONTAINER & BACKGROUND --- */
 
-/* --- 1. BASE CONTAINER (SCROLL & CLICK FIX) --- */
-
+/* Der Dashboard Container (Scrollbar & Verlauf) */
 .perf-content-scroll {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    
-    /* Hintergrund */
+    /* Hintergrund: Verlauf */
     background: radial-gradient(circle at center top, #1a1a1a 0%, #000000 80%);
-    
-    /* WICHTIGSTER FIX: Erlaubt Scrollen und Klicken wieder! */
-    pointer-events: auto !important; 
-    
-    overflow-y: auto; 
-    overflow-x: hidden;
-    z-index: 10;
-    
-    padding-top: 10px;
+    overflow-y: auto; overflow-x: hidden;
+    z-index: 10; /* Liegt ÜBER der Map im Dashboard-Modus */
     padding-bottom: 120px;
-    
-    /* Smooth Scroll für iOS */
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
-}
-/* NEU: Der Fade ganz oben an der Kante (Soft Edge) */
-.header-fade-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-    background: linear-gradient(to bottom, #000 10%, transparent 100%);
-    z-index: 20; pointer-events: none;
+    transition: opacity 0.3s;
 }
 
+/* Wenn Creator Mode an ist, blenden wir das Dashboard komplett aus */
+body.creator-active .perf-content-scroll {
+    display: none !important; /* WICHTIG: Weg damit, damit man die Map sieht */
+}
+
+/* Map Container (Basis) */
+#perf-map-container {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0; /* Standard: Ganz hinten */
+    opacity: 0; /* Standard: Unsichtbar */
+    transition: opacity 0.5s;
+}
+
+/* Map Container (Wenn Creator Mode an ist) */
+body.creator-active #perf-map-container {
+    opacity: 1 !important; 
+    z-index: 1 !important; /* Nach vorne holen, aber hinter das HUD */
+}
+
+#perf-map { width: 100%; height: 100%; background: #111; }
 /* --- 2. HERO HEADER (GLASS HUB) --- */
 
 .perf-dashboard-header {
