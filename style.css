@@ -1130,3 +1130,39 @@ input, textarea { user-select: text !important; -webkit-user-select: text !impor
 /* ANIMATIONS */
 @keyframes slideInRight { to { opacity: 1; transform: translateX(0); } }
 @keyframes btn-shine { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }
+
+/* ================================================= */
+/* === MAP INTERACTION FIX (GHOST BUSTER) === */
+/* ================================================= */
+
+/* 1. Die Karte MUSS Klicks empfangen, wenn Creator Mode an ist */
+body.creator-active #perf-map-container {
+    z-index: 100 !important; /* Höher als der Hintergrund */
+    pointer-events: auto !important; /* MUSS AN SEIN */
+    touch-action: none !important; /* Wichtig für Leaflet auf Handy */
+}
+
+body.creator-active #perf-map {
+    pointer-events: auto !important;
+    z-index: 101 !important;
+}
+
+/* 2. Das UI Overlay (Creator UI) darf KEINE Klicks klauen */
+#perf-creator-ui {
+    pointer-events: none !important; /* Klicks gehen durch leere Flächen durch */
+    z-index: 2000 !important; /* Liegt optisch oben */
+}
+
+/* 3. Aber die Buttons im UI müssen klickbar bleiben */
+.creator-top-hud, 
+.creator-bottom-bar,
+.cb-action-btn, 
+.cb-pin {
+    pointer-events: auto !important; /* Buttons wieder aktivieren */
+}
+
+/* 4. Sicherstellen, dass das alte Dashboard wirklich weg ist */
+body.creator-active .perf-content-scroll {
+    display: none !important;
+    pointer-events: none !important;
+}
