@@ -602,122 +602,107 @@ window.PerfLogic = {
             flySettings.classList.add('hidden'); 
         }
     },
-// --- TACHO LOGIC V4 (SYNCED & GPU) ---
+// --- TACHO LOGIC V7 (DECOUPLED MIN/MAX) ---
 
- _initTachoHTML: function() {
+    _initTachoHTML: function() {
         const container = document.querySelector('.tacho-container');
-        // Neu aufbauen, falls leer oder altes Design
         if (container && (!container.querySelector('.tacho-ticks') || container.innerHTML.trim() === '')) {
             container.innerHTML = ''; 
             container.classList.add('ready');
 
-            // 1. NEU: Die Skala-Striche
-            const ticks = document.createElement('div');
-            ticks.className = 'tacho-ticks';
-            container.appendChild(ticks);
-
-            // 2. Hintergrund Spur
-            const track = document.createElement('div');
-            track.className = 'tacho-track';
-            container.appendChild(track);
-
-            // 3. Farbiger Bogen
-            const arc = document.createElement('div');
-            arc.className = 'tacho-arc';
-            arc.id = 'tacho-visual-arc';
-            container.appendChild(arc);
-
-            // 4. Text Display
-            const display = document.createElement('div');
-            display.className = 'tacho-value-display';
+            // HTML Aufbau (Design V6)
+            const ticks = document.createElement('div'); ticks.className = 'tacho-ticks'; container.appendChild(ticks);
+            const track = document.createElement('div'); track.className = 'tacho-track'; container.appendChild(track);
+            const arc = document.createElement('div'); arc.className = 'tacho-arc'; arc.id = 'tacho-visual-arc'; container.appendChild(arc);
+            const display = document.createElement('div'); display.className = 'tacho-value-display';
             display.innerHTML = `<div class="tacho-val" id="tacho-val-text">0</div><span class="tacho-unit">ENTRY SPEED</span>`;
             container.appendChild(display);
-
-            // 5. Der Anfasser (Knob)
-            const knobCont = document.createElement('div');
-            knobCont.className = 'tacho-knob-container';
-            knobCont.id = 'tacho-knob-rotator';
-            knobCont.innerHTML = '<div class="tacho-knob"></div>';
-            container.appendChild(knobCont);
+            const knobCont = document.createElement('div'); knobCont.className = 'tacho-knob-container'; knobCont.id = 'tacho-knob-rotator';
+            knobCont.innerHTML = '<div class="tacho-knob"></div>'; container.appendChild(knobCont);
             
-            // Initial Trigger
             this.updateTacho(120);
         }
     },
 
     updateTacho: function(val) {
-        // Sicherstellen, dass HTML existiert
-        if(!document.querySelector('.tacho-track')) {
-            this._initTachoHTML();
-        }
+        if(!document.querySelector('.tacho-track')) this._initTachoHTML();
 
-        // Snapping auf 5er Schritte
+        // 1. Tacho Snapping & Limits
         val = parseInt(val);
         val = Math.round(val / 5) * 5; 
         val = Math.max(0, Math.min(300, val));
 
-        // Text Update
+        // 2. Visuelles Update (Tacho)
         const textEl = document.getElementById('tacho-val-text');
         if(textEl) textEl.innerText = val;
         
-        // Mathematik: 0 bis 1.0
         const percentage = val / 300; 
-        
-        // HSL Farbe berechnen (120=Grün -> 0=Rot)
         const hue = 120 - (percentage * 120);
         const color = `hsl(${hue}, 100%, 50%)`;
         
         const container = document.querySelector('.tacho-container');
         if(container) {
-            // 1. Farbe setzen
             container.style.setProperty('--tacho-color', color);
-            
-            // 2. Prozent für den Conic-Gradient setzen (TRICK: Wir nutzen 50%, da Halbkreis!)
-            // Wenn 100% Speed = 180 Grad Rotation = 50% vom Kreis
             const cssPercent = percentage * 50; 
             container.style.setProperty('--tacho-percent', cssPercent + '%');
         }
 
-        // Knob Rotation (-90 bis +90)
         const knob = document.getElementById('tacho-knob-rotator');
         if(knob) {
             const knobDeg = -90 + (percentage * 180);
             knob.style.transform = `rotate(${knobDeg}deg)`;
         }
 
-        // Inputs synchronisieren
+        // 3. AUTOMATIK: Min/Max folgen dem Tacho (Reset auf +/- 5)
+        // Aber NUR, wenn wir nicht gerade in einem Input-Feld tippen (fokus)
         const minInput = document.getElementById('fly-min');
         const maxInput = document.getElementById('fly-max');
-        if(minInput && document.activeElement !== minInput) minInput.value = Math.max(0, val - 5);
-        if(maxInput && document.activeElement !== maxInput) maxInput.value = val + 5;
+        
+        if(minInput && document.activeElement !== minInput) {
+            minInput.value = Math.max(0, val - 5);
+        }
+        if(maxInput && document.activeElement !== maxInput) {
+            maxInput.value = val + 5;
+        }
     },
 
     stepValue: function(inputId, step) {
         const input = document.getElementById(inputId);
         let val = parseInt(input.value) || 0;
+        
+        // Aktuelle Target-Speed holen (als Grenze)
+        const targetSpeed = parseInt(document.getElementById('tacho-val-text').innerText) || 0;
+
+        // Neuen Wert berechnen
         val += step;
-        if(val < 0) val = 0; 
+
+        // LOGIK SPERRE: Manuelles Verstellen darf physikalisch unmögliche Werte nicht erlauben
+        
+        if (inputId === 'fly-min') {
+            // Min darf nicht größer als Target sein
+            if (val > targetSpeed) val = targetSpeed;
+            if (val < 0) val = 0;
+        }
+
+        if (inputId === 'fly-max') {
+            // Max darf nicht kleiner als Target sein
+            if (val < targetSpeed) val = targetSpeed;
+            if (val > 350) val = 350; // Hard Limit
+        }
+
+        // Wert setzen
         input.value = val;
         
-        // Wenn man die Buttons drückt, muss sich der Tacho auch bewegen!
-        // Wir nehmen den Mittelwert zwischen Min und Max als neuen Tachowert
-        if(inputId === 'fly-min' || inputId === 'fly-max') {
-             const min = parseInt(document.getElementById('fly-min').value);
-             const max = parseInt(document.getElementById('fly-max').value);
-             const mid = Math.round((min + max) / 2);
-             this.updateTacho(mid);
-        }
+        // HIER WICHTIG: KEIN Aufruf von updateTacho()!
+        // Der Tacho bleibt stehen, wir ändern nur das Fenster drumherum.
 
         if (navigator.vibrate) navigator.vibrate(5);
     },
 
     handleTachoTouch: function(event) {
         if(event.cancelable) event.preventDefault();
-        
         const container = event.currentTarget;
         const rect = container.getBoundingClientRect();
-        
-        // X Position im Container
         const clientX = event.touches ? event.touches[0].clientX : event.clientX;
         
         let percent = (clientX - rect.left) / rect.width;
@@ -727,7 +712,6 @@ window.PerfLogic = {
         const rawVal = percent * 300;
         const snappedVal = Math.round(rawVal / 5) * 5;
 
-        // Nur updaten wenn sich was geändert hat (Performance!)
         const currentText = document.getElementById('tacho-val-text');
         if(currentText && parseInt(currentText.innerText) !== snappedVal) {
             this.updateTacho(snappedVal);
