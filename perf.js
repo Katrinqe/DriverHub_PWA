@@ -851,23 +851,24 @@ window.PerfLogic = {
             this.checkTrackConditions(t); 
         });
 
+   // 3. ADD TRACK BUTTON (Fixed Interaction)
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
+        // Animation etwas später als die anderen
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
+        
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
         
+        // WICHTIG: Kein ontouchend mehr, nur onclick!
+        // Das verhindert den "Dead Click" Bug auf Handys.
         addBtn.onclick = (e) => {
-            if(e) { e.preventDefault(); e.stopPropagation(); }
-            this.enterCreatorMode();
-        };
-        addBtn.ontouchend = (e) => {
-            e.preventDefault(); e.stopPropagation();
+            e.stopPropagation(); // Verhindert, dass Events durchsickern
+            console.log("Add Button Clicked"); 
             this.enterCreatorMode();
         };
 
         list.appendChild(addBtn);
     },
-
     renderMiniMap: function(track) {
         const mapId = `mini-map-${track.id}`;
         const container = document.getElementById(mapId);
