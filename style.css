@@ -1699,3 +1699,138 @@ input, textarea {
     color: white; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
     padding: 10px; font-size: 0.8rem; pointer-events: none; z-index: 1000;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* === PERF DASHBOARD V3 (FINAL LAYOUT) === */
+
+/* Container Animation beim Laden */
+#perf-content-area {
+    animation: fadeIn 0.4s ease-out;
+}
+
+/* 1. HERO HEADER (Mitte Dominant) */
+.perf-dashboard-header {
+    display: flex;
+    align-items: center; /* Mittig ausrichten */
+    justify-content: space-between;
+    padding: 30px 20px 20px 20px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+/* Links & Rechts: Die Neben-Stats */
+.pd-side-stat {
+    flex: 1;
+    text-align: center;
+    opacity: 0.8;
+}
+.pd-side-stat label {
+    display: block; font-size: 0.65rem; color: #888; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px;
+}
+.pd-side-stat .val {
+    font-size: 1.4rem; font-weight: 800; color: white; font-family: monospace;
+}
+
+/* Mitte: Der Haupt-Score (Eyecatcher) */
+.pd-main-score {
+    flex: 1.5; /* Breiter als die anderen */
+    text-align: center;
+    transform: scale(1.1); /* Größer */
+    position: relative;
+}
+.pd-main-score label {
+    display: block; font-size: 0.7rem; color: #bf5af2; font-weight: 800; letter-spacing: 2px; margin-bottom: 5px;
+    text-shadow: 0 0 10px rgba(191, 90, 242, 0.3);
+}
+.pd-main-score .val {
+    font-size: 3.2rem; font-weight: 900; color: white; line-height: 0.9;
+    text-shadow: 0 0 25px rgba(191, 90, 242, 0.5); /* Glow */
+}
+
+/* 2. TRACK LISTE */
+#perf-track-list {
+    padding: 0 20px;
+    display: flex; flex-direction: column; gap: 15px;
+}
+
+/* Track Card V2 (Wie besprochen) */
+.track-card-v2 {
+    position: relative; height: 130px; border-radius: 16px; overflow: hidden;
+    background: #111; border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    /* Animation Init State */
+    opacity: 0; transform: translateY(20px);
+    animation: slideUpCard 0.5s forwards;
+}
+.track-card-v2:active { transform: scale(0.98); }
+
+.tc-bg-map {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0.5; filter: grayscale(100%) contrast(1.1); z-index: 0;
+}
+.tc-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(90deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.5) 100%);
+    z-index: 1;
+}
+.tc-content {
+    position: relative; z-index: 2; padding: 20px; height: 100%;
+    display: flex; flex-direction: column; justify-content: center;
+}
+.tc-name { font-size: 1.3rem; font-weight: 800; color: white; text-transform: uppercase; margin-bottom: 5px; }
+.tc-details { font-size: 0.8rem; color: #ccc; font-weight: 600; display: flex; gap: 15px;}
+.tc-details i { color: #bf5af2; margin-right: 5px; }
+
+/* ADD TRACK CARD (Style angepasst) */
+.add-track-v2 {
+    height: 80px; 
+    border-radius: 16px;
+    background: rgba(255,255,255,0.03);
+    border: 2px dashed rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    color: #888; font-weight: 700; cursor: pointer;
+    font-size: 0.9rem; letter-spacing: 1px;
+    transition: all 0.2s;
+    /* Animation */
+    opacity: 0; transform: translateY(20px);
+    animation: slideUpCard 0.5s forwards;
+}
+.add-track-v2:active { background: rgba(255,255,255,0.08); color: white; border-color: #fff; }
+
+/* 3. HISTORY SECTION */
+.perf-history-section {
+    padding: 30px 20px 100px 20px; /* Platz unten für Navigation */
+}
+.ph-title {
+    font-size: 0.9rem; font-weight: 800; color: #666; text-transform: uppercase; 
+    margin-bottom: 15px; letter-spacing: 1px; border-bottom: 1px solid #222; padding-bottom: 10px;
+}
+.ph-empty {
+    text-align: center; padding: 30px; color: #444; font-weight: 600; font-size: 0.8rem;
+    background: rgba(255,255,255,0.02); border-radius: 12px;
+}
+
+/* Animation Keyframes */
+@keyframes slideUpCard { to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* Live Badge */
+.tc-condition-badge {
+    position: absolute; top: 15px; right: 15px; z-index: 3;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+    padding: 5px 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; gap: 6px;
+}
+.cond-dot { width: 6px; height: 6px; border-radius: 50%; background: #666; }
+.cond-text { font-size: 0.6rem; font-weight: 800; color: white; }
