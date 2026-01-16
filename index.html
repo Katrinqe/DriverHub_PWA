@@ -230,12 +230,13 @@
                 </div> 
 
                 <div id="standing-info" class="config-group" style="margin-top: 20px;">
-                    <label>SECTORS</label>
-                    <div style="border: 2px dashed #444; background: rgba(255, 255, 255, 0.05); border-radius: 15px; padding: 20px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100px;">
-                        <div style="font-weight:900; font-size:1.1rem; color:white; margin-bottom:5px; letter-spacing:1px;">Sector 1</div>
-                        <small style="color:#888; font-weight:700; text-transform:uppercase; font-size:0.75rem; letter-spacing:2px;">Start - Finish</small>
-                    </div>
-                </div>
+        <label>SECTORS</label>
+        <div id="sector-config-container">
+            <div class="sector-add-card" onclick="PerfLogic.openSectorEditor()">
+                <i class="fa-solid fa-plus-circle"></i> ADD SECTORS
+            </div>
+        </div>
+    </div>
 
               <div class="prm-engine-box">
         <div class="prm-bg-stripes"></div>
