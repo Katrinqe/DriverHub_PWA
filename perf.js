@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - FINAL MASTER V80 (ALL FEATURES) === */
+/* === PERF.JS - FINAL MASTER V4 (CAROUSEL & API) === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -15,7 +15,7 @@ window.PerfLogic = {
     isCreatorMode: false,
     selectedPin: 'start', 
     creatorPoints: [], 
-    routeLayer: null,         
+    routeLayer: null,          
     selectedTrackLayer: null, 
     selectedTrackId: null,
     
@@ -38,12 +38,12 @@ window.PerfLogic = {
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - Master Version");
+        console.log("PerfLogic Init - V4 Carousel Master");
         this.renderTrackList();
-        this.updateStatsDisplay(null);
     },
 
     onScreenShow: function() {
+        // Map nur laden, wenn wir NICHT im Dashboard sind (oder für Creator Mode vorbereiten)
         if (!this.map) {
             this.loadMap();
         } else {
@@ -115,16 +115,17 @@ window.PerfLogic = {
 
     selectTrack: function(track) {
         this.selectedTrackId = track.id;
-        this.showTrackOnMap(track);
         
-        document.querySelectorAll('.track-card').forEach(c => c.classList.remove('active-card'));
-        const card = document.getElementById(`track-card-${track.id}`);
-        if(card) {
-            card.classList.add('active-card');
-            card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        // V4: Navigiere zum Detail Screen (Hier Platzhalter Alert oder Logic)
+        // console.log("Track selected:", track.name);
+        
+        // Für jetzt: Zeige es auf der Map (Creator Context)
+        if(this.isCreatorMode) {
+            this.showTrackOnMap(track);
+        } else {
+            // TODO: Öffne den Detail-Screen Overlay
+            alert("Opening Details for: " + track.name);
         }
-
-        this.updateStatsDisplay(track);
     },
 
     deselectTrack: function() {
@@ -141,9 +142,6 @@ window.PerfLogic = {
                 this.map.removeLayer(layer);
             }
         });
-
-        document.querySelectorAll('.track-card').forEach(c => c.classList.remove('active-card'));
-        this.updateStatsDisplay(null);
     },
 
     showTrackOnMap: function(track) {
@@ -221,41 +219,6 @@ window.PerfLogic = {
         });
     },
 
-    updateStatsDisplay: function(track) {
-        const statsRow = document.getElementById('main-stats-row');
-        const actionBar = document.getElementById('track-action-bar');
-        const btnInfo = document.getElementById('btn-track-info');
-        const btnEdit = document.getElementById('btn-track-edit');
-
-        if(track) {
-            actionBar.classList.remove('hidden'); 
-            setTimeout(() => actionBar.classList.add('visible'), 10);
-            btnInfo.classList.remove('hidden');
-            btnEdit.classList.remove('hidden');
-
-            statsRow.innerHTML = `
-                <div class="p-stat-box"><label>LENGTH</label><span>${track.dist}</span></div>
-                <div class="p-stat-box glow-text"><label>BEST TIME</label><span>${track.bestTime}</span></div>
-                <div class="p-stat-box"><label>ELEVATION</label>
-                    <span style="font-size:0.8rem">
-                        <i class="fa-solid fa-arrow-trend-up" style="color:#30d158"></i> ${track.elevUp || '0m'} 
-                        <i class="fa-solid fa-arrow-trend-down" style="color:#ff3b30; margin-left:5px"></i> ${track.elevDown || '0m'}
-                    </span>
-                </div>`;
-        } else {
-            actionBar.classList.remove('visible');
-            setTimeout(() => actionBar.classList.add('hidden'), 300);
-            btnInfo.classList.add('hidden');
-            btnEdit.classList.add('hidden');
-
-            const totalScore = this.tracks.length * 150; 
-            statsRow.innerHTML = `
-                <div class="p-stat-box"><label>TRACKS</label><span id="perf-total-tracks">${this.tracks.length}</span></div>
-                <div class="p-stat-box glow-text"><label>SCORE</label><span id="perf-global-score">${totalScore}</span></div>
-                <div class="p-stat-box"><label>BEST TIME</label><span id="perf-best-time">--:--</span></div>`;
-        }
-    },
-
     // =================================================
     // 3. CREATOR MODE LOGIC
     // =================================================
@@ -266,16 +229,16 @@ window.PerfLogic = {
         this.deselectTrack();
         this.hubMarkers.forEach(m => m.setOpacity(0));
 
-        document.querySelector('.perf-content-scroll').style.display = 'none';
-        document.querySelector('.perf-map-fade').style.display = 'none';
+        // UI Umschalten
+        document.querySelector('.perf-content-scroll').style.display = 'none'; // Dashboard aus
         document.querySelector('.perf-sub-nav').style.display = 'none';
-        document.getElementById('perf-creator-ui').classList.remove('hidden');
+        document.getElementById('perf-creator-ui').classList.remove('hidden'); // Creator an
         document.getElementById('nav-perf').parentElement.classList.add('hidden');
+        document.body.classList.add('creator-active'); // CSS Trigger für Map Höhe
 
         const mapContainer = document.getElementById('perf-map-container');
-        mapContainer.style.height = "100vh"; 
-        mapContainer.style.zIndex = "0"; 
-        mapContainer.style.position = "fixed"; 
+        // Map Container sichtbar und groß machen
+        mapContainer.style.opacity = '1';
         
         setTimeout(() => { 
             this.map.invalidateSize(); 
@@ -287,6 +250,26 @@ window.PerfLogic = {
         document.getElementById('ct-elev').innerText = "0 m";
     },
 
+    quitCreator: function() {
+        this.isCreatorMode = false;
+        document.querySelector('.perf-content-scroll').style.display = 'block'; // Dashboard an
+        document.querySelector('.perf-sub-nav').style.display = 'flex';
+        document.getElementById('perf-creator-ui').classList.add('hidden');
+        document.getElementById('nav-perf').parentElement.classList.remove('hidden');
+        document.body.classList.remove('creator-active');
+
+        // Map wieder verstecken
+        const mapContainer = document.getElementById('perf-map-container');
+        mapContainer.style.opacity = '0';
+        
+        setTimeout(() => { this.map.invalidateSize(); }, 300);
+
+        this.clearCreatorMap();
+        this.hubMarkers.forEach(m => m.setOpacity(1)); 
+        this.renderMapHubs();
+        this.renderTrackList(); // Liste neu laden (falls neuer Track)
+    },
+    
     leaveCreatorMode: function() {
         if(this.creatorPoints.length > 0) {
             if(confirm("Discard Track creation?")) {
@@ -297,26 +280,6 @@ window.PerfLogic = {
         }
     },
 
-    quitCreator: function() {
-        this.isCreatorMode = false;
-        document.querySelector('.perf-content-scroll').style.display = 'block';
-        document.querySelector('.perf-map-fade').style.display = 'block';
-        document.querySelector('.perf-sub-nav').style.display = 'flex';
-        document.getElementById('perf-creator-ui').classList.add('hidden');
-        document.getElementById('nav-perf').parentElement.classList.remove('hidden');
-
-        const mapContainer = document.getElementById('perf-map-container');
-        mapContainer.style.height = "50vh";
-        mapContainer.style.zIndex = "0";
-        mapContainer.style.position = "absolute";
-        
-        setTimeout(() => { this.map.invalidateSize(); }, 300);
-
-        this.clearCreatorMap();
-        this.hubMarkers.forEach(m => m.setOpacity(1)); 
-        this.renderMapHubs();
-    },
-    
     clearCreatorMap: function() {
         if(this.creatorPoints) {
             this.creatorPoints.forEach(p => {
@@ -449,22 +412,7 @@ window.PerfLogic = {
         const setupScreen = document.getElementById('track-setup-screen');
         setupScreen.classList.remove('hidden');
         
-        // MAP KILLER & SCROLL FIX
-        const bgMap = document.getElementById('perf-map-container');
-        if(bgMap) bgMap.style.display = 'none';
-        const scrollBox = document.querySelector('.setup-content-scroll');
-        if(scrollBox) scrollBox.addEventListener('touchmove', (e) => { e.stopPropagation(); }, { passive: true });
-
-        // RESET SECTOR UI
-        const sectorContainer = document.getElementById('sector-config-container');
-        if(sectorContainer) {
-            sectorContainer.innerHTML = `
-            <div class="sector-add-card" onclick="PerfLogic.openSectorEditor()">
-                <i class="fa-solid fa-plus-circle"></i> ADD SECTORS
-            </div>`;
-        }
-        this.currentSectorsData = [];
-
+        // Setup Map Init
         if(!this.setupMap) {
             this.setupMap = L.map('setup-map', {
                 zoomControl: false, attributionControl: false,
@@ -481,32 +429,27 @@ window.PerfLogic = {
                 const poly = L.polyline(this.currentRouteGeo, {color: '#ff3b30', weight: 5}).addTo(this.setupMap);
                 this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
             }
-
-            if(this.creatorPoints) {
-                this.creatorPoints.forEach(p => {
-                    if(p.type === 'start' || p.type === 'finish') {
-                        const colorClass = p.type === 'start' ? 'green' : 'red';
-                        const glowColor = p.type === 'start' ? '#30d158' : '#ff3b30';
-                        const iconHtml = `<div class="pin-dot ${colorClass}" style="width:12px; height:12px; box-shadow: 0 0 8px ${glowColor};"></div>`;
-                        const icon = L.divIcon({ className: 'custom-pin-icon', html: iconHtml, iconSize: [12,12], iconAnchor: [6,6] });
-                        L.marker(p.latlng, {icon: icon}).addTo(this.setupMap);
-                    }
-                });
-            }
         }, 200);
+
+        // Reset Sectors
+        const sectorContainer = document.getElementById('sector-config-container');
+        if(sectorContainer) {
+            sectorContainer.innerHTML = `
+            <div class="sector-add-card" onclick="PerfLogic.openSectorEditor()">
+                <i class="fa-solid fa-plus-circle"></i> ADD SECTORS
+            </div>`;
+        }
+        this.currentSectorsData = [];
     },
 
     cancelSetup: function() {
-        document.getElementById('perf-map-container').style.display = 'block';
         document.getElementById('track-setup-screen').classList.add('hidden');
         document.getElementById('perf-creator-ui').classList.remove('hidden');
     },
 
-    // --- REPARIERTE SAVE FUNKTION ---
     finalizeSave: function() {
         const nameInput = document.getElementById('setup-name').value;
         const name = nameInput.trim() || "Unnamed Track";
-
         const tachoElement = document.getElementById('tacho-val-text');
         const targetSpeed = tachoElement ? tachoElement.innerText : "0";
 
@@ -514,7 +457,7 @@ window.PerfLogic = {
             id: Date.now(),
             name: name,
             routePath: this.currentRouteGeo, 
-            sectors: this.currentSectorsData || [], // SECTORS SPEICHERN!
+            sectors: this.currentSectorsData || [], 
             pins: this.creatorPoints.map(p => ({lat: p.latlng.lat, lng: p.latlng.lng, type: p.type})),
             dist: this.currentRouteStats.dist,
             elevUp: this.currentRouteStats.elevUp || "0m",
@@ -531,13 +474,8 @@ window.PerfLogic = {
         this.tracks.push(track);
         localStorage.setItem('driverhub_tracks', JSON.stringify(this.tracks));
         
-        document.getElementById('perf-map-container').style.display = 'block';
         document.getElementById('track-setup-screen').classList.add('hidden');
-        
         this.quitCreator();
-        this.renderTrackList();
-        this.renderMapHubs(); 
-        this.updateStatsDisplay(null);
     },
 
     setStartType: function(type) {
@@ -556,7 +494,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 6. TACHO LOGIC V7 (DECOUPLED & SNAPPY)
+    // 6. TACHO LOGIC V7
     // =================================================
 
     _initTachoHTML: function() {
@@ -574,6 +512,16 @@ window.PerfLogic = {
             const knobCont = document.createElement('div'); knobCont.className = 'tacho-knob-container'; knobCont.id = 'tacho-knob-rotator';
             knobCont.innerHTML = '<div class="tacho-knob"></div>'; container.appendChild(knobCont);
             
+            // Touch Overlay hinzufügen
+            const overlay = document.createElement('div'); overlay.className = 'tacho-input-overlay';
+            // Event Listeners
+            const handleTouch = (e) => this.handleTachoTouch(e);
+            overlay.addEventListener('touchmove', handleTouch, {passive: false});
+            overlay.addEventListener('touchstart', handleTouch, {passive: false});
+            overlay.addEventListener('mousemove', (e) => { if(e.buttons === 1) handleTouch(e); });
+            overlay.addEventListener('mousedown', handleTouch);
+            container.appendChild(overlay);
+
             this.updateTacho(120);
         }
     },
@@ -604,39 +552,24 @@ window.PerfLogic = {
             const knobDeg = -90 + (percentage * 180);
             knob.style.transform = `rotate(${knobDeg}deg)`;
         }
-
+        
+        // Update Inputs
         const minInput = document.getElementById('fly-min');
         const maxInput = document.getElementById('fly-max');
-        if(minInput && document.activeElement !== minInput) {
-            minInput.value = Math.max(0, val - 5);
-        }
-        if(maxInput && document.activeElement !== maxInput) {
-            maxInput.value = val + 5;
-        }
+        if(minInput) minInput.value = Math.max(0, val - 5);
+        if(maxInput) maxInput.value = val + 5;
     },
 
     stepValue: function(inputId, step) {
         const input = document.getElementById(inputId);
         let val = parseInt(input.value) || 0;
-        const targetSpeed = parseInt(document.getElementById('tacho-val-text').innerText) || 0;
-
         val += step;
-
-        if (inputId === 'fly-min') {
-            if (val > targetSpeed) val = targetSpeed;
-            if (val < 0) val = 0;
-        }
-        if (inputId === 'fly-max') {
-            if (val < targetSpeed) val = targetSpeed;
-            if (val > 350) val = 350;
-        }
         input.value = val;
-        if (navigator.vibrate) navigator.vibrate(5);
     },
 
     handleTachoTouch: function(event) {
         if(event.cancelable) event.preventDefault();
-        const container = event.currentTarget;
+        const container = event.currentTarget.parentElement; // Overlay ist Child
         const rect = container.getBoundingClientRect();
         const clientX = event.touches ? event.touches[0].clientX : event.clientX;
         
@@ -646,12 +579,7 @@ window.PerfLogic = {
         
         const rawVal = percent * 300;
         const snappedVal = Math.round(rawVal / 5) * 5;
-
-        const currentText = document.getElementById('tacho-val-text');
-        if(currentText && parseInt(currentText.innerText) !== snappedVal) {
-            this.updateTacho(snappedVal);
-            if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(2);
-        }
+        this.updateTacho(snappedVal);
     },
 
     // =================================================
@@ -694,13 +622,9 @@ window.PerfLogic = {
         });
 
         if(closestDist > 50) return;
-        const isTooClose = this.sectorSplits.some(idx => Math.abs(idx - closestIndex) < 5); 
-        if(isTooClose) return;
-
         this.sectorSplits.push(closestIndex);
         this.sectorSplits.sort((a, b) => a - b);
         this.renderSectorMap();
-        if(navigator.vibrate) navigator.vibrate(10);
     },
 
     undoSectorSplit: function() {
@@ -732,11 +656,6 @@ window.PerfLogic = {
                 L.marker(markerPos, {icon: icon}).addTo(this.sectorMap);
             }
         }
-        
-        const start = this.currentRouteGeo[0];
-        const end = this.currentRouteGeo[this.currentRouteGeo.length-1];
-        L.circleMarker(start, {radius: 6, color: '#30d158', fillOpacity: 1}).addTo(this.sectorMap);
-        L.circleMarker(end, {radius: 6, color: '#ff3b30', fillOpacity: 1}).addTo(this.sectorMap);
     },
 
     saveSectors: function() {
@@ -757,26 +676,10 @@ window.PerfLogic = {
                 distMeters += p1.distanceTo(p2);
             }
             const distKm = (distMeters / 1000).toFixed(2) + " km";
-
-            let elevGain = 0;
-            if(this.cachedElevations) {
-                const ratio = this.cachedElevations.length / this.currentRouteGeo.length;
-                const eStart = Math.floor(startIdx * ratio);
-                const eEnd = Math.floor(endIdx * ratio);
-                
-                if(eEnd < this.cachedElevations.length) {
-                     const diff = this.cachedElevations[eEnd] - this.cachedElevations[eStart];
-                     const val = Math.round(diff);
-                     elevGain = (val > 0 ? "+" : "") + val + "m";
-                }
-            } else {
-                elevGain = "--";
-            }
-
             const color = this.sectorColors[i % this.sectorColors.length];
 
             this.currentSectorsData.push({
-                index: i+1, dist: distKm, elev: elevGain, startIdx: startIdx, endIdx: endIdx, color: color
+                index: i+1, dist: distKm, elev: "--", startIdx: startIdx, endIdx: endIdx, color: color
             });
 
             const item = document.createElement('div');
@@ -786,7 +689,6 @@ window.PerfLogic = {
                 <div><div class="sec-num" style="color:${color}">SECTOR ${i+1}</div><div class="sec-title">Section ${i+1}</div></div>
                 <div class="sec-stats">
                     <div class="sec-stat-box"><label>DIST</label><span>${distKm}</span></div>
-                    <div class="sec-stat-box"><label>ELEV</label><span>${elevGain}</span></div>
                 </div>`;
             item.onclick = () => this.openSectorEditor();
             list.appendChild(item);
@@ -794,9 +696,6 @@ window.PerfLogic = {
         
         const resetBtn = document.createElement('div');
         resetBtn.className = 'sector-add-card';
-        resetBtn.style.minHeight = "50px";
-        resetBtn.style.marginTop = "10px";
-        resetBtn.style.fontSize = "0.7rem";
         resetBtn.innerHTML = '<i class="fa-solid fa-pen"></i> EDIT SECTORS';
         resetBtn.onclick = () => this.openSectorEditor();
         container.appendChild(resetBtn);
@@ -804,17 +703,15 @@ window.PerfLogic = {
         this.closeSectorEditor();
     },
 
-// =================================================
-    // 8. RENDER FUNCTIONS
-    // =================================================
 
-    // --- RENDER LOGIC V3 (REAL DATA & DASHBOARD) ---
+    // =================================================
+    // 8. RENDER FUNCTIONS (V4 CAROUSEL & DASHBOARD)
+    // =================================================
 
     renderTrackList: function() {
         // 1. STATS BERECHNEN (Nur echte Daten!)
         const trackCount = this.tracks.length;
         let bestTime = "---";
-        let globalScore = "---";
         let scoreInt = 0;
 
         if (trackCount > 0) {
@@ -822,15 +719,12 @@ window.PerfLogic = {
             if(validTracks.length > 0) {
                 bestTime = validTracks[0].bestTime; 
                 scoreInt = trackCount * 150; 
-                globalScore = scoreInt;
-            } else {
-                globalScore = "0";
             }
         }
 
         const contentArea = document.querySelector('.perf-content-scroll');
         
-        // HTML AUFBAU
+        // HTML AUFBAU (CAROUSEL LAYOUT)
         let html = `
             <div class="perf-dashboard-header">
                 <div class="pd-side-stat">
@@ -853,13 +747,13 @@ window.PerfLogic = {
             <div class="perf-history-section">
                 <div class="ph-title">Recent Activity</div>
                 <div id="perf-history-list">
+                    <div class="ph-empty">NO RECENT DRIVES RECORDED</div>
                 </div>
             </div>
         `;
         
         contentArea.innerHTML = html;
         
-        // Animation für Score nur starten, wenn wir Daten haben
         if(trackCount > 0 && scoreInt > 0) {
             this.animateValue("global-score-display", 0, scoreInt, 1200);
         }
@@ -870,7 +764,7 @@ window.PerfLogic = {
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
-            div.style.animationDelay = (index * 0.1) + "s"; // Staggered
+            div.style.animationDelay = (index * 0.1) + "s";
             
             div.innerHTML = `
                 <div class="tc-bg-map" id="mini-map-${t.id}"></div>
@@ -891,28 +785,97 @@ window.PerfLogic = {
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
 
-            setTimeout(() => this.renderMiniMap(t), 200);
-            this.checkTrackConditions(t); // Echter Wetter Check
+            // Wichtig: Mini-Map verzögert laden
+            setTimeout(() => this.renderMiniMap(t), 300);
+            this.checkTrackConditions(t); 
         });
 
-        // 3. ADD TRACK BUTTON (Immer am Ende der Liste)
+        // 3. ADD TRACK BUTTON
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
-        addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="margin-right:8px"></i> CREATE NEW TRACK';
+        addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.5rem"></i><span>CREATE</span>';
         addBtn.onclick = () => this.enterCreatorMode();
         list.appendChild(addBtn);
-
-        // 4. HISTORY RENDERN
-        const historyList = document.getElementById('perf-history-list');
-        const hasHistory = false; 
-
-        if(!hasHistory) {
-            historyList.innerHTML = `<div class="ph-empty">NO RECENT DRIVES RECORDED</div>`;
-        }
     },
 
-    // --- HELPER ---
+    // --- MINI MAP RENDERER (NEON STYLE, BLACK BG) ---
+    renderMiniMap: function(track) {
+        const mapId = `mini-map-${track.id}`;
+        const container = document.getElementById(mapId);
+        if(!container) return;
+        if(container._leaflet_id) return; // Schon gerendert
+
+        // Karte erstellen (Komplett nackt)
+        const miniMap = L.map(mapId, {
+            zoomControl: false, attributionControl: false,
+            dragging: false, touchZoom: false, doubleClickZoom: false,
+            scrollWheelZoom: false, boxZoom: false, keyboard: false
+        });
+
+        // KEIN TileLayer -> Schwarzer Hintergrund durch CSS
+
+        if(track.routePath && track.routePath.length > 0) {
+            // Neon Linie
+            const polyline = L.polyline(track.routePath, {
+                color: '#bf5af2', // LILA NEON
+                weight: 5,
+                opacity: 1,
+                lineCap: 'round'
+            }).addTo(miniMap);
+
+            miniMap.fitBounds(polyline.getBounds(), {
+                padding: [20, 20],
+                animate: false
+            });
+        }
+        
+        setTimeout(() => { miniMap.invalidateSize(); }, 100);
+    },
+
+    // --- WEATHER API (OPEN-METEO) ---
+    checkTrackConditions: function(track) {
+        if(!track.routePath || track.routePath.length === 0) return;
+        
+        const startPoint = track.routePath[0]; 
+        const lat = startPoint[0];
+        const lng = startPoint[1];
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+
+        fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if(data.current) {
+                const temp = data.current.temperature_2m;
+                const code = data.current.weather_code; 
+                
+                let score = 100;
+                let label = "PERFECT GRIP";
+                let colorClass = "cond-good";
+                let dotColor = "#30d158";
+
+                if(code >= 51) { 
+                    score -= 50; label = "WET / SLIPPERY"; colorClass = "cond-bad"; dotColor = "#ff3b30";
+                } else if(temp < 5) {
+                    score -= 20; label = "COLD TIRES"; colorClass = "cond-mid"; dotColor = "#ff9f0a";
+                }
+
+                const badge = document.getElementById(`cond-badge-${track.id}`);
+                if(badge) {
+                    badge.innerHTML = `
+                        <div class="cond-dot" style="background:${dotColor}; box-shadow: 0 0 5px ${dotColor}"></div>
+                        <div class="cond-text">${label} (${temp}°C)</div>
+                    `;
+                }
+            }
+        })
+        .catch(err => {
+            console.log("Weather Error", err);
+            const badge = document.getElementById(`cond-badge-${track.id}`);
+            if(badge) badge.style.display = 'none';
+        });
+    },
+
     animateValue: function(id, start, end, duration) {
         const obj = document.getElementById(id);
         if(!obj) return;
@@ -926,13 +889,9 @@ window.PerfLogic = {
             }
         };
         window.requestAnimationFrame(step);
-    },
+    }
 
-    // Placeholder functions needs for the script to run if not defined elsewhere yet
-    renderMiniMap: function(t) { /* ... Mini Map Logic ... */ },
-    checkTrackConditions: function(t) { /* ... Weather Logic ... */ }
+};
 
-}; // <--- HIER WAR DER FEHLER: Das Objekt muss geschlossen werden!
-
-// Init call nach dem Schließen des Objekts
+// Init starten
 PerfLogic.init();
