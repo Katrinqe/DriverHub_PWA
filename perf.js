@@ -604,37 +604,44 @@ window.PerfLogic = {
     },
 // --- TACHO LOGIC V4 (SYNCED & GPU) ---
 
-    _initTachoHTML: function() {
+ _initTachoHTML: function() {
         const container = document.querySelector('.tacho-container');
-        // Wir bauen es nur auf, wenn es leer ist
-        if (container && container.innerHTML.trim() === '') {
-            
-            // 1. Hintergrund Spur
+        // Neu aufbauen, falls leer oder altes Design
+        if (container && (!container.querySelector('.tacho-ticks') || container.innerHTML.trim() === '')) {
+            container.innerHTML = ''; 
+            container.classList.add('ready');
+
+            // 1. NEU: Die Skala-Striche
+            const ticks = document.createElement('div');
+            ticks.className = 'tacho-ticks';
+            container.appendChild(ticks);
+
+            // 2. Hintergrund Spur
             const track = document.createElement('div');
             track.className = 'tacho-track';
             container.appendChild(track);
 
-            // 2. Farbiger Bogen
+            // 3. Farbiger Bogen
             const arc = document.createElement('div');
             arc.className = 'tacho-arc';
             arc.id = 'tacho-visual-arc';
             container.appendChild(arc);
 
-            // 3. Text Display
+            // 4. Text Display
             const display = document.createElement('div');
             display.className = 'tacho-value-display';
-            display.innerHTML = `<div class="tacho-val" id="tacho-val-text">0</div><span class="tacho-unit">TARGET KM/H</span>`;
+            display.innerHTML = `<div class="tacho-val" id="tacho-val-text">0</div><span class="tacho-unit">ENTRY SPEED</span>`;
             container.appendChild(display);
 
-            // 4. Der Anfasser (Knob)
+            // 5. Der Anfasser (Knob)
             const knobCont = document.createElement('div');
             knobCont.className = 'tacho-knob-container';
             knobCont.id = 'tacho-knob-rotator';
             knobCont.innerHTML = '<div class="tacho-knob"></div>';
             container.appendChild(knobCont);
             
-            // WICHTIG: Sofort einmal updaten mit Startwert
-            this.updateTacho(120); 
+            // Initial Trigger
+            this.updateTacho(120);
         }
     },
 
