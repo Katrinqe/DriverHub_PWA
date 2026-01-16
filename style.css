@@ -740,17 +740,27 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 
 /* --- 1. BASE CONTAINER & BACKGROUND --- */
 
+/* --- 1. BASE CONTAINER (SCROLL & CLICK FIX) --- */
+
 .perf-content-scroll {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    /* Der Hintergrund */
+    
+    /* Hintergrund */
     background: radial-gradient(circle at center top, #1a1a1a 0%, #000000 80%);
-    overflow-y: auto; overflow-x: hidden;
+    
+    /* WICHTIGSTER FIX: Erlaubt Scrollen und Klicken wieder! */
+    pointer-events: auto !important; 
+    
+    overflow-y: auto; 
+    overflow-x: hidden;
     z-index: 10;
+    
+    padding-top: 10px;
     padding-bottom: 120px;
-    touch-action: pan-y;
+    
+    /* Smooth Scroll für iOS */
     -webkit-overflow-scrolling: touch;
 }
-
 /* NEU: Der Fade ganz oben an der Kante (Soft Edge) */
 .header-fade-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 60px;
@@ -811,38 +821,39 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     position: relative; z-index: 50; /* Nach vorne holen! */
 }
 .add-track-v2:active { background: rgba(255,255,255,0.08); border-color: white; color: white; }
-/* --- 3. TRACK LISTE (HORIZONTAL CAROUSEL V4) --- */
+/* --- 2. TRACK LISTE (SCROLL FIX) --- */
 
 #perf-track-list {
-    display: flex;             /* Nebeneinander */
-    flex-direction: row;       /* Horizontal */
-    gap: 15px;                 /* Abstand */
-    overflow-x: auto;          /* Scrollbar */
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    
+    /* WICHTIG: Scrollen erzwingen */
+    overflow-x: auto !important; 
+    overflow-y: hidden;
+    
     padding: 10px 20px;
-    scroll-snap-type: x mandatory; /* Einrasten */
-    -webkit-overflow-scrolling: touch;
-    min-height: 180px;         /* Platz sichern */
+    
+    /* Das hier sorgt für das magnetische Einrasten */
+    scroll-snap-type: x mandatory;
+    
+    /* Stellt sicher, dass die Liste breit genug ist */
+    min-width: 100%;
+    min-height: 180px; 
+    
+    /* Interaktion sicherstellen */
+    pointer-events: auto !important;
     
     /* Scrollbar verstecken */
     scrollbar-width: none; 
+    -ms-overflow-style: none;
 }
 #perf-track-list::-webkit-scrollbar { display: none; }
 
-/* Die Track Card (Groß & Breit) */
-.track-card-v2 {
-    flex: 0 0 85vw;           /* 85% Bildschirmbreite */
-    scroll-snap-align: center; /* Rastet mittig ein */
-    height: 160px;
-    position: relative;
-    border-radius: 18px;
-    background: #000;
-    border: 1px solid rgba(255,255,255,0.15);
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    
-    /* Animation */
-    opacity: 0; transform: translateX(50px);
-    animation: slideInRight 0.5s forwards;
+/* Die Karten müssen Klicks empfangen */
+.track-card-v2, .add-track-v2 {
+    pointer-events: auto !important;
+    cursor: pointer;
 }
 .track-card-v2:active { transform: scale(0.98); border-color: #bf5af2; }
 
