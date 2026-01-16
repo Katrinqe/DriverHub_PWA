@@ -738,61 +738,79 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 /* === PERFORMANCE HUB (FINAL MASTER: CAROUSEL & CREATOR) === */
 /* ============================================================== */
 
-/* --- 1. BASE CONTAINER & DASHBOARD BACKGROUND --- */
+/* --- 1. BASE CONTAINER & BACKGROUND --- */
 
-/* Der Haupt-Scroll-Container (Ersetzt die Map im Dashboard) */
 .perf-content-scroll {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    
-    /* V4: Dunkler Verlauf statt Map */
+    /* Der Hintergrund */
     background: radial-gradient(circle at center top, #1a1a1a 0%, #000000 80%);
-    
-    overflow-y: auto; /* Vertikal scrollen erlaubt (für History unten) */
-    overflow-x: hidden;
+    overflow-y: auto; overflow-x: hidden;
     z-index: 10;
-    
-    padding-top: 10px; /* Weniger Abstand oben */
-    padding-bottom: 120px; /* Platz für Nav Bar unten */
-    
-    /* Wichtig für Interaction */
+    padding-bottom: 120px;
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
 }
 
-/* Map Container (Nur für Creator Mode sichtbar machen via JS) */
-#perf-map-container {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 0; /* Hinter allem liegen */
-    opacity: 0; /* Standardmäßig unsichtbar */
-    transition: opacity 0.3s;
-    pointer-events: none;
+/* NEU: Der Fade ganz oben an der Kante (Soft Edge) */
+.header-fade-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+    background: linear-gradient(to bottom, #000 10%, transparent 100%);
+    z-index: 20; pointer-events: none;
 }
-/* Wenn Creator Mode aktiv ist (wird per JS gesteuert) */
-body.creator-active #perf-map-container {
-    opacity: 1; pointer-events: auto; z-index: 2000;
-}
-#perf-map { width: 100%; height: 100%; background: #000; }
 
-
-/* --- 2. HERO HEADER (STATS) --- */
+/* --- 2. HERO HEADER (GLASS HUB) --- */
 
 .perf-dashboard-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 25px 20px 25px; /* Kompakt */
-    margin-bottom: 5px;
+    /* Container positioniert den Hub */
+    padding: 60px 20px 10px 20px; /* Mehr Platz oben (60px) wegen Notch/Fade */
+    display: flex; justify-content: center;
+    position: relative; z-index: 25; /* Über dem Fade liegen */
 }
 
-.pd-side-stat { flex: 1; text-align: center; opacity: 0.8; }
-.pd-side-stat label { display: block; font-size: 0.65rem; color: #888; font-weight: 700; margin-bottom: 2px; letter-spacing: 1px; }
-.pd-side-stat .val { font-size: 1.3rem; font-weight: 800; color: white; font-family: monospace; }
+/* Das eigentliche Glas-Element */
+.glass-stats-hub {
+    width: 100%;
+    display: flex; align-items: center; justify-content: space-between;
+    
+    /* GLAS OPTIK */
+    background: rgba(20, 20, 20, 0.65); /* Halbtransparent dunkel */
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    
+    border-radius: 24px;
+    padding: 15px 20px;
+}
 
-.pd-main-score { flex: 1.3; text-align: center; transform: scale(1.1); }
-.pd-main-score label { display: block; font-size: 0.7rem; color: #bf5af2; font-weight: 800; margin-bottom: 2px; text-shadow: 0 0 10px rgba(191,90,242,0.4); }
-.pd-main-score .val { font-size: 3.5rem; font-weight: 900; color: white; line-height: 0.9; text-shadow: 0 0 30px rgba(191,90,242,0.6); }
+/* Die Stats darin */
+.pd-side-stat { flex: 1; text-align: center; opacity: 0.9; }
+.pd-side-stat label { display: block; font-size: 0.6rem; color: #888; font-weight: 800; margin-bottom: 4px; letter-spacing: 1px; }
+.pd-side-stat .val { font-size: 1.2rem; font-weight: 800; color: white; font-family: monospace; }
 
+.pd-main-score { flex: 1.4; text-align: center; position: relative; }
+/* Trennlinien links und rechts vom Score */
+.pd-main-score::before, .pd-main-score::after {
+    content: ''; position: absolute; top: 20%; height: 60%; width: 1px; background: rgba(255,255,255,0.1);
+}
+.pd-main-score::before { left: 0; }
+.pd-main-score::after { right: 0; }
 
+.pd-main-score label { display: block; font-size: 0.7rem; color: #bf5af2; font-weight: 900; margin-bottom: 2px; text-shadow: 0 0 10px rgba(191,90,242,0.4); }
+.pd-main-score .val { font-size: 2.8rem; font-weight: 900; color: white; line-height: 1; text-shadow: 0 0 25px rgba(191,90,242,0.6); }
+
+/* --- BUTTON FIX (Add Track Card) --- */
+.add-track-v2 {
+    /* Style wie vorher, aber sicherstellen, dass er klickbar ist */
+    flex: 0 0 45vw; scroll-snap-align: center; height: 160px;
+    border-radius: 18px; background: rgba(255,255,255,0.03);
+    border: 2px dashed rgba(255,255,255,0.2);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #666; font-weight: 700; gap: 10px; font-size: 0.8rem; letter-spacing: 1px;
+    opacity: 0; transform: translateX(50px); animation: slideInRight 0.5s forwards;
+    cursor: pointer;
+    position: relative; z-index: 50; /* Nach vorne holen! */
+}
+.add-track-v2:active { background: rgba(255,255,255,0.08); border-color: white; color: white; }
 /* --- 3. TRACK LISTE (HORIZONTAL CAROUSEL V4) --- */
 
 #perf-track-list {
