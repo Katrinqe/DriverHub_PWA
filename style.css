@@ -822,83 +822,64 @@ body.creator-active #perf-map-container {
     position: relative; z-index: 50; /* Nach vorne holen! */
 }
 .add-track-v2:active { background: rgba(255,255,255,0.08); border-color: white; color: white; }
-/* --- 2. TRACK LISTE (SCROLL FIX) --- */
+/* --- 3. TRACK LISTE (CAROUSEL REPARATUR) --- */
 
 #perf-track-list {
     display: flex;
     flex-direction: row;
-    gap: 15px;
-    
-    /* WICHTIG: Scrollen erzwingen */
-    overflow-x: auto !important; 
-    overflow-y: hidden;
-    
-    padding: 10px 20px;
-    
-    /* Das hier sorgt für das magnetische Einrasten */
+    gap: 20px; /* Mehr Abstand */
+    overflow-x: auto;
+    padding: 10px 25px;
     scroll-snap-type: x mandatory;
+    min-height: 200px; /* Platz erzwingen */
+    position: relative;
+    z-index: 10;
     
-    /* Stellt sicher, dass die Liste breit genug ist */
-    min-width: 100%;
-    min-height: 180px; 
-    
-    /* Interaktion sicherstellen */
-    pointer-events: auto !important;
-    
-    /* Scrollbar verstecken */
+    /* Scrollbar weg */
     scrollbar-width: none; 
-    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
 }
 #perf-track-list::-webkit-scrollbar { display: none; }
 
-/* Die Karten müssen Klicks empfangen */
-.track-card-v2, .add-track-v2 {
-    pointer-events: auto !important;
-    cursor: pointer;
+/* Die Card Box - MUSS RELATIVE SEIN */
+.track-card-v2 {
+    flex: 0 0 85vw; /* Feste Breite */
+    max-width: 350px; /* Nicht zu breit auf Tablets */
+    height: 180px; /* Feste Höhe */
+    
+    position: relative !important; /* WICHTIG: Damit die Map drinnen bleibt */
+    overflow: hidden !important; /* WICHTIG: Schneidet alles ab was raus will */
+    
+    border-radius: 20px;
+    background: #000;
+    border: 1px solid rgba(255,255,255,0.15);
+    scroll-snap-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    
+    margin-right: 0; /* Flex gap regelt das */
 }
-.track-card-v2:active { transform: scale(0.98); border-color: #bf5af2; }
 
-/* Inhalte der Card */
+/* Der Map Container IN der Card */
 .tc-bg-map {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 0; opacity: 1; background: #000;
+    position: absolute !important; 
+    top: 0; left: 0; 
+    width: 100% !important; 
+    height: 100% !important;
+    z-index: 0;
+    background: #111; /* Fallback Farbe */
 }
-.tc-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,0.95) 100%);
-    z-index: 1; pointer-events: none;
-}
-.tc-content {
-    position: absolute; bottom: 0; left: 0; width: 100%;
-    z-index: 2; padding: 15px 20px;
-}
-.tc-name { font-size: 1.5rem; font-weight: 800; color: white; text-transform: uppercase; margin-bottom: 5px; text-shadow: 0 2px 5px black; }
-.tc-details { font-size: 0.85rem; color: #ccc; font-weight: 600; display: flex; gap: 15px; }
-.tc-details i { color: #bf5af2; margin-right: 5px; }
-
-/* Live Badge */
-.tc-condition-badge {
-    position: absolute; top: 15px; right: 15px; z-index: 3;
-    background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-    padding: 5px 10px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
-    display: flex; align-items: center; gap: 6px;
-}
-.cond-dot { width: 6px; height: 6px; border-radius: 50%; background: #666; }
-.cond-text { font-size: 0.6rem; font-weight: 800; color: white; }
 
 /* Add Track Card */
 .add-track-v2 {
-    flex: 0 0 45vw; /* Schmaler */
-    scroll-snap-align: center;
-    height: 160px;
-    border-radius: 18px;
+    flex: 0 0 45vw; 
+    height: 180px;
+    position: relative;
+    border-radius: 20px;
     background: rgba(255,255,255,0.03);
     border: 2px dashed rgba(255,255,255,0.2);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    color: #666; font-weight: 700; gap: 10px; font-size: 0.8rem; letter-spacing: 1px;
-    
-    opacity: 0; transform: translateX(50px);
-    animation: slideInRight 0.5s forwards;
+    scroll-snap-align: center;
+    color: #666; font-weight: 700;
 }
 
 
