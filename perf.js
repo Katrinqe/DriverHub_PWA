@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - FINAL MASTER V4 (CAROUSEL & API) === */
+/* === PERF.JS - FINAL MASTER V4.1 (FIXED)       === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -38,12 +38,11 @@ window.PerfLogic = {
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - V4 Carousel Master");
+        console.log("PerfLogic Init - V4.1 Fixed");
         this.renderTrackList();
     },
 
     onScreenShow: function() {
-        // Map nur laden, wenn wir NICHT im Dashboard sind (oder für Creator Mode vorbereiten)
         if (!this.map) {
             this.loadMap();
         } else {
@@ -116,14 +115,9 @@ window.PerfLogic = {
     selectTrack: function(track) {
         this.selectedTrackId = track.id;
         
-        // V4: Navigiere zum Detail Screen (Hier Platzhalter Alert oder Logic)
-        // console.log("Track selected:", track.name);
-        
-        // Für jetzt: Zeige es auf der Map (Creator Context)
         if(this.isCreatorMode) {
             this.showTrackOnMap(track);
         } else {
-            // TODO: Öffne den Detail-Screen Overlay
             alert("Opening Details for: " + track.name);
         }
     },
@@ -223,42 +217,37 @@ window.PerfLogic = {
     // 3. CREATOR MODE LOGIC
     // =================================================
 
-  enterCreatorMode: function() {
+    enterCreatorMode: function() {
         console.log("Entering Creator Mode...");
         this.isCreatorMode = true;
         this.creatorPoints = []; 
         this.deselectTrack();
-        this.hubMarkers.forEach(m => m.setOpacity(0)); // Hubs ausblenden
+        this.hubMarkers.forEach(m => m.setOpacity(0)); 
 
-        // 1. CSS Trigger setzen (Versteckt Dashboard, Zeigt Map via CSS)
         document.body.classList.add('creator-active');
         
-        // 2. Nav Bar verstecken
         const navBar = document.querySelector('.perf-sub-nav');
         if(navBar) navBar.style.display = 'none';
         
         const mainNav = document.getElementById('nav-perf').parentElement;
         if(mainNav) mainNav.classList.add('hidden');
 
-        // 3. Creator UI anzeigen
         document.getElementById('perf-creator-ui').classList.remove('hidden');
 
-        // 4. MAP FIX: Leaflet neu berechnen, da sich die Sichtbarkeit geändert hat
         setTimeout(() => { 
             if(this.map) {
-                this.map.invalidateSize(); // WICHTIG: Zwingt Leaflet zum Neuzeichnen
+                this.map.invalidateSize(); 
+                this.map.dragging.enable();
+                this.map.touchZoom.enable();
                 
-                // Zu User zoomen oder Standard-Position
                 if(this.userMarker) {
                     this.map.setView(this.userMarker.getLatLng(), 16);
                 } else {
-                    // Fallback falls kein GPS: Nürnberg Zentrum (oder dein Default)
                     this.map.setView([49.4521, 11.0767], 14); 
                 }
             }
-        }, 100); // Kurze Verzögerung für CSS Transition
+        }, 100);
 
-        // Reset HUD Stats
         this.selectPinType('start');
         document.getElementById('ct-dist').innerText = "0.0 km";
         document.getElementById('ct-elev').innerText = "0 m";
@@ -268,24 +257,20 @@ window.PerfLogic = {
         console.log("Quitting Creator Mode...");
         this.isCreatorMode = false;
         
-        // 1. CSS Trigger entfernen (Zeigt Dashboard wieder)
         document.body.classList.remove('creator-active');
 
-        // 2. Nav Bar wieder anzeigen
         const navBar = document.querySelector('.perf-sub-nav');
         if(navBar) navBar.style.display = 'flex';
 
         const mainNav = document.getElementById('nav-perf').parentElement;
         if(mainNav) mainNav.classList.remove('hidden');
 
-        // 3. UI Verstecken
         document.getElementById('perf-creator-ui').classList.add('hidden');
 
-        // Cleanup Map
         this.clearCreatorMap();
         this.hubMarkers.forEach(m => m.setOpacity(1)); 
         this.renderMapHubs();
-        this.renderTrackList(); // Liste aktualisieren
+        this.renderTrackList(); 
     },
     
     leaveCreatorMode: function() {
@@ -425,12 +410,12 @@ window.PerfLogic = {
         this.openSetupScreen();
     },
 
-openSetupScreen: function() {
+    openSetupScreen: function() {
         document.getElementById('perf-creator-ui').classList.add('hidden');
         const setupScreen = document.getElementById('track-setup-screen');
         setupScreen.classList.remove('hidden');
         
-        // HTML INJECTEN (PRM BOX WIEDER DA)
+        // HTML INJECTEN
         const scrollContent = document.querySelector('.setup-content-scroll');
         scrollContent.innerHTML = `
             <div class="setup-card">
@@ -456,7 +441,8 @@ openSetupScreen: function() {
                 </div>
 
                 <div id="flying-settings" class="hidden">
-                    <div class="tacho-container"></div> <div class="fly-grid-row">
+                    <div class="tacho-container"></div> 
+                    <div class="fly-grid-row">
                         <div class="fly-col">
                             <label>MIN SPEED (Trigger)</label>
                             <div class="stepper-control">
@@ -501,7 +487,7 @@ openSetupScreen: function() {
             </div>
         `;
 
-        // Map Setup Logic...
+        // Map Setup
         if(!this.setupMap) {
             this.setupMap = L.map('setup-map', {
                 zoomControl: false, attributionControl: false,
@@ -519,18 +505,7 @@ openSetupScreen: function() {
             }
         }, 200);
 
-        this.setStartType('standing'); // Reset auf Standing Start beim Öffnen
-        this.currentSectorsData = [];
-    },
-
-        // Reset Sectors
-        const sectorContainer = document.getElementById('sector-config-container');
-        if(sectorContainer) {
-            sectorContainer.innerHTML = `
-            <div class="sector-add-card" onclick="PerfLogic.openSectorEditor()">
-                <i class="fa-solid fa-plus-circle"></i> ADD SECTORS
-            </div>`;
-        }
+        this.setStartType('standing'); 
         this.currentSectorsData = [];
     },
 
@@ -604,9 +579,7 @@ openSetupScreen: function() {
             const knobCont = document.createElement('div'); knobCont.className = 'tacho-knob-container'; knobCont.id = 'tacho-knob-rotator';
             knobCont.innerHTML = '<div class="tacho-knob"></div>'; container.appendChild(knobCont);
             
-            // Touch Overlay hinzufügen
             const overlay = document.createElement('div'); overlay.className = 'tacho-input-overlay';
-            // Event Listeners
             const handleTouch = (e) => this.handleTachoTouch(e);
             overlay.addEventListener('touchmove', handleTouch, {passive: false});
             overlay.addEventListener('touchstart', handleTouch, {passive: false});
@@ -645,7 +618,6 @@ openSetupScreen: function() {
             knob.style.transform = `rotate(${knobDeg}deg)`;
         }
         
-        // Update Inputs
         const minInput = document.getElementById('fly-min');
         const maxInput = document.getElementById('fly-max');
         if(minInput) minInput.value = Math.max(0, val - 5);
@@ -661,7 +633,7 @@ openSetupScreen: function() {
 
     handleTachoTouch: function(event) {
         if(event.cancelable) event.preventDefault();
-        const container = event.currentTarget.parentElement; // Overlay ist Child
+        const container = event.currentTarget.parentElement; 
         const rect = container.getBoundingClientRect();
         const clientX = event.touches ? event.touches[0].clientX : event.clientX;
         
@@ -795,12 +767,9 @@ openSetupScreen: function() {
         this.closeSectorEditor();
     },
 
-
     // =================================================
-    // 8. RENDER FUNCTIONS (V4 CAROUSEL & DASHBOARD)
+    // 8. RENDER FUNCTIONS
     // =================================================
-
-// --- RENDER LOGIC V4 ---
 
     renderTrackList: function() {
         const trackCount = this.tracks.length;
@@ -811,25 +780,29 @@ openSetupScreen: function() {
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
             if(validTracks.length > 0) {
                 bestTime = validTracks[0].bestTime; 
-                scoreInt = trackCount * 150; 
+                // scoreInt = ... (PRM Formel kommt später)
             }
         }
 
         const contentArea = document.querySelector('.perf-content-scroll');
         
         let html = `
+            <div class="header-fade-overlay"></div>
+
             <div class="perf-dashboard-header">
-                <div class="pd-side-stat">
-                    <label>BEST TIME</label>
-                    <div class="val">${bestTime}</div>
-                </div>
-                <div class="pd-main-score">
-                    <label>PRM SCORE</label>
-                    <div class="val" id="global-score-display">${trackCount > 0 ? 0 : '---'}</div>
-                </div>
-                <div class="pd-side-stat">
-                    <label>TRACKS</label>
-                    <div class="val">${trackCount}</div>
+                <div class="glass-stats-hub">
+                    <div class="pd-side-stat">
+                        <label>BEST TIME</label>
+                        <div class="val">${bestTime}</div>
+                    </div>
+                    <div class="pd-main-score">
+                        <label>PRM SCORE</label>
+                        <div class="val" id="global-score-display">${scoreInt > 0 ? scoreInt : '---'}</div>
+                    </div>
+                    <div class="pd-side-stat">
+                        <label>TRACKS</label>
+                        <div class="val">${trackCount}</div>
+                    </div>
                 </div>
             </div>
             
@@ -871,43 +844,36 @@ openSetupScreen: function() {
                     <div class="cond-text">LOADING</div>
                 </div>
             `;
-            
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
 
-            // Wichtig: Mini-Map verzögert laden
             setTimeout(() => this.renderMiniMap(t), 300);
             this.checkTrackConditions(t); 
         });
 
-        // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
         
         addBtn.onclick = (e) => {
-            e.preventDefault(); 
-            e.stopPropagation();
+            if(e) { e.preventDefault(); e.stopPropagation(); }
             this.enterCreatorMode();
         };
         addBtn.ontouchend = (e) => {
-            e.preventDefault(); 
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             this.enterCreatorMode();
         };
 
         list.appendChild(addBtn);
     },
 
-    // --- MINI MAP RENDERER (NEON STYLE, BLACK BG) ---
     renderMiniMap: function(track) {
         const mapId = `mini-map-${track.id}`;
         const container = document.getElementById(mapId);
         if(!container) return;
-        if(container._leaflet_id) return; // Schon gerendert
+        if(container._leaflet_id) return; 
 
-        // Karte erstellen (Komplett nackt)
         const miniMap = L.map(mapId, {
             zoomControl: false, attributionControl: false,
             dragging: false, touchZoom: false, doubleClickZoom: false,
@@ -915,9 +881,8 @@ openSetupScreen: function() {
         });
 
         if(track.routePath && track.routePath.length > 0) {
-            // Neon Linie
             const polyline = L.polyline(track.routePath, {
-                color: '#bf5af2', // LILA NEON
+                color: '#bf5af2', 
                 weight: 5,
                 opacity: 1,
                 lineCap: 'round'
@@ -932,7 +897,6 @@ openSetupScreen: function() {
         setTimeout(() => { miniMap.invalidateSize(); }, 100);
     },
 
-    // --- WEATHER API (OPEN-METEO) ---
     checkTrackConditions: function(track) {
         if(!track.routePath || track.routePath.length === 0) return;
         
@@ -990,6 +954,6 @@ openSetupScreen: function() {
         window.requestAnimationFrame(step);
     }
 
-}; // HIER ENDET DAS OBJEKT
+};
 
 PerfLogic.init();
