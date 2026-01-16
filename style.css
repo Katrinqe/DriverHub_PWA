@@ -1147,3 +1147,18 @@ body.creator-active .perf-content-scroll {
     display: none !important;
     pointer-events: none !important;
 }
+
+/* FORCE INTERACTION */
+.track-card-v2, 
+.add-track-v2 {
+    pointer-events: auto !important; /* Muss klickbar sein */
+    z-index: 100 !important; /* Über allem anderen im Scroll-Bereich */
+    position: relative !important;
+    cursor: pointer;
+}
+
+/* Sicherstellen, dass der Container Klicks durchlässt */
+#perf-track-list {
+    pointer-events: auto !important;
+    z-index: 100 !important;
+}
