@@ -708,41 +708,41 @@ window.PerfLogic = {
     // 8. RENDER FUNCTIONS (V4 CAROUSEL & DASHBOARD)
     // =================================================
 
-    renderTrackList: function() {
-        // 1. STATS BERECHNEN (Nur echte Daten!)
+   renderTrackList: function() {
+        // 1. STATS BERECHNEN
         const trackCount = this.tracks.length;
         let bestTime = "---";
         let scoreInt = 0;
 
         if (trackCount > 0) {
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
-            if(validTracks.length > 0) {
-                bestTime = validTracks[0].bestTime; 
-                scoreInt = trackCount * 150; 
-            }
+            if(validTracks.length > 0) bestTime = validTracks[0].bestTime; 
+            scoreInt = trackCount * 150; 
         }
 
         const contentArea = document.querySelector('.perf-content-scroll');
         
-        // HTML AUFBAU (CAROUSEL LAYOUT)
+        // HTML AUFBAU (Mit Fade Overlay & Glass Hub Container)
         let html = `
-            <div class="perf-dashboard-header">
-                <div class="pd-side-stat">
-                    <label>BEST TIME</label>
-                    <div class="val">${bestTime}</div>
-                </div>
-                <div class="pd-main-score">
-                    <label>PRM SCORE</label>
-                    <div class="val" id="global-score-display">${trackCount > 0 ? 0 : '---'}</div>
-                </div>
-                <div class="pd-side-stat">
-                    <label>TRACKS</label>
-                    <div class="val">${trackCount}</div>
+            <div class="header-fade-overlay"></div> <div class="perf-dashboard-header">
+                <div class="glass-stats-hub">
+                    <div class="pd-side-stat">
+                        <label>BEST TIME</label>
+                        <div class="val">${bestTime}</div>
+                    </div>
+                    <div class="pd-main-score">
+                        <label>PRM SCORE</label>
+                        <div class="val" id="global-score-display">${trackCount > 0 ? 0 : '---'}</div>
+                    </div>
+                    <div class="pd-side-stat">
+                        <label>TRACKS</label>
+                        <div class="val">${trackCount}</div>
+                    </div>
                 </div>
             </div>
             
             <div id="perf-track-list">
-            </div>
+                </div>
 
             <div class="perf-history-section">
                 <div class="ph-title">Recent Activity</div>
@@ -785,17 +785,26 @@ window.PerfLogic = {
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
 
-            // Wichtig: Mini-Map verzögert laden
             setTimeout(() => this.renderMiniMap(t), 300);
             this.checkTrackConditions(t); 
         });
 
-        // 3. ADD TRACK BUTTON
+        // 3. ADD TRACK BUTTON (Repariert & Umbenannt)
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
-        addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.5rem"></i><span>CREATE</span>';
-        addBtn.onclick = () => this.enterCreatorMode();
+        
+        // HIER DER NEUE TEXT:
+        addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
+        
+        // HIER DER FIX FÜR DEN KLICK:
+        addBtn.onclick = (e) => {
+            e.preventDefault(); // Verhindert Bubbling Fehler
+            e.stopPropagation();
+            console.log("Add Track Clicked"); // Debugging
+            this.enterCreatorMode();
+        };
+        
         list.appendChild(addBtn);
     },
 
