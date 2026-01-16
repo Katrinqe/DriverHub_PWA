@@ -425,12 +425,83 @@ window.PerfLogic = {
         this.openSetupScreen();
     },
 
-    openSetupScreen: function() {
+openSetupScreen: function() {
         document.getElementById('perf-creator-ui').classList.add('hidden');
         const setupScreen = document.getElementById('track-setup-screen');
         setupScreen.classList.remove('hidden');
         
-        // Setup Map Init
+        // HTML INJECTEN (PRM BOX WIEDER DA)
+        const scrollContent = document.querySelector('.setup-content-scroll');
+        scrollContent.innerHTML = `
+            <div class="setup-card">
+                <h2>CONFIGURE TRACK</h2>
+                
+                <div class="config-group">
+                    <label>TRACK NAME</label>
+                    <div class="fancy-input-wrap">
+                        <input type="text" id="setup-name" placeholder="Ex: Midnight Run" value="Unnamed Track">
+                    </div>
+                </div>
+
+                <div class="config-group">
+                    <label>START TYPE</label>
+                    <div class="fancy-toggle-row">
+                        <button class="fancy-toggle active" id="btn-standing" onclick="PerfLogic.setStartType('standing')">
+                            <i class="fa-solid fa-flag"></i> STANDING
+                        </button>
+                        <button class="fancy-toggle" id="btn-flying" onclick="PerfLogic.setStartType('flying')">
+                            <i class="fa-solid fa-plane-departure"></i> FLYING
+                        </button>
+                    </div>
+                </div>
+
+                <div id="flying-settings" class="hidden">
+                    <div class="tacho-container"></div> <div class="fly-grid-row">
+                        <div class="fly-col">
+                            <label>MIN SPEED (Trigger)</label>
+                            <div class="stepper-control">
+                                <div class="step-btn" onclick="PerfLogic.stepValue('fly-min', -5)">-</div>
+                                <div class="step-display"><input type="number" id="fly-min" value="30" readonly></div>
+                                <div class="step-btn" onclick="PerfLogic.stepValue('fly-min', 5)">+</div>
+                            </div>
+                        </div>
+                        <div class="fly-col">
+                            <label>MAX SPEED (Valid)</label>
+                            <div class="stepper-control">
+                                <div class="step-btn" onclick="PerfLogic.stepValue('fly-max', -5)">-</div>
+                                <div class="step-display"><input type="number" id="fly-max" value="300" readonly></div>
+                                <div class="step-btn" onclick="PerfLogic.stepValue('fly-max', 5)">+</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-group" style="margin-top:20px;">
+                    <label>SECTORS & SPLITS</label>
+                    <div id="sector-config-container">
+                        <div class="sector-add-card" onclick="PerfLogic.openSectorEditor()">
+                            <i class="fa-solid fa-plus-circle"></i> ADD SECTORS
+                        </div>
+                    </div>
+                </div>
+
+                <div class="prm-engine-box">
+                    <div class="prm-bg-stripes"></div>
+                    <div class="prm-title">PRM CALCULATION ENGINE</div>
+                    <div class="prm-status">
+                        <div class="prm-dot"></div>
+                        WAITING FOR TRACK DATA
+                    </div>
+                </div>
+
+                <div class="setup-actions">
+                    <button class="btn-discard-text" onclick="PerfLogic.cancelSetup()">DISCARD</button>
+                    <button class="btn-save-final" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button>
+                </div>
+            </div>
+        `;
+
+        // Map Setup Logic...
         if(!this.setupMap) {
             this.setupMap = L.map('setup-map', {
                 zoomControl: false, attributionControl: false,
@@ -442,12 +513,15 @@ window.PerfLogic = {
         setTimeout(() => {
             this.setupMap.invalidateSize();
             this.setupMap.eachLayer(l => { if(!l._url) this.setupMap.removeLayer(l); });
-            
             if(this.currentRouteGeo) {
                 const poly = L.polyline(this.currentRouteGeo, {color: '#ff3b30', weight: 5}).addTo(this.setupMap);
                 this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
             }
         }, 200);
+
+        this.setStartType('standing'); // Reset auf Standing Start beim Öffnen
+        this.currentSectorsData = [];
+    },
 
         // Reset Sectors
         const sectorContainer = document.getElementById('sector-config-container');
@@ -726,23 +800,27 @@ window.PerfLogic = {
     // 8. RENDER FUNCTIONS (V4 CAROUSEL & DASHBOARD)
     // =================================================
 
-   renderTrackList: function() {
+ renderTrackList: function() {
         // 1. STATS BERECHNEN
         const trackCount = this.tracks.length;
         let bestTime = "---";
-        let scoreInt = 0;
+        let scoreInt = 0; // Standard auf 0
 
+        // Wir berechnen KEINEN Fake-Score mehr. Nur echte Daten zählen.
         if (trackCount > 0) {
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
-            if(validTracks.length > 0) bestTime = validTracks[0].bestTime; 
-            scoreInt = trackCount * 150; 
+            if(validTracks.length > 0) {
+                bestTime = validTracks[0].bestTime; 
+                // scoreInt = ... (Hier kommt später die echte PRM Formel hin)
+            }
         }
 
         const contentArea = document.querySelector('.perf-content-scroll');
         
-        // HTML AUFBAU (Mit Fade Overlay & Glass Hub Container)
         let html = `
-            <div class="header-fade-overlay"></div> <div class="perf-dashboard-header">
+            <div class="header-fade-overlay"></div>
+
+            <div class="perf-dashboard-header">
                 <div class="glass-stats-hub">
                     <div class="pd-side-stat">
                         <label>BEST TIME</label>
@@ -750,7 +828,7 @@ window.PerfLogic = {
                     </div>
                     <div class="pd-main-score">
                         <label>PRM SCORE</label>
-                        <div class="val" id="global-score-display">${trackCount > 0 ? 0 : '---'}</div>
+                        <div class="val" id="global-score-display">${scoreInt > 0 ? scoreInt : '---'}</div>
                     </div>
                     <div class="pd-side-stat">
                         <label>TRACKS</label>
@@ -759,8 +837,7 @@ window.PerfLogic = {
                 </div>
             </div>
             
-            <div id="perf-track-list">
-                </div>
+            <div id="perf-track-list"></div>
 
             <div class="perf-history-section">
                 <div class="ph-title">Recent Activity</div>
@@ -772,18 +849,13 @@ window.PerfLogic = {
         
         contentArea.innerHTML = html;
         
-        if(trackCount > 0 && scoreInt > 0) {
-            this.animateValue("global-score-display", 0, scoreInt, 1200);
-        }
-
-        // 2. TRACKS RENDERN
-        const list = document.getElementById('perf-track-list');
+        // ... (Rest der Funktion mit Render Loop bleibt gleich) ...
         
+        // HIER REST EINFÜGEN (Kopier ich dir sicherheitshalber dazu):
+        const list = document.getElementById('perf-track-list');
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
-            div.style.animationDelay = (index * 0.1) + "s";
-            
             div.innerHTML = `
                 <div class="tc-bg-map" id="mini-map-${t.id}"></div>
                 <div class="tc-overlay"></div>
@@ -799,13 +871,18 @@ window.PerfLogic = {
                     <div class="cond-text">LOADING</div>
                 </div>
             `;
-            
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
-
             setTimeout(() => this.renderMiniMap(t), 300);
             this.checkTrackConditions(t); 
         });
+
+        const addBtn = document.createElement('div');
+        addBtn.className = 'add-track-v2';
+        addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
+        addBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.enterCreatorMode(); };
+        list.appendChild(addBtn);
+    },
 
         // 3. ADD TRACK BUTTON (Repariert & Umbenannt)
   const addBtn = document.createElement('div');
