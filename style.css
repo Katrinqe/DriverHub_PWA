@@ -1088,42 +1088,45 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 }
 .fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 /* ========================================= */
-/* === FINAL TACHO FIX (LAYOUT & TOUCH) === */
-/* ========================================= */
-
-/* === VERBESSERTER TACHO (SMOOTH CONTROL) === */
-
-/* === TACHO V4: GPU ACCELERATED RING === */
+/* ================================================= */
+/* === TACHO V5: PREMIUM DEPTH & NEON === */
+/* ================================================= */
 
 .tacho-container {
     width: 260px;
-    height: 130px; /* Exakter Halbkreis */
+    height: 130px;
     position: relative;
-    margin: 25px auto;
+    margin: 30px auto 20px auto;
     overflow: hidden; 
     cursor: crosshair;
     background: transparent;
     touch-action: none !important;
-    /* GPU Layer erzwingen gegen Ruckeln */
-    transform: translateZ(0);
+    /* GPU Rendering erzwingen */
+    transform: translateZ(0); 
+    /* Leichter Schein nach unten */
+    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
 }
 
-/* Der Hintergrund-Ring (Dunkelgrau) */
+/* Der Hintergrund-Ring (Eingelassen/Recessed Look) */
 .tacho-track {
     position: absolute;
     top: 0; left: 0;
-    width: 260px; height: 260px; /* Vollkreis Box */
+    width: 260px; height: 260px;
     border-radius: 50%;
-    background: #222; /* Farbe der Spur */
+    background: #141414; /* Sehr dunkel */
     
-    /* Wir stanzen die Mitte aus -> Ring entsteht */
+    /* Innerer Schatten für Tiefe */
+    box-shadow: inset 0 0 15px rgba(0,0,0,1);
+    border: 1px solid rgba(255,255,255,0.05); /* Feine Kante */
+
+    /* Maske für den Ring */
     -webkit-mask-image: radial-gradient(transparent 58%, black 60%);
     mask-image: radial-gradient(transparent 58%, black 60%);
     
     z-index: 1;
 }
 
-/* Der aktive farbige Bogen */
+/* Der aktive Farb-Bogen (Neon) */
 .tacho-arc {
     position: absolute;
     top: 0; left: 0;
@@ -1131,7 +1134,7 @@ body.creator-active #perf-map-container { height: 100vh !important; }
     border-radius: 50%;
     z-index: 2;
     
-    /* Der Farbverlauf (wird per JS rotiert/gesteuert) */
+    /* Verlauf wird per JS gesteuert */
     background: conic-gradient(
         from 270deg, 
         var(--tacho-color, #30d158) 0%, 
@@ -1140,73 +1143,159 @@ body.creator-active #perf-map-container { height: 100vh !important; }
         transparent 100%
     );
 
-    /* Auch hier die Mitte ausstanzen */
+    /* Gleiche Maske wie Track */
     -webkit-mask-image: radial-gradient(transparent 58%, black 60%);
     mask-image: radial-gradient(transparent 58%, black 60%);
 
-    /* Performance Booster */
+    /* Der Glow-Effekt */
+    filter: drop-shadow(0 0 8px var(--tacho-color, #30d158));
+    opacity: 0.9;
     will-change: background;
 }
 
-/* Der weiße Knopf */
+/* Der Anfasser (Knob) - Jetzt mit Metall-Look */
 .tacho-knob-container {
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 200%; 
     transform-origin: 50% 50%;
-    transform: rotate(-90deg); /* Start links */
+    transform: rotate(-90deg);
     pointer-events: none;
     z-index: 4;
-    will-change: transform; /* Ruckeln verhindern */
-    transition: transform 0.05s linear; /* Sehr kurze Transition für Smoothness */
+    transition: transform 0.08s linear; /* Ultra Smooth */
 }
 
 .tacho-knob {
-    width: 28px; height: 28px;
-    background: white;
+    width: 32px; height: 32px;
+    background: radial-gradient(circle at 30% 30%, #fff, #ccc); /* Metall-Glanz */
     border-radius: 50%;
     position: absolute;
-    top: 10px; /* Positioniert auf dem Ring */
+    top: 8px; /* Mittig auf dem Ring */
     left: 50%;
     transform: translateX(-50%);
-    box-shadow: 0 0 15px var(--tacho-color, #30d158); /* Glow in Wagenfarbe */
-    border: 3px solid #111;
+    /* Starker Schatten und farbiger Glow */
+    box-shadow: 
+        0 2px 5px rgba(0,0,0,0.8),
+        0 0 15px var(--tacho-color, #30d158); 
+    border: 2px solid #000;
 }
 
 /* Text Display */
 .tacho-value-display {
     position: absolute;
-    bottom: 0; left: 0; width: 100%;
+    bottom: 5px; left: 0; width: 100%;
     text-align: center;
     z-index: 5;
     pointer-events: none;
 }
 .tacho-val {
-    font-size: 3.5rem;
+    font-size: 3.8rem;
     font-weight: 900;
     color: white;
     line-height: 0.9;
-    font-family: monospace; 
-    text-shadow: 0 0 20px rgba(0,0,0,0.5);
+    font-family: 'Segoe UI', sans-serif; /* Clean Font */
+    text-shadow: 0 0 20px rgba(0,0,0,0.8);
+    letter-spacing: -2px;
 }
 .tacho-unit {
     display: block;
-    color: #888; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;
-    margin-top: 5px; letter-spacing: 1px;
-}
-/* Mehr Platz für den Tacho reservieren */
-.tacho-container {
-    height: 150px !important; /* Erhöht, damit der Bogen Platz hat */
-    margin-bottom: 10px !important;
+    color: #666; font-weight: 700; font-size: 0.75rem; 
+    text-transform: uppercase; margin-top: 5px; letter-spacing: 2px;
 }
 
-/* Die Min/Max Zeile nach unten schieben */
-.fly-grid-row {
-    margin-top: 10px !important; 
-    padding-top: 20px !important; /* Extra Abstand zum Tacho */
-    border-top: 1px solid rgba(255,255,255,0.05); /* Feine Linie zur Trennung */
+/* ================================================= */
+/* === PRM & ACTION BUTTONS (RESTORED & NEW) === */
+/* ================================================= */
+
+/* PRM Placeholder Box (Under Construction) */
+.prm-engine-box {
+    margin: 20px 0;
+    background: rgba(10, 10, 10, 0.6);
+    border: 1px solid rgba(191, 90, 242, 0.3); /* Lila Border */
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
 }
 
+/* Gestreifter Hintergrund für "Construction"-Look */
+.prm-bg-stripes {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(191, 90, 242, 0.03) 10px,
+        rgba(191, 90, 242, 0.03) 20px
+    );
+    z-index: 0;
+}
+
+.prm-title {
+    color: #bf5af2;
+    font-size: 0.7rem; letter-spacing: 1px; font-weight: 800;
+    z-index: 1; text-transform: uppercase; margin-bottom: 5px;
+    text-shadow: 0 0 10px rgba(191, 90, 242, 0.4);
+}
+
+.prm-status {
+    color: #666; font-size: 0.65rem; font-family: monospace;
+    z-index: 1; display: flex; align-items: center; gap: 6px;
+}
+
+/* Pulsierender Punkt */
+.prm-dot {
+    width: 6px; height: 6px; background: #bf5af2; border-radius: 50%;
+    animation: prm-pulse 1.5s infinite;
+}
+@keyframes prm-pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+
+/* === ACTION BUTTONS (WIEDER DA!) === */
+
+.setup-actions { 
+    display: flex; gap: 15px; align-items: center; width: 100%; 
+    margin-top: 30px; margin-bottom: 20px;
+}
+
+/* Discard: Dezent, Glass, Rahmen */
+.btn-discard-text { 
+    flex: 1; 
+    background: rgba(255,255,255,0.05); 
+    border: 1px solid rgba(255,255,255,0.1); 
+    color: #888; 
+    padding: 16px; border-radius: 14px;
+    font-weight: 700; font-size: 0.8rem;
+    cursor: pointer; transition: all 0.2s;
+}
+.btn-discard-text:active { background: rgba(255,255,255,0.1); color: white; }
+
+/* Save: Fett, Rot, Leuchtend */
+.btn-save-final {
+    flex: 2; 
+    background: linear-gradient(135deg, #ff3b30, #ff6b30); 
+    color: white; 
+    border: none; 
+    padding: 16px; border-radius: 14px; 
+    font-weight: 900; font-size: 1rem; letter-spacing: 1px; 
+    box-shadow: 0 5px 20px rgba(255, 59, 48, 0.4); 
+    cursor: pointer; text-transform: uppercase;
+    position: relative; overflow: hidden;
+}
+.btn-save-final:active { transform: scale(0.98); box-shadow: 0 2px 10px rgba(255, 59, 48, 0.4); }
+
+/* Shine Effekt auf dem Save Button */
+.btn-save-final::after {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: linear-gradient(transparent, rgba(255,255,255,0.2), transparent);
+    transform: rotate(25deg); animation: btn-shine 3s infinite;
+}
+@keyframes btn-shine { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }
 /* ========================================= */
 /* === NAV FIX: PERF MUSS LEUCHTEN === */
 /* ========================================= */
