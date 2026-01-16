@@ -163,6 +163,16 @@
     </div>
 
     <div id="track-setup-screen" class="hidden">
+
+        <div id="sector-editor-overlay" class="hidden">
+        <div class="sec-hint"><i class="fa-solid fa-scissors"></i> TAP ON TRACK TO SPLIT SECTOR</div>
+        <div id="sector-map" style="width: 100%; height: 100%;"></div>
+        <div class="sec-editor-hud">
+            <button class="sec-btn" onclick="PerfLogic.closeSectorEditor()"><i class="fa-solid fa-xmark"></i> CANCEL</button>
+            <button class="sec-btn" onclick="PerfLogic.undoSectorSplit()"><i class="fa-solid fa-rotate-left"></i> UNDO</button>
+            <button class="sec-btn save" onclick="PerfLogic.saveSectors()"><i class="fa-solid fa-check"></i> SAVE SECTORS</button>
+        </div>
+    </div>
     
         <div class="setup-map-wrapper">
             <div id="setup-map"></div> 
