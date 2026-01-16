@@ -1162,3 +1162,119 @@ body.creator-active .perf-content-scroll {
     pointer-events: auto !important;
     z-index: 100 !important;
 }
+
+/* ================================================= */
+/* === DESIGN FIXES: RED THEME & CARDS & CONFIG === */
+/* ================================================= */
+
+/* --- 1. TRACK CARD (INHALT SICHTBAR MACHEN) --- */
+.track-card-v2 {
+    flex: 0 0 85vw; max-width: 350px; height: 180px;
+    position: relative !important;
+    overflow: hidden !important;
+    border-radius: 20px;
+    background: #000;
+    border: 1px solid rgba(255, 59, 48, 0.3); /* ROTER RAND DEZENT */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    margin-right: 0;
+}
+
+/* Map ganz hinten */
+.tc-bg-map {
+    position: absolute !important; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0.6; /* Etwas dunkler damit Text lesbar ist */
+}
+
+/* Content ganz vorne */
+.tc-content {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    z-index: 10 !important; /* WICHTIG: Über der Map */
+    padding: 15px 20px;
+    background: linear-gradient(to top, #000 20%, transparent 100%);
+}
+
+.tc-name { 
+    font-size: 1.6rem; font-weight: 900; color: white; 
+    text-transform: uppercase; margin-bottom: 2px; line-height: 1;
+    font-style: italic; text-shadow: 0 2px 10px black;
+}
+
+.tc-details { 
+    font-size: 0.85rem; color: #ccc; font-weight: 700; 
+    display: flex; gap: 15px; margin-top: 5px; 
+}
+.tc-details i { color: #ff3b30; margin-right: 5px; } /* ROT */
+
+
+/* --- 2. CONFIG SCREEN (PRM & INPUTS) --- */
+
+/* Labels hübscher machen (Min Speed etc.) */
+.fly-col label {
+    font-size: 0.6rem; color: #666; font-weight: 800; 
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-bottom: 8px; display: block;
+}
+
+/* PRM Box Design (War verschwunden) */
+.prm-engine-box {
+    margin: 20px 0;
+    background: rgba(20, 20, 20, 0.8);
+    border: 1px solid rgba(255, 59, 48, 0.3); /* ROT */
+    border-radius: 16px;
+    padding: 20px;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100px;
+}
+.prm-bg-stripes {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,59,48,0.03) 10px, rgba(255,59,48,0.03) 20px);
+    z-index: 0;
+}
+.prm-title {
+    color: #ff3b30; font-size: 0.75rem; letter-spacing: 2px; font-weight: 900; z-index: 1; 
+    text-transform: uppercase; margin-bottom: 8px;
+}
+.prm-status {
+    color: #888; font-size: 0.7rem; font-family: monospace; z-index: 1; display: flex; align-items: center; gap: 8px;
+}
+.prm-dot {
+    width: 8px; height: 8px; background: #ff3b30; border-radius: 50%; 
+    box-shadow: 0 0 10px #ff3b30; animation: prm-pulse 1.5s infinite;
+}
+
+
+/* --- 3. SECTOR EDITOR HUD (MODERN) --- */
+
+/* Der Text oben "Tap to split" als schicke Kapsel */
+.sec-hint-hub {
+    position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
+    background: rgba(15, 15, 15, 0.85);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 10px 25px;
+    border-radius: 30px;
+    display: flex; align-items: center; gap: 10px;
+    z-index: 1000;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+    pointer-events: none; /* Klicks gehen durch */
+}
+.sec-hint-text {
+    color: white; font-weight: 700; font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;
+}
+.sec-hint-icon { color: #ff3b30; font-size: 0.9rem; }
+
+/* Start/Ziel Marker im Editor */
+.sec-marker-start {
+    width: 14px; height: 14px; background: #30d158; border-radius: 50%; 
+    border: 2px solid white; box-shadow: 0 0 10px #30d158;
+}
+.sec-marker-finish {
+    width: 14px; height: 14px; background: #ff3b30; border-radius: 50%; 
+    border: 2px solid white; box-shadow: 0 0 10px #ff3b30;
+}
+
+/* Allgemein: LILA zu ROT ändern */
+.pd-main-score label { color: #ff3b30 !important; }
+.pd-main-score .val { text-shadow: 0 0 30px rgba(255, 59, 48, 0.4) !important; }
+.add-track-v2 { border-color: rgba(255,255,255,0.15) !important; }
