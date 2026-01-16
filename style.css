@@ -734,201 +734,260 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 
 
-/* --- 1. BASE CONTAINER & BACKGROUND --- */
+/* ============================================================= */
+/* === DRIVERHUB STYLE.CSS - MASTER V6 (RED NEON & GLASS)    === */
+/* ============================================================= */
 
-/* Der Dashboard Container (Scrollbar & Verlauf) */
+/* --- 1. GLOBAL SETTINGS & INPUT FIXES --- */
+input, textarea { 
+    user-select: text !important; 
+    -webkit-user-select: text !important; 
+    pointer-events: auto !important; 
+    touch-action: manipulation !important; 
+    z-index: 10000 !important; 
+}
+
+/* --- 2. DYNAMIC BACKGROUND (ALIVE RED GLOW) --- */
 .perf-content-scroll {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    /* Hintergrund: Verlauf */
-    background: radial-gradient(circle at center top, #1a1a1a 0%, #000000 80%);
+    
+    /* Basis Dunkel */
+    background: #050505;
+    
     overflow-y: auto; overflow-x: hidden;
-    z-index: 10; /* Liegt ÜBER der Map im Dashboard-Modus */
+    z-index: 10;
     padding-bottom: 120px;
+    
+    /* Scroll Behavior */
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
     transition: opacity 0.3s;
 }
 
-/* Wenn Creator Mode an ist, blenden wir das Dashboard komplett aus */
+/* Der pulsierende rote Nebel im Hintergrund */
+.perf-content-scroll::before {
+    content: '';
+    position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(255, 59, 48, 0.12) 0%, transparent 60%);
+    animation: bg-pulse-move 12s ease-in-out infinite alternate;
+    z-index: -1;
+    pointer-events: none;
+}
+
+@keyframes bg-pulse-move {
+    0% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+    100% { transform: translate(-30px, 30px) scale(1.15); opacity: 0.7; }
+}
+
+/* Wenn Creator Mode an ist -> Dashboard ausblenden */
 body.creator-active .perf-content-scroll {
-    display: none !important; /* WICHTIG: Weg damit, damit man die Map sieht */
+    display: none !important;
 }
 
-/* Map Container (Basis) */
-#perf-map-container {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 0; /* Standard: Ganz hinten */
-    opacity: 0; /* Standard: Unsichtbar */
-    transition: opacity 0.5s;
-}
 
-/* Map Container (Wenn Creator Mode an ist) */
-body.creator-active #perf-map-container {
-    opacity: 1 !important; 
-    z-index: 1 !important; /* Nach vorne holen, aber hinter das HUD */
-}
+/* --- 3. HEADER & GLASS HUB --- */
 
-#perf-map { width: 100%; height: 100%; background: #111; }
-/* --- 2. HERO HEADER (GLASS HUB) --- */
+/* Der Fade ganz oben (Weicher Übergang) */
+.header-fade-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 90px; /* Schön hoch */
+    background: linear-gradient(to bottom, #050505 30%, transparent 100%);
+    z-index: 20; pointer-events: none;
+}
 
 .perf-dashboard-header {
-    /* Container positioniert den Hub */
-    padding: 60px 20px 10px 20px; /* Mehr Platz oben (60px) wegen Notch/Fade */
+    /* Abstand für Notch und Fade */
+    padding: 70px 20px 10px 20px; 
     display: flex; justify-content: center;
-    position: relative; z-index: 25; /* Über dem Fade liegen */
+    position: relative; z-index: 25;
 }
 
-/* Das eigentliche Glas-Element */
+/* Das Glas-Element für die Stats */
 .glass-stats-hub {
     width: 100%;
     display: flex; align-items: center; justify-content: space-between;
     
-    /* GLAS OPTIK */
-    background: rgba(20, 20, 20, 0.65); /* Halbtransparent dunkel */
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    /* GLASMOPHISMUS HIGH-END */
+    background: rgba(30, 30, 30, 0.5); /* Helleres Grau für Kontrast */
+    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255,255,255,0.02);
     
-    border-radius: 24px;
-    padding: 15px 20px;
+    border-radius: 26px;
+    padding: 18px 25px;
 }
 
-/* Die Stats darin */
 .pd-side-stat { flex: 1; text-align: center; opacity: 0.9; }
-.pd-side-stat label { display: block; font-size: 0.6rem; color: #888; font-weight: 800; margin-bottom: 4px; letter-spacing: 1px; }
+.pd-side-stat label { display: block; font-size: 0.6rem; color: #999; font-weight: 800; margin-bottom: 4px; letter-spacing: 1px; }
 .pd-side-stat .val { font-size: 1.2rem; font-weight: 800; color: white; font-family: monospace; }
 
 .pd-main-score { flex: 1.4; text-align: center; position: relative; }
-/* Trennlinien links und rechts vom Score */
+/* Trennlinien */
 .pd-main-score::before, .pd-main-score::after {
     content: ''; position: absolute; top: 20%; height: 60%; width: 1px; background: rgba(255,255,255,0.1);
 }
 .pd-main-score::before { left: 0; }
 .pd-main-score::after { right: 0; }
 
-.pd-main-score label { display: block; font-size: 0.7rem; color: #bf5af2; font-weight: 900; margin-bottom: 2px; text-shadow: 0 0 10px rgba(191,90,242,0.4); }
-.pd-main-score .val { font-size: 2.8rem; font-weight: 900; color: white; line-height: 1; text-shadow: 0 0 25px rgba(191,90,242,0.6); }
+.pd-main-score label { display: block; font-size: 0.75rem; color: #ff3b30 !important; font-weight: 900; margin-bottom: 2px; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4); }
+.pd-main-score .val { font-size: 2.8rem; font-weight: 900; color: white; line-height: 1; text-shadow: 0 0 30px rgba(255, 59, 48, 0.5) !important; }
 
-/* --- BUTTON FIX (Add Track Card) --- */
-.add-track-v2 {
-    /* Style wie vorher, aber sicherstellen, dass er klickbar ist */
-    flex: 0 0 45vw; scroll-snap-align: center; height: 160px;
-    border-radius: 18px; background: rgba(255,255,255,0.03);
-    border: 2px dashed rgba(255,255,255,0.2);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    color: #666; font-weight: 700; gap: 10px; font-size: 0.8rem; letter-spacing: 1px;
-    opacity: 0; transform: translateX(50px); animation: slideInRight 0.5s forwards;
-    cursor: pointer;
-    position: relative; z-index: 50; /* Nach vorne holen! */
-}
-.add-track-v2:active { background: rgba(255,255,255,0.08); border-color: white; color: white; }
-/* --- 3. TRACK LISTE (CAROUSEL REPARATUR) --- */
+
+/* --- 4. TRACK CARDS (SMARTPHONE FORMAT & LIVE LOOK) --- */
 
 #perf-track-list {
-    display: flex;
-    flex-direction: row;
-    gap: 20px; /* Mehr Abstand */
-    overflow-x: auto;
-    padding: 10px 25px;
+    display: flex; flex-direction: row; gap: 20px;
+    overflow-x: auto; padding: 10px 25px;
     scroll-snap-type: x mandatory;
-    min-height: 200px; /* Platz erzwingen */
-    position: relative;
-    z-index: 10;
+    min-height: 260px; /* Genug Platz für hohe Karten */
+    position: relative; z-index: 10;
     
-    /* Scrollbar weg */
-    scrollbar-width: none; 
-    -webkit-overflow-scrolling: touch;
+    pointer-events: auto !important; /* Scrollen erlauben */
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
 #perf-track-list::-webkit-scrollbar { display: none; }
 
-/* Die Card Box - MUSS RELATIVE SEIN */
 .track-card-v2 {
-    flex: 0 0 85vw; /* Feste Breite */
-    max-width: 350px; /* Nicht zu breit auf Tablets */
-    height: 180px; /* Feste Höhe */
+    /* Schlank & Hoch */
+    flex: 0 0 65vw; max-width: 280px; 
+    height: 240px;
     
-    position: relative !important; /* WICHTIG: Damit die Map drinnen bleibt */
-    overflow: hidden !important; /* WICHTIG: Schneidet alles ab was raus will */
+    position: relative !important; overflow: hidden !important;
+    border-radius: 24px;
     
-    border-radius: 20px;
-    background: #000;
-    border: 1px solid rgba(255,255,255,0.15);
+    /* Glas-Look für die Card */
+    background: rgba(20, 20, 20, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
     scroll-snap-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    cursor: pointer;
+    margin-right: 0;
     
-    margin-right: 0; /* Flex gap regelt das */
+    pointer-events: auto !important;
 }
 
-/* Der Map Container IN der Card */
+/* Map im Hintergrund */
 .tc-bg-map {
-    position: absolute !important; 
-    top: 0; left: 0; 
-    width: 100% !important; 
-    height: 100% !important;
-    z-index: 0;
-    background: #111; /* Fallback Farbe */
+    position: absolute !important; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0.8; mix-blend-mode: screen; /* Map leuchtet */
+    background: #000;
 }
 
-/* Add Track Card */
-.add-track-v2 {
-    flex: 0 0 45vw; 
-    height: 180px;
-    position: relative;
+/* Content Bereich (Unten) mit Verlauf für Lesbarkeit */
+.tc-content {
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    z-index: 10 !important;
+    padding: 20px;
+    background: linear-gradient(to top, #000 20%, rgba(0,0,0,0.8) 60%, transparent 100%);
+}
+
+.tc-name { 
+    font-size: 1.8rem; font-weight: 900; color: white; 
+    text-transform: uppercase; margin-bottom: 5px; line-height: 0.9;
+    font-style: italic; text-shadow: 0 2px 10px black;
+}
+
+.tc-details { 
+    font-size: 0.85rem; color: #ccc; font-weight: 700; 
+    display: flex; gap: 15px; margin-top: 8px; 
+}
+.tc-details i { color: #ff3b30; margin-right: 5px; }
+
+/* Wetter Badge (Schicke Kapsel) */
+.tc-condition-badge {
+    position: absolute; top: 15px; right: 15px; z-index: 10;
+    
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 20px;
-    background: rgba(255,255,255,0.03);
-    border: 2px dashed rgba(255,255,255,0.2);
+    padding: 6px 12px;
+    
+    display: flex; align-items: center; gap: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.cond-dot { width: 8px; height: 8px; border-radius: 50%; }
+.cond-text { font-size: 0.65rem; font-weight: 800; color: white; letter-spacing: 0.5px; text-transform: uppercase; }
+
+/* Die Linie zum Leben erwecken (Neon Glow) - Klasse wird von JS gesetzt */
+.track-poly-line {
+    stroke: #ff3b30;
+    stroke-width: 5;
+    stroke-linecap: round;
+    /* Der Glow Effekt */
+    filter: drop-shadow(0 0 8px #ff3b30) drop-shadow(0 0 15px rgba(255, 59, 48, 0.6));
+    animation: line-pulse 3s infinite alternate;
+}
+@keyframes line-pulse {
+    0% { filter: drop-shadow(0 0 5px #ff3b30); opacity: 0.9; }
+    100% { filter: drop-shadow(0 0 12px #ff3b30); opacity: 1; }
+}
+
+/* ADD TRACK CARD */
+.add-track-v2 {
+    flex: 0 0 45vw; /* Etwas kleiner */
+    height: 240px;  /* Gleiche Höhe */
+    position: relative;
+    border-radius: 24px;
+    background: rgba(255, 59, 48, 0.03); /* Hauch von Rot */
+    border: 2px dashed rgba(255, 255, 255, 0.2);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     scroll-snap-align: center;
-    color: #666; font-weight: 700;
+    color: #888; font-weight: 700; font-size: 0.8rem; letter-spacing: 1px; gap: 10px;
+    
+    opacity: 0; transform: translateX(50px); animation: slideInRight 0.5s forwards;
+    cursor: pointer; pointer-events: auto !important; z-index: 50;
+}
+.add-track-v2:active { background: rgba(255,255,255,0.08); border-color: white; color: white; }
+
+
+/* --- 5. HISTORY --- */
+.perf-history-section { padding: 20px; margin-top: 10px; }
+.ph-title { font-size: 0.8rem; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+.ph-empty { background: rgba(255,255,255,0.02); padding: 30px; border-radius: 16px; color: #555; text-align: center; font-size: 0.8rem; font-weight: 600; border: 1px dashed #333; }
+
+
+/* --- 6. MAP CONTAINER (LOGIK FIX) --- */
+#perf-map-container {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0; transition: opacity 0.5s;
+}
+/* Wenn Creator Mode an ist */
+body.creator-active #perf-map-container {
+    opacity: 1 !important; z-index: 100 !important;
+    pointer-events: auto !important; touch-action: none !important;
+}
+#perf-map { width: 100%; height: 100%; background: #111; z-index: 101 !important; pointer-events: auto !important; }
+
+
+/* --- 7. CREATOR UI & HUD --- */
+#perf-creator-ui {
+    pointer-events: none !important; z-index: 2000 !important;
+}
+/* Buttons reaktivieren */
+.creator-top-hud, .creator-bottom-bar, .cb-action-btn, .cb-pin {
+    pointer-events: auto !important;
 }
 
-
-/* --- 4. HISTORY SECTION --- */
-.perf-history-section { padding: 20px; margin-top: 5px; }
-.ph-title { font-size: 0.8rem; font-weight: 700; color: #444; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 1px solid #222; padding-bottom: 5px; }
-.ph-empty { background: rgba(255,255,255,0.02); padding: 25px; border-radius: 12px; color: #555; text-align: center; font-size: 0.8rem; font-weight: 600; }
-
-
-/* --- 5. NAV BAR STYLE (Fix) --- */
-.perf-sub-nav {
-    position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%);
-    width: 80%; height: 45px;
-    background: rgba(10, 10, 10, 0.95); backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 59, 48, 0.3); border-radius: 30px;
-    display: flex; align-items: center; justify-content: space-between; padding: 5px;
-    z-index: 600 !important; box-shadow: 0 5px 25px rgba(0,0,0,0.6);
-}
-.psn-item { flex: 1; text-align: center; color: #666; font-size: 0.7rem; font-weight: 800; padding: 8px 0; border-radius: 25px; transition: all 0.3s; }
-.psn-item.active { background: #ff3b30; color: white; }
-
-
-/* --- 6. CREATOR MODE STYLES (HUD & PINS) --- */
-
-/* HUD Top */
+/* Creator HUD (Glas) */
 .creator-top-hud {
-    position: absolute; top: 60px; left: 50%; transform: translateX(-50%); 
-    width: 92%; height: 75px;
+    position: absolute; top: 60px; left: 50%; transform: translateX(-50%); width: 92%; height: 75px;
     background: rgba(12, 12, 12, 0.85); backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
     display: flex; justify-content: space-evenly; align-items: center;
-    pointer-events: auto; z-index: 2005;
 }
 .cth-item { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; position: relative; }
 .cth-item:not(:last-child)::after { content: ''; position: absolute; right: 0; top: 25%; height: 50%; width: 1px; background: rgba(255, 255, 255, 0.1); }
 .cth-item label { display: block; font-size: 0.55rem; color: #555; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
 .cth-item span { color: #ffffff; font-family: -apple-system, monospace; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 1.1rem; font-style: italic; text-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
 
-/* HUD Bottom */
 .creator-bottom-bar {
     position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 95%; height: 70px;
     display: flex; align-items: center; justify-content: space-between;
-    pointer-events: auto; z-index: 2005;
 }
-.cb-action-btn {
-    width: 50px; height: 50px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; cursor: pointer; background: rgba(20,20,20,0.9); border: 1px solid #333;
-}
+.cb-action-btn { width: 50px; height: 50px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; background: rgba(20,20,20,0.9); border: 1px solid #333; }
 .cb-action-btn.cancel { color: #ff3b30; }
 .cb-action-btn.save { color: #30d158; }
 
@@ -939,8 +998,6 @@ body.creator-active #perf-map-container {
 .cb-pin { display: flex; flex-direction: column; align-items: center; opacity: 0.4; transition: all 0.2s; cursor: pointer; }
 .cb-pin.active { opacity: 1; transform: scale(1.1); }
 .cb-pin span { font-size: 0.5rem; font-weight: 800; color: white; margin-top: 4px; }
-
-/* Map Markers & Pins */
 .pin-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; }
 .pin-dot.green { background: #30d158; box-shadow: 0 0 10px #30d158; }
 .pin-dot.white { background: #fff; box-shadow: 0 0 10px #fff; }
@@ -949,8 +1006,7 @@ body.creator-active #perf-map-container {
 .creator-crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.8); font-size: 1.2rem; z-index: 2001; }
 
 
-/* --- 7. SETUP / CONFIGURATOR SCREEN --- */
-
+/* --- 8. SETUP / CONFIGURATOR SCREEN --- */
 #track-setup-screen {
     position: fixed !important; top: 0; left: 0; width: 100%; height: 100%;
     background-color: #050505 !important; z-index: 5000 !important;
@@ -958,32 +1014,27 @@ body.creator-active #perf-map-container {
     overflow: hidden !important; pointer-events: auto !important;
 }
 #track-setup-screen.hidden { display: none !important; }
-
 .setup-map-wrapper { grid-row: 1; width: 100%; height: 100%; background: #111; position: relative; z-index: 1; }
 #setup-map { width: 100%; height: 100%; }
-
 .setup-content-scroll {
     grid-row: 2; width: 100%; height: 100%; background: #0a0a0a; position: relative; z-index: 10;
     overflow-y: scroll !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important;
     overscroll-behavior: contain; border-top: 1px solid rgba(255, 59, 48, 0.2);
 }
-
-.setup-card { padding: 25px; padding-bottom: 40px !important; pointer-events: auto !important; }
+.setup-card { padding: 25px; padding-bottom: 60px !important; pointer-events: auto !important; }
 .setup-card h2 {
     font-size: 0.9rem; color: #ff3b30; font-weight: 900; margin-bottom: 20px; text-align: center;
     letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4); margin-top: 10px;
 }
 
-/* Inputs & Forms */
+/* Inputs & Config */
 .config-group { margin-bottom: 25px; }
 .config-group label { display: block; color: #888; font-size: 0.7rem; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px; }
-
 .fancy-input-wrap input {
     width: 100%; background: rgba(255,255,255,0.05); border: 1px solid #333; color: white; padding: 15px;
     border-radius: 12px; font-weight: bold; font-size: 1rem; outline: none; transition: all 0.3s;
 }
 .fancy-input-wrap input:focus { border-color: #ff3b30; background: rgba(20,0,0,0.5); }
-
 .fancy-toggle-row { display: flex; background: rgba(255,255,255,0.03); border-radius: 15px; padding: 5px; border: 1px solid #222; }
 .fancy-toggle {
     flex: 1; background: transparent; border: none; color: #666; padding: 12px; font-weight: 800; font-size: 0.8rem; border-radius: 12px;
@@ -991,231 +1042,7 @@ body.creator-active #perf-map-container {
 }
 .fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 
-
-/* --- 8. TACHO V6 --- */
-
-.tacho-container {
-    width: 280px; height: 140px; position: relative; margin: 30px auto 20px auto;
-    overflow: hidden; background: transparent; transform: translateZ(0);
-    filter: drop-shadow(0 15px 20px rgba(0,0,0,0.6));
-    touch-action: none !important;
-}
-
-.tacho-ticks {
-    position: absolute; top: 10px; left: 10px; width: 260px; height: 260px; border-radius: 50%;
-    background: repeating-conic-gradient(from 270deg, rgba(255,255,255,0.3) 0deg 1deg, transparent 1deg 5deg);
-    -webkit-mask-image: radial-gradient(transparent 68%, black 70%);
-    mask-image: radial-gradient(transparent 68%, black 70%);
-    z-index: 0; pointer-events: none;
-}
-
-.tacho-track {
-    position: absolute; top: 20px; left: 20px; width: 240px; height: 240px; border-radius: 50%;
-    border: 4px solid rgba(255,255,255,0.08); border-bottom: none; z-index: 1;
-}
-
-.tacho-arc {
-    position: absolute; top: 20px; left: 20px; width: 240px; height: 240px; border-radius: 50%; z-index: 2;
-    background: conic-gradient(from 270deg, transparent 0%, var(--tacho-color, #30d158) 0%, var(--tacho-color, #30d158) var(--tacho-percent, 0%), transparent var(--tacho-percent, 0%));
-    -webkit-mask-image: radial-gradient(transparent 66%, black 68%, black 72%, transparent 74%);
-    mask-image: radial-gradient(transparent 66%, black 68%, black 72%, transparent 74%);
-    filter: drop-shadow(0 0 8px var(--tacho-color, #30d158)); will-change: background;
-}
-
-.tacho-knob-container {
-    position: absolute; top: 20px; left: 20px; width: 240px; height: 240px; transform-origin: 50% 50%;
-    transform: rotate(-90deg); pointer-events: none; z-index: 10; transition: transform 0.08s cubic-bezier(0.1, 0.5, 0.1, 1);
-}
-.tacho-knob {
-    width: 34px; height: 34px; border-radius: 50%; position: absolute; top: -17px; left: 50%; transform: translateX(-50%);
-    background: radial-gradient(circle at 50% 50%, #000 30%, transparent 40%); border: 2px solid white;
-    box-shadow: 0 0 10px var(--tacho-color, #30d158), inset 0 0 10px var(--tacho-color, #30d158);
-}
-
-.tacho-value-display { position: absolute; bottom: 0; left: 0; width: 100%; text-align: center; z-index: 5; pointer-events: none; }
-.tacho-val { font-size: 3.5rem; font-weight: 800; color: white; line-height: 0.9; letter-spacing: -2px; text-shadow: 0 0 30px var(--tacho-color, #30d158); }
-.tacho-unit { display: block; color: #666; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; margin-top: 5px; letter-spacing: 3px; }
-
-/* Tacho Touch Overlay */
-.tacho-input-overlay {
-    position: absolute; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important;
-    opacity: 0; z-index: 999 !important; cursor: ew-resize; touch-action: none;
-}
-
-
-/* --- 9. FLYING START & SECTOR UI --- */
-
-/* Min/Max Controls */
-.fly-grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
-.stepper-control { display: flex; align-items: center; justify-content: space-between; background: #000000 !important; border: 1px solid #333 !important; border-radius: 12px; padding: 4px; height: 50px; }
-.step-btn { width: 40px !important; height: 100%; background: #151515 !important; border: 1px solid #333 !important; border-radius: 8px; color: #888 !important; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.step-btn:active { background: #333 !important; color: white !important; }
-.step-display { flex: 1; display: flex; justify-content: center; }
-.step-display input { background: transparent !important; border: none !important; color: white !important; font-size: 1.3rem !important; font-weight: 900 !important; text-align: center; width: 100% !important; outline: none !important; }
-
-/* Standing Start Placeholder */
-.sector-placeholder {
-    border: 1px dashed #444; background: rgba(255, 255, 255, 0.02); border-radius: 15px; padding: 20px;
-    text-align: center; margin-top: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px;
-}
-.sector-placeholder div { font-size: 1rem; color: white; font-weight: 800; margin-bottom: 5px; }
-.sector-placeholder small { color: #666; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-
-/* Sector Editor Overlay */
-#sector-editor-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 200; display: flex; flex-direction: column; }
-.sec-editor-hud { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 20px; pointer-events: none; z-index: 1000; }
-.sec-btn { pointer-events: auto; background: #111; color: white; border: 1px solid #333; padding: 12px 25px; border-radius: 30px; font-weight: 700; box-shadow: 0 5px 15px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 8px; cursor: pointer; }
-.sec-btn.save { background: #007aff; border: none; box-shadow: 0 0 15px rgba(0,122,255,0.4); }
-.sec-hint { position: absolute; top: 20px; width: 100%; text-align: center; color: white; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); padding: 10px; font-size: 0.8rem; pointer-events: none; z-index: 1000; }
-
-/* Sector Add Card */
-.sector-add-card {
-    width: 100%; min-height: 80px; background: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;
-    transition: all 0.2s; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;
-}
-.sector-list-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
-.sector-item {
-    background: linear-gradient(90deg, #111, #161616); border-left: 4px solid #444; border-radius: 8px;
-    padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-}
-.sec-num { font-size: 0.7rem; color: #666; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px; }
-.sec-title { font-size: 1rem; color: white; font-weight: 700; font-family: 'Segoe UI', sans-serif; }
-.sec-stats { display: flex; gap: 15px; text-align: right; }
-.sec-stat-box label { display: block; font-size: 0.55rem; color: #666; margin-bottom: 2px; }
-.sec-stat-box span { display: block; font-size: 0.9rem; color: #ccc; font-weight: 600; font-family: monospace; }
-
-
-/* --- 10. SETUP ACTIONS (SAVE/DISCARD) --- */
-
-.setup-actions { display: flex; gap: 15px; align-items: center; width: 100%; margin-top: 30px; margin-bottom: 20px; }
-.btn-discard-text {
-    flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #888;
-    padding: 16px; border-radius: 14px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
-}
-.btn-save-final {
-    flex: 2; background: linear-gradient(135deg, #ff3b30, #ff6b30); color: white; border: none; padding: 16px;
-    border-radius: 14px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; box-shadow: 0 5px 20px rgba(255, 59, 48, 0.4);
-    cursor: pointer; text-transform: uppercase; position: relative; overflow: hidden;
-}
-.btn-save-final::after {
-    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-    background: linear-gradient(transparent, rgba(255,255,255,0.2), transparent);
-    transform: rotate(25deg); animation: btn-shine 3s infinite;
-}
-
-
-/* --- 11. GLOBAL INPUT FIXES --- */
-input, textarea { user-select: text !important; -webkit-user-select: text !important; pointer-events: auto !important; touch-action: manipulation !important; z-index: 10000 !important; }
-
-/* ANIMATIONS */
-@keyframes slideInRight { to { opacity: 1; transform: translateX(0); } }
-@keyframes btn-shine { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }
-
-/* ================================================= */
-/* === MAP INTERACTION FIX (GHOST BUSTER) === */
-/* ================================================= */
-
-/* 1. Die Karte MUSS Klicks empfangen, wenn Creator Mode an ist */
-body.creator-active #perf-map-container {
-    z-index: 100 !important; /* Höher als der Hintergrund */
-    pointer-events: auto !important; /* MUSS AN SEIN */
-    touch-action: none !important; /* Wichtig für Leaflet auf Handy */
-}
-
-body.creator-active #perf-map {
-    pointer-events: auto !important;
-    z-index: 101 !important;
-}
-
-/* 2. Das UI Overlay (Creator UI) darf KEINE Klicks klauen */
-#perf-creator-ui {
-    pointer-events: none !important; /* Klicks gehen durch leere Flächen durch */
-    z-index: 2000 !important; /* Liegt optisch oben */
-}
-
-/* 3. Aber die Buttons im UI müssen klickbar bleiben */
-.creator-top-hud, 
-.creator-bottom-bar,
-.cb-action-btn, 
-.cb-pin {
-    pointer-events: auto !important; /* Buttons wieder aktivieren */
-}
-
-/* 4. Sicherstellen, dass das alte Dashboard wirklich weg ist */
-body.creator-active .perf-content-scroll {
-    display: none !important;
-    pointer-events: none !important;
-}
-
-/* FORCE INTERACTION */
-.track-card-v2, 
-.add-track-v2 {
-    pointer-events: auto !important; /* Muss klickbar sein */
-    z-index: 100 !important; /* Über allem anderen im Scroll-Bereich */
-    position: relative !important;
-    cursor: pointer;
-}
-
-/* Sicherstellen, dass der Container Klicks durchlässt */
-#perf-track-list {
-    pointer-events: auto !important;
-    z-index: 100 !important;
-}
-
-/* ================================================= */
-/* === DESIGN FIXES: RED THEME & CARDS & CONFIG === */
-/* ================================================= */
-
-/* --- 1. TRACK CARD (INHALT SICHTBAR MACHEN) --- */
-.track-card-v2 {
-    flex: 0 0 85vw; max-width: 350px; height: 180px;
-    position: relative !important;
-    overflow: hidden !important;
-    border-radius: 20px;
-    background: #000;
-    border: 1px solid rgba(255, 59, 48, 0.3); /* ROTER RAND DEZENT */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    margin-right: 0;
-}
-
-/* Map ganz hinten */
-.tc-bg-map {
-    position: absolute !important; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 0; opacity: 0.6; /* Etwas dunkler damit Text lesbar ist */
-}
-
-/* Content ganz vorne */
-.tc-content {
-    position: absolute; bottom: 0; left: 0; width: 100%;
-    z-index: 10 !important; /* WICHTIG: Über der Map */
-    padding: 15px 20px;
-    background: linear-gradient(to top, #000 20%, transparent 100%);
-}
-
-.tc-name { 
-    font-size: 1.6rem; font-weight: 900; color: white; 
-    text-transform: uppercase; margin-bottom: 2px; line-height: 1;
-    font-style: italic; text-shadow: 0 2px 10px black;
-}
-
-.tc-details { 
-    font-size: 0.85rem; color: #ccc; font-weight: 700; 
-    display: flex; gap: 15px; margin-top: 5px; 
-}
-.tc-details i { color: #ff3b30; margin-right: 5px; } /* ROT */
-
-
-/* --- 2. CONFIG SCREEN (PRM & INPUTS) --- */
-
-/* Labels hübscher machen (Min Speed etc.) */
-.fly-col label {
-    font-size: 0.6rem; color: #666; font-weight: 800; 
-    text-transform: uppercase; letter-spacing: 1.5px;
-    margin-bottom: 8px; display: block;
-}
-
-/* PRM Box Design (War verschwunden) */
+/* PRM Box Design */
 .prm-engine-box {
     margin: 20px 0;
     background: rgba(20, 20, 20, 0.8);
@@ -1242,145 +1069,84 @@ body.creator-active .perf-content-scroll {
     width: 8px; height: 8px; background: #ff3b30; border-radius: 50%; 
     box-shadow: 0 0 10px #ff3b30; animation: prm-pulse 1.5s infinite;
 }
+@keyframes prm-pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+/* Buttons Save/Discard */
+.setup-actions { display: flex; gap: 15px; align-items: center; width: 100%; margin-top: 30px; margin-bottom: 20px; }
+.btn-discard-text {
+    flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #888;
+    padding: 16px; border-radius: 14px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+}
+.btn-save-final {
+    flex: 2; background: linear-gradient(135deg, #ff3b30, #ff6b30); color: white; border: none; padding: 16px;
+    border-radius: 14px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; box-shadow: 0 5px 20px rgba(255, 59, 48, 0.4);
+    cursor: pointer; text-transform: uppercase; position: relative; overflow: hidden;
+}
+.btn-save-final::after {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: linear-gradient(transparent, rgba(255,255,255,0.2), transparent);
+    transform: rotate(25deg); animation: btn-shine 3s infinite;
+}
 
 
-/* --- 3. SECTOR EDITOR HUD (MODERN) --- */
+/* --- 9. FLYING START TACHO --- */
+.fly-grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
+.fly-col label { font-size: 0.6rem; color: #666; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: block; }
+.stepper-control { display: flex; align-items: center; justify-content: space-between; background: #000000 !important; border: 1px solid #333 !important; border-radius: 12px; padding: 4px; height: 50px; }
+.step-btn { width: 40px !important; height: 100%; background: #151515 !important; border: 1px solid #333 !important; border-radius: 8px; color: #888 !important; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.step-display { flex: 1; display: flex; justify-content: center; }
+.step-display input { background: transparent !important; border: none !important; color: white !important; font-size: 1.3rem !important; font-weight: 900 !important; text-align: center; width: 100% !important; outline: none !important; }
 
-/* Der Text oben "Tap to split" als schicke Kapsel */
+/* Tacho Styles */
+.tacho-container { width: 280px; height: 140px; position: relative; margin: 30px auto 20px auto; overflow: hidden; background: transparent; transform: translateZ(0); filter: drop-shadow(0 15px 20px rgba(0,0,0,0.6)); touch-action: none !important; }
+.tacho-ticks { position: absolute; top: 10px; left: 10px; width: 260px; height: 260px; border-radius: 50%; background: repeating-conic-gradient(from 270deg, rgba(255,255,255,0.3) 0deg 1deg, transparent 1deg 5deg); -webkit-mask-image: radial-gradient(transparent 68%, black 70%); mask-image: radial-gradient(transparent 68%, black 70%); z-index: 0; pointer-events: none; }
+.tacho-track { position: absolute; top: 20px; left: 20px; width: 240px; height: 240px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.08); border-bottom: none; z-index: 1; }
+.tacho-arc { position: absolute; top: 20px; left: 20px; width: 240px; height: 240px; border-radius: 50%; z-index: 2; background: conic-gradient(from 270deg, transparent 0%, var(--tacho-color, #ff3b30) 0%, var(--tacho-color, #ff3b30) var(--tacho-percent, 0%), transparent var(--tacho-percent, 0%)); -webkit-mask-image: radial-gradient(transparent 66%, black 68%, black 72%, transparent 74%); mask-image: radial-gradient(transparent 66%, black 68%, black 72%, transparent 74%); filter: drop-shadow(0 0 8px var(--tacho-color, #ff3b30)); will-change: background; }
+.tacho-knob-container { position: absolute; top: 20px; left: 20px; width: 240px; height: 240px; transform-origin: 50% 50%; transform: rotate(-90deg); pointer-events: none; z-index: 10; transition: transform 0.08s cubic-bezier(0.1, 0.5, 0.1, 1); }
+.tacho-knob { width: 34px; height: 34px; border-radius: 50%; position: absolute; top: -17px; left: 50%; transform: translateX(-50%); background: radial-gradient(circle at 50% 50%, #000 30%, transparent 40%); border: 2px solid white; box-shadow: 0 0 10px var(--tacho-color, #ff3b30), inset 0 0 10px var(--tacho-color, #ff3b30); }
+.tacho-value-display { position: absolute; bottom: 0; left: 0; width: 100%; text-align: center; z-index: 5; pointer-events: none; }
+.tacho-val { font-size: 3.5rem; font-weight: 800; color: white; line-height: 0.9; letter-spacing: -2px; text-shadow: 0 0 30px var(--tacho-color, #ff3b30); }
+.tacho-unit { display: block; color: #666; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; margin-top: 5px; letter-spacing: 3px; }
+.tacho-input-overlay { position: absolute; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; opacity: 0; z-index: 999 !important; cursor: ew-resize; touch-action: none; }
+
+
+/* --- 10. SECTOR EDITOR OVERLAY --- */
 .sec-hint-hub {
     position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
-    background: rgba(15, 15, 15, 0.85);
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 10px 25px;
-    border-radius: 30px;
-    display: flex; align-items: center; gap: 10px;
-    z-index: 1000;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-    pointer-events: none; /* Klicks gehen durch */
+    background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1); padding: 10px 25px; border-radius: 30px;
+    display: flex; align-items: center; gap: 10px; z-index: 1000; box-shadow: 0 10px 20px rgba(0,0,0,0.5); pointer-events: none;
 }
-.sec-hint-text {
-    color: white; font-weight: 700; font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;
-}
+.sec-hint-text { color: white; font-weight: 700; font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; }
 .sec-hint-icon { color: #ff3b30; font-size: 0.9rem; }
 
 /* Start/Ziel Marker im Editor */
-.sec-marker-start {
-    width: 14px; height: 14px; background: #30d158; border-radius: 50%; 
-    border: 2px solid white; box-shadow: 0 0 10px #30d158;
+.sec-marker-start { width: 14px; height: 14px; background: #30d158; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #30d158; }
+.sec-marker-finish { width: 14px; height: 14px; background: #ff3b30; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #ff3b30; }
+
+/* Sector Add Card (Config Screen) */
+.sector-add-card {
+    width: 100%; min-height: 80px; background: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;
+    transition: all 0.2s; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px;
 }
-.sec-marker-finish {
-    width: 14px; height: 14px; background: #ff3b30; border-radius: 50%; 
-    border: 2px solid white; box-shadow: 0 0 10px #ff3b30;
+.sector-list-container { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.sector-item {
+    background: linear-gradient(90deg, #111, #161616); border-left: 4px solid #444; border-radius: 8px;
+    padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
+.sec-num { font-size: 0.7rem; color: #666; font-weight: 800; letter-spacing: 1px; margin-bottom: 2px; }
+.sec-title { font-size: 1rem; color: white; font-weight: 700; font-family: 'Segoe UI', sans-serif; }
+.sec-stats { display: flex; gap: 15px; text-align: right; }
+.sec-stat-box label { display: block; font-size: 0.55rem; color: #666; margin-bottom: 2px; }
+.sec-stat-box span { display: block; font-size: 0.9rem; color: #ccc; font-weight: 600; font-family: monospace; }
 
-/* Allgemein: LILA zu ROT ändern */
-.pd-main-score label { color: #ff3b30 !important; }
-.pd-main-score .val { text-shadow: 0 0 30px rgba(255, 59, 48, 0.4) !important; }
-.add-track-v2 { border-color: rgba(255,255,255,0.15) !important; }
 
-/* ================================================= */
-/* === V5 VISUAL OVERHAUL: ALIVE & GLOWING === */
-/* ================================================= */
+/* --- 11. NAV BAR HIGHLIGHTS --- */
+#nav-perf { transition: all 0.3s ease; }
+#nav-perf.active-perf, .nav-item.active-perf { color: #ff3b30 !important; text-shadow: 0 0 15px rgba(255, 59, 48, 0.8) !important; }
+#nav-perf.active-perf i, .nav-item.active-perf i { color: #ff3b30 !important; transform: scale(1.1); }
 
-/* 1. DYNAMIC BACKGROUND (Pulsierender Roter Nebel) */
-.perf-content-scroll {
-    /* Basis Hintergrund */
-    background: #050505; 
-    z-index: 10;
-}
-
-/* Ein beweglicher Glow-Effekt im Hintergrund */
-.perf-content-scroll::before {
-    content: '';
-    position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-    background: radial-gradient(circle, rgba(255, 59, 48, 0.15) 0%, transparent 60%);
-    animation: bg-pulse-move 10s ease-in-out infinite alternate;
-    z-index: -1;
-    pointer-events: none;
-}
-
-@keyframes bg-pulse-move {
-    0% { transform: translate(0, 0) scale(1); opacity: 0.5; }
-    100% { transform: translate(-20px, 20px) scale(1.1); opacity: 0.8; }
-}
-
-/* 2. HEADER FADE FIX */
-.header-fade-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 80px; /* Höher */
-    background: linear-gradient(to bottom, #050505 20%, transparent 100%);
-    z-index: 20; pointer-events: none;
-}
-
-/* 3. TRACK CARDS (Schlanker & Höher & Mehr Glas) */
-.track-card-v2 {
-    flex: 0 0 65vw; /* Viel schlanker (war 85vw) */
-    height: 240px;  /* Viel höher (war 160/180) */
-    
-    position: relative !important; overflow: hidden !important;
-    border-radius: 24px;
-    
-    /* Glas-Effekt verstärken */
-    background: rgba(20, 20, 20, 0.6);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15); /* Hellerer Rand für Glas-Look */
-    
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6); /* Tieferer Schatten */
-    margin-right: 0;
-}
-
-/* Die Karte darin */
-.tc-bg-map { opacity: 0.8; mix-blend-mode: screen; } /* Map leuchtet mehr durch */
-
-/* Content Bereich in der Card */
-.tc-content {
-    background: linear-gradient(to top, #000 10%, rgba(0,0,0,0.8) 50%, transparent 100%);
-    padding: 20px;
-}
-.tc-name { font-size: 1.8rem; letter-spacing: 1px; margin-bottom: 5px; }
-
-/* 4. TRACK LINE "ALIVE" (Neon Glow) */
-/* Diese Klasse fügen wir im JS der Polyline hinzu */
-.track-poly-line {
-    stroke: #ff3b30;
-    stroke-width: 5;
-    stroke-linecap: round;
-    /* Der Glow Effekt */
-    filter: drop-shadow(0 0 8px #ff3b30) drop-shadow(0 0 15px rgba(255, 59, 48, 0.6));
-    animation: line-pulse 3s infinite alternate;
-}
-
-@keyframes line-pulse {
-    0% { filter: drop-shadow(0 0 5px #ff3b30); opacity: 0.9; }
-    100% { filter: drop-shadow(0 0 12px #ff3b30); opacity: 1; }
-}
-
-/* 5. WEATHER BADGE (Hübsche Kapsel) */
-.tc-condition-badge {
-    position: absolute; top: 15px; right: 15px; z-index: 10;
-    
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 20px;
-    padding: 6px 12px;
-    
-    display: flex; align-items: center; gap: 8px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-.cond-text { font-size: 0.65rem; letter-spacing: 0.5px; text-transform: uppercase; }
-
-/* 6. GLASS HUB OBEN (Mehr Glas) */
-.glass-stats-hub {
-    background: rgba(30, 30, 30, 0.5); /* Heller für mehr Kontrast */
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 0 20px rgba(255,255,255,0.02);
-}
-
-/* 7. ADD CARD ANPASSEN */
-.add-track-v2 {
-    flex: 0 0 40vw; /* Auch schlanker */
-    height: 240px;  /* Gleiche Höhe */
-    border: 2px dashed rgba(255, 59, 48, 0.3);
-    background: rgba(255, 59, 48, 0.02);
-}
+/* Animationen */
+@keyframes slideInRight { to { opacity: 1; transform: translateX(0); } }
+@keyframes btn-shine { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }
