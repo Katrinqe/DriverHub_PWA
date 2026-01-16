@@ -1089,118 +1089,138 @@ body.creator-active #perf-map-container { height: 100vh !important; }
 .fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 /* ========================================= */
 /* ================================================= */
-/* === TACHO V5: PREMIUM DEPTH & NEON === */
+/* ================================================= */
+/* === TACHO V6: AERO TECH PRECISION === */
 /* ================================================= */
 
 .tacho-container {
-    width: 260px;
-    height: 130px;
+    width: 280px; /* Etwas breiter für mehr Präsenz */
+    height: 140px;
     position: relative;
     margin: 30px auto 20px auto;
     overflow: hidden; 
     cursor: crosshair;
     background: transparent;
     touch-action: none !important;
-    /* GPU Rendering erzwingen */
-    transform: translateZ(0); 
-    /* Leichter Schein nach unten */
-    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.5));
+    transform: translateZ(0); /* GPU an */
+    
+    /* Ein feiner Schein nach unten, damit er "schwebt" */
+    filter: drop-shadow(0 15px 20px rgba(0,0,0,0.6));
 }
 
-/* Der Hintergrund-Ring (Eingelassen/Recessed Look) */
+/* 1. Die Skala (Striche im Hintergrund) */
+.tacho-ticks {
+    position: absolute; top: 10px; left: 10px;
+    width: 260px; height: 260px; /* Passend eingemittet */
+    border-radius: 50%;
+    
+    /* Erzeugt die Striche per Gradient */
+    background: repeating-conic-gradient(
+        from 270deg,
+        rgba(255,255,255,0.3) 0deg 1deg,
+        transparent 1deg 5deg
+    );
+    
+    /* Schneidet die Mitte raus, damit nur kurze Striche bleiben */
+    -webkit-mask-image: radial-gradient(transparent 68%, black 70%);
+    mask-image: radial-gradient(transparent 68%, black 70%);
+    
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* 2. Die Hintergrund-Spur (Dünne Rail) */
 .tacho-track {
     position: absolute;
-    top: 0; left: 0;
-    width: 260px; height: 260px;
+    top: 20px; left: 20px;
+    width: 240px; height: 240px;
     border-radius: 50%;
-    background: #141414; /* Sehr dunkel */
     
-    /* Innerer Schatten für Tiefe */
-    box-shadow: inset 0 0 15px rgba(0,0,0,1);
-    border: 1px solid rgba(255,255,255,0.05); /* Feine Kante */
-
-    /* Maske für den Ring */
-    -webkit-mask-image: radial-gradient(transparent 58%, black 60%);
-    mask-image: radial-gradient(transparent 58%, black 60%);
+    /* Sehr dünne Linie */
+    border: 4px solid rgba(255,255,255,0.08);
+    border-bottom: none; /* Unten offen */
     
     z-index: 1;
 }
 
-/* Der aktive Farb-Bogen (Neon) */
+/* 3. Der aktive Neon-Bogen (Dünn & Leuchtend) */
 .tacho-arc {
     position: absolute;
-    top: 0; left: 0;
-    width: 260px; height: 260px;
+    top: 20px; left: 20px;
+    width: 240px; height: 240px;
     border-radius: 50%;
     z-index: 2;
     
-    /* Verlauf wird per JS gesteuert */
+    /* Verlauf */
     background: conic-gradient(
         from 270deg, 
+        transparent 0%,
         var(--tacho-color, #30d158) 0%, 
         var(--tacho-color, #30d158) var(--tacho-percent, 0%), 
-        transparent var(--tacho-percent, 0%), 
-        transparent 100%
+        transparent var(--tacho-percent, 0%)
     );
 
-    /* Gleiche Maske wie Track */
-    -webkit-mask-image: radial-gradient(transparent 58%, black 60%);
-    mask-image: radial-gradient(transparent 58%, black 60%);
-
-    /* Der Glow-Effekt */
+    /* Maske für dünne Linie */
+    -webkit-mask-image: radial-gradient(transparent 66%, black 68%, black 72%, transparent 74%);
+    mask-image: radial-gradient(transparent 66%, black 68%, black 72%, transparent 74%);
+    
+    /* Der Glow - sehr intensiv aber fein */
     filter: drop-shadow(0 0 8px var(--tacho-color, #30d158));
-    opacity: 0.9;
     will-change: background;
 }
 
-/* Der Anfasser (Knob) - Jetzt mit Metall-Look */
+/* 4. Der Halo-Knob (Das Highlight) */
 .tacho-knob-container {
     position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 200%; 
+    top: 20px; left: 20px;
+    width: 240px; height: 240px; /* Muss exakt über Track liegen */
     transform-origin: 50% 50%;
     transform: rotate(-90deg);
     pointer-events: none;
-    z-index: 4;
-    transition: transform 0.08s linear; /* Ultra Smooth */
+    z-index: 10;
+    transition: transform 0.08s cubic-bezier(0.1, 0.5, 0.1, 1);
 }
 
 .tacho-knob {
-    width: 32px; height: 32px;
-    background: radial-gradient(circle at 30% 30%, #fff, #ccc); /* Metall-Glanz */
+    width: 34px; height: 34px;
     border-radius: 50%;
     position: absolute;
-    top: 8px; /* Mittig auf dem Ring */
+    top: -17px; /* Exakt mittig auf der Linie zentrieren */
     left: 50%;
     transform: translateX(-50%);
-    /* Starker Schatten und farbiger Glow */
+    
+    /* Design: Ein Glas-Ring mit schwarzem Kern */
+    background: radial-gradient(circle at 50% 50%, #000 30%, transparent 40%);
+    border: 2px solid white;
+    
+    /* Starker Glow in Farbe */
     box-shadow: 
-        0 2px 5px rgba(0,0,0,0.8),
-        0 0 15px var(--tacho-color, #30d158); 
-    border: 2px solid #000;
+        0 0 10px var(--tacho-color, #30d158),
+        inset 0 0 10px var(--tacho-color, #30d158);
 }
 
 /* Text Display */
 .tacho-value-display {
     position: absolute;
-    bottom: 5px; left: 0; width: 100%;
+    bottom: 0; left: 0; width: 100%;
     text-align: center;
     z-index: 5;
     pointer-events: none;
 }
 .tacho-val {
-    font-size: 3.8rem;
-    font-weight: 900;
+    font-size: 3.5rem;
+    font-weight: 800;
     color: white;
     line-height: 0.9;
-    font-family: 'Segoe UI', sans-serif; /* Clean Font */
-    text-shadow: 0 0 20px rgba(0,0,0,0.8);
+    font-family: 'Segoe UI', sans-serif;
     letter-spacing: -2px;
+    /* Leichter Glow passend zur Farbe */
+    text-shadow: 0 0 30px var(--tacho-color, #30d158);
 }
 .tacho-unit {
     display: block;
-    color: #666; font-weight: 700; font-size: 0.75rem; 
-    text-transform: uppercase; margin-top: 5px; letter-spacing: 2px;
+    color: #666; font-weight: 700; font-size: 0.7rem; 
+    text-transform: uppercase; margin-top: 5px; letter-spacing: 3px;
 }
 
 /* ================================================= */
