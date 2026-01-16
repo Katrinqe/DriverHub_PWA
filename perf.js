@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - FINAL MASTER V5 (RED & FIXED)   === */
+/* === PERF.JS - FINAL MASTER V5.1 (RED & FIXED) === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -22,7 +22,8 @@ window.PerfLogic = {
     // --- SECTOR EDITOR VARS ---
     sectorSplits: [], 
     sectorMap: null,
-    sectorColors: ['#ff3b30', '#ffffff', '#ff9f0a'], // ROT THEMA
+    // Erweiterte Palette für bessere Unterscheidung
+    sectorColors: ['#ff3b30', '#00e5ff', '#30d158', '#bf5af2', '#ff9f0a', '#ffffff'], 
     currentSectorsData: [],
     cachedElevations: [],
 
@@ -38,7 +39,7 @@ window.PerfLogic = {
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - V5 Red Master");
+        console.log("PerfLogic Init - V5.1 Red Master");
         this.renderTrackList();
     },
 
@@ -119,7 +120,7 @@ window.PerfLogic = {
         if(this.isCreatorMode) {
             this.showTrackOnMap(track);
         } else {
-            // TODO: Detail Screen Logic
+            // Placeholder Detail Logic
             console.log("Opening Details for: " + track.name);
         }
     },
@@ -216,7 +217,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 3. CREATOR MODE LOGIC (GPS FIX)
+    // 3. CREATOR MODE LOGIC (GPS & MAP FIX)
     // =================================================
 
     enterCreatorMode: function() {
@@ -228,6 +229,7 @@ window.PerfLogic = {
 
         document.body.classList.add('creator-active');
         
+        // UI Umschalten
         const navBar = document.querySelector('.perf-sub-nav');
         if(navBar) navBar.style.display = 'none';
         
@@ -236,16 +238,17 @@ window.PerfLogic = {
 
         document.getElementById('perf-creator-ui').classList.remove('hidden');
 
-        // MAP FIX: Invalidating Size und GPS Suche
+        // MAP LOGIC: Sofort GPS starten
         setTimeout(() => { 
             if(this.map) {
                 this.map.invalidateSize(); 
                 this.map.dragging.enable();
                 this.map.touchZoom.enable();
                 
-                // SOFORT GPS SUCHEN
+                // SOFORT GPS SUCHEN & HINSPRINGEN
                 this.map.locate({setView: true, maxZoom: 17, enableHighAccuracy: true});
                 
+                // Fallback falls Locate dauert
                 if(this.userMarker) {
                     this.map.setView(this.userMarker.getLatLng(), 17);
                 }
@@ -870,10 +873,7 @@ window.PerfLogic = {
                         <span><i class="fa-solid fa-stopwatch"></i> ${timeDisplay}</span>
                     </div>
                 </div>
-                <div class="tc-condition-badge" id="cond-badge-${t.id}">
-                    <div class="cond-dot" style="background:#888;"></div>
-                    <div class="cond-text">LOADING</div>
-                </div>
+                <div class="tc-condition-badge" id="cond-badge-${t.id}" style="display:none"></div>
             `;
             
             div.onclick = () => this.selectTrack(t); 
@@ -916,7 +916,8 @@ window.PerfLogic = {
                 color: '#ff3b30', // RED
                 weight: 5,
                 opacity: 1,
-                lineCap: 'round'
+                lineCap: 'round',
+                className: 'track-poly-line' // CSS Glow
             }).addTo(miniMap);
 
             miniMap.fitBounds(polyline.getBounds(), {
@@ -956,6 +957,7 @@ window.PerfLogic = {
 
                 const badge = document.getElementById(`cond-badge-${track.id}`);
                 if(badge) {
+                    badge.style.display = 'flex';
                     badge.innerHTML = `
                         <div class="cond-dot" style="background:${dotColor}; box-shadow: 0 0 5px ${dotColor}"></div>
                         <div class="cond-text">${label} (${temp}°C)</div>
