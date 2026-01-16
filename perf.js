@@ -790,19 +790,30 @@ window.PerfLogic = {
         });
 
         // 3. ADD TRACK BUTTON (Repariert & Umbenannt)
-        const addBtn = document.createElement('div');
+  const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
+        
+        // Style Animation
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
         
-        // HIER DER NEUE TEXT:
+        // HTML Inhalt
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
         
-        // HIER DER FIX FÜR DEN KLICK:
-        addBtn.onclick = (e) => {
-            e.preventDefault(); // Verhindert Bubbling Fehler
+        // FIX: Direktes Zuweisen und Stop Propagation
+        addBtn.onclick = function(e) {
+            if(e) {
+                e.preventDefault(); 
+                e.stopPropagation();
+            }
+            console.log("ADD TRACK GEKLICKT"); // Check Konsole (F12) falls es nicht geht
+            PerfLogic.enterCreatorMode();
+        };
+        
+        // Touch Event für mobile Geräte (Doppelt hält besser)
+        addBtn.ontouchend = function(e) {
+            e.preventDefault();
             e.stopPropagation();
-            console.log("Add Track Clicked"); // Debugging
-            this.enterCreatorMode();
+            PerfLogic.enterCreatorMode();
         };
         
         list.appendChild(addBtn);
