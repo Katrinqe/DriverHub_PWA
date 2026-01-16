@@ -800,40 +800,36 @@ openSetupScreen: function() {
     // 8. RENDER FUNCTIONS (V4 CAROUSEL & DASHBOARD)
     // =================================================
 
- renderTrackList: function() {
-        // 1. STATS BERECHNEN
+// --- RENDER LOGIC V4 ---
+
+    renderTrackList: function() {
         const trackCount = this.tracks.length;
         let bestTime = "---";
-        let scoreInt = 0; // Standard auf 0
+        let scoreInt = 0;
 
-        // Wir berechnen KEINEN Fake-Score mehr. Nur echte Daten zählen.
         if (trackCount > 0) {
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
             if(validTracks.length > 0) {
                 bestTime = validTracks[0].bestTime; 
-                // scoreInt = ... (Hier kommt später die echte PRM Formel hin)
+                scoreInt = trackCount * 150; 
             }
         }
 
         const contentArea = document.querySelector('.perf-content-scroll');
         
         let html = `
-            <div class="header-fade-overlay"></div>
-
             <div class="perf-dashboard-header">
-                <div class="glass-stats-hub">
-                    <div class="pd-side-stat">
-                        <label>BEST TIME</label>
-                        <div class="val">${bestTime}</div>
-                    </div>
-                    <div class="pd-main-score">
-                        <label>PRM SCORE</label>
-                        <div class="val" id="global-score-display">${scoreInt > 0 ? scoreInt : '---'}</div>
-                    </div>
-                    <div class="pd-side-stat">
-                        <label>TRACKS</label>
-                        <div class="val">${trackCount}</div>
-                    </div>
+                <div class="pd-side-stat">
+                    <label>BEST TIME</label>
+                    <div class="val">${bestTime}</div>
+                </div>
+                <div class="pd-main-score">
+                    <label>PRM SCORE</label>
+                    <div class="val" id="global-score-display">${trackCount > 0 ? 0 : '---'}</div>
+                </div>
+                <div class="pd-side-stat">
+                    <label>TRACKS</label>
+                    <div class="val">${trackCount}</div>
                 </div>
             </div>
             
@@ -849,13 +845,17 @@ openSetupScreen: function() {
         
         contentArea.innerHTML = html;
         
-        // ... (Rest der Funktion mit Render Loop bleibt gleich) ...
-        
-        // HIER REST EINFÜGEN (Kopier ich dir sicherheitshalber dazu):
+        if(trackCount > 0 && scoreInt > 0) {
+            this.animateValue("global-score-display", 0, scoreInt, 1200);
+        }
+
         const list = document.getElementById('perf-track-list');
+        
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
+            div.style.animationDelay = (index * 0.1) + "s";
+            
             div.innerHTML = `
                 <div class="tc-bg-map" id="mini-map-${t.id}"></div>
                 <div class="tc-overlay"></div>
@@ -871,46 +871,32 @@ openSetupScreen: function() {
                     <div class="cond-text">LOADING</div>
                 </div>
             `;
+            
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
+
+            // Wichtig: Mini-Map verzögert laden
             setTimeout(() => this.renderMiniMap(t), 300);
             this.checkTrackConditions(t); 
         });
 
+        // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
-        addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
-        addBtn.onclick = (e) => { e.preventDefault(); e.stopPropagation(); this.enterCreatorMode(); };
-        list.appendChild(addBtn);
-    },
-
-        // 3. ADD TRACK BUTTON (Repariert & Umbenannt)
-  const addBtn = document.createElement('div');
-        addBtn.className = 'add-track-v2';
-        
-        // Style Animation
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
-        
-        // HTML Inhalt
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
         
-        // FIX: Direktes Zuweisen und Stop Propagation
-        addBtn.onclick = function(e) {
-            if(e) {
-                e.preventDefault(); 
-                e.stopPropagation();
-            }
-            console.log("ADD TRACK GEKLICKT"); // Check Konsole (F12) falls es nicht geht
-            PerfLogic.enterCreatorMode();
-        };
-        
-        // Touch Event für mobile Geräte (Doppelt hält besser)
-        addBtn.ontouchend = function(e) {
-            e.preventDefault();
+        addBtn.onclick = (e) => {
+            e.preventDefault(); 
             e.stopPropagation();
-            PerfLogic.enterCreatorMode();
+            this.enterCreatorMode();
         };
-        
+        addBtn.ontouchend = (e) => {
+            e.preventDefault(); 
+            e.stopPropagation();
+            this.enterCreatorMode();
+        };
+
         list.appendChild(addBtn);
     },
 
@@ -927,8 +913,6 @@ openSetupScreen: function() {
             dragging: false, touchZoom: false, doubleClickZoom: false,
             scrollWheelZoom: false, boxZoom: false, keyboard: false
         });
-
-        // KEIN TileLayer -> Schwarzer Hintergrund durch CSS
 
         if(track.routePath && track.routePath.length > 0) {
             // Neon Linie
@@ -1006,7 +990,6 @@ openSetupScreen: function() {
         window.requestAnimationFrame(step);
     }
 
-};
+}; // HIER ENDET DAS OBJEKT
 
-// Init starten
 PerfLogic.init();
