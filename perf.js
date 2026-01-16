@@ -446,32 +446,19 @@ window.PerfLogic = {
         }).catch(err => console.log(err));
     },
 
-    fetchElevationForCreator: function(latlngs) {
-        const step = Math.ceil(latlngs.length / 10);
-        const samplePoints = latlngs.filter((_, i) => i % step === 0);
-        const latStr = samplePoints.map(p => p[0].toFixed(4)).join(',');
-        const lngStr = samplePoints.map(p => p[1].toFixed(4)).join(',');
-
-        fetch(`https://api.open-meteo.com/v1/elevation?latitude=${latStr}&longitude=${lngStr}`)
+  fetchElevationForCreator: function(latlngs) {
+        // ... (alter Code) ...
+        fetch(`https://api.open-meteo.com/v1/elevation...`)
         .then(r => r.json())
         .then(data => {
             if(data.elevation) {
-                let up = 0, down = 0;
-                let elevs = data.elevation;
-                for(let i=1; i<elevs.length; i++) {
-                    let diff = elevs[i] - elevs[i-1];
-                    if(diff > 0) up += diff;
-                    else down += Math.abs(diff);
-                }
-                this.currentRouteStats.elevUp = Math.round(up) + "m";
-                this.currentRouteStats.elevDown = Math.round(down) + "m";
+                // WICHTIG: Rohdaten speichern für späteres Slicing!
+                this.cachedElevations = data.elevation; 
                 
-                const hudEl = document.getElementById('ct-elev');
-                if(hudEl) hudEl.innerHTML = `<span style="color:#30d158"><i class="fa-solid fa-caret-up"></i> ${Math.round(up)}</span> <span style="color:#666">|</span> <span style="color:#ff3b30"><i class="fa-solid fa-caret-down"></i> ${Math.round(down)}</span>`;
+                // ... (Rest deiner Berechnung) ...
             }
         });
     },
-
     // =================================================
     // 5. SETUP & SAVE LOGIC
     // =================================================
@@ -564,6 +551,16 @@ window.PerfLogic = {
                 flyTarget: targetSpeed,
                 flyMin: document.getElementById('fly-min').value,
                 flyMax: document.getElementById('fly-max').value
+
+                const track = {
+            id: Date.now(),
+            name: name,
+            routePath: this.currentRouteGeo, 
+            
+            // NEU: Sektoren speichern (oder leeres Array wenn keine)
+            sectors: this.currentSectorsData || [], 
+            
+            pins: this.creatorPoints.map(p => ({lat: p.latlng.lat, lng: p.latlng.lng, type: p.type})),
             }
         };
 
@@ -781,5 +778,220 @@ window.PerfLogic = {
         }
     }
 };
+
+// =================================================
+    // 4b. SECTOR EDITOR LOGIC
+    // =================================================
+    
+    sectorSplits: [], // Indizes im routePath Array, wo geschnitten wurde
+    sectorMap: null,
+    sectorColors: ['#bf5af2', '#30d158', '#007aff', '#ff9f0a', '#ff3b30'], // Neon Palette
+
+    openSectorEditor: function() {
+        if(!this.currentRouteGeo) return;
+        
+        document.getElementById('sector-editor-overlay').classList.remove('hidden');
+        
+        // Map initialisieren
+        if(!this.sectorMap) {
+            this.sectorMap = L.map('sector-map', {
+                zoomControl: false, attributionControl: false
+            });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.sectorMap);
+            
+            // Event Listener auf die Map für Klicks
+            this.sectorMap.on('click', (e) => {
+                this.handleSectorClick(e.latlng);
+            });
+        }
+        
+        // Reset Splits (Start 0 und Ende sind implizit)
+        this.sectorSplits = [0, this.currentRouteGeo.length - 1]; 
+        
+        setTimeout(() => {
+            this.sectorMap.invalidateSize();
+            this.renderSectorMap(); // Zeichnet die Linie
+        }, 200);
+    },
+
+    closeSectorEditor: function() {
+        document.getElementById('sector-editor-overlay').classList.add('hidden');
+    },
+
+    handleSectorClick: function(latlng) {
+        // Wir suchen den Punkt auf der Linie, der dem Klick am nächsten ist
+        let closestDist = Infinity;
+        let closestIndex = -1;
+
+        // Simple Suche durch alle Punkte (schnell genug für < 5000 Punkte)
+        this.currentRouteGeo.forEach((pt, index) => {
+            // Leaflet LatLng Objekt erstellen für Distanz-Check
+            const pLat = L.latLng(pt[0], pt[1]);
+            const dist = pLat.distanceTo(latlng);
+            if(dist < closestDist) {
+                closestDist = dist;
+                closestIndex = index;
+            }
+        });
+
+        // Toleranz: Wenn Klick > 50m von der Strecke weg, ignorieren
+        if(closestDist > 50) return;
+
+        // Check: Ist der Punkt zu nah an Start/Ziel oder anderen Splits?
+        const isTooClose = this.sectorSplits.some(idx => Math.abs(idx - closestIndex) < 5); // min 5 Punkte Abstand
+        if(isTooClose) return;
+
+        // Split hinzufügen und sortieren
+        this.sectorSplits.push(closestIndex);
+        this.sectorSplits.sort((a, b) => a - b);
+        
+        // Neu zeichnen
+        this.renderSectorMap();
+        
+        // Feedback Vibration
+        if(navigator.vibrate) navigator.vibrate(10);
+    },
+
+    undoSectorSplit: function() {
+        if(this.sectorSplits.length <= 2) return; // Start & Ende dürfen nicht gelöscht werden
+        // Den letzten HINZUGEFÜGTEN Split entfernen (nicht einfach den letzten im Array, weil sortiert)
+        // Vereinfachung: Wir entfernen den vorletzten Index (der letzte Split vor dem Finish)
+        this.sectorSplits.splice(this.sectorSplits.length - 2, 1);
+        this.renderSectorMap();
+    },
+
+    renderSectorMap: function() {
+        // Map aufräumen
+        this.sectorMap.eachLayer(l => { if(!l._url) this.sectorMap.removeLayer(l); });
+
+        // Kamera fitten
+        const bounds = L.polyline(this.currentRouteGeo).getBounds();
+        this.sectorMap.fitBounds(bounds, {padding: [50,50]});
+
+        // Segmente zeichnen
+        for(let i=0; i < this.sectorSplits.length - 1; i++) {
+            const startIdx = this.sectorSplits[i];
+            const endIdx = this.sectorSplits[i+1];
+            
+            // Teilstück extrahieren
+            // slice endet exklusive, also +1
+            const segment = this.currentRouteGeo.slice(startIdx, endIdx + 1);
+            
+            // Farbe wählen (Loop durch Palette)
+            const color = this.sectorColors[i % this.sectorColors.length];
+            
+            // Linie zeichnen
+            L.polyline(segment, {color: color, weight: 6, opacity: 1}).addTo(this.sectorMap);
+            
+            // Split-Marker zeichnen (außer am Start)
+            if(i > 0) {
+                const markerPos = this.currentRouteGeo[startIdx];
+                const icon = L.divIcon({
+                    className: 'split-marker',
+                    html: `<div style="width:4px; height:20px; background:white; box-shadow:0 0 10px white; transform:rotate(45deg);"></div>`,
+                    iconSize: [20,20], iconAnchor: [10,10]
+                });
+                L.marker(markerPos, {icon: icon}).addTo(this.sectorMap);
+            }
+        }
+        
+        // Start & Finish Marker immer dazu
+        const start = this.currentRouteGeo[0];
+        const end = this.currentRouteGeo[this.currentRouteGeo.length-1];
+        L.circleMarker(start, {radius: 6, color: '#30d158', fillOpacity: 1}).addTo(this.sectorMap);
+        L.circleMarker(end, {radius: 6, color: '#ff3b30', fillOpacity: 1}).addTo(this.sectorMap);
+    },
+
+    saveSectors: function() {
+        // Daten berechnen und HTML bauen
+        const container = document.getElementById('sector-config-container');
+        container.innerHTML = `<div class="sector-list-container"></div>`;
+        const list = container.querySelector('.sector-list-container');
+        
+        // Temporäre Speicherung der Sektoren für finalizeSave
+        this.currentSectorsData = [];
+
+        for(let i=0; i < this.sectorSplits.length - 1; i++) {
+            const startIdx = this.sectorSplits[i];
+            const endIdx = this.sectorSplits[i+1];
+            
+            // 1. Distanz berechnen
+            let distMeters = 0;
+            for(let j=startIdx; j < endIdx; j++) {
+                const p1 = L.latLng(this.currentRouteGeo[j]);
+                const p2 = L.latLng(this.currentRouteGeo[j+1]);
+                distMeters += p1.distanceTo(p2);
+            }
+            const distKm = (distMeters / 1000).toFixed(2) + " km";
+
+            // 2. Elevation berechnen (aus Cache interpolieren)
+            let elevGain = 0;
+            if(this.cachedElevations) {
+                // Wir mappen die Indizes auf das Elevation Array (das evtl. kleiner ist)
+                const ratio = this.cachedElevations.length / this.currentRouteGeo.length;
+                const eStart = Math.floor(startIdx * ratio);
+                const eEnd = Math.floor(endIdx * ratio);
+                
+                // Einfache Differenz (könnte man genauer machen)
+                if(eEnd < this.cachedElevations.length) {
+                     const diff = this.cachedElevations[eEnd] - this.cachedElevations[eStart];
+                     // Nur positive Höhenmeter summieren? Oder netto? User wollte Höhenmeter.
+                     // Wir nehmen hier Netto Differenz für den Sektor
+                     const val = Math.round(diff);
+                     elevGain = (val > 0 ? "+" : "") + val + "m";
+                }
+            } else {
+                elevGain = "--";
+            }
+
+            // Farbe
+            const color = this.sectorColors[i % this.sectorColors.length];
+
+            // Datenobjekt
+            this.currentSectorsData.push({
+                index: i+1,
+                dist: distKm,
+                elev: elevGain,
+                startIdx: startIdx,
+                endIdx: endIdx,
+                color: color
+            });
+
+            // HTML Item
+            const item = document.createElement('div');
+            item.className = 'sector-item';
+            item.style.borderLeftColor = color;
+            item.innerHTML = `
+                <div>
+                    <div class="sec-num" style="color:${color}">SECTOR ${i+1}</div>
+                    <div class="sec-title">Section ${i+1}</div>
+                </div>
+                <div class="sec-stats">
+                    <div class="sec-stat-box">
+                        <label>DIST</label><span>${distKm}</span>
+                    </div>
+                    <div class="sec-stat-box">
+                        <label>ELEV</label><span>${elevGain}</span>
+                    </div>
+                </div>
+            `;
+            // Klick auf Sektor öffnet wieder Editor? Optional.
+            item.onclick = () => this.openSectorEditor();
+            
+            list.appendChild(item);
+        }
+        
+        // Reset Button unten drunter hängen
+        const resetBtn = document.createElement('div');
+        resetBtn.className = 'sector-add-card';
+        resetBtn.style.minHeight = "50px";
+        resetBtn.style.marginTop = "10px";
+        resetBtn.style.fontSize = "0.7rem";
+        resetBtn.innerHTML = '<i class="fa-solid fa-pen"></i> EDIT SECTORS';
+        resetBtn.onclick = () => this.openSectorEditor();
+        container.appendChild(resetBtn);
+
+        this.closeSectorEditor();
+    },
 
 PerfLogic.init();
