@@ -804,11 +804,11 @@ window.PerfLogic = {
         this.closeSectorEditor();
     },
 
-    // =================================================
+// =================================================
     // 8. RENDER FUNCTIONS
     // =================================================
 
-// --- RENDER LOGIC V3 (REAL DATA & DASHBOARD) ---
+    // --- RENDER LOGIC V3 (REAL DATA & DASHBOARD) ---
 
     renderTrackList: function() {
         // 1. STATS BERECHNEN (Nur echte Daten!)
@@ -818,17 +818,12 @@ window.PerfLogic = {
         let scoreInt = 0;
 
         if (trackCount > 0) {
-            // Echte Logik: Wir suchen die beste Zeit aus allen Tracks
-            // (Hier vereinfacht: Wir nehmen den ersten Track als Beispiel, 
-            // später loopen wir durch alle Runs)
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
             if(validTracks.length > 0) {
-                bestTime = validTracks[0].bestTime; // Platzhalter-Logik, später Sortierung
-                // Score Berechnung (Dummy-Formel basierend auf Anzahl Tracks für jetzt)
+                bestTime = validTracks[0].bestTime; 
                 scoreInt = trackCount * 150; 
                 globalScore = scoreInt;
             } else {
-                // Tracks da, aber noch nie gefahren
                 globalScore = "0";
             }
         }
@@ -853,12 +848,12 @@ window.PerfLogic = {
             </div>
             
             <div id="perf-track-list">
-                </div>
+            </div>
 
             <div class="perf-history-section">
                 <div class="ph-title">Recent Activity</div>
                 <div id="perf-history-list">
-                    </div>
+                </div>
             </div>
         `;
         
@@ -903,7 +898,6 @@ window.PerfLogic = {
         // 3. ADD TRACK BUTTON (Immer am Ende der Liste)
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
-        // Verzögerung basierend auf Anzahl der Tracks, damit es als letztes reinfliegt
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="margin-right:8px"></i> CREATE NEW TRACK';
         addBtn.onclick = () => this.enterCreatorMode();
@@ -911,14 +905,34 @@ window.PerfLogic = {
 
         // 4. HISTORY RENDERN
         const historyList = document.getElementById('perf-history-list');
-        // Hier prüfen wir später auf echte "Runs"
-        // Aktuell haben wir noch keine gespeicherten Runs, also zeigen wir ehrlich "Empty"
         const hasHistory = false; 
 
         if(!hasHistory) {
             historyList.innerHTML = `<div class="ph-empty">NO RECENT DRIVES RECORDED</div>`;
-        } else {
-            // Später: Loop durch Runs und rendern
         }
     },
+
+    // --- HELPER ---
+    animateValue: function(id, start, end, duration) {
+        const obj = document.getElementById(id);
+        if(!obj) return;
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            obj.innerHTML = Math.floor(progress * (end - start) + start);
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    },
+
+    // Placeholder functions needs for the script to run if not defined elsewhere yet
+    renderMiniMap: function(t) { /* ... Mini Map Logic ... */ },
+    checkTrackConditions: function(t) { /* ... Weather Logic ... */ }
+
+}; // <--- HIER WAR DER FEHLER: Das Objekt muss geschlossen werden!
+
+// Init call nach dem Schließen des Objekts
 PerfLogic.init();
