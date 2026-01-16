@@ -808,63 +808,117 @@ window.PerfLogic = {
     // 8. RENDER FUNCTIONS
     // =================================================
 
+// --- RENDER LOGIC V3 (REAL DATA & DASHBOARD) ---
+
     renderTrackList: function() {
-        const list = document.getElementById('perf-track-list');
-        if(!list) return;
-        list.innerHTML = ''; 
+        // 1. STATS BERECHNEN (Nur echte Daten!)
+        const trackCount = this.tracks.length;
+        let bestTime = "---";
+        let globalScore = "---";
+        let scoreInt = 0;
 
-        this.tracks.forEach(t => {
-            const div = document.createElement('div');
-            div.className = 'track-card';
-            div.id = `track-card-${t.id}`;
-            div.innerHTML = `
-                <div class="tc-map-preview" id="mini-map-${t.id}"></div>
-                <div class="tc-info">
-                    <div class="tc-name">${t.name}</div>
-                    <div class="tc-stats">
-                        <span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span>
-                        <span><i class="fa-solid fa-road"></i> ${t.dist}</span>
-                    </div>
-                </div>`;
-            div.onclick = (e) => {
-                e.stopPropagation();
-                this.toggleTrackSelection(t);
-            };
-            list.appendChild(div);
-            setTimeout(() => this.renderMiniMap(t), 200);
-        });
-
-        const createDiv = document.createElement('div');
-        createDiv.className = 'track-card add-track-card';
-        createDiv.onclick = (e) => { e.stopPropagation(); this.enterCreatorMode(); };
-        createDiv.innerHTML = `<div class="add-icon"><i class="fa-solid fa-plus"></i></div><span>CREATE TRACK</span>`;
-        list.appendChild(createDiv);
-        
-        const spacer = document.createElement('div');
-        spacer.style.width='20px'; spacer.style.flexShrink='0';
-        list.appendChild(spacer);
-    },
-
-    renderMiniMap: function(track) {
-        const container = document.getElementById(`mini-map-${track.id}`);
-        if(!container || container._leaflet_id) return; 
-
-        const miniMap = L.map(container, {
-            zoomControl: false, attributionControl: false,
-            dragging: false, touchZoom: false, doubleClickZoom: false, 
-            scrollWheelZoom: false, boxZoom: false, keyboard: false, tap: false
-        });
-
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(miniMap);
-
-        if(track.routePath && track.routePath.length > 0) {
-            const poly = L.polyline(track.routePath, {color: '#ff3b30', weight: 6}).addTo(miniMap);
-            setTimeout(() => {
-                miniMap.invalidateSize();
-                miniMap.fitBounds(poly.getBounds(), {padding: [10, 10]});
-            }, 300);
+        if (trackCount > 0) {
+            // Echte Logik: Wir suchen die beste Zeit aus allen Tracks
+            // (Hier vereinfacht: Wir nehmen den ersten Track als Beispiel, 
+            // später loopen wir durch alle Runs)
+            const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
+            if(validTracks.length > 0) {
+                bestTime = validTracks[0].bestTime; // Platzhalter-Logik, später Sortierung
+                // Score Berechnung (Dummy-Formel basierend auf Anzahl Tracks für jetzt)
+                scoreInt = trackCount * 150; 
+                globalScore = scoreInt;
+            } else {
+                // Tracks da, aber noch nie gefahren
+                globalScore = "0";
+            }
         }
-    }
-};
 
+        const contentArea = document.querySelector('.perf-content-scroll');
+        
+        // HTML AUFBAU
+        let html = `
+            <div class="perf-dashboard-header">
+                <div class="pd-side-stat">
+                    <label>BEST TIME</label>
+                    <div class="val">${bestTime}</div>
+                </div>
+                <div class="pd-main-score">
+                    <label>PRM SCORE</label>
+                    <div class="val" id="global-score-display">${trackCount > 0 ? 0 : '---'}</div>
+                </div>
+                <div class="pd-side-stat">
+                    <label>TRACKS</label>
+                    <div class="val">${trackCount}</div>
+                </div>
+            </div>
+            
+            <div id="perf-track-list">
+                </div>
+
+            <div class="perf-history-section">
+                <div class="ph-title">Recent Activity</div>
+                <div id="perf-history-list">
+                    </div>
+            </div>
+        `;
+        
+        contentArea.innerHTML = html;
+        
+        // Animation für Score nur starten, wenn wir Daten haben
+        if(trackCount > 0 && scoreInt > 0) {
+            this.animateValue("global-score-display", 0, scoreInt, 1200);
+        }
+
+        // 2. TRACKS RENDERN
+        const list = document.getElementById('perf-track-list');
+        
+        this.tracks.forEach((t, index) => {
+            const div = document.createElement('div');
+            div.className = 'track-card-v2';
+            div.style.animationDelay = (index * 0.1) + "s"; // Staggered
+            
+            div.innerHTML = `
+                <div class="tc-bg-map" id="mini-map-${t.id}"></div>
+                <div class="tc-overlay"></div>
+                <div class="tc-content">
+                    <div class="tc-name">${t.name}</div>
+                    <div class="tc-details">
+                        <span><i class="fa-solid fa-road"></i> ${t.dist}</span>
+                        <span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span>
+                    </div>
+                </div>
+                <div class="tc-condition-badge" id="cond-badge-${t.id}">
+                    <div class="cond-dot" style="background:#888;"></div>
+                    <div class="cond-text">LOADING</div>
+                </div>
+            `;
+            
+            div.onclick = () => this.selectTrack(t); 
+            list.appendChild(div);
+
+            setTimeout(() => this.renderMiniMap(t), 200);
+            this.checkTrackConditions(t); // Echter Wetter Check
+        });
+
+        // 3. ADD TRACK BUTTON (Immer am Ende der Liste)
+        const addBtn = document.createElement('div');
+        addBtn.className = 'add-track-v2';
+        // Verzögerung basierend auf Anzahl der Tracks, damit es als letztes reinfliegt
+        addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
+        addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="margin-right:8px"></i> CREATE NEW TRACK';
+        addBtn.onclick = () => this.enterCreatorMode();
+        list.appendChild(addBtn);
+
+        // 4. HISTORY RENDERN
+        const historyList = document.getElementById('perf-history-list');
+        // Hier prüfen wir später auf echte "Runs"
+        // Aktuell haben wir noch keine gespeicherten Runs, also zeigen wir ehrlich "Empty"
+        const hasHistory = false; 
+
+        if(!hasHistory) {
+            historyList.innerHTML = `<div class="ph-empty">NO RECENT DRIVES RECORDED</div>`;
+        } else {
+            // Später: Loop durch Runs und rendern
+        }
+    },
 PerfLogic.init();
