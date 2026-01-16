@@ -223,51 +223,69 @@ window.PerfLogic = {
     // 3. CREATOR MODE LOGIC
     // =================================================
 
-    enterCreatorMode: function() {
+  enterCreatorMode: function() {
+        console.log("Entering Creator Mode...");
         this.isCreatorMode = true;
         this.creatorPoints = []; 
         this.deselectTrack();
-        this.hubMarkers.forEach(m => m.setOpacity(0));
+        this.hubMarkers.forEach(m => m.setOpacity(0)); // Hubs ausblenden
 
-        // UI Umschalten
-        document.querySelector('.perf-content-scroll').style.display = 'none'; // Dashboard aus
-        document.querySelector('.perf-sub-nav').style.display = 'none';
-        document.getElementById('perf-creator-ui').classList.remove('hidden'); // Creator an
-        document.getElementById('nav-perf').parentElement.classList.add('hidden');
-        document.body.classList.add('creator-active'); // CSS Trigger für Map Höhe
-
-        const mapContainer = document.getElementById('perf-map-container');
-        // Map Container sichtbar und groß machen
-        mapContainer.style.opacity = '1';
+        // 1. CSS Trigger setzen (Versteckt Dashboard, Zeigt Map via CSS)
+        document.body.classList.add('creator-active');
         
-        setTimeout(() => { 
-            this.map.invalidateSize(); 
-            if(this.userMarker) this.map.setView(this.userMarker.getLatLng(), 16);
-        }, 100);
+        // 2. Nav Bar verstecken
+        const navBar = document.querySelector('.perf-sub-nav');
+        if(navBar) navBar.style.display = 'none';
+        
+        const mainNav = document.getElementById('nav-perf').parentElement;
+        if(mainNav) mainNav.classList.add('hidden');
 
+        // 3. Creator UI anzeigen
+        document.getElementById('perf-creator-ui').classList.remove('hidden');
+
+        // 4. MAP FIX: Leaflet neu berechnen, da sich die Sichtbarkeit geändert hat
+        setTimeout(() => { 
+            if(this.map) {
+                this.map.invalidateSize(); // WICHTIG: Zwingt Leaflet zum Neuzeichnen
+                
+                // Zu User zoomen oder Standard-Position
+                if(this.userMarker) {
+                    this.map.setView(this.userMarker.getLatLng(), 16);
+                } else {
+                    // Fallback falls kein GPS: Nürnberg Zentrum (oder dein Default)
+                    this.map.setView([49.4521, 11.0767], 14); 
+                }
+            }
+        }, 100); // Kurze Verzögerung für CSS Transition
+
+        // Reset HUD Stats
         this.selectPinType('start');
         document.getElementById('ct-dist').innerText = "0.0 km";
         document.getElementById('ct-elev').innerText = "0 m";
     },
 
     quitCreator: function() {
+        console.log("Quitting Creator Mode...");
         this.isCreatorMode = false;
-        document.querySelector('.perf-content-scroll').style.display = 'block'; // Dashboard an
-        document.querySelector('.perf-sub-nav').style.display = 'flex';
-        document.getElementById('perf-creator-ui').classList.add('hidden');
-        document.getElementById('nav-perf').parentElement.classList.remove('hidden');
+        
+        // 1. CSS Trigger entfernen (Zeigt Dashboard wieder)
         document.body.classList.remove('creator-active');
 
-        // Map wieder verstecken
-        const mapContainer = document.getElementById('perf-map-container');
-        mapContainer.style.opacity = '0';
-        
-        setTimeout(() => { this.map.invalidateSize(); }, 300);
+        // 2. Nav Bar wieder anzeigen
+        const navBar = document.querySelector('.perf-sub-nav');
+        if(navBar) navBar.style.display = 'flex';
 
+        const mainNav = document.getElementById('nav-perf').parentElement;
+        if(mainNav) mainNav.classList.remove('hidden');
+
+        // 3. UI Verstecken
+        document.getElementById('perf-creator-ui').classList.add('hidden');
+
+        // Cleanup Map
         this.clearCreatorMap();
         this.hubMarkers.forEach(m => m.setOpacity(1)); 
         this.renderMapHubs();
-        this.renderTrackList(); // Liste neu laden (falls neuer Track)
+        this.renderTrackList(); // Liste aktualisieren
     },
     
     leaveCreatorMode: function() {
