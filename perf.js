@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - FINAL MASTER V4.1 (FIXED)       === */
+/* === PERF.JS - FINAL MASTER V5 (RED & FIXED)   === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -22,7 +22,7 @@ window.PerfLogic = {
     // --- SECTOR EDITOR VARS ---
     sectorSplits: [], 
     sectorMap: null,
-    sectorColors: ['#bf5af2', '#30d158', '#007aff', '#ff9f0a', '#ff3b30'],
+    sectorColors: ['#ff3b30', '#ffffff', '#ff9f0a'], // ROT THEMA
     currentSectorsData: [],
     cachedElevations: [],
 
@@ -38,11 +38,12 @@ window.PerfLogic = {
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - V4.1 Fixed");
+        console.log("PerfLogic Init - V5 Red Master");
         this.renderTrackList();
     },
 
     onScreenShow: function() {
+        // Map nur laden wenn nötig
         if (!this.map) {
             this.loadMap();
         } else {
@@ -118,7 +119,8 @@ window.PerfLogic = {
         if(this.isCreatorMode) {
             this.showTrackOnMap(track);
         } else {
-            alert("Opening Details for: " + track.name);
+            // TODO: Detail Screen Logic
+            console.log("Opening Details for: " + track.name);
         }
     },
 
@@ -214,7 +216,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 3. CREATOR MODE LOGIC
+    // 3. CREATOR MODE LOGIC (GPS FIX)
     // =================================================
 
     enterCreatorMode: function() {
@@ -234,16 +236,18 @@ window.PerfLogic = {
 
         document.getElementById('perf-creator-ui').classList.remove('hidden');
 
+        // MAP FIX: Invalidating Size und GPS Suche
         setTimeout(() => { 
             if(this.map) {
                 this.map.invalidateSize(); 
                 this.map.dragging.enable();
                 this.map.touchZoom.enable();
                 
+                // SOFORT GPS SUCHEN
+                this.map.locate({setView: true, maxZoom: 17, enableHighAccuracy: true});
+                
                 if(this.userMarker) {
-                    this.map.setView(this.userMarker.getLatLng(), 16);
-                } else {
-                    this.map.setView([49.4521, 11.0767], 14); 
+                    this.map.setView(this.userMarker.getLatLng(), 17);
                 }
             }
         }, 100);
@@ -354,7 +358,7 @@ window.PerfLogic = {
                 if(this.routeLayer) this.map.removeLayer(this.routeLayer);
                 
                 const latlngs = route.geometry.coordinates.map(c => [c[1], c[0]]);
-                this.routeLayer = L.polyline(latlngs, {color: '#bf5af2', weight: 5, opacity: 0.8}).addTo(this.map);
+                this.routeLayer = L.polyline(latlngs, {color: '#ff3b30', weight: 5, opacity: 0.8}).addTo(this.map); // RED
 
                 const distKm = (route.distance / 1000).toFixed(2);
                 const timeMin = Math.round(route.duration / 60);
@@ -399,7 +403,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 5. SETUP & SAVE LOGIC
+    // 5. SETUP & SAVE LOGIC (WITH PRM)
     // =================================================
 
     saveTrack: function() {
@@ -415,7 +419,7 @@ window.PerfLogic = {
         const setupScreen = document.getElementById('track-setup-screen');
         setupScreen.classList.remove('hidden');
         
-        // HTML INJECTEN
+        // HTML INJECTEN (PRM IS BACK)
         const scrollContent = document.querySelector('.setup-content-scroll');
         scrollContent.innerHTML = `
             <div class="setup-card">
@@ -647,13 +651,22 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 7. SECTOR EDITOR (LOGIC)
+    // 7. SECTOR EDITOR (LOGIC) - ZOOM FIX
     // =================================================
 
     openSectorEditor: function() {
         if(!this.currentRouteGeo) return;
         document.getElementById('sector-editor-overlay').classList.remove('hidden');
         
+        // HUD
+        const overlay = document.getElementById('sector-editor-overlay');
+        if(!overlay.querySelector('.sec-hint-hub')) {
+            const hud = document.createElement('div');
+            hud.className = 'sec-hint-hub';
+            hud.innerHTML = `<i class="fa-solid fa-scissors sec-hint-icon"></i><div class="sec-hint-text">TAP TRACK TO SPLIT</div>`;
+            overlay.appendChild(hud);
+        }
+
         if(!this.sectorMap) {
             this.sectorMap = L.map('sector-map', { zoomControl: false, attributionControl: false });
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.sectorMap);
@@ -664,7 +677,7 @@ window.PerfLogic = {
         
         setTimeout(() => {
             this.sectorMap.invalidateSize();
-            this.renderSectorMap(); 
+            this.renderSectorMap(true); // <--- TRUE: Zoom einmalig
         }, 200);
     },
 
@@ -688,19 +701,23 @@ window.PerfLogic = {
         if(closestDist > 50) return;
         this.sectorSplits.push(closestIndex);
         this.sectorSplits.sort((a, b) => a - b);
-        this.renderSectorMap();
+        this.renderSectorMap(false); // <--- FALSE: Kein Zoom Reset!
     },
 
     undoSectorSplit: function() {
         if(this.sectorSplits.length <= 2) return; 
         this.sectorSplits.splice(this.sectorSplits.length - 2, 1);
-        this.renderSectorMap();
+        this.renderSectorMap(false);
     },
 
-    renderSectorMap: function() {
+    renderSectorMap: function(fitBounds = false) {
+        if(!this.sectorMap) return;
         this.sectorMap.eachLayer(l => { if(!l._url) this.sectorMap.removeLayer(l); });
-        const bounds = L.polyline(this.currentRouteGeo).getBounds();
-        this.sectorMap.fitBounds(bounds, {padding: [50,50]});
+        
+        if(fitBounds && this.currentRouteGeo) {
+            const bounds = L.polyline(this.currentRouteGeo).getBounds();
+            this.sectorMap.fitBounds(bounds, {padding: [40,40]});
+        }
 
         for(let i=0; i < this.sectorSplits.length - 1; i++) {
             const startIdx = this.sectorSplits[i];
@@ -714,11 +731,21 @@ window.PerfLogic = {
                 const markerPos = this.currentRouteGeo[startIdx];
                 const icon = L.divIcon({
                     className: 'split-marker',
-                    html: `<div style="width:4px; height:20px; background:white; box-shadow:0 0 10px white; transform:rotate(45deg);"></div>`,
+                    html: `<div style="width:4px; height:16px; background:white; transform:rotate(20deg); box-shadow:0 0 5px black;"></div>`,
                     iconSize: [20,20], iconAnchor: [10,10]
                 });
                 L.marker(markerPos, {icon: icon}).addTo(this.sectorMap);
             }
+        }
+        
+        // Start/Ziel Marker
+        if(this.currentRouteGeo && this.currentRouteGeo.length > 0) {
+            const start = this.currentRouteGeo[0];
+            const end = this.currentRouteGeo[this.currentRouteGeo.length-1];
+            const startIcon = L.divIcon({className: 'custom-icon', html: '<div class="sec-marker-start"></div>', iconSize:[14,14]});
+            const endIcon = L.divIcon({className: 'custom-icon', html: '<div class="sec-marker-finish"></div>', iconSize:[14,14]});
+            L.marker(start, {icon: startIcon}).addTo(this.sectorMap);
+            L.marker(end, {icon: endIcon}).addTo(this.sectorMap);
         }
     },
 
@@ -768,7 +795,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 8. RENDER FUNCTIONS
+    // 8. RENDER FUNCTIONS (V4 CAROUSEL & RED THEME)
     // =================================================
 
     renderTrackList: function() {
@@ -780,7 +807,7 @@ window.PerfLogic = {
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
             if(validTracks.length > 0) {
                 bestTime = validTracks[0].bestTime; 
-                // scoreInt = ... (PRM Formel kommt später)
+                scoreInt = trackCount * 150; 
             }
         }
 
@@ -829,14 +856,18 @@ window.PerfLogic = {
             div.className = 'track-card-v2';
             div.style.animationDelay = (index * 0.1) + "s";
             
+            const distDisplay = t.dist || "0.0 km";
+            const nameDisplay = t.name || "UNNAMED TRACK";
+            const timeDisplay = t.bestTime || "---";
+
             div.innerHTML = `
                 <div class="tc-bg-map" id="mini-map-${t.id}"></div>
                 <div class="tc-overlay"></div>
                 <div class="tc-content">
-                    <div class="tc-name">${t.name}</div>
+                    <div class="tc-name">${nameDisplay}</div>
                     <div class="tc-details">
-                        <span><i class="fa-solid fa-road"></i> ${t.dist}</span>
-                        <span><i class="fa-solid fa-trophy"></i> ${t.bestTime}</span>
+                        <span><i class="fa-solid fa-road"></i> ${distDisplay}</span>
+                        <span><i class="fa-solid fa-stopwatch"></i> ${timeDisplay}</span>
                     </div>
                 </div>
                 <div class="tc-condition-badge" id="cond-badge-${t.id}">
@@ -844,6 +875,7 @@ window.PerfLogic = {
                     <div class="cond-text">LOADING</div>
                 </div>
             `;
+            
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
 
@@ -851,24 +883,22 @@ window.PerfLogic = {
             this.checkTrackConditions(t); 
         });
 
-   // 3. ADD TRACK BUTTON (Fixed Interaction)
+        // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
-        // Animation etwas später als die anderen
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
-        
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
         
-        // WICHTIG: Kein ontouchend mehr, nur onclick!
-        // Das verhindert den "Dead Click" Bug auf Handys.
+        // CLICK FIX
         addBtn.onclick = (e) => {
-            e.stopPropagation(); // Verhindert, dass Events durchsickern
-            console.log("Add Button Clicked"); 
+            e.stopPropagation(); 
+            console.log("Add Track Clicked"); 
             this.enterCreatorMode();
         };
 
         list.appendChild(addBtn);
     },
+
     renderMiniMap: function(track) {
         const mapId = `mini-map-${track.id}`;
         const container = document.getElementById(mapId);
@@ -883,7 +913,7 @@ window.PerfLogic = {
 
         if(track.routePath && track.routePath.length > 0) {
             const polyline = L.polyline(track.routePath, {
-                color: '#bf5af2', 
+                color: '#ff3b30', // RED
                 weight: 5,
                 opacity: 1,
                 lineCap: 'round'
