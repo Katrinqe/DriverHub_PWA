@@ -1188,3 +1188,55 @@ body.creator-active #perf-map-container {
 /* Animationen */
 @keyframes slideInRight { to { opacity: 1; transform: translateX(0); } }
 @keyframes btn-shine { 0% { left: -100%; } 20% { left: 100%; } 100% { left: 100%; } }
+
+
+
+
+/* ========================================= */
+/* === SUB-NAVIGATION FIX (TRACK/DRAG)   === */
+/* ========================================= */
+
+.perf-sub-nav {
+    position: fixed !important; 
+    bottom: 110px !important; /* Über der Haupt-Nav */
+    left: 50% !important; 
+    transform: translateX(-50%) !important;
+    
+    width: 85% !important; 
+    height: 50px !important;
+    
+    /* Glas-Look & Rahmen */
+    background: rgba(15, 15, 15, 0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 59, 48, 0.3) !important; /* Roter Rand */
+    border-radius: 40px !important;
+    
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: space-between !important; 
+    padding: 5px !important;
+    
+    z-index: 9000 !important; /* GANZ OBEN LIEGEN */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+    pointer-events: auto !important;
+}
+
+.psn-item {
+    flex: 1 !important;
+    text-align: center !important;
+    color: #666 !important;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    padding: 10px 0 !important;
+    border-radius: 30px !important;
+    transition: all 0.3s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+
+/* Aktiver Tab (Rot) */
+.psn-item.active {
+    background: #ff3b30 !important;
+    color: white !important;
+    box-shadow: 0 0 15px rgba(255, 59, 48, 0.4) !important;
+}
