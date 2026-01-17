@@ -1381,3 +1381,12 @@ body:has(#track-setup-screen:not(.hidden)) .perf-sub-nav {
     font-size: 1rem; font-weight: 900; color: white; background: rgba(255, 59, 48, 0.1);
     box-shadow: 0 0 15px rgba(255, 59, 48, 0.2);
 }
+
+/* VIEWS VISIBILITY FIX */
+#view-track, #view-drag, #view-analytics {
+    /* Sicherstellen, dass sie angezeigt werden können */
+    width: 100%;
+    height: auto;
+    position: relative;
+    z-index: 15; /* Über dem Hintergrund */
+}
