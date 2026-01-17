@@ -1254,3 +1254,25 @@ body.creator-active #perf-map-container {
     border: 1px solid rgba(255, 59, 48, 0.2) !important; /* Feiner roter Rand nur um das aktive Item */
     box-shadow: 0 0 15px rgba(255, 59, 48, 0.15) !important;
 }
+
+/* ================================================= */
+/* === NAV VISIBILITY FIX (ONLY ON DASHBOARD)    === */
+/* ================================================= */
+
+/* Wenn Creator Mode aktiv ist -> Nav WEG */
+body.creator-active .perf-sub-nav {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Wenn Setup Screen offen ist -> Nav WEG */
+/* Wir nutzen hier den :not(.hidden) Selector */
+#track-setup-screen:not(.hidden) ~ .perf-content-scroll .perf-sub-nav {
+    display: none !important;
+}
+
+/* Brute-Force Methode: Wenn das Setup-Overlay sichtbar ist, verstecken wir die Nav global */
+body:has(#track-setup-screen:not(.hidden)) .perf-sub-nav {
+    display: none !important;
+}
