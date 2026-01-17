@@ -43,17 +43,12 @@ window.PerfLogic = {
         this.renderTrackList();
     },
 
-// --- TAB SWITCHING LOGIC (DEBUGGED) ---
+// --- TAB SWITCHING LOGIC ---
     switchTab: function(tabName) {
-        console.log("Switching to tab:", tabName);
-
         // 1. Alle Views ausblenden
         ['track', 'drag', 'analytics'].forEach(t => {
             const view = document.getElementById('view-' + t);
-            if(view) {
-                view.style.display = 'none'; 
-                view.classList.add('hidden'); 
-            }
+            if(view) view.style.display = 'none';
             
             const btn = document.getElementById('btn-tab-' + t);
             if(btn) btn.classList.remove('active');
@@ -61,48 +56,34 @@ window.PerfLogic = {
 
         // 2. Gewählten View anzeigen
         const activeView = document.getElementById('view-' + tabName);
-        if(activeView) {
-            activeView.style.display = 'block'; 
-            activeView.classList.remove('hidden');
-        }
+        if(activeView) activeView.style.display = 'block';
 
         // 3. Button aktiv setzen
         const activeBtn = document.getElementById('btn-tab-' + tabName);
         if(activeBtn) activeBtn.classList.add('active');
 
-        // Refresh Logic für Analytics
+        // Refresh Logic Analytics
         if(tabName === 'analytics') {
-            this.updateLiveDashboard(); 
+            this.updateLiveDashboard();
         }
-    }, // <--- HIER WAR DER FEHLER (KLAMMER UND KOMMA FEHLTEN)
+    }, // <--- WICHTIG: Komma hier nicht vergessen!
 
-    // --- FORCE EVENT BINDING ---
+    // --- FORCE TOUCH EVENTS (Damit Buttons auf Handy reagieren) ---
     bindNavEvents: function() {
-        console.log("Binding Nav Events...");
-        
         ['track', 'drag', 'analytics'].forEach(tab => {
             const btn = document.getElementById('btn-tab-' + tab);
             if(btn) {
-                // Alten Krams entfernen (Sicherheit)
+                // Klonen um alte Event-Listener zu löschen (Sauberer Neustart)
                 const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
                 
-                // Touch Start (für sofortige Reaktion auf Handy)
-                newBtn.addEventListener('touchstart', (e) => {
-                    e.preventDefault(); // Verhindert Ghost-Clicks
-                    e.stopPropagation();
-                    console.log("Touch detected:", tab);
+                // Touch & Click Listener
+                const action = (e) => {
+                    e.preventDefault(); e.stopPropagation();
                     this.switchTab(tab);
-                }, {passive: false});
-
-                // Normaler Klick (Desktop/Fallback)
-                newBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    console.log("Click detected:", tab);
-                    this.switchTab(tab);
-                });
-            } else {
-                console.warn("Button not found:", tab);
+                };
+                newBtn.addEventListener('touchstart', action, {passive: false});
+                newBtn.addEventListener('click', action);
             }
         });
     },
