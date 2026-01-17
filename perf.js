@@ -43,12 +43,17 @@ window.PerfLogic = {
         this.renderTrackList();
     },
 
-// --- TAB SWITCHING LOGIC ---
+// --- TAB SWITCHING LOGIC (FIXED) ---
     switchTab: function(tabName) {
+        console.log("Switching to tab:", tabName);
+
         // 1. Alle Views ausblenden
         ['track', 'drag', 'analytics'].forEach(t => {
             const view = document.getElementById('view-' + t);
-            if(view) view.style.display = 'none';
+            if(view) {
+                view.style.display = 'none';
+                view.classList.add('hidden');
+            }
             
             const btn = document.getElementById('btn-tab-' + t);
             if(btn) btn.classList.remove('active');
@@ -56,20 +61,24 @@ window.PerfLogic = {
 
         // 2. Gewählten View anzeigen
         const activeView = document.getElementById('view-' + tabName);
-        if(activeView) activeView.style.display = 'block';
+        if(activeView) {
+            activeView.style.display = 'block'; 
+            activeView.classList.remove('hidden');
+        }
 
         // 3. Button aktiv setzen
         const activeBtn = document.getElementById('btn-tab-' + tabName);
         if(activeBtn) activeBtn.classList.add('active');
 
-        // Refresh Logic Analytics
+        // Refresh Logic für Analytics
         if(tabName === 'analytics') {
             this.updateLiveDashboard();
         }
-    }, // <--- WICHTIG: Komma hier nicht vergessen!
+    },
 
-    // --- FORCE TOUCH EVENTS (Damit Buttons auf Handy reagieren) ---
+    // --- FORCE TOUCH EVENTS ---
     bindNavEvents: function() {
+        console.log("Binding Nav Events...");
         ['track', 'drag', 'analytics'].forEach(tab => {
             const btn = document.getElementById('btn-tab-' + tab);
             if(btn) {
@@ -77,38 +86,22 @@ window.PerfLogic = {
                 const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
                 
-                // Touch & Click Listener
-                const action = (e) => {
-                    e.preventDefault(); e.stopPropagation();
+                // Touch Start (für sofortige Reaktion auf Handy)
+                newBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); 
+                    e.stopPropagation();
                     this.switchTab(tab);
-                };
-                newBtn.addEventListener('touchstart', action, {passive: false});
-                newBtn.addEventListener('click', action);
+                }, {passive: false});
+
+                // Normaler Klick (Desktop/Fallback)
+                newBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.switchTab(tab);
+                });
             }
         });
     },
-        // 2. Gewählten View anzeigen
-        const activeView = document.getElementById('view-' + tabName);
-        if(activeView) {
-            activeView.style.display = 'block'; // Hart anzeigen
-            activeView.classList.remove('hidden');
-            console.log("View displayed:", activeView.id);
-        } else {
-            console.error("View not found:", 'view-' + tabName);
-        }
 
-        // 3. Button aktiv setzen
-        const activeBtn = document.getElementById('btn-tab-' + tabName);
-        if(activeBtn) activeBtn.classList.add('active');
-
-        // Refresh Logic
-        if(tabName === 'analytics') {
-            console.log("Updating Analytics Data...");
-            this.updateLiveDashboard(); 
-        }
-    },
-
-      
     onScreenShow: function() {
         if (!this.map) {
             this.loadMap();
