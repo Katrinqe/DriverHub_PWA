@@ -1314,3 +1314,70 @@ body.creator-active .perf-sub-nav {
 body:has(#track-setup-screen:not(.hidden)) .perf-sub-nav {
     display: none !important;
 }
+
+/* ================================================= */
+/* === LIVE DASHBOARD (REPLACES HISTORY)         === */
+/* ================================================= */
+
+.live-dashboard-section {
+    padding: 0 20px 40px 20px;
+    margin-top: 10px;
+    display: flex; flex-direction: column; gap: 15px;
+}
+
+.ld-title {
+    font-size: 0.75rem; color: #ff3b30; font-weight: 800; letter-spacing: 2px; 
+    text-transform: uppercase; margin-bottom: 5px; opacity: 0.8;
+    display: flex; align-items: center; gap: 8px;
+}
+.ld-pulse { width: 6px; height: 6px; background: #ff3b30; border-radius: 50%; box-shadow: 0 0 8px #ff3b30; animation: prm-pulse 1s infinite; }
+
+/* GENERIC CARD STYLE */
+.ld-card {
+    background: rgba(15, 15, 15, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    position: relative; overflow: hidden;
+}
+
+/* --- 1. WEATHER CARD --- */
+.weather-main-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+.weather-temp { font-size: 2.2rem; font-weight: 800; color: white; line-height: 1; }
+.weather-icon { font-size: 2rem; color: #ff3b30; filter: drop-shadow(0 0 10px rgba(255,59,48,0.4)); }
+
+.weather-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+.wg-item label { display: block; font-size: 0.55rem; color: #666; font-weight: 700; text-transform: uppercase; margin-bottom: 2px; }
+.wg-item div { font-size: 0.9rem; color: #ccc; font-family: monospace; font-weight: 600; }
+
+.traction-index-box { 
+    background: rgba(255, 59, 48, 0.05); border: 1px solid rgba(255, 59, 48, 0.15); 
+    border-radius: 12px; padding: 12px; display: flex; align-items: center; justify-content: space-between;
+}
+.ti-label { font-size: 0.7rem; color: #ff3b30; font-weight: 800; }
+.ti-value { font-size: 1.1rem; color: white; font-weight: 900; text-shadow: 0 0 10px rgba(255,59,48,0.3); }
+
+.weather-summary { 
+    margin-top: 15px; font-size: 0.8rem; color: #aaa; font-style: italic; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;
+}
+
+/* --- 2. STATS GRID --- */
+.stats-grid-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.stat-mini-card {
+    background: rgba(255,255,255,0.02); border-radius: 16px; padding: 12px; text-align: center; border: 1px solid rgba(255,255,255,0.05);
+}
+.stat-mini-card label { display: block; font-size: 0.55rem; color: #666; font-weight: 700; margin-bottom: 4px; }
+.stat-mini-card .val { font-size: 1.1rem; font-weight: 800; color: white; }
+.stat-mini-card.best .val { color: #30d158; text-shadow: 0 0 8px rgba(48, 209, 88, 0.3); }
+
+/* --- 3. BEST TRACK CARD --- */
+.best-track-layout { display: flex; align-items: center; justify-content: space-between; }
+.bt-info h3 { margin: 0; font-size: 1.1rem; color: white; font-weight: 900; font-style: italic; text-transform: uppercase; }
+.bt-info p { margin: 4px 0 0 0; font-size: 0.75rem; color: #888; }
+.bt-score-badge { 
+    width: 50px; height: 50px; border-radius: 50%; border: 3px solid #ff3b30; 
+    display: flex; align-items: center; justify-content: center; 
+    font-size: 1rem; font-weight: 900; color: white; background: rgba(255, 59, 48, 0.1);
+    box-shadow: 0 0 15px rgba(255, 59, 48, 0.2);
+}
