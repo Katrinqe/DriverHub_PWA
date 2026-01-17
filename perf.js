@@ -435,11 +435,12 @@ window.PerfLogic = {
             </div>
         `;
 
-        // Map Setup Logic... (bleibt gleich)
+ // Map Setup Logic...
         if(!this.setupMap) {
             this.setupMap = L.map('setup-map', { zoomControl: false, attributionControl: false, dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false });
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.setupMap);
         }
+
         setTimeout(() => {
             this.setupMap.invalidateSize();
             this.setupMap.eachLayer(l => { if(!l._url) this.setupMap.removeLayer(l); });
@@ -448,19 +449,16 @@ window.PerfLogic = {
                 this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
             }
         }, 200);
-        this.setStartType('standing'); 
-        this.currentSectorsData = [];
-        this._initTachoHTML(); 
-    },
 
         this.setStartType('standing'); 
         this.currentSectorsData = [];
         this._initTachoHTML(); 
-    },
+    }, // <--- HIER endet openSetupScreen korrekt (nur EINMAL)
 
     cancelSetup: function() {
         document.getElementById('track-setup-screen').classList.add('hidden');
         document.getElementById('perf-creator-ui').classList.remove('hidden');
+        // Da wir zurück in den Creator Mode gehen, bleibt die Nav ausgeblendet (CSS regelt das)
     },
 
     finalizeSave: function() {
