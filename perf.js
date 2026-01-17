@@ -43,7 +43,7 @@ window.PerfLogic = {
         this.renderTrackList();
     },
 
-  // --- TAB SWITCHING LOGIC (DEBUGGED) ---
+// --- TAB SWITCHING LOGIC (DEBUGGED) ---
     switchTab: function(tabName) {
         console.log("Switching to tab:", tabName);
 
@@ -51,16 +51,32 @@ window.PerfLogic = {
         ['track', 'drag', 'analytics'].forEach(t => {
             const view = document.getElementById('view-' + t);
             if(view) {
-                view.style.display = 'none'; // Hart ausblenden
-                view.classList.add('hidden'); // Klasse setzen (falls CSS hilft)
+                view.style.display = 'none'; 
+                view.classList.add('hidden'); 
             }
             
             const btn = document.getElementById('btn-tab-' + t);
             if(btn) btn.classList.remove('active');
         });
 
+        // 2. Gewählten View anzeigen
+        const activeView = document.getElementById('view-' + tabName);
+        if(activeView) {
+            activeView.style.display = 'block'; 
+            activeView.classList.remove('hidden');
+        }
 
-        // --- FORCE EVENT BINDING ---
+        // 3. Button aktiv setzen
+        const activeBtn = document.getElementById('btn-tab-' + tabName);
+        if(activeBtn) activeBtn.classList.add('active');
+
+        // Refresh Logic für Analytics
+        if(tabName === 'analytics') {
+            this.updateLiveDashboard(); 
+        }
+    }, // <--- HIER WAR DER FEHLER (KLAMMER UND KOMMA FEHLTEN)
+
+    // --- FORCE EVENT BINDING ---
     bindNavEvents: function() {
         console.log("Binding Nav Events...");
         
@@ -90,7 +106,6 @@ window.PerfLogic = {
             }
         });
     },
-        
         // 2. Gewählten View anzeigen
         const activeView = document.getElementById('view-' + tabName);
         if(activeView) {
