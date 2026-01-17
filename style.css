@@ -1390,3 +1390,24 @@ body:has(#track-setup-screen:not(.hidden)) .perf-sub-nav {
     position: relative;
     z-index: 15; /* Über dem Hintergrund */
 }
+
+/* FORCE CLICKABILITY */
+.perf-sub-nav {
+    pointer-events: auto !important;
+    z-index: 9999 !important; /* Über ALLEM */
+}
+
+.psn-item {
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    user-select: none;
+    -webkit-user-select: none;
+    /* Damit man sieht, dass man drückt */
+    active-behavior: contain; 
+}
+
+/* Feedback beim Drücken */
+.psn-item:active {
+    transform: scale(0.95);
+    background: rgba(255, 59, 48, 0.2) !important;
+}
