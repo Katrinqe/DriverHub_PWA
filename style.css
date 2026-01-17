@@ -759,38 +759,46 @@ input, textarea {
     z-index: 10000 !important; 
 }
 
-/* --- 2. DYNAMIC BACKGROUND (ALIVE RED GLOW) --- */
+/* --- 2. DYNAMIC BACKGROUND (ALIVE RED GLOW - UPDATED) --- */
 .perf-content-scroll {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    /* Basis Schwarz */
     background: #000000; 
     overflow-y: auto; overflow-x: hidden;
     z-index: 10;
     padding-bottom: 120px;
     touch-action: pan-y; -webkit-overflow-scrolling: touch;
-    transition: opacity 0.3s;
+    /* Transition entfernt, damit es beim Wechsel sofort weg ist */
 }
 
-/* Der pulsierende rote Nebel */
+/* Der pulsierende rote Nebel - STÄRKER (0.22) */
 .perf-content-scroll::before {
     content: '';
     position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-    /* 15% Deckkraft für edlen Look */
-    background: radial-gradient(circle, rgba(255, 59, 48, 0.15) 0%, transparent 60%);
-    animation: bg-pulse-move 15s ease-in-out infinite alternate;
+    
+    /* Hier war vorher 0.15 -> Jetzt 0.22 für mehr Sichtbarkeit */
+    background: radial-gradient(circle, rgba(255, 59, 48, 0.22) 0%, transparent 60%);
+    
+    animation: bg-pulse-move 12s ease-in-out infinite alternate;
     z-index: -1;
     pointer-events: none;
     will-change: transform, opacity;
 }
 
 @keyframes bg-pulse-move {
-    0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-    50% { transform: translate(-20px, 10px) scale(1.1); opacity: 0.5; }
-    100% { transform: translate(10px, -20px) scale(1.05); opacity: 0.3; }
+    0% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+    50% { transform: translate(-20px, 10px) scale(1.1); opacity: 0.6; }
+    100% { transform: translate(10px, -20px) scale(1.05); opacity: 0.4; }
 }
 
-/* Wenn Creator Mode an ist -> Dashboard ausblenden */
+/* WICHTIG: Wenn Creator Mode (Add Track) an ist -> ALLES KILLEN */
 body.creator-active .perf-content-scroll {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+/* Sicherheitsnetz: Auch das Pseudo-Element ausblenden */
+body.creator-active .perf-content-scroll::before {
     display: none !important;
 }
 
