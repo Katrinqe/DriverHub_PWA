@@ -801,6 +801,8 @@ window.PerfLogic = {
     // 8. RENDER FUNCTIONS (V4 CAROUSEL & RED THEME)
     // =================================================
 
+  // --- RENDER LOGIC V5.2 (ANIMATED & FIXED PADDING) ---
+
     renderTrackList: function() {
         const trackCount = this.tracks.length;
         let bestTime = "---";
@@ -857,6 +859,8 @@ window.PerfLogic = {
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
+            
+            // STAGGERED ANIMATION: Jede Karte kommt 0.1s später
             div.style.animationDelay = (index * 0.1) + "s";
             
             const distDisplay = t.dist || "0.0 km";
@@ -879,17 +883,18 @@ window.PerfLogic = {
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
 
-            setTimeout(() => this.renderMiniMap(t), 300);
+            setTimeout(() => this.renderMiniMap(t), 200 + (index * 50)); // Render Maps slightly delayed to save perf
             this.checkTrackConditions(t); 
         });
 
         // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
+        // Kommt als letztes rein
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
+        
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
         
-        // CLICK FIX
         addBtn.onclick = (e) => {
             e.stopPropagation(); 
             console.log("Add Track Clicked"); 
@@ -905,28 +910,32 @@ window.PerfLogic = {
         if(!container) return;
         if(container._leaflet_id) return; 
 
+        // Minimale Map Optionen für Performance
         const miniMap = L.map(mapId, {
             zoomControl: false, attributionControl: false,
             dragging: false, touchZoom: false, doubleClickZoom: false,
-            scrollWheelZoom: false, boxZoom: false, keyboard: false
+            scrollWheelZoom: false, boxZoom: false, keyboard: false,
+            zoomAnimation: false, fadeAnimation: false, inertia: false
         });
 
         if(track.routePath && track.routePath.length > 0) {
             const polyline = L.polyline(track.routePath, {
-                color: '#ff3b30', // RED
-                weight: 5,
-                opacity: 1,
+                color: '#ff3b30', 
+                weight: 5, 
+                opacity: 1, 
                 lineCap: 'round',
                 className: 'track-poly-line' // CSS Glow
             }).addTo(miniMap);
 
+            // WICHTIG: Padding erhöhen (z.B. [40, 40]), damit die Linie nicht am Rand klebt
             miniMap.fitBounds(polyline.getBounds(), {
-                padding: [20, 20],
+                padding: [50, 50], 
                 animate: false
             });
         }
         
-        setTimeout(() => { miniMap.invalidateSize(); }, 100);
+        // Timeout ist wichtig, damit der Container die finale Größe hat
+        setTimeout(() => { miniMap.invalidateSize(); }, 150);
     },
 
     checkTrackConditions: function(track) {
