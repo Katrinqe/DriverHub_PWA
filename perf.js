@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - FINAL MASTER V5.1 (RED & FIXED) === */
+/* === PERF.JS - FINAL MASTER V9 (FULL COMPLETE) === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -22,7 +22,7 @@ window.PerfLogic = {
     // --- SECTOR EDITOR VARS ---
     sectorSplits: [], 
     sectorMap: null,
-    // Erweiterte Palette für bessere Unterscheidung
+    // Erweiterte Palette für Sektoren
     sectorColors: ['#ff3b30', '#00e5ff', '#30d158', '#bf5af2', '#ff9f0a', '#ffffff'], 
     currentSectorsData: [],
     cachedElevations: [],
@@ -39,7 +39,7 @@ window.PerfLogic = {
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - V5.1 Red Master");
+        console.log("PerfLogic Init - V9 Full");
         this.renderTrackList();
     },
 
@@ -161,22 +161,12 @@ window.PerfLogic = {
 
         if(track.pins) {
             track.pins.forEach(p => {
-                if(p.type === 'start') {
-                    const icon = L.divIcon({ 
-                        className: 'custom-marker-wrap', 
-                        html: `<div class="tm-marker tm-start"><i class="fa-solid fa-play" style="margin-left:2px;"></i></div>`, 
-                        iconSize: [30,30], iconAnchor: [15,15] 
-                    });
-                    L.marker([p.lat, p.lng], {icon: icon}).addTo(this.map);
-                }
-                if(p.type === 'finish') {
-                    const icon = L.divIcon({ 
-                        className: 'custom-marker-wrap', 
-                        html: `<div class="tm-marker tm-finish"><i class="fa-solid fa-flag-checkered"></i></div>`, 
-                        iconSize: [30,30], iconAnchor: [15,15] 
-                    });
-                    L.marker([p.lat, p.lng], {icon: icon}).addTo(this.map);
-                }
+                const icon = L.divIcon({ 
+                    className: 'custom-marker-wrap', 
+                    html: `<div class="tm-marker tm-${p.type}"><i class="fa-solid fa-${p.type === 'start' ? 'play' : 'flag-checkered'}"></i></div>`, 
+                    iconSize: [30,30], iconAnchor: [15,15] 
+                });
+                L.marker([p.lat, p.lng], {icon: icon}).addTo(this.map);
             });
         }
     },
@@ -514,6 +504,7 @@ window.PerfLogic = {
 
         this.setStartType('standing'); 
         this.currentSectorsData = [];
+        this._initTachoHTML(); // Ensure Tacho HTML is ready if needed
     },
 
     cancelSetup: function() {
@@ -572,8 +563,11 @@ window.PerfLogic = {
     // =================================================
 
     _initTachoHTML: function() {
+        // Safe check if container exists in current DOM
         const container = document.querySelector('.tacho-container');
-        if (container && (!container.querySelector('.tacho-ticks') || container.innerHTML.trim() === '')) {
+        if (!container) return; 
+
+        if (!container.querySelector('.tacho-ticks') || container.innerHTML.trim() === '') {
             container.innerHTML = ''; 
             container.classList.add('ready');
 
@@ -599,6 +593,7 @@ window.PerfLogic = {
     },
 
     updateTacho: function(val) {
+        // If not initialized, try init
         if(!document.querySelector('.tacho-track')) this._initTachoHTML();
 
         val = parseInt(val);
@@ -654,28 +649,47 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 7. SECTOR EDITOR (LOGIC) - ZOOM FIX
+    // 7. SECTOR EDITOR (LOGIC) - ZOOM FIX & OVERLAY FIX
     // =================================================
 
     openSectorEditor: function() {
         if(!this.currentRouteGeo) return;
-        document.getElementById('sector-editor-overlay').classList.remove('hidden');
         
-        // HUD
         const overlay = document.getElementById('sector-editor-overlay');
-        if(!overlay.querySelector('.sec-hint-hub')) {
-            const hud = document.createElement('div');
-            hud.className = 'sec-hint-hub';
-            hud.innerHTML = `<i class="fa-solid fa-scissors sec-hint-icon"></i><div class="sec-hint-text">TAP TRACK TO SPLIT</div>`;
-            overlay.appendChild(hud);
-        }
-
-        if(!this.sectorMap) {
-            this.sectorMap = L.map('sector-map', { zoomControl: false, attributionControl: false });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.sectorMap);
-            this.sectorMap.on('click', (e) => { this.handleSectorClick(e.latlng); });
-        }
+        overlay.classList.remove('hidden');
         
+        // 1. CLEAR OVERLAY (WICHTIG gegen Dopplungen)
+        overlay.innerHTML = ''; 
+        
+        // 2. HUD OBEN BAUEN
+        const hintHub = document.createElement('div');
+        hintHub.className = 'sec-hint-hub';
+        hintHub.innerHTML = `<i class="fa-solid fa-scissors sec-hint-icon"></i><div class="sec-hint-text">TAP TRACK TO SPLIT</div>`;
+        overlay.appendChild(hintHub);
+
+        // 3. MAP CONTAINER
+        const mapDiv = document.createElement('div');
+        mapDiv.id = 'sector-map';
+        mapDiv.style.width = '100%'; mapDiv.style.height = '100%';
+        overlay.appendChild(mapDiv);
+
+        // 4. BUTTONS UNTEN (Style Klassen nutzen)
+        const hud = document.createElement('div');
+        hud.className = 'sec-editor-hud';
+        hud.innerHTML = `
+            <div class="sec-btn" onclick="PerfLogic.closeSectorEditor()"><i class="fa-solid fa-xmark"></i> CANCEL</div>
+            <div class="sec-btn" onclick="PerfLogic.undoSectorSplit()"><i class="fa-solid fa-rotate-left"></i> UNDO</div>
+            <div class="sec-btn save" onclick="PerfLogic.saveSectors()"><i class="fa-solid fa-check"></i> SAVE SECTORS</div>
+        `;
+        overlay.appendChild(hud);
+
+        // 5. MAP INIT
+        if(this.sectorMap) { this.sectorMap.remove(); } // Alte Instanz killen
+        this.sectorMap = L.map('sector-map', { zoomControl: false, attributionControl: false });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.sectorMap);
+        this.sectorMap.on('click', (e) => { this.handleSectorClick(e.latlng); });
+        
+        // Init Splits (0 bis Ende)
         this.sectorSplits = [0, this.currentRouteGeo.length - 1]; 
         
         setTimeout(() => {
@@ -685,7 +699,9 @@ window.PerfLogic = {
     },
 
     closeSectorEditor: function() {
-        document.getElementById('sector-editor-overlay').classList.add('hidden');
+        const overlay = document.getElementById('sector-editor-overlay');
+        overlay.classList.add('hidden');
+        if(this.sectorMap) { this.sectorMap.remove(); this.sectorMap = null; }
     },
 
     handleSectorClick: function(latlng) {
@@ -702,13 +718,19 @@ window.PerfLogic = {
         });
 
         if(closestDist > 50) return;
+        
+        // Verhindern, dass Splits zu nah aneinander sind
+        if (this.sectorSplits.includes(closestIndex)) return;
+
         this.sectorSplits.push(closestIndex);
         this.sectorSplits.sort((a, b) => a - b);
         this.renderSectorMap(false); // <--- FALSE: Kein Zoom Reset!
+        if(navigator.vibrate) navigator.vibrate(10);
     },
 
     undoSectorSplit: function() {
         if(this.sectorSplits.length <= 2) return; 
+        // Entfernt den vorletzten Eintrag (letzter Split vor dem Ziel)
         this.sectorSplits.splice(this.sectorSplits.length - 2, 1);
         this.renderSectorMap(false);
     },
@@ -722,31 +744,37 @@ window.PerfLogic = {
             this.sectorMap.fitBounds(bounds, {padding: [40,40]});
         }
 
+        // LOGIK FIX: WIR FÄRBEN VOM START (0)
+        // Die Loop geht durch die Splits. Split[0] ist Start. Split[1] ist erster Cut.
         for(let i=0; i < this.sectorSplits.length - 1; i++) {
             const startIdx = this.sectorSplits[i];
             const endIdx = this.sectorSplits[i+1];
+            
             const segment = this.currentRouteGeo.slice(startIdx, endIdx + 1);
+            
+            // Farben Logik: Einfach rotieren
             const color = this.sectorColors[i % this.sectorColors.length];
             
             L.polyline(segment, {color: color, weight: 6, opacity: 1}).addTo(this.sectorMap);
             
-            if(i > 0) {
+            // Marker am Ende des Segments (Split Punkt), außer es ist das Ziel
+            if(i > 0 && i < this.sectorSplits.length - 1) {
                 const markerPos = this.currentRouteGeo[startIdx];
                 const icon = L.divIcon({
                     className: 'split-marker',
-                    html: `<div style="width:4px; height:16px; background:white; transform:rotate(20deg); box-shadow:0 0 5px black;"></div>`,
+                    html: `<div style="width:4px; height:20px; background:white; transform:rotate(20deg); box-shadow:0 0 5px black;"></div>`,
                     iconSize: [20,20], iconAnchor: [10,10]
                 });
                 L.marker(markerPos, {icon: icon}).addTo(this.sectorMap);
             }
         }
         
-        // Start/Ziel Marker
+        // Start & Ziel Marker explizit setzen
         if(this.currentRouteGeo && this.currentRouteGeo.length > 0) {
             const start = this.currentRouteGeo[0];
             const end = this.currentRouteGeo[this.currentRouteGeo.length-1];
-            const startIcon = L.divIcon({className: 'custom-icon', html: '<div class="sec-marker-start"></div>', iconSize:[14,14]});
-            const endIcon = L.divIcon({className: 'custom-icon', html: '<div class="sec-marker-finish"></div>', iconSize:[14,14]});
+            const startIcon = L.divIcon({className: 'custom-icon', html: '<div class="sec-marker-start"></div>', iconSize:[14,14], iconAnchor:[7,7]});
+            const endIcon = L.divIcon({className: 'custom-icon', html: '<div class="sec-marker-finish"></div>', iconSize:[14,14], iconAnchor:[7,7]});
             L.marker(start, {icon: startIcon}).addTo(this.sectorMap);
             L.marker(end, {icon: endIcon}).addTo(this.sectorMap);
         }
@@ -800,8 +828,6 @@ window.PerfLogic = {
     // =================================================
     // 8. RENDER FUNCTIONS (V4 CAROUSEL & RED THEME)
     // =================================================
-
-  // --- RENDER LOGIC V5.2 (ANIMATED & FIXED PADDING) ---
 
     renderTrackList: function() {
         const trackCount = this.tracks.length;
@@ -859,8 +885,6 @@ window.PerfLogic = {
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
-            
-            // STAGGERED ANIMATION: Jede Karte kommt 0.1s später
             div.style.animationDelay = (index * 0.1) + "s";
             
             const distDisplay = t.dist || "0.0 km";
@@ -869,7 +893,6 @@ window.PerfLogic = {
 
             div.innerHTML = `
                 <div class="tc-bg-map" id="mini-map-${t.id}"></div>
-                <div class="tc-overlay"></div>
                 <div class="tc-content">
                     <div class="tc-name">${nameDisplay}</div>
                     <div class="tc-details">
@@ -883,18 +906,17 @@ window.PerfLogic = {
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
 
-            setTimeout(() => this.renderMiniMap(t), 200 + (index * 50)); // Render Maps slightly delayed to save perf
+            setTimeout(() => this.renderMiniMap(t), 300);
             this.checkTrackConditions(t); 
         });
 
         // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
-        // Kommt als letztes rein
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
-        
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
         
+        // CLICK FIX
         addBtn.onclick = (e) => {
             e.stopPropagation(); 
             console.log("Add Track Clicked"); 
@@ -910,31 +932,30 @@ window.PerfLogic = {
         if(!container) return;
         if(container._leaflet_id) return; 
 
-        // Minimale Map Optionen für Performance
+        // Minimalste Map
         const miniMap = L.map(mapId, {
             zoomControl: false, attributionControl: false,
             dragging: false, touchZoom: false, doubleClickZoom: false,
             scrollWheelZoom: false, boxZoom: false, keyboard: false,
-            zoomAnimation: false, fadeAnimation: false, inertia: false
+            zoomAnimation: false
         });
 
         if(track.routePath && track.routePath.length > 0) {
             const polyline = L.polyline(track.routePath, {
-                color: '#ff3b30', 
-                weight: 5, 
-                opacity: 1, 
+                color: '#ff3b30', // RED
+                weight: 5,
+                opacity: 1,
                 lineCap: 'round',
-                className: 'track-poly-line' // CSS Glow
+                className: 'track-poly-line' // GLOW CSS CLASS
             }).addTo(miniMap);
 
-            // WICHTIG: Padding erhöhen (z.B. [40, 40]), damit die Linie nicht am Rand klebt
+            // WICHTIG: Padding, damit die Linie nicht am Rand klebt
             miniMap.fitBounds(polyline.getBounds(), {
                 padding: [50, 50], 
                 animate: false
             });
         }
         
-        // Timeout ist wichtig, damit der Container die finale Größe hat
         setTimeout(() => { miniMap.invalidateSize(); }, 150);
     },
 
