@@ -43,6 +43,31 @@ window.PerfLogic = {
         this.renderTrackList();
     },
 
+    // --- TAB SWITCHING LOGIC ---
+    switchTab: function(tabName) {
+        // 1. Alle Views ausblenden
+        ['track', 'drag', 'analytics'].forEach(t => {
+            const view = document.getElementById('view-' + t);
+            if(view) view.style.display = 'none';
+            
+            const btn = document.getElementById('btn-tab-' + t);
+            if(btn) btn.classList.remove('active');
+        });
+
+        // 2. Gewählten View anzeigen
+        const activeView = document.getElementById('view-' + tabName);
+        if(activeView) activeView.style.display = 'block';
+
+        // 3. Button aktiv setzen
+        const activeBtn = document.getElementById('btn-tab-' + tabName);
+        if(activeBtn) activeBtn.classList.add('active');
+
+        // Optional: Animation oder Refresh triggern wenn nötig
+        if(tabName === 'analytics') {
+            this.updateLiveDashboard(); // Daten auffrischen
+        }
+    },
+
     onScreenShow: function() {
         if (!this.map) {
             this.loadMap();
@@ -773,104 +798,116 @@ window.PerfLogic = {
 renderTrackList: function() {
         const trackCount = this.tracks.length;
         let bestTime = "---";
-        // Echte Berechnung des Best Scores für den Header
-        let bestScoreDisplay = "---";
-        
-        // Suche echten besten Score
+        let scoreInt = 0;
+
         if (trackCount > 0) {
-            const scores = this.tracks.map(t => parseInt(t.bestTime) || 0).filter(s => s > 0);
-            // Fallback: Wenn wir noch keine echten Scores haben, nehmen wir Dummy-Logik oder ---
-            // Hier nehmen wir an, dass t.bestTime ein String wie "1:20" ist. 
-            // Für das Dashboard berechnen wir gleich echte Stats.
+            const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
+            if(validTracks.length > 0) {
+                bestTime = validTracks[0].bestTime; 
+                scoreInt = trackCount * 150; 
+            }
         }
 
         const contentArea = document.querySelector('.perf-content-scroll');
         
+        // NEUE STRUKTUR: Header + Views + Nav
         let html = `
             <div class="header-fade-overlay"></div>
 
             <div class="perf-dashboard-header">
                 <div class="glass-stats-hub">
                     <div class="pd-side-stat">
-                        <label>TRACKS</label>
-                        <div class="val">${trackCount}</div>
+                        <label>BEST TIME</label>
+                        <div class="val">${bestTime}</div>
                     </div>
                     <div class="pd-main-score">
-                        <label>DRIVER RATING</label>
-                        <div class="val" id="global-score-display">---</div>
+                        <label>PRM SCORE</label>
+                        <div class="val" id="global-score-display">${scoreInt > 0 ? scoreInt : '---'}</div>
                     </div>
                     <div class="pd-side-stat">
-                        <label>BEST GAP</label>
-                        <div class="val" id="header-best-gap">---</div>
+                        <label>TRACKS</label>
+                        <div class="val">${trackCount}</div>
                     </div>
                 </div>
             </div>
             
-            <div id="perf-track-list"></div>
+            <div id="view-track" style="display:block; padding-bottom:100px;">
+                <div id="perf-track-list"></div>
+            </div>
 
-            <div class="live-dashboard-section">
-                <div class="ld-title"><div class="ld-pulse"></div> LIVE CONDITIONS</div>
-                
-                <div class="ld-card" id="live-weather-card">
-                    <div class="weather-main-row">
-                        <div class="weather-temp" id="ld-temp">--°</div>
-                        <div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div>
-                    </div>
-                    <div class="weather-grid">
-                        <div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div>
-                        <div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div>
-                        <div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div>
-                    </div>
-                    <div class="traction-index-box">
-                        <div class="ti-label">TRACTION INDEX</div>
-                        <div class="ti-value" id="ld-grip">---</div>
-                    </div>
-                    <div class="weather-summary" id="ld-summary">
-                        Connecting to satellites...
-                    </div>
-                </div>
+            <div id="view-drag" style="display:none; padding:20px; text-align:center;">
+                <div style="color:#666; font-weight:800; margin-top:50px;">DRAG MODE COMING SOON</div>
+            </div>
 
-                <div class="ld-title" style="margin-top:10px;">PERFORMANCE STATS</div>
-
-                <div class="stats-grid-row">
-                    <div class="stat-mini-card">
-                        <label>AVG SCORE</label>
-                        <div class="val" id="stat-avg">---</div>
-                    </div>
-                    <div class="stat-mini-card best">
-                        <label>BEST SCORE</label>
-                        <div class="val" id="stat-best">---</div>
-                    </div>
-                    <div class="stat-mini-card">
-                        <label>WORST</label>
-                        <div class="val" id="stat-worst">---</div>
-                    </div>
-                </div>
-
-                <div class="ld-card" id="best-track-card" style="display:none;">
-                    <div class="ld-title" style="color:#fff; opacity:0.5; margin-bottom:10px;">YOUR STRONGEST TRACK</div>
-                    <div class="best-track-layout">
-                        <div class="bt-info">
-                            <h3 id="bt-name">---</h3>
-                            <p><i class="fa-solid fa-road"></i> <span id="bt-dist">---</span> | Best: <span id="bt-time" style="color:#ff3b30">---</span></p>
+            <div id="view-analytics" style="display:none;">
+                <div class="live-dashboard-section">
+                    <div class="ld-title"><div class="ld-pulse"></div> LIVE CONDITIONS</div>
+                    
+                    <div class="ld-card" id="live-weather-card">
+                        <div class="weather-main-row">
+                            <div class="weather-temp" id="ld-temp">--°</div>
+                            <div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div>
                         </div>
-                        <div class="bt-score-badge" id="bt-badge">A+</div>
+                        <div class="weather-grid">
+                            <div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div>
+                            <div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div>
+                            <div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div>
+                        </div>
+                        <div class="traction-index-box">
+                            <div class="ti-label">TRACTION INDEX</div>
+                            <div class="ti-value" id="ld-grip">---</div>
+                        </div>
+                        <div class="weather-summary" id="ld-summary">
+                            Connecting to satellites...
+                        </div>
+                    </div>
+
+                    <div class="ld-title" style="margin-top:20px;">PERFORMANCE DATA</div>
+
+                    <div class="stats-grid-row">
+                        <div class="stat-mini-card">
+                            <label>AVG SCORE</label>
+                            <div class="val" id="stat-avg">---</div>
+                        </div>
+                        <div class="stat-mini-card best">
+                            <label>BEST SCORE</label>
+                            <div class="val" id="stat-best">---</div>
+                        </div>
+                        <div class="stat-mini-card">
+                            <label>WORST</label>
+                            <div class="val" id="stat-worst">---</div>
+                        </div>
+                    </div>
+
+                    <div class="ld-card" id="best-track-card" style="display:none; margin-top:15px;">
+                        <div class="ld-title" style="color:#fff; opacity:0.5; margin-bottom:10px;">STRONGEST TRACK</div>
+                        <div class="best-track-layout">
+                            <div class="bt-info">
+                                <h3 id="bt-name">---</h3>
+                                <p><i class="fa-solid fa-road"></i> <span id="bt-dist">---</span> | Best: <span id="bt-time" style="color:#ff3b30">---</span></p>
+                            </div>
+                            <div class="bt-score-badge" id="bt-badge">A+</div>
+                        </div>
                     </div>
                 </div>
-
             </div>
 
             <div class="perf-sub-nav">
-                <div class="psn-item active">TRACK</div>
-                <div class="psn-item">DRAG</div>
-                <div class="psn-item">ANALYTICS</div>
+                <div class="psn-item active" id="btn-tab-track" onclick="PerfLogic.switchTab('track')">TRACK</div>
+                <div class="psn-item" id="btn-tab-drag" onclick="PerfLogic.switchTab('drag')">DRAG</div>
+                <div class="psn-item" id="btn-tab-analytics" onclick="PerfLogic.switchTab('analytics')">ANALYTICS</div>
             </div>
         `;
         
         contentArea.innerHTML = html;
+        
+        if(trackCount > 0 && scoreInt > 0) {
+            this.animateValue("global-score-display", 0, scoreInt, 1200);
+        }
 
-        // Render Track List Loop (Code bleibt gleich wie in V11)
+        // --- TRACK LISTE RENDERN (In den view-track Container) ---
         const list = document.getElementById('perf-track-list');
+        
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
@@ -882,6 +919,7 @@ renderTrackList: function() {
 
             div.innerHTML = `
                 <div class="tc-bg-map" id="mini-map-${t.id}"></div>
+                <div class="tc-overlay"></div>
                 <div class="tc-content">
                     <div class="tc-name">${nameDisplay}</div>
                     <div class="tc-details">
@@ -891,21 +929,28 @@ renderTrackList: function() {
                 </div>
                 <div class="tc-condition-badge" id="cond-badge-${t.id}" style="display:none"></div>
             `;
+            
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
+
             setTimeout(() => this.renderMiniMap(t), 200 + (index * 50));
             this.checkTrackConditions(t); 
         });
 
-        // Add Button (Code bleibt gleich wie in V11)
+        // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
-        addBtn.onclick = (e) => { e.stopPropagation(); this.enterCreatorMode(); };
+        addBtn.onclick = (e) => {
+            e.stopPropagation(); 
+            console.log("Add Track Clicked"); 
+            this.enterCreatorMode();
+        };
+
         list.appendChild(addBtn);
 
-        // NEU: Dashboard Daten laden
+        // Daten im Hintergrund laden, damit sie da sind wenn man umschaltet
         this.updateLiveDashboard();
     },
 
