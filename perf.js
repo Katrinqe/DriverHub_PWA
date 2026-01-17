@@ -407,92 +407,39 @@ window.PerfLogic = {
         this.openSetupScreen();
     },
 
-    openSetupScreen: function() {
+  openSetupScreen: function() {
+        // UI Aufräumen
         document.getElementById('perf-creator-ui').classList.add('hidden');
+        
+        // Setup Screen zeigen
         const setupScreen = document.getElementById('track-setup-screen');
         setupScreen.classList.remove('hidden');
         
-        // HTML INJECTEN (Komplett)
+        // NAV FIX: Navigationsleiste explizit ausblenden
+        const navBar = document.querySelector('.perf-sub-nav');
+        if(navBar) navBar.style.display = 'none'; // <--- WICHTIG!
+
+        // HTML INJECTEN (PRM IS BACK)
         const scrollContent = document.querySelector('.setup-content-scroll');
+        // ... (Rest vom HTML String bleibt gleich wie vorher) ...
+        // Damit du nicht alles kopieren musst, hier nur der Anfang des Strings:
         scrollContent.innerHTML = `
             <div class="setup-card">
                 <h2>CONFIGURE TRACK</h2>
-                
-                <div class="config-group">
-                    <label>TRACK NAME</label>
-                    <div class="fancy-input-wrap">
-                        <input type="text" id="setup-name" placeholder="Ex: Midnight Run" value="Unnamed Track">
-                    </div>
-                </div>
-
-                <div class="config-group">
-                    <label>START TYPE</label>
-                    <div class="fancy-toggle-row">
-                        <button class="fancy-toggle active" id="btn-standing" onclick="PerfLogic.setStartType('standing')">
-                            <i class="fa-solid fa-flag"></i> STANDING
-                        </button>
-                        <button class="fancy-toggle" id="btn-flying" onclick="PerfLogic.setStartType('flying')">
-                            <i class="fa-solid fa-plane-departure"></i> FLYING
-                        </button>
-                    </div>
-                </div>
-
-                <div id="flying-settings" class="hidden">
-                    <div class="tacho-container"></div> 
-                    <div class="fly-grid-row">
-                        <div class="fly-col">
-                            <label>MIN SPEED (Trigger)</label>
-                            <div class="stepper-control">
-                                <div class="step-btn" onclick="PerfLogic.stepValue('fly-min', -5)">-</div>
-                                <div class="step-display"><input type="number" id="fly-min" value="30" readonly></div>
-                                <div class="step-btn" onclick="PerfLogic.stepValue('fly-min', 5)">+</div>
-                            </div>
-                        </div>
-                        <div class="fly-col">
-                            <label>MAX SPEED (Valid)</label>
-                            <div class="stepper-control">
-                                <div class="step-btn" onclick="PerfLogic.stepValue('fly-max', -5)">-</div>
-                                <div class="step-display"><input type="number" id="fly-max" value="300" readonly></div>
-                                <div class="step-btn" onclick="PerfLogic.stepValue('fly-max', 5)">+</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="config-group" style="margin-top:20px;">
-                    <label>SECTORS & SPLITS</label>
-                    <div id="sector-config-container">
-                        <div class="sector-add-card" onclick="PerfLogic.openSectorEditor()">
-                            <i class="fa-solid fa-plus-circle"></i> ADD SECTORS
-                        </div>
-                    </div>
-                </div>
-
-                <div class="prm-engine-box">
-                    <div class="prm-bg-stripes"></div>
-                    <div class="prm-title">PRM CALCULATION ENGINE</div>
-                    <div class="prm-status">
-                        <div class="prm-dot"></div>
-                        WAITING FOR TRACK DATA
-                    </div>
-                </div>
-
-                <div class="setup-actions">
-                    <button class="btn-discard-text" onclick="PerfLogic.cancelSetup()">DISCARD</button>
-                    <button class="btn-save-final" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button>
-                </div>
+                <div class="config-group"><label>TRACK NAME</label><div class="fancy-input-wrap"><input type="text" id="setup-name" placeholder="Ex: Midnight Run" value="Unnamed Track"></div></div>
+                <div class="config-group"><label>START TYPE</label><div class="fancy-toggle-row"><button class="fancy-toggle active" id="btn-standing" onclick="PerfLogic.setStartType('standing')"><i class="fa-solid fa-flag"></i> STANDING</button><button class="fancy-toggle" id="btn-flying" onclick="PerfLogic.setStartType('flying')"><i class="fa-solid fa-plane-departure"></i> FLYING</button></div></div>
+                <div id="flying-settings" class="hidden"><div class="tacho-container"></div><div class="fly-grid-row"><div class="fly-col"><label>MIN SPEED</label><div class="stepper-control"><div class="step-btn" onclick="PerfLogic.stepValue('fly-min', -5)">-</div><div class="step-display"><input type="number" id="fly-min" value="30" readonly></div><div class="step-btn" onclick="PerfLogic.stepValue('fly-min', 5)">+</div></div></div><div class="fly-col"><label>MAX SPEED</label><div class="stepper-control"><div class="step-btn" onclick="PerfLogic.stepValue('fly-max', -5)">-</div><div class="step-display"><input type="number" id="fly-max" value="300" readonly></div><div class="step-btn" onclick="PerfLogic.stepValue('fly-max', 5)">+</div></div></div></div></div>
+                <div class="config-group" style="margin-top:20px;"><label>SECTORS & SPLITS</label><div id="sector-config-container"><div class="sector-add-card" onclick="PerfLogic.openSectorEditor()"><i class="fa-solid fa-plus-circle"></i> ADD SECTORS</div></div></div>
+                <div class="prm-engine-box"><div class="prm-bg-stripes"></div><div class="prm-title">PRM CALCULATION ENGINE</div><div class="prm-status"><div class="prm-dot"></div>WAITING FOR TRACK DATA</div></div>
+                <div class="setup-actions"><button class="btn-discard-text" onclick="PerfLogic.cancelSetup()">DISCARD</button><button class="btn-save-final" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button></div>
             </div>
         `;
 
-        // Map Setup
+        // Map Setup Logic... (bleibt gleich)
         if(!this.setupMap) {
-            this.setupMap = L.map('setup-map', {
-                zoomControl: false, attributionControl: false,
-                dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false
-            });
+            this.setupMap = L.map('setup-map', { zoomControl: false, attributionControl: false, dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false });
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(this.setupMap);
         }
-
         setTimeout(() => {
             this.setupMap.invalidateSize();
             this.setupMap.eachLayer(l => { if(!l._url) this.setupMap.removeLayer(l); });
@@ -501,6 +448,10 @@ window.PerfLogic = {
                 this.setupMap.fitBounds(poly.getBounds(), {padding: [50, 50]});
             }
         }, 200);
+        this.setStartType('standing'); 
+        this.currentSectorsData = [];
+        this._initTachoHTML(); 
+    },
 
         this.setStartType('standing'); 
         this.currentSectorsData = [];
