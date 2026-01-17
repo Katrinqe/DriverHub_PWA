@@ -734,10 +734,23 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
 }
 
 /* ============================================================= */
-/* === DRIVERHUB STYLE.CSS - MASTER V7 (FINAL POLISH)        === */
+/* === DRIVERHUB STYLE.CSS - TRUE MASTER V9 (FULL & COMPLETE) === */
 /* ============================================================= */
 
 /* --- 1. GLOBAL SETTINGS & INPUT FIXES --- */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #000; color: white;
+    overflow: hidden; /* App Feeling */
+}
+
+/* WICHTIG: Damit man in Inputs tippen kann */
 input, textarea { 
     user-select: text !important; 
     -webkit-user-select: text !important; 
@@ -746,7 +759,7 @@ input, textarea {
     z-index: 10000 !important; 
 }
 
-/* --- 2. DYNAMIC BACKGROUND (ULTRA SUBTLE) --- */
+/* --- 2. DYNAMIC BACKGROUND (ALIVE RED GLOW) --- */
 .perf-content-scroll {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     /* Basis Schwarz */
@@ -758,40 +771,42 @@ input, textarea {
     transition: opacity 0.3s;
 }
 
-/* Der pulsierende rote Nebel - FAST UNSICHTBAR (5-8% Opacity) */
+/* Der pulsierende rote Nebel */
 .perf-content-scroll::before {
     content: '';
     position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-    /* Extrem reduziert für den "Edel-Look" */
-    background: radial-gradient(circle, rgba(255, 59, 48, 0.08) 0%, transparent 50%);
-    animation: bg-pulse-move 20s ease-in-out infinite alternate;
+    /* 15% Deckkraft für edlen Look */
+    background: radial-gradient(circle, rgba(255, 59, 48, 0.15) 0%, transparent 60%);
+    animation: bg-pulse-move 15s ease-in-out infinite alternate;
     z-index: -1;
     pointer-events: none;
     will-change: transform, opacity;
 }
 
 @keyframes bg-pulse-move {
-    0% { transform: translate(0, 0) scale(1); opacity: 0.2; }
-    50% { transform: translate(-20px, 10px) scale(1.1); opacity: 0.3; }
-    100% { transform: translate(10px, -20px) scale(1.05); opacity: 0.2; }
+    0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+    50% { transform: translate(-20px, 10px) scale(1.1); opacity: 0.5; }
+    100% { transform: translate(10px, -20px) scale(1.05); opacity: 0.3; }
 }
 
 /* Wenn Creator Mode an ist -> Dashboard ausblenden */
-body.creator-active .perf-content-scroll { display: none !important; }
+body.creator-active .perf-content-scroll {
+    display: none !important;
+}
 
 
-/* --- 3. HEADER (PLATZ SPAREN) --- */
+/* --- 3. HEADER & GLASS HUB --- */
 
-/* Der Fade ganz oben (Kleiner) */
+/* Der Fade ganz oben */
 .header-fade-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 60px; 
-    background: linear-gradient(to bottom, #000 40%, transparent 100%);
+    position: fixed; top: 0; left: 0; width: 100%; height: 80px; 
+    background: linear-gradient(to bottom, #050505 40%, transparent 100%);
     z-index: 20; pointer-events: none;
 }
 
 .perf-dashboard-header {
-    /* WENIGER PLATZ OBEN: Nur 40px Padding */
-    padding: 40px 20px 5px 20px; 
+    /* Kompakter Abstand oben */
+    padding: 50px 20px 10px 20px; 
     display: flex; justify-content: center;
     position: relative; z-index: 25;
 }
@@ -800,18 +815,19 @@ body.creator-active .perf-content-scroll { display: none !important; }
 .glass-stats-hub {
     width: 100%;
     display: flex; align-items: center; justify-content: space-between;
-    /* GLASMOPHISMUS */
-    background: rgba(20, 20, 20, 0.5); 
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    
+    background: rgba(30, 30, 30, 0.5); 
+    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255,255,255,0.02);
+    
     border-radius: 26px;
-    padding: 15px 25px;
+    padding: 18px 25px;
 }
 
-.pd-side-stat { flex: 1; text-align: center; opacity: 0.8; }
-.pd-side-stat label { display: block; font-size: 0.55rem; color: #888; font-weight: 800; margin-bottom: 2px; letter-spacing: 1px; }
-.pd-side-stat .val { font-size: 1.1rem; font-weight: 800; color: white; font-family: monospace; }
+.pd-side-stat { flex: 1; text-align: center; opacity: 0.9; }
+.pd-side-stat label { display: block; font-size: 0.6rem; color: #999; font-weight: 800; margin-bottom: 4px; letter-spacing: 1px; }
+.pd-side-stat .val { font-size: 1.2rem; font-weight: 800; color: white; font-family: monospace; }
 
 .pd-main-score { flex: 1.4; text-align: center; position: relative; }
 .pd-main-score::before, .pd-main-score::after {
@@ -820,11 +836,11 @@ body.creator-active .perf-content-scroll { display: none !important; }
 .pd-main-score::before { left: 0; }
 .pd-main-score::after { right: 0; }
 
-.pd-main-score label { display: block; font-size: 0.7rem; color: #ff3b30 !important; font-weight: 900; margin-bottom: 2px; text-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
-.pd-main-score .val { font-size: 2.5rem; font-weight: 900; color: white; line-height: 1; text-shadow: 0 0 30px rgba(255, 59, 48, 0.4) !important; }
+.pd-main-score label { display: block; font-size: 0.75rem; color: #ff3b30 !important; font-weight: 900; margin-bottom: 2px; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4); }
+.pd-main-score .val { font-size: 2.8rem; font-weight: 900; color: white; line-height: 1; text-shadow: 0 0 30px rgba(255, 59, 48, 0.5) !important; }
 
 
-/* --- 4. TRACK CARDS (CLEAN EDGES FIX) --- */
+/* --- 4. TRACK CARDS (SMARTPHONE FORMAT & LIVE LOOK) --- */
 
 /* Entry Animation */
 @keyframes slideUpFade {
@@ -836,61 +852,79 @@ body.creator-active .perf-content-scroll { display: none !important; }
     display: flex; flex-direction: row; gap: 20px;
     overflow-x: auto; padding: 10px 25px;
     scroll-snap-type: x mandatory;
-    min-height: 260px; position: relative; z-index: 10;
-    pointer-events: auto !important; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    min-height: 260px; /* Genug Platz */
+    position: relative; z-index: 10;
+    pointer-events: auto !important; 
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
 #perf-track-list::-webkit-scrollbar { display: none; }
 
 .track-card-v2 {
-    /* Format */
-    flex: 0 0 65vw; max-width: 280px; height: 240px;
+    flex: 0 0 65vw; max-width: 280px; 
+    height: 240px;
     
-    /* EDGE FIX: Isolation erzwingt sauberes Abschneiden */
-    position: relative !important; 
-    overflow: hidden !important;
-    isolation: isolate; 
-    transform: translateZ(0); /* Hardware Fix für Kanten */
-    
+    /* WICHTIG: Clean Edges */
+    position: relative !important; overflow: hidden !important;
     border-radius: 24px;
+    
     background: #080808; 
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
     
-    scroll-snap-align: center; cursor: pointer; margin-right: 0;
-    opacity: 0; animation: slideUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    scroll-snap-align: center;
+    cursor: pointer; margin-right: 0;
+    
+    opacity: 0; 
+    animation: slideUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     pointer-events: auto !important;
 }
 
+/* Map im Hintergrund */
 .tc-bg-map {
     position: absolute !important; top: 0; left: 0; width: 100%; height: 100%;
-    z-index: 0; opacity: 0.8; mix-blend-mode: screen; background: #000;
+    z-index: 0; opacity: 0.8; mix-blend-mode: screen; 
+    background: #000;
 }
 
+/* Content Bereich (Weicher Verlauf unten) */
 .tc-content {
     position: absolute; bottom: 0; left: 0; width: 100%;
     z-index: 10 !important;
     padding: 20px;
-    /* Weicher Verlauf nach oben */
-    background: linear-gradient(to top, #000 10%, rgba(0,0,0,0.8) 50%, transparent 100%);
-    /* KEINE border-radius hier, damit keine Lücken entstehen */
+    background: linear-gradient(to top, 
+        rgba(0,0,0,0.95) 0%, 
+        rgba(0,0,0,0.6) 60%, 
+        transparent 100%
+    );
+    /* Keine Ecken unten abrunden, damit es bündig ist */
+    border-bottom-left-radius: 24px;
+    border-bottom-right-radius: 24px;
 }
 
-.tc-name { font-size: 1.8rem; font-weight: 900; color: white; text-transform: uppercase; margin-bottom: 5px; line-height: 0.9; font-style: italic; text-shadow: 0 2px 10px black; }
-.tc-details { font-size: 0.85rem; color: #ccc; font-weight: 700; display: flex; gap: 15px; margin-top: 8px; }
+.tc-name { 
+    font-size: 1.8rem; font-weight: 900; color: white; 
+    text-transform: uppercase; margin-bottom: 5px; line-height: 0.9;
+    font-style: italic; text-shadow: 0 2px 10px black;
+}
+
+.tc-details { 
+    font-size: 0.85rem; color: #ccc; font-weight: 700; 
+    display: flex; gap: 15px; margin-top: 8px; 
+}
 .tc-details i { color: #ff3b30; margin-right: 5px; }
 
-/* Wetter Badge */
 .tc-condition-badge {
     position: absolute; top: 15px; right: 15px; z-index: 10;
     background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px;
-    padding: 6px 12px; display: flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px; padding: 6px 12px;
+    display: flex; align-items: center; gap: 8px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 .cond-dot { width: 8px; height: 8px; border-radius: 50%; }
 .cond-text { font-size: 0.65rem; font-weight: 800; color: white; letter-spacing: 0.5px; text-transform: uppercase; }
 
-/* Neon Linie */
+/* Neon Line Animation */
 .track-poly-line {
     stroke: #ff3b30; stroke-width: 5; stroke-linecap: round;
     filter: drop-shadow(0 0 8px #ff3b30) drop-shadow(0 0 15px rgba(255, 59, 48, 0.6));
@@ -907,8 +941,10 @@ body.creator-active .perf-content-scroll { display: none !important; }
     border-radius: 24px; background: rgba(255, 59, 48, 0.03); 
     border: 2px dashed rgba(255, 255, 255, 0.2);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    scroll-snap-align: center; color: #888; font-weight: 700; font-size: 0.8rem; letter-spacing: 1px; gap: 10px;
-    opacity: 0; transform: translateX(50px); animation: slideInRight 0.5s forwards;
+    scroll-snap-align: center;
+    color: #888; font-weight: 700; font-size: 0.8rem; letter-spacing: 1px; gap: 10px;
+    
+    opacity: 0; animation: slideUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     cursor: pointer; pointer-events: auto !important; z-index: 50;
 }
 .add-track-v2:active { background: rgba(255,255,255,0.08); border-color: white; color: white; }
@@ -925,31 +961,46 @@ body.creator-active .perf-content-scroll { display: none !important; }
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 0; opacity: 0; transition: opacity 0.5s;
 }
-body.creator-active #perf-map-container { opacity: 1 !important; z-index: 100 !important; pointer-events: auto !important; touch-action: none !important; }
+/* Wenn Creator Mode an ist */
+body.creator-active #perf-map-container {
+    opacity: 1 !important; z-index: 100 !important;
+    pointer-events: auto !important; touch-action: none !important;
+}
 #perf-map { width: 100%; height: 100%; background: #111; z-index: 101 !important; pointer-events: auto !important; }
 
 
-/* --- 7. CREATOR UI & HUD --- */
-#perf-creator-ui { pointer-events: none !important; z-index: 2000 !important; }
-.creator-top-hud, .creator-bottom-bar, .cb-action-btn, .cb-pin { pointer-events: auto !important; }
+/* --- 7. CREATOR UI (HUD & BUTTONS) --- */
+#perf-creator-ui {
+    pointer-events: none !important; z-index: 2000 !important;
+}
+.creator-top-hud, .creator-bottom-bar, .cb-action-btn, .cb-pin {
+    pointer-events: auto !important;
+}
 
 .creator-top-hud {
-    position: absolute; top: 50px; left: 50%; transform: translateX(-50%); width: 92%; height: 75px;
+    position: absolute; top: 60px; left: 50%; transform: translateX(-50%); width: 92%; height: 75px;
     background: rgba(12, 12, 12, 0.85); backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); display: flex; justify-content: space-evenly; align-items: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    display: flex; justify-content: space-evenly; align-items: center;
 }
 .cth-item { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; position: relative; }
 .cth-item:not(:last-child)::after { content: ''; position: absolute; right: 0; top: 25%; height: 50%; width: 1px; background: rgba(255, 255, 255, 0.1); }
 .cth-item label { display: block; font-size: 0.55rem; color: #555; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
 .cth-item span { color: #ffffff; font-family: -apple-system, monospace; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 1.1rem; font-style: italic; text-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
 
-.creator-bottom-bar { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 95%; height: 70px; display: flex; align-items: center; justify-content: space-between; }
+.creator-bottom-bar {
+    position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); width: 95%; height: 70px;
+    display: flex; align-items: center; justify-content: space-between;
+}
 .cb-action-btn { width: 50px; height: 50px; border-radius: 50%; border: none; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; cursor: pointer; background: rgba(20,20,20,0.9); border: 1px solid #333; }
 .cb-action-btn.cancel { color: #ff3b30; }
 .cb-action-btn.save { color: #30d158; }
 
-.cb-pins-container { background: rgba(10,10,10,0.95); border: 1px solid #333; border-radius: 40px; height: 55px; width: 65%; display: flex; align-items: center; justify-content: space-evenly; }
+.cb-pins-container {
+    background: rgba(10,10,10,0.95); border: 1px solid #333; border-radius: 40px; height: 55px; width: 65%;
+    display: flex; align-items: center; justify-content: space-evenly;
+}
 .cb-pin { display: flex; flex-direction: column; align-items: center; opacity: 0.4; transition: all 0.2s; cursor: pointer; }
 .cb-pin.active { opacity: 1; transform: scale(1.1); }
 .cb-pin span { font-size: 0.5rem; font-weight: 800; color: white; margin-top: 4px; }
@@ -962,36 +1013,86 @@ body.creator-active #perf-map-container { opacity: 1 !important; z-index: 100 !i
 
 
 /* --- 8. SETUP / CONFIGURATOR SCREEN --- */
-#track-setup-screen { position: fixed !important; top: 0; left: 0; width: 100%; height: 100%; background-color: #050505 !important; z-index: 5000 !important; display: grid !important; grid-template-rows: 35vh 1fr; overflow: hidden !important; pointer-events: auto !important; }
+#track-setup-screen {
+    position: fixed !important; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: #050505 !important; z-index: 5000 !important;
+    display: grid !important; grid-template-rows: 35vh 1fr; 
+    overflow: hidden !important; pointer-events: auto !important;
+}
 #track-setup-screen.hidden { display: none !important; }
 .setup-map-wrapper { grid-row: 1; width: 100%; height: 100%; background: #111; position: relative; z-index: 1; }
 #setup-map { width: 100%; height: 100%; }
-.setup-content-scroll { grid-row: 2; width: 100%; height: 100%; background: #0a0a0a; position: relative; z-index: 10; overflow-y: scroll !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important; overscroll-behavior: contain; border-top: 1px solid rgba(255, 59, 48, 0.2); }
+.setup-content-scroll {
+    grid-row: 2; width: 100%; height: 100%; background: #0a0a0a; position: relative; z-index: 10;
+    overflow-y: scroll !important; touch-action: pan-y !important; -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain; border-top: 1px solid rgba(255, 59, 48, 0.2);
+}
 .setup-card { padding: 25px; padding-bottom: 60px !important; pointer-events: auto !important; }
-.setup-card h2 { font-size: 0.9rem; color: #ff3b30; font-weight: 900; margin-bottom: 20px; text-align: center; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4); margin-top: 10px; }
+.setup-card h2 {
+    font-size: 0.9rem; color: #ff3b30; font-weight: 900; margin-bottom: 20px; text-align: center;
+    letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 15px rgba(255, 59, 48, 0.4); margin-top: 10px;
+}
 
-/* Inputs */
+/* Inputs & Config */
 .config-group { margin-bottom: 25px; }
 .config-group label { display: block; color: #888; font-size: 0.7rem; font-weight: 800; margin-bottom: 10px; letter-spacing: 1px; }
-.fancy-input-wrap input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid #333; color: white; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1rem; outline: none; transition: all 0.3s; }
+.fancy-input-wrap input {
+    width: 100%; background: rgba(255,255,255,0.05); border: 1px solid #333; color: white; padding: 15px;
+    border-radius: 12px; font-weight: bold; font-size: 1rem; outline: none; transition: all 0.3s;
+}
 .fancy-input-wrap input:focus { border-color: #ff3b30; background: rgba(20,0,0,0.5); }
 .fancy-toggle-row { display: flex; background: rgba(255,255,255,0.03); border-radius: 15px; padding: 5px; border: 1px solid #222; }
-.fancy-toggle { flex: 1; background: transparent; border: none; color: #666; padding: 12px; font-weight: 800; font-size: 0.8rem; border-radius: 12px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.fancy-toggle {
+    flex: 1; background: transparent; border: none; color: #666; padding: 12px; font-weight: 800; font-size: 0.8rem; border-radius: 12px;
+    transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
 .fancy-toggle.active { background: #ff3b30; color: white; box-shadow: 0 0 15px rgba(255, 59, 48, 0.3); }
 
-/* PRM Box */
-.prm-engine-box { margin: 20px 0; background: rgba(20, 20, 20, 0.8); border: 1px solid rgba(255, 59, 48, 0.3); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100px; }
-.prm-bg-stripes { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,59,48,0.03) 10px, rgba(255,59,48,0.03) 20px); z-index: 0; }
-.prm-title { color: #ff3b30; font-size: 0.75rem; letter-spacing: 2px; font-weight: 900; z-index: 1; text-transform: uppercase; margin-bottom: 8px; }
-.prm-status { color: #888; font-size: 0.7rem; font-family: monospace; z-index: 1; display: flex; align-items: center; gap: 8px; }
-.prm-dot { width: 8px; height: 8px; background: #ff3b30; border-radius: 50%; box-shadow: 0 0 10px #ff3b30; animation: prm-pulse 1.5s infinite; }
+/* PRM Box Design */
+.prm-engine-box {
+    margin: 20px 0;
+    background: rgba(20, 20, 20, 0.8);
+    border: 1px solid rgba(255, 59, 48, 0.3); /* ROT */
+    border-radius: 16px;
+    padding: 20px;
+    position: relative; overflow: hidden;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100px;
+}
+.prm-bg-stripes {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,59,48,0.03) 10px, rgba(255,59,48,0.03) 20px);
+    z-index: 0;
+}
+.prm-title {
+    color: #ff3b30; font-size: 0.75rem; letter-spacing: 2px; font-weight: 900; z-index: 1; 
+    text-transform: uppercase; margin-bottom: 8px;
+}
+.prm-status {
+    color: #888; font-size: 0.7rem; font-family: monospace; z-index: 1; display: flex; align-items: center; gap: 8px;
+}
+.prm-dot {
+    width: 8px; height: 8px; background: #ff3b30; border-radius: 50%; 
+    box-shadow: 0 0 10px #ff3b30; animation: prm-pulse 1.5s infinite;
+}
 @keyframes prm-pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
-/* Buttons */
+/* Buttons Save/Discard */
 .setup-actions { display: flex; gap: 15px; align-items: center; width: 100%; margin-top: 30px; margin-bottom: 20px; }
-.btn-discard-text { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #888; padding: 16px; border-radius: 14px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
-.btn-save-final { flex: 2; background: linear-gradient(135deg, #ff3b30, #ff6b30); color: white; border: none; padding: 16px; border-radius: 14px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; box-shadow: 0 5px 20px rgba(255, 59, 48, 0.4); cursor: pointer; text-transform: uppercase; position: relative; overflow: hidden; }
-.btn-save-final::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(transparent, rgba(255,255,255,0.2), transparent); transform: rotate(25deg); animation: btn-shine 3s infinite; }
+.btn-discard-text {
+    flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #888;
+    padding: 16px; border-radius: 14px; font-weight: 700; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;
+}
+.btn-save-final {
+    flex: 2; background: linear-gradient(135deg, #ff3b30, #ff6b30); color: white; border: none; padding: 16px;
+    border-radius: 14px; font-weight: 900; font-size: 1rem; letter-spacing: 1px; box-shadow: 0 5px 20px rgba(255, 59, 48, 0.4);
+    cursor: pointer; text-transform: uppercase; position: relative; overflow: hidden;
+}
+.btn-save-final::after {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: linear-gradient(transparent, rgba(255,255,255,0.2), transparent);
+    transform: rotate(25deg); animation: btn-shine 3s infinite;
+}
 
 
 /* --- 9. TACHO & UI --- */
@@ -1002,7 +1103,7 @@ body.creator-active #perf-map-container { opacity: 1 !important; z-index: 100 !i
 .step-display { flex: 1; display: flex; justify-content: center; }
 .step-display input { background: transparent !important; border: none !important; color: white !important; font-size: 1.3rem !important; font-weight: 900 !important; text-align: center; width: 100% !important; outline: none !important; }
 
-/* Tacho */
+/* Tacho Styles */
 .tacho-container { width: 280px; height: 140px; position: relative; margin: 30px auto 20px auto; overflow: hidden; background: transparent; transform: translateZ(0); filter: drop-shadow(0 15px 20px rgba(0,0,0,0.6)); touch-action: none !important; }
 .tacho-ticks { position: absolute; top: 10px; left: 10px; width: 260px; height: 260px; border-radius: 50%; background: repeating-conic-gradient(from 270deg, rgba(255,255,255,0.3) 0deg 1deg, transparent 1deg 5deg); -webkit-mask-image: radial-gradient(transparent 68%, black 70%); mask-image: radial-gradient(transparent 68%, black 70%); z-index: 0; pointer-events: none; }
 .tacho-track { position: absolute; top: 20px; left: 20px; width: 240px; height: 240px; border-radius: 50%; border: 4px solid rgba(255,255,255,0.08); border-bottom: none; z-index: 1; }
@@ -1015,25 +1116,49 @@ body.creator-active #perf-map-container { opacity: 1 !important; z-index: 100 !i
 .tacho-input-overlay { position: absolute; top: 0 !important; left: 0 !important; width: 100% !important; height: 100% !important; opacity: 0; z-index: 999 !important; cursor: ew-resize; touch-action: none; }
 
 
-/* --- 10. SECTOR EDITOR OVERLAY --- */
-/* WICHTIG: Z-INDEX 6000, DAMIT ES ÜBER DEM SETUP SCREEN (5000) LIEGT */
+/* --- 10. SECTOR EDITOR OVERLAY (FIXED Z-INDEX) --- */
 #sector-editor-overlay { 
     position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-    background: #050505; z-index: 6000 !important; /* <--- FIX HIER */
+    background: #050505; 
+    z-index: 6000 !important; /* MUSS ÜBER 5000 SEIN (SETUP SCREEN) */
     display: flex; flex-direction: column; 
-    pointer-events: auto !important; /* Muss Klicks empfangen */
+    pointer-events: auto !important; 
 }
 
+/* HUD OBEN (Text) */
 .sec-hint-hub {
     position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
-    background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(15px);
-    border: 1px solid rgba(255,255,255,0.1); padding: 10px 25px; border-radius: 30px;
-    display: flex; align-items: center; gap: 10px; z-index: 6005; box-shadow: 0 10px 20px rgba(0,0,0,0.5); pointer-events: none;
+    background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1); padding: 12px 30px; border-radius: 40px;
+    display: flex; align-items: center; gap: 10px; z-index: 6005; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8); pointer-events: none;
+    white-space: nowrap;
 }
-.sec-hint-text { color: white; font-weight: 700; font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase; }
-.sec-hint-icon { color: #ff3b30; font-size: 0.9rem; }
+.sec-hint-text { color: white; font-weight: 800; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+.sec-hint-icon { color: #ff3b30; font-size: 1rem; }
 
-/* Start/Ziel Marker im Editor */
+/* BUTTONS UNTEN (Style repariert) */
+.sec-editor-hud { 
+    position: absolute; bottom: 40px; left: 0; width: 100%; 
+    display: flex; justify-content: center; gap: 20px; 
+    z-index: 6005 !important; pointer-events: none; 
+}
+.sec-btn { 
+    pointer-events: auto !important; 
+    background: rgba(20,20,20,0.95); color: white; 
+    border: 1px solid #333; padding: 15px 30px; 
+    border-radius: 30px; font-weight: 800; font-size: 0.9rem;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5); 
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 1px;
+}
+.sec-btn:active { transform: scale(0.95); background: #333; }
+.sec-btn.save { 
+    background: #007aff; border: none; 
+    box-shadow: 0 0 20px rgba(0,122,255,0.4); 
+}
+
+/* Marker */
 .sec-marker-start { width: 14px; height: 14px; background: #30d158; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #30d158; }
 .sec-marker-finish { width: 14px; height: 14px; background: #ff3b30; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #ff3b30; }
 
