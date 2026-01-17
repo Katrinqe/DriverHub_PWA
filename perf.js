@@ -59,6 +59,38 @@ window.PerfLogic = {
             if(btn) btn.classList.remove('active');
         });
 
+
+        // --- FORCE EVENT BINDING ---
+    bindNavEvents: function() {
+        console.log("Binding Nav Events...");
+        
+        ['track', 'drag', 'analytics'].forEach(tab => {
+            const btn = document.getElementById('btn-tab-' + tab);
+            if(btn) {
+                // Alten Krams entfernen (Sicherheit)
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                // Touch Start (für sofortige Reaktion auf Handy)
+                newBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // Verhindert Ghost-Clicks
+                    e.stopPropagation();
+                    console.log("Touch detected:", tab);
+                    this.switchTab(tab);
+                }, {passive: false});
+
+                // Normaler Klick (Desktop/Fallback)
+                newBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log("Click detected:", tab);
+                    this.switchTab(tab);
+                });
+            } else {
+                console.warn("Button not found:", tab);
+            }
+        });
+    },
+        
         // 2. Gewählten View anzeigen
         const activeView = document.getElementById('view-' + tabName);
         if(activeView) {
