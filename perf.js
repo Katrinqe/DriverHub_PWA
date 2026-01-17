@@ -1,5 +1,5 @@
 /* ================================================= */
-/* === PERF.JS - FINAL MASTER V9 (FULL COMPLETE) === */
+/* === PERF.JS - FINAL MASTER V11 (COMPLETE)     === */
 /* ================================================= */
 
 window.PerfLogic = {
@@ -22,7 +22,7 @@ window.PerfLogic = {
     // --- SECTOR EDITOR VARS ---
     sectorSplits: [], 
     sectorMap: null,
-    // Erweiterte Palette für Sektoren
+    // Erweiterte Palette (Rot, Blau, Grün, Lila, Orange, Weiß)
     sectorColors: ['#ff3b30', '#00e5ff', '#30d158', '#bf5af2', '#ff9f0a', '#ffffff'], 
     currentSectorsData: [],
     cachedElevations: [],
@@ -39,12 +39,11 @@ window.PerfLogic = {
     // 1. INITIALISIERUNG
     // =================================================
     init: function() {
-        console.log("PerfLogic Init - V9 Full");
+        console.log("PerfLogic Init - V11 Complete");
         this.renderTrackList();
     },
 
     onScreenShow: function() {
-        // Map nur laden wenn nötig
         if (!this.map) {
             this.loadMap();
         } else {
@@ -121,7 +120,7 @@ window.PerfLogic = {
             this.showTrackOnMap(track);
         } else {
             // Placeholder Detail Logic
-            console.log("Opening Details for: " + track.name);
+            alert("Opening Details for: " + track.name);
         }
     },
 
@@ -256,6 +255,7 @@ window.PerfLogic = {
         
         document.body.classList.remove('creator-active');
 
+        // Restore Nav
         const navBar = document.querySelector('.perf-sub-nav');
         if(navBar) navBar.style.display = 'flex';
 
@@ -396,7 +396,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 5. SETUP & SAVE LOGIC (WITH PRM)
+    // 5. SETUP & SAVE LOGIC (WITH PRM & TACHO)
     // =================================================
 
     saveTrack: function() {
@@ -412,7 +412,7 @@ window.PerfLogic = {
         const setupScreen = document.getElementById('track-setup-screen');
         setupScreen.classList.remove('hidden');
         
-        // HTML INJECTEN (PRM IS BACK)
+        // HTML INJECTEN (Komplett)
         const scrollContent = document.querySelector('.setup-content-scroll');
         scrollContent.innerHTML = `
             <div class="setup-card">
@@ -504,7 +504,7 @@ window.PerfLogic = {
 
         this.setStartType('standing'); 
         this.currentSectorsData = [];
-        this._initTachoHTML(); // Ensure Tacho HTML is ready if needed
+        this._initTachoHTML(); 
     },
 
     cancelSetup: function() {
@@ -563,10 +563,8 @@ window.PerfLogic = {
     // =================================================
 
     _initTachoHTML: function() {
-        // Safe check if container exists in current DOM
         const container = document.querySelector('.tacho-container');
         if (!container) return; 
-
         if (!container.querySelector('.tacho-ticks') || container.innerHTML.trim() === '') {
             container.innerHTML = ''; 
             container.classList.add('ready');
@@ -593,7 +591,6 @@ window.PerfLogic = {
     },
 
     updateTacho: function(val) {
-        // If not initialized, try init
         if(!document.querySelector('.tacho-track')) this._initTachoHTML();
 
         val = parseInt(val);
@@ -649,7 +646,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 7. SECTOR EDITOR (LOGIC) - ZOOM FIX & OVERLAY FIX
+    // 7. SECTOR EDITOR (FIXED LOGIC)
     // =================================================
 
     openSectorEditor: function() {
@@ -718,8 +715,6 @@ window.PerfLogic = {
         });
 
         if(closestDist > 50) return;
-        
-        // Verhindern, dass Splits zu nah aneinander sind
         if (this.sectorSplits.includes(closestIndex)) return;
 
         this.sectorSplits.push(closestIndex);
@@ -730,7 +725,6 @@ window.PerfLogic = {
 
     undoSectorSplit: function() {
         if(this.sectorSplits.length <= 2) return; 
-        // Entfernt den vorletzten Eintrag (letzter Split vor dem Ziel)
         this.sectorSplits.splice(this.sectorSplits.length - 2, 1);
         this.renderSectorMap(false);
     },
@@ -745,7 +739,6 @@ window.PerfLogic = {
         }
 
         // LOGIK FIX: WIR FÄRBEN VOM START (0)
-        // Die Loop geht durch die Splits. Split[0] ist Start. Split[1] ist erster Cut.
         for(let i=0; i < this.sectorSplits.length - 1; i++) {
             const startIdx = this.sectorSplits[i];
             const endIdx = this.sectorSplits[i+1];
@@ -757,7 +750,7 @@ window.PerfLogic = {
             
             L.polyline(segment, {color: color, weight: 6, opacity: 1}).addTo(this.sectorMap);
             
-            // Marker am Ende des Segments (Split Punkt), außer es ist das Ziel
+            // Marker am Ende des Segments (Split Punkt)
             if(i > 0 && i < this.sectorSplits.length - 1) {
                 const markerPos = this.currentRouteGeo[startIdx];
                 const icon = L.divIcon({
@@ -826,7 +819,7 @@ window.PerfLogic = {
     },
 
     // =================================================
-    // 8. RENDER FUNCTIONS (V4 CAROUSEL & RED THEME)
+    // 8. RENDER FUNCTIONS
     // =================================================
 
     renderTrackList: function() {
@@ -846,47 +839,32 @@ window.PerfLogic = {
         
         let html = `
             <div class="header-fade-overlay"></div>
-
             <div class="perf-dashboard-header">
                 <div class="glass-stats-hub">
-                    <div class="pd-side-stat">
-                        <label>BEST TIME</label>
-                        <div class="val">${bestTime}</div>
-                    </div>
-                    <div class="pd-main-score">
-                        <label>PRM SCORE</label>
-                        <div class="val" id="global-score-display">${scoreInt > 0 ? scoreInt : '---'}</div>
-                    </div>
-                    <div class="pd-side-stat">
-                        <label>TRACKS</label>
-                        <div class="val">${trackCount}</div>
-                    </div>
+                    <div class="pd-side-stat"><label>BEST TIME</label><div class="val">${bestTime}</div></div>
+                    <div class="pd-main-score"><label>PRM SCORE</label><div class="val" id="global-score-display">${scoreInt > 0 ? scoreInt : '---'}</div></div>
+                    <div class="pd-side-stat"><label>TRACKS</label><div class="val">${trackCount}</div></div>
                 </div>
             </div>
-            
             <div id="perf-track-list"></div>
-
             <div class="perf-history-section">
                 <div class="ph-title">Recent Activity</div>
-                <div id="perf-history-list">
-                    <div class="ph-empty">NO RECENT DRIVES RECORDED</div>
-                </div>
+                <div id="perf-history-list"><div class="ph-empty">NO RECENT DRIVES RECORDED</div></div>
+            </div>
+            <div class="perf-sub-nav">
+                <div class="psn-item active">TRACK</div>
+                <div class="psn-item">DRAG</div>
+                <div class="psn-item">ANALYTICS</div>
             </div>
         `;
-        
         contentArea.innerHTML = html;
-        
-        if(trackCount > 0 && scoreInt > 0) {
-            this.animateValue("global-score-display", 0, scoreInt, 1200);
-        }
+        if(trackCount > 0 && scoreInt > 0) { this.animateValue("global-score-display", 0, scoreInt, 1200); }
 
         const list = document.getElementById('perf-track-list');
-        
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
             div.style.animationDelay = (index * 0.1) + "s";
-            
             const distDisplay = t.dist || "0.0 km";
             const nameDisplay = t.name || "UNNAMED TRACK";
             const timeDisplay = t.bestTime || "---";
@@ -902,27 +880,17 @@ window.PerfLogic = {
                 </div>
                 <div class="tc-condition-badge" id="cond-badge-${t.id}" style="display:none"></div>
             `;
-            
             div.onclick = () => this.selectTrack(t); 
             list.appendChild(div);
-
             setTimeout(() => this.renderMiniMap(t), 300);
             this.checkTrackConditions(t); 
         });
 
-        // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
-        
-        // CLICK FIX
-        addBtn.onclick = (e) => {
-            e.stopPropagation(); 
-            console.log("Add Track Clicked"); 
-            this.enterCreatorMode();
-        };
-
+        addBtn.onclick = (e) => { e.stopPropagation(); this.enterCreatorMode(); };
         list.appendChild(addBtn);
     },
 
@@ -932,7 +900,6 @@ window.PerfLogic = {
         if(!container) return;
         if(container._leaflet_id) return; 
 
-        // Minimalste Map
         const miniMap = L.map(mapId, {
             zoomControl: false, attributionControl: false,
             dragging: false, touchZoom: false, doubleClickZoom: false,
@@ -942,81 +909,41 @@ window.PerfLogic = {
 
         if(track.routePath && track.routePath.length > 0) {
             const polyline = L.polyline(track.routePath, {
-                color: '#ff3b30', // RED
-                weight: 5,
-                opacity: 1,
-                lineCap: 'round',
-                className: 'track-poly-line' // GLOW CSS CLASS
+                color: '#ff3b30', weight: 5, opacity: 1, lineCap: 'round', className: 'track-poly-line'
             }).addTo(miniMap);
-
-            // WICHTIG: Padding, damit die Linie nicht am Rand klebt
-            miniMap.fitBounds(polyline.getBounds(), {
-                padding: [50, 50], 
-                animate: false
-            });
+            miniMap.fitBounds(polyline.getBounds(), { padding: [50, 50], animate: false });
         }
-        
         setTimeout(() => { miniMap.invalidateSize(); }, 150);
     },
 
     checkTrackConditions: function(track) {
         if(!track.routePath || track.routePath.length === 0) return;
-        
         const startPoint = track.routePath[0]; 
-        const lat = startPoint[0];
-        const lng = startPoint[1];
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${startPoint[0]}&longitude=${startPoint[1]}&current=temperature_2m,weather_code,is_day&timezone=auto`;
 
-        fetch(url)
-        .then(response => response.json())
-        .then(data => {
+        fetch(url).then(r => r.json()).then(data => {
             if(data.current) {
                 const temp = data.current.temperature_2m;
                 const code = data.current.weather_code; 
-                
-                let score = 100;
-                let label = "PERFECT GRIP";
-                let colorClass = "cond-good";
-                let dotColor = "#30d158";
-
-                if(code >= 51) { 
-                    score -= 50; label = "WET / SLIPPERY"; colorClass = "cond-bad"; dotColor = "#ff3b30";
-                } else if(temp < 5) {
-                    score -= 20; label = "COLD TIRES"; colorClass = "cond-mid"; dotColor = "#ff9f0a";
-                }
-
+                let label = "PERFECT GRIP"; let dotColor = "#30d158";
+                if(code >= 51) { label = "WET / SLIPPERY"; dotColor = "#ff3b30"; } else if(temp < 5) { label = "COLD TIRES"; dotColor = "#ff9f0a"; }
                 const badge = document.getElementById(`cond-badge-${track.id}`);
-                if(badge) {
-                    badge.style.display = 'flex';
-                    badge.innerHTML = `
-                        <div class="cond-dot" style="background:${dotColor}; box-shadow: 0 0 5px ${dotColor}"></div>
-                        <div class="cond-text">${label} (${temp}°C)</div>
-                    `;
-                }
+                if(badge) { badge.style.display = 'flex'; badge.innerHTML = `<div class="cond-dot" style="background:${dotColor}; box-shadow: 0 0 5px ${dotColor}"></div><div class="cond-text">${label} (${temp}°C)</div>`; }
             }
-        })
-        .catch(err => {
-            console.log("Weather Error", err);
-            const badge = document.getElementById(`cond-badge-${track.id}`);
-            if(badge) badge.style.display = 'none';
-        });
+        }).catch(err => { const badge = document.getElementById(`cond-badge-${track.id}`); if(badge) badge.style.display = 'none'; });
     },
 
     animateValue: function(id, start, end, duration) {
-        const obj = document.getElementById(id);
-        if(!obj) return;
+        const obj = document.getElementById(id); if(!obj) return;
         let startTimestamp = null;
         const step = (timestamp) => {
             if (!startTimestamp) startTimestamp = timestamp;
             const progress = Math.min((timestamp - startTimestamp) / duration, 1);
             obj.innerHTML = Math.floor(progress * (end - start) + start);
-            if (progress < 1) {
-                window.requestAnimationFrame(step);
-            }
+            if (progress < 1) window.requestAnimationFrame(step);
         };
         window.requestAnimationFrame(step);
     }
-
 };
 
 PerfLogic.init();
