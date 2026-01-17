@@ -733,7 +733,6 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     font-family: sans-serif;
 }
 
-
 /* ============================================================= */
 /* === DRIVERHUB STYLE.CSS - MASTER V6 (RED NEON & GLASS)    === */
 /* ============================================================= */
@@ -764,19 +763,23 @@ input, textarea {
     transition: opacity 0.3s;
 }
 
-/* Der pulsierende rote Nebel im Hintergrund */
+/* Der pulsierende rote Nebel im Hintergrund (Dynamisch & Dezent) */
 .perf-content-scroll::before {
     content: '';
     position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-    background: radial-gradient(circle, rgba(255, 59, 48, 0.12) 0%, transparent 60%);
+    /* Weniger Deckkraft (0.15), damit es edel wirkt */
+    background: radial-gradient(circle, rgba(255, 59, 48, 0.15) 0%, transparent 60%);
+    /* Animation: Bewegt sich langsam */
     animation: bg-pulse-move 12s ease-in-out infinite alternate;
     z-index: -1;
     pointer-events: none;
+    will-change: transform, opacity;
 }
 
 @keyframes bg-pulse-move {
     0% { transform: translate(0, 0) scale(1); opacity: 0.4; }
-    100% { transform: translate(-30px, 30px) scale(1.15); opacity: 0.7; }
+    50% { transform: translate(-20px, 10px) scale(1.1); opacity: 0.6; }
+    100% { transform: translate(10px, -20px) scale(1.05); opacity: 0.4; }
 }
 
 /* Wenn Creator Mode an ist -> Dashboard ausblenden */
@@ -789,14 +792,14 @@ body.creator-active .perf-content-scroll {
 
 /* Der Fade ganz oben (Weicher Übergang) */
 .header-fade-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 90px; /* Schön hoch */
-    background: linear-gradient(to bottom, #050505 30%, transparent 100%);
+    position: fixed; top: 0; left: 0; width: 100%; height: 80px; 
+    background: linear-gradient(to bottom, #050505 40%, transparent 100%);
     z-index: 20; pointer-events: none;
 }
 
 .perf-dashboard-header {
-    /* Abstand für Notch und Fade */
-    padding: 70px 20px 10px 20px; 
+    /* Platz sparen: Nur 50px oben (reicht für Notch) */
+    padding: 50px 20px 10px 20px; 
     display: flex; justify-content: center;
     position: relative; z-index: 25;
 }
@@ -834,6 +837,12 @@ body.creator-active .perf-content-scroll {
 
 /* --- 4. TRACK CARDS (SMARTPHONE FORMAT & LIVE LOOK) --- */
 
+/* Entry Animation für die Cards */
+@keyframes slideUpFade {
+    0% { opacity: 0; transform: translateY(30px) scale(0.95); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 #perf-track-list {
     display: flex; flex-direction: row; gap: 20px;
     overflow-x: auto; padding: 10px 25px;
@@ -847,7 +856,7 @@ body.creator-active .perf-content-scroll {
 #perf-track-list::-webkit-scrollbar { display: none; }
 
 .track-card-v2 {
-    /* Schlank & Hoch */
+    /* Schlank & Hoch (Smartphone Format) */
     flex: 0 0 65vw; max-width: 280px; 
     height: 240px;
     
@@ -864,6 +873,10 @@ body.creator-active .perf-content-scroll {
     cursor: pointer;
     margin-right: 0;
     
+    /* Animation beim Laden */
+    opacity: 0; 
+    animation: slideUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    
     pointer-events: auto !important;
 }
 
@@ -874,12 +887,19 @@ body.creator-active .perf-content-scroll {
     background: #000;
 }
 
-/* Content Bereich (Unten) mit Verlauf für Lesbarkeit */
+/* Content Bereich (Unten) mit weichem Verlauf gegen schwarze Kanten */
 .tc-content {
     position: absolute; bottom: 0; left: 0; width: 100%;
     z-index: 10 !important;
     padding: 20px;
-    background: linear-gradient(to top, #000 20%, rgba(0,0,0,0.8) 60%, transparent 100%);
+    /* Weicher Verlauf von Schwarz zu Transparent */
+    background: linear-gradient(to top, 
+        rgba(0,0,0,0.95) 0%, 
+        rgba(0,0,0,0.6) 60%, 
+        transparent 100%
+    );
+    border-bottom-left-radius: 24px;
+    border-bottom-right-radius: 24px;
 }
 
 .tc-name { 
@@ -936,7 +956,10 @@ body.creator-active .perf-content-scroll {
     scroll-snap-align: center;
     color: #888; font-weight: 700; font-size: 0.8rem; letter-spacing: 1px; gap: 10px;
     
-    opacity: 0; transform: translateX(50px); animation: slideInRight 0.5s forwards;
+    /* Animation */
+    opacity: 0; 
+    animation: slideUpFade 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    
     cursor: pointer; pointer-events: auto !important; z-index: 50;
 }
 .add-track-v2:active { background: rgba(255,255,255,0.08); border-color: white; color: white; }
