@@ -43,12 +43,17 @@ window.PerfLogic = {
         this.renderTrackList();
     },
 
-    // --- TAB SWITCHING LOGIC ---
+  // --- TAB SWITCHING LOGIC (DEBUGGED) ---
     switchTab: function(tabName) {
+        console.log("Switching to tab:", tabName);
+
         // 1. Alle Views ausblenden
         ['track', 'drag', 'analytics'].forEach(t => {
             const view = document.getElementById('view-' + t);
-            if(view) view.style.display = 'none';
+            if(view) {
+                view.style.display = 'none'; // Hart ausblenden
+                view.classList.add('hidden'); // Klasse setzen (falls CSS hilft)
+            }
             
             const btn = document.getElementById('btn-tab-' + t);
             if(btn) btn.classList.remove('active');
@@ -56,18 +61,26 @@ window.PerfLogic = {
 
         // 2. Gewählten View anzeigen
         const activeView = document.getElementById('view-' + tabName);
-        if(activeView) activeView.style.display = 'block';
+        if(activeView) {
+            activeView.style.display = 'block'; // Hart anzeigen
+            activeView.classList.remove('hidden');
+            console.log("View displayed:", activeView.id);
+        } else {
+            console.error("View not found:", 'view-' + tabName);
+        }
 
         // 3. Button aktiv setzen
         const activeBtn = document.getElementById('btn-tab-' + tabName);
         if(activeBtn) activeBtn.classList.add('active');
 
-        // Optional: Animation oder Refresh triggern wenn nötig
+        // Refresh Logic
         if(tabName === 'analytics') {
-            this.updateLiveDashboard(); // Daten auffrischen
+            console.log("Updating Analytics Data...");
+            this.updateLiveDashboard(); 
         }
     },
 
+      
     onScreenShow: function() {
         if (!this.map) {
             this.loadMap();
