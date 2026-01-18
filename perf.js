@@ -128,27 +128,16 @@ window.PerfLogic = {
                 <h3 style="color:#444;">DRAG MODE</h3><p style="color:#666;">COMING SOON</p>
             </div>
 
-            <div id="view-analytics" style="display:none; padding-bottom:150px;">
+        <div id="view-analytics" style="display:none; padding-bottom:150px;">
                 <div class="live-dashboard-section">
-                    <div class="ld-title"><div class="ld-pulse"></div> LIVE CONDITIONS</div>
+                    <div class="ld-title" style="margin-bottom: 10px;">
+                        <div class="ld-pulse"></div> LIVE CONDITIONS
+                    </div>
                     <div class="ld-card" id="live-weather-card">
                         <div class="weather-main-row"><div class="weather-temp" id="ld-temp">--°</div><div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div></div>
                         <div class="weather-grid"><div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div><div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div><div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div></div>
                         <div class="traction-index-box"><div class="ti-label">TRACTION INDEX</div><div class="ti-value" id="ld-grip">---</div></div>
                         <div class="weather-summary" id="ld-summary">Connecting...</div>
-                    </div>
-                    <div class="ld-title" style="margin-top:20px;">PERFORMANCE DATA</div>
-                    <div class="stats-grid-row">
-                        <div class="stat-mini-card"><label>AVG SCORE</label><div class="val" id="stat-avg">---</div></div>
-                        <div class="stat-mini-card best"><label>BEST SCORE</label><div class="val" id="stat-best">---</div></div>
-                        <div class="stat-mini-card"><label>WORST</label><div class="val" id="stat-worst">---</div></div>
-                    </div>
-                    <div class="ld-card" id="best-track-card" style="display:none; margin-top:15px;">
-                        <div class="ld-title" style="color:#fff; opacity:0.5; margin-bottom:10px;">STRONGEST TRACK</div>
-                        <div class="best-track-layout">
-                            <div class="bt-info"><h3 id="bt-name">---</h3><p><i class="fa-solid fa-road"></i> <span id="bt-dist">---</span> | Best: <span id="bt-time" style="color:#ff3b30">---</span></p></div>
-                            <div class="bt-score-badge" id="bt-badge">A+</div>
-                        </div>
                     </div>
                 </div>
             </div>
