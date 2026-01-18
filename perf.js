@@ -834,46 +834,39 @@ renderTrackList: function() {
         let bestTime = "---";
         let scoreInt = 0;
 
+        // Score Berechnung für Header
         if (trackCount > 0) {
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
             if(validTracks.length > 0) {
                 bestTime = validTracks[0].bestTime; 
-                scoreInt = trackCount * 150; 
+                scoreInt = trackCount * 150; // Dummy Logik
             }
         }
 
         const contentArea = document.querySelector('.perf-content-scroll');
         
-        // NEUE STRUKTUR: Header + Views + Nav
+        // --- HIER WIRD DIE STRUKTUR GEBAUT ---
         let html = `
             <div class="header-fade-overlay"></div>
 
             <div class="perf-dashboard-header">
                 <div class="glass-stats-hub">
-                    <div class="pd-side-stat">
-                        <label>BEST TIME</label>
-                        <div class="val">${bestTime}</div>
-                    </div>
-                    <div class="pd-main-score">
-                        <label>PRM SCORE</label>
-                        <div class="val" id="global-score-display">${scoreInt > 0 ? scoreInt : '---'}</div>
-                    </div>
-                    <div class="pd-side-stat">
-                        <label>TRACKS</label>
-                        <div class="val">${trackCount}</div>
-                    </div>
+                    <div class="pd-side-stat"><label>BEST TIME</label><div class="val">${bestTime}</div></div>
+                    <div class="pd-main-score"><label>PRM SCORE</label><div class="val" id="global-score-display">${scoreInt > 0 ? scoreInt : '---'}</div></div>
+                    <div class="pd-side-stat"><label>TRACKS</label><div class="val">${trackCount}</div></div>
                 </div>
             </div>
             
-            <div id="view-track" style="display:block; padding-bottom:100px;">
+            <div id="view-track" style="display:block; padding-bottom:120px;">
                 <div id="perf-track-list"></div>
             </div>
 
-            <div id="view-drag" style="display:none; padding:20px; text-align:center;">
-                <div style="color:#666; font-weight:800; margin-top:50px;">DRAG MODE COMING SOON</div>
+            <div id="view-drag" style="display:none; padding:40px; text-align:center;">
+                <h3 style="color:#444; font-weight:900;">DRAG MODE</h3>
+                <p style="color:#666;">COMING SOON</p>
             </div>
 
-            <div id="view-analytics" style="display:none;">
+            <div id="view-analytics" style="display:none; padding-bottom:120px;">
                 <div class="live-dashboard-section">
                     <div class="ld-title"><div class="ld-pulse"></div> LIVE CONDITIONS</div>
                     
@@ -891,26 +884,15 @@ renderTrackList: function() {
                             <div class="ti-label">TRACTION INDEX</div>
                             <div class="ti-value" id="ld-grip">---</div>
                         </div>
-                        <div class="weather-summary" id="ld-summary">
-                            Connecting to satellites...
-                        </div>
+                        <div class="weather-summary" id="ld-summary">Connecting to satellites...</div>
                     </div>
 
                     <div class="ld-title" style="margin-top:20px;">PERFORMANCE DATA</div>
 
                     <div class="stats-grid-row">
-                        <div class="stat-mini-card">
-                            <label>AVG SCORE</label>
-                            <div class="val" id="stat-avg">---</div>
-                        </div>
-                        <div class="stat-mini-card best">
-                            <label>BEST SCORE</label>
-                            <div class="val" id="stat-best">---</div>
-                        </div>
-                        <div class="stat-mini-card">
-                            <label>WORST</label>
-                            <div class="val" id="stat-worst">---</div>
-                        </div>
+                        <div class="stat-mini-card"><label>AVG SCORE</label><div class="val" id="stat-avg">---</div></div>
+                        <div class="stat-mini-card best"><label>BEST SCORE</label><div class="val" id="stat-best">---</div></div>
+                        <div class="stat-mini-card"><label>WORST</label><div class="val" id="stat-worst">---</div></div>
                     </div>
 
                     <div class="ld-card" id="best-track-card" style="display:none; margin-top:15px;">
@@ -927,21 +909,22 @@ renderTrackList: function() {
             </div>
 
             <div class="perf-sub-nav">
-                <div class="psn-item active" id="btn-tab-track" onclick="PerfLogic.switchTab('track')">TRACK</div>
-                <div class="psn-item" id="btn-tab-drag" onclick="PerfLogic.switchTab('drag')">DRAG</div>
-                <div class="psn-item" id="btn-tab-analytics" onclick="PerfLogic.switchTab('analytics')">ANALYTICS</div>
+                <div class="psn-item active" id="btn-tab-track">TRACK</div>
+                <div class="psn-item" id="btn-tab-drag">DRAG</div>
+                <div class="psn-item" id="btn-tab-analytics">ANALYTICS</div>
             </div>
         `;
         
+        // HTML in DOM schreiben
         contentArea.innerHTML = html;
         
+        // Animation für Header Score
         if(trackCount > 0 && scoreInt > 0) {
             this.animateValue("global-score-display", 0, scoreInt, 1200);
         }
 
-        // --- TRACK LISTE RENDERN (In den view-track Container) ---
+        // --- TRACKS RENDERN (In View 1) ---
         const list = document.getElementById('perf-track-list');
-        
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
@@ -953,7 +936,6 @@ renderTrackList: function() {
 
             div.innerHTML = `
                 <div class="tc-bg-map" id="mini-map-${t.id}"></div>
-                <div class="tc-overlay"></div>
                 <div class="tc-content">
                     <div class="tc-name">${nameDisplay}</div>
                     <div class="tc-details">
@@ -970,6 +952,22 @@ renderTrackList: function() {
             setTimeout(() => this.renderMiniMap(t), 200 + (index * 50));
             this.checkTrackConditions(t); 
         });
+
+        // Add Button
+        const addBtn = document.createElement('div');
+        addBtn.className = 'add-track-v2';
+        addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
+        addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
+        addBtn.onclick = (e) => { e.stopPropagation(); this.enterCreatorMode(); };
+        list.appendChild(addBtn);
+
+        // --- WICHTIG: CLICK EVENTS STARTEN ---
+        // Wartet kurz, bis HTML da ist, und bindet dann die Klicks
+        setTimeout(() => {
+            this.bindNavEvents();
+            this.updateLiveDashboard(); // Daten schon mal laden
+        }, 50);
+    },
 
         // Add Button
         const addBtn = document.createElement('div');
