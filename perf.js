@@ -936,27 +936,20 @@ renderTrackList: function() {
             this.checkTrackConditions(t); 
         });
 
-        // Add Button
+    // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
-        addBtn.onclick = (e) => { e.stopPropagation(); this.enterCreatorMode(); };
+        addBtn.onclick = (e) => { 
+            e.stopPropagation(); 
+            this.enterCreatorMode(); 
+        };
         list.appendChild(addBtn);
 
         // Daten einmalig laden
         this.updateLiveDashboard();
     },
-
-        list.appendChild(addBtn);
-
-        // Events binden & Daten laden
-        setTimeout(() => {
-            this.bindNavEvents();
-            this.updateLiveDashboard();
-        }, 100);
-    },
-
     renderMiniMap: function(track) {
         const mapId = `mini-map-${track.id}`;
         const container = document.getElementById(mapId);
