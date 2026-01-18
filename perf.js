@@ -44,31 +44,52 @@ window.PerfLogic = {
     },
 
 // --- TAB SWITCHING (SIMPLIFIED & ROBUST) ---
+   // --- TAB SWITCHING (BRUTE FORCE FIX) ---
     switchTab: function(tabName) {
-        console.log("Switching Tab to:", tabName); // Debug Check
+        // 1. Debugging: Sehen wir das in der Konsole?
+        console.log("!!! FORCE SWITCH TO: " + tabName + " !!!");
 
-        // 1. Buttons umschalten
-        document.querySelectorAll('.psn-item').forEach(btn => {
-            btn.classList.remove('active');
+        // 2. Buttons aktualisieren (Visuell)
+        const tabs = ['track', 'drag', 'analytics'];
+        tabs.forEach(t => {
+            const btn = document.getElementById('btn-tab-' + t);
+            if(btn) {
+                // Hartes Reset der Klassen
+                btn.classList.remove('active');
+                btn.style.color = "#888"; 
+                btn.style.background = "transparent";
+            }
         });
+
+        // Aktiven Button einfärben (Direkt per Style, um CSS-Probleme zu umgehen)
         const activeBtn = document.getElementById('btn-tab-' + tabName);
-        if(activeBtn) activeBtn.classList.add('active');
-
-        // 2. Views umschalten
-        ['track', 'drag', 'analytics'].forEach(viewName => {
-            const el = document.getElementById('view-' + viewName);
-            if(el) el.style.display = 'none';
-        });
-
-        const targetView = document.getElementById('view-' + tabName);
-        if(targetView) {
-            targetView.style.display = 'block';
-            console.log("View displayed:", tabName);
-        } else {
-            alert("Error: View not found for " + tabName);
+        if(activeBtn) {
+            activeBtn.classList.add('active');
+            activeBtn.style.color = "white";
+            activeBtn.style.background = "#ff3b30";
         }
 
-        // 3. Analytics laden (falls nötig)
+        // 3. Views umschalten (Mit !important Logik via setProperty)
+        tabs.forEach(t => {
+            const view = document.getElementById('view-' + t);
+            if(view) {
+                // Erstmal alles verstecken
+                view.style.setProperty('display', 'none', 'important');
+            }
+        });
+
+        // Gewünschten View anzeigen
+        const targetView = document.getElementById('view-' + tabName);
+        if(targetView) {
+            targetView.style.setProperty('display', 'block', 'important');
+            // Z-Index hochsetzen, falls irgendwas drüber liegt
+            targetView.style.position = 'relative';
+            targetView.style.zIndex = '100'; 
+        } else {
+            alert("Error: View 'view-" + tabName + "' not found!");
+        }
+
+        // 4. Daten laden
         if(tabName === 'analytics') {
             this.updateLiveDashboard();
         }
