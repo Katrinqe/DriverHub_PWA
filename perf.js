@@ -462,44 +462,121 @@ window.PerfLogic = {
         }).catch(err => { const badge = document.getElementById(`cond-badge-${track.id}`); if(badge) badge.style.display = 'none'; });
     },
 
-    updateLiveDashboard: function() {
+ updateLiveDashboard: function() {
         try {
+            // 1. DUMMY STATS BERECHNEN (Bleibt gleich)
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
             let avgScore = 0, bestScore = 0, worstScore = 0;
             const calculatedScores = validTracks.map(t => Math.floor(Math.random() * 40) + 60);
+            
             if (calculatedScores.length > 0) {
-                bestScore = Math.max(...calculatedScores); worstScore = Math.min(...calculatedScores); avgScore = Math.floor(calculatedScores.reduce((a,b)=>a+b,0) / calculatedScores.length);
+                bestScore = Math.max(...calculatedScores);
+                worstScore = Math.min(...calculatedScores);
+                avgScore = Math.floor(calculatedScores.reduce((a,b)=>a+b,0) / calculatedScores.length);
+                
                 const elAvg = document.getElementById('stat-avg'); if(elAvg) elAvg.innerText = avgScore;
                 const elBest = document.getElementById('stat-best'); if(elBest) elBest.innerText = bestScore;
                 const elWorst = document.getElementById('stat-worst'); if(elWorst) elWorst.innerText = worstScore;
+                
                 this.animateValue("global-score-display", 0, avgScore, 1500);
-                const bestTrackIndex = calculatedScores.indexOf(bestScore);
-                const bestTrack = validTracks[bestTrackIndex];
-                if(bestTrack) {
-                    document.getElementById('best-track-card').style.display = 'block';
-                    document.getElementById('bt-name').innerText = bestTrack.name;
-                    document.getElementById('bt-dist').innerText = bestTrack.dist;
-                    document.getElementById('bt-time').innerText = bestTrack.bestTime;
-                    document.getElementById('bt-badge').innerText = bestScore;
-                }
+            } else {
+                const elGlob = document.getElementById('global-score-display');
+                if(elGlob) elGlob.innerText = "---";
             }
+
+            // 2. LIVE WETTER & TAG/NACHT LOGIK
             if(navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
-                    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&current=temperature_2m,relative_humidity_2m,surface_pressure,weather_code,wind_speed_10m&timezone=auto`)
-                    .then(r => r.json()).then(data => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    
+                    // WICHTIG: "is_day" zur URL hinzugefügt!
+                    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,surface_pressure,weather_code,wind_speed_10m,is_day&timezone=auto`)
+                    .then(r => r.json())
+                    .then(data => {
                         if(data.current) {
                             const c = data.current;
+                            
+                            // Werte setzen
                             document.getElementById('ld-temp').innerText = Math.round(c.temperature_2m) + "°";
                             document.getElementById('ld-hum').innerText = c.relative_humidity_2m + "%";
                             document.getElementById('ld-press').innerText = Math.round(c.surface_pressure) + " hPa";
                             document.getElementById('ld-wind').innerText = Math.round(c.wind_speed_10m) + " km/h";
-                            let traction = 100; let text = "Optimal racing conditions. ";
-                            if(c.temperature_2m < 10) { traction -= (10 - c.temperature_2m) * 2; text = "Cold surface temperatures detected. Tire warmup essential. "; }
-                            if(c.weather_code >= 51) { traction -= 40; text = "Wet/Slippery surface detected. Reduced grip levels. Caution advised. "; document.getElementById('ld-icon').innerHTML = '<i class="fa-solid fa-cloud-rain"></i>'; }
-                            else if(c.weather_code <= 3) { text += "Dry surface with good visibility."; document.getElementById('ld-icon').innerHTML = '<i class="fa-solid fa-sun"></i>'; }
+
+                            // --- ICON LOGIK ---
+                            const isDay = c.is_day === 1; // 1 = Tag, 0 = Nacht
+                            const code = c.weather_code;
+                            let iconClass = "fa-circle-question";
+                            let iconColor = "#ff3b30"; // Standard Rot
+
+                            // WMO Wetter Codes
+                            if (code === 0) { 
+                                // Klarer Himmel
+                                iconClass = isDay ? "fa-sun" : "fa-moon";
+                                iconColor = isDay ? "#ff9f0a" : "#ffffff"; // Orange am Tag, Weiß nachts
+                            } 
+                            else if (code >= 1 && code <= 3) {
+                                // Leicht bewölkt
+                                iconClass = isDay ? "fa-cloud-sun" : "fa-cloud-moon";
+                                iconColor = isDay ? "#ff9f0a" : "#ccc";
+                            } 
+                            else if (code >= 45 && code <= 48) {
+                                // Nebel
+                                iconClass = "fa-smog";
+                                iconColor = "#888";
+                            }
+                            else if (code >= 51 && code <= 67) {
+                                // Regen
+                                iconClass = "fa-cloud-rain";
+                                iconColor = "#00e5ff"; // Neon Blau
+                            }
+                            else if (code >= 71 && code <= 77) {
+                                // Schnee
+                                iconClass = "fa-snowflake";
+                                iconColor = "#ffffff";
+                            }
+                            else if (code >= 95) {
+                                // Gewitter
+                                iconClass = "fa-bolt";
+                                iconColor = "#bf5af2"; // Lila/Blitz
+                            } else {
+                                // Default Wolke
+                                iconClass = "fa-cloud";
+                                iconColor = "#bbb";
+                            }
+
+                            // Icon in HTML setzen
+                            const iconEl = document.getElementById('ld-icon');
+                            if(iconEl) {
+                                iconEl.innerHTML = `<i class="fa-solid ${iconClass}"></i>`;
+                                iconEl.style.color = iconColor;
+                                // Schatten passend zur Farbe
+                                iconEl.style.filter = `drop-shadow(0 0 10px ${iconColor})`;
+                            }
+
+                            // --- TRACTION INDEX LOGIK ---
+                            let traction = 100;
+                            let text = isDay ? "Daylight driving conditions. " : "Night conditions active. Visibility reduced. ";
+                            
+                            if(c.temperature_2m < 10) {
+                                traction -= (10 - c.temperature_2m) * 2;
+                                text += "Cold surface. Warm up tires! ";
+                            }
+                            
+                            if(c.weather_code >= 51) {
+                                traction -= 40; 
+                                text = "WET SURFACE! Reduce speed. Grip is low.";
+                            } 
+
                             traction = Math.max(0, Math.min(100, Math.round(traction)));
-                            const gripEl = document.getElementById('ld-grip'); gripEl.innerText = traction + "/100";
-                            if(traction > 80) gripEl.style.color = "#30d158"; else if(traction > 50) gripEl.style.color = "#ff9f0a"; else gripEl.style.color = "#ff3b30";
+                            const gripEl = document.getElementById('ld-grip');
+                            if(gripEl) {
+                                gripEl.innerText = traction + "/100";
+                                if(traction > 80) gripEl.style.color = "#30d158"; 
+                                else if(traction > 50) gripEl.style.color = "#ff9f0a"; 
+                                else gripEl.style.color = "#ff3b30"; 
+                            }
+
                             document.getElementById('ld-summary').innerText = text;
                         }
                     });
