@@ -128,15 +128,28 @@ window.PerfLogic = {
                 <h3 style="color:#444;">DRAG MODE</h3><p style="color:#666;">COMING SOON</p>
             </div>
 
-        <div id="view-analytics" style="display:none; padding-bottom:150px;">
+     <div id="view-analytics" style="display:none; padding-bottom:150px;">
                 <div class="live-dashboard-section">
-                    <div class="ld-title" style="margin-bottom: 10px;">
-                        <div class="ld-pulse"></div> LIVE CONDITIONS
+                    
+                    <div class="ld-title" style="color: #30d158; margin-bottom: 10px;">
+                        <div class="ld-pulse" style="background: #30d158; box-shadow: 0 0 10px #30d158;"></div> 
+                        LIVE CONDITIONS
                     </div>
+
                     <div class="ld-card" id="live-weather-card">
-                        <div class="weather-main-row"><div class="weather-temp" id="ld-temp">--°</div><div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div></div>
-                        <div class="weather-grid"><div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div><div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div><div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div></div>
-                        <div class="traction-index-box"><div class="ti-label">TRACTION INDEX</div><div class="ti-value" id="ld-grip">---</div></div>
+                        <div class="weather-main-row">
+                            <div class="weather-temp" id="ld-temp">--°</div>
+                            <div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+                        </div>
+                        <div class="weather-grid">
+                            <div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div>
+                            <div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div>
+                            <div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div>
+                        </div>
+                        <div class="traction-index-box">
+                            <div class="ti-label">TRACTION INDEX</div>
+                            <div class="ti-value" id="ld-grip">---</div>
+                        </div>
                         <div class="weather-summary" id="ld-summary">Connecting...</div>
                     </div>
                 </div>
