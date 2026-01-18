@@ -839,13 +839,13 @@ renderTrackList: function() {
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
             if(validTracks.length > 0) {
                 bestTime = validTracks[0].bestTime; 
-                scoreInt = trackCount * 150; // Dummy Logik
+                scoreInt = trackCount * 150; 
             }
         }
 
         const contentArea = document.querySelector('.perf-content-scroll');
         
-        // --- HIER WIRD DIE STRUKTUR GEBAUT ---
+        // HTML STRUKTUR
         let html = `
             <div class="header-fade-overlay"></div>
 
@@ -869,7 +869,6 @@ renderTrackList: function() {
             <div id="view-analytics" style="display:none; padding-bottom:120px;">
                 <div class="live-dashboard-section">
                     <div class="ld-title"><div class="ld-pulse"></div> LIVE CONDITIONS</div>
-                    
                     <div class="ld-card" id="live-weather-card">
                         <div class="weather-main-row">
                             <div class="weather-temp" id="ld-temp">--°</div>
@@ -886,15 +885,12 @@ renderTrackList: function() {
                         </div>
                         <div class="weather-summary" id="ld-summary">Connecting to satellites...</div>
                     </div>
-
                     <div class="ld-title" style="margin-top:20px;">PERFORMANCE DATA</div>
-
                     <div class="stats-grid-row">
                         <div class="stat-mini-card"><label>AVG SCORE</label><div class="val" id="stat-avg">---</div></div>
                         <div class="stat-mini-card best"><label>BEST SCORE</label><div class="val" id="stat-best">---</div></div>
                         <div class="stat-mini-card"><label>WORST</label><div class="val" id="stat-worst">---</div></div>
                     </div>
-
                     <div class="ld-card" id="best-track-card" style="display:none; margin-top:15px;">
                         <div class="ld-title" style="color:#fff; opacity:0.5; margin-bottom:10px;">STRONGEST TRACK</div>
                         <div class="best-track-layout">
@@ -909,22 +905,22 @@ renderTrackList: function() {
             </div>
 
             <div class="perf-sub-nav">
-                <div class="psn-item active" id="btn-tab-track">TRACK</div>
-                <div class="psn-item" id="btn-tab-drag">DRAG</div>
-                <div class="psn-item" id="btn-tab-analytics">ANALYTICS</div>
+                <div class="psn-item active" id="btn-tab-track" onclick="PerfLogic.switchTab('track')">TRACK</div>
+                <div class="psn-item" id="btn-tab-drag" onclick="PerfLogic.switchTab('drag')">DRAG</div>
+                <div class="psn-item" id="btn-tab-analytics" onclick="PerfLogic.switchTab('analytics')">ANALYTICS</div>
             </div>
         `;
         
-        // HTML in DOM schreiben
         contentArea.innerHTML = html;
         
-        // Animation für Header Score
         if(trackCount > 0 && scoreInt > 0) {
             this.animateValue("global-score-display", 0, scoreInt, 1200);
         }
 
-        // --- TRACKS RENDERN (In View 1) ---
+        // --- TRACKS RENDERN ---
         const list = document.getElementById('perf-track-list');
+        
+        // HIER STARTET DIE SCHLEIFE
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
@@ -936,6 +932,7 @@ renderTrackList: function() {
 
             div.innerHTML = `
                 <div class="tc-bg-map" id="mini-map-${t.id}"></div>
+                <div class="tc-overlay"></div>
                 <div class="tc-content">
                     <div class="tc-name">${nameDisplay}</div>
                     <div class="tc-details">
@@ -951,23 +948,7 @@ renderTrackList: function() {
 
             setTimeout(() => this.renderMiniMap(t), 200 + (index * 50));
             this.checkTrackConditions(t); 
-        });
-
-        // Add Button
-        const addBtn = document.createElement('div');
-        addBtn.className = 'add-track-v2';
-        addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
-        addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
-        addBtn.onclick = (e) => { e.stopPropagation(); this.enterCreatorMode(); };
-        list.appendChild(addBtn);
-
-        // --- WICHTIG: CLICK EVENTS STARTEN ---
-        // Wartet kurz, bis HTML da ist, und bindet dann die Klicks
-        setTimeout(() => {
-            this.bindNavEvents();
-            this.updateLiveDashboard(); // Daten schon mal laden
-        }, 50);
-    },
+        }); // <--- HIER WURDE VORHER DIE KLAMMER VERGESSEN
 
         // Add Button
         const addBtn = document.createElement('div');
@@ -976,14 +957,16 @@ renderTrackList: function() {
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
         addBtn.onclick = (e) => {
             e.stopPropagation(); 
-            console.log("Add Track Clicked"); 
             this.enterCreatorMode();
         };
 
         list.appendChild(addBtn);
 
-        // Daten im Hintergrund laden, damit sie da sind wenn man umschaltet
-        this.updateLiveDashboard();
+        // Events binden & Daten laden
+        setTimeout(() => {
+            this.bindNavEvents();
+            this.updateLiveDashboard();
+        }, 100);
     },
 
     renderMiniMap: function(track) {
