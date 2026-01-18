@@ -76,28 +76,31 @@ window.PerfLogic = {
         }
     },
 
-    // --- FORCE TOUCH EVENTS ---
+    /// --- FORCE TOUCH EVENTS (ROBUST VERSION) ---
     bindNavEvents: function() {
-        console.log("Binding Nav Events...");
+        console.log("Binding Nav Events... (Robust)");
         ['track', 'drag', 'analytics'].forEach(tab => {
             const btn = document.getElementById('btn-tab-' + tab);
             if(btn) {
-                // Klonen um alte Event-Listener zu löschen (Sauberer Neustart)
+                // Klonen um alte Event-Listener sicher zu entfernen
                 const newBtn = btn.cloneNode(true);
                 btn.parentNode.replaceChild(newBtn, btn);
                 
-                // Touch Start (für sofortige Reaktion auf Handy)
-                newBtn.addEventListener('touchstart', (e) => {
+                // Handler definieren
+                const handler = (e) => {
+                    // WICHTIG: Stoppt das Event bubbling, damit nichts anderes dazwischenfunkt
                     e.preventDefault(); 
                     e.stopPropagation();
+                    console.log("Tab clicked:", tab); // DEBUG LOG
                     this.switchTab(tab);
-                }, {passive: false});
+                };
 
-                // Normaler Klick (Desktop/Fallback)
-                newBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.switchTab(tab);
-                });
+                // Touch UND Click Events binden
+                newBtn.addEventListener('touchstart', handler, {passive: false});
+                newBtn.addEventListener('mousedown', handler); // Für Desktop/Maus
+                // click Event weglassen, da touchstart/mousedown schneller sind
+            } else {
+                console.error("Button not found:", 'btn-tab-' + tab);
             }
         });
     },
