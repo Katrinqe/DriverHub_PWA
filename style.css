@@ -911,10 +911,46 @@ body.creator-active #perf-map-container { opacity: 1 !important; z-index: 100 !i
 .sec-hint-hub { position: absolute; top: 50px; left: 50%; transform: translateX(-50%); background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); padding: 12px 30px; border-radius: 40px; display: flex; align-items: center; gap: 10px; z-index: 6005; box-shadow: 0 10px 30px rgba(0,0,0,0.8); pointer-events: none; white-space: nowrap; }
 .sec-hint-text { color: white; font-weight: 800; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
 .sec-hint-icon { color: #ff3b30; font-size: 1rem; }
-.sec-editor-hud { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 20px; z-index: 6005 !important; pointer-events: none; }
-.sec-btn { pointer-events: auto !important; background: rgba(20,20,20,0.95); color: white; border: 1px solid #333; padding: 15px 30px; border-radius: 30px; font-weight: 800; font-size: 0.9rem; box-shadow: 0 10px 20px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 8px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
+
+/* --- SECTOR EDITOR HUD (FIXED SIZE) --- */
+.sec-editor-hud { 
+    position: absolute; 
+    bottom: 30px; /* Tiefer */
+    left: 0; 
+    width: 100%; 
+    display: flex; 
+    justify-content: center; 
+    gap: 12px; /* Enger zusammen */
+    z-index: 6005 !important; 
+    pointer-events: none; 
+}
+
+.sec-btn { 
+    pointer-events: auto !important; 
+    background: rgba(20,20,20,0.95); 
+    color: white; 
+    border: 1px solid #333; 
+    
+    /* HIER IST DIE VERKLEINERUNG: */
+    padding: 8px 16px; /* Viel weniger Padding */
+    border-radius: 12px; /* Eher Pillen-Form aber kompakter */
+    font-weight: 700; 
+    font-size: 0.75rem; /* Schrift kleiner */
+    height: 40px; /* Feste, kleine Höhe */
+    
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5); 
+    display: flex; 
+    align-items: center; 
+    gap: 6px; 
+    cursor: pointer; 
+    text-transform: uppercase; 
+    letter-spacing: 0.5px; 
+}
+
+.sec-btn i { font-size: 0.9rem; } /* Icons auch kleiner */
+
 .sec-btn:active { transform: scale(0.95); background: #333; }
-.sec-btn.save { background: #007aff; border: none; box-shadow: 0 0 20px rgba(0,122,255,0.4); }
+.sec-btn.save { background: #007aff; border: none; box-shadow: 0 0 15px rgba(0,122,255,0.3); }
 .sec-marker-start { width: 14px; height: 14px; background: #30d158; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #30d158; }
 .sec-marker-finish { width: 14px; height: 14px; background: #ff3b30; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px #ff3b30; }
 .sector-add-card { width: 100%; min-height: 80px; background: rgba(255, 255, 255, 0.03); border: 2px dashed rgba(255, 255, 255, 0.2); border-radius: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.2s; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; }
