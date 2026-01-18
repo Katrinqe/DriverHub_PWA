@@ -128,11 +128,11 @@ window.PerfLogic = {
                 <h3 style="color:#444;">DRAG MODE</h3><p style="color:#666;">COMING SOON</p>
             </div>
 
-     <div id="view-analytics" style="display:none; padding-bottom:150px;">
-                <div class="live-dashboard-section">
+   <div id="view-analytics" style="display:none; padding-bottom:150px; width: 100%;">
+                <div class="live-dashboard-section" style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
                     
-                    <div class="ld-title" style="color: #30d158; margin-bottom: 10px;">
-                        <div class="ld-pulse" style="background: #30d158; box-shadow: 0 0 10px #30d158;"></div> 
+                    <div style="display: flex; align-items: center; gap: 10px; color: #30d158; font-weight: 900; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; margin-left: 5px;">
+                        <div style="width: 8px; height: 8px; background: #30d158; border-radius: 50%; box-shadow: 0 0 10px #30d158; animation: prm-pulse 1.5s infinite;"></div> 
                         LIVE CONDITIONS
                     </div>
 
@@ -152,6 +152,7 @@ window.PerfLogic = {
                         </div>
                         <div class="weather-summary" id="ld-summary">Connecting...</div>
                     </div>
+
                 </div>
             </div>
         `;
