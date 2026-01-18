@@ -51,31 +51,45 @@ window.PerfLogic = {
         });
     },
 
-    // --- TAB WECHSEL LOGIK ---
     switchTab: function(tabName) {
         console.log("Switching to:", tabName);
-        
-        // 1. Buttons zurücksetzen
-        document.querySelectorAll('.psn-item').forEach(b => b.classList.remove('active'));
+
+        // 1. HEADER LOGIC (NEU): Nur bei 'track' anzeigen
+        const header = document.querySelector('.perf-dashboard-header');
+        if(header) {
+            if(tabName === 'track') {
+                header.style.display = 'flex'; // Oder 'block', je nach Layout
+            } else {
+                header.style.display = 'none'; // Weg damit bei Drag/Analytics
+            }
+        }
+
+        // 2. Buttons resetten
+        document.querySelectorAll('.psn-item').forEach(b => {
+            b.classList.remove('active');
+            b.style.color = ""; b.style.background = "";
+        });
+
+        // 3. Aktiven Button setzen
         const activeBtn = document.querySelector(`.psn-item[data-tab="${tabName}"]`);
         if(activeBtn) activeBtn.classList.add('active');
 
-        // 2. Views umschalten
+        // 4. Views resetten
         ['track', 'drag', 'analytics'].forEach(t => {
             const view = document.getElementById('view-' + t);
             if(view) view.style.display = 'none';
         });
 
-        const targetView = document.getElementById('view-' + tabName);
-        if(targetView) {
-            targetView.style.display = 'block';
+        // 5. Ziel View anzeigen
+        const target = document.getElementById('view-' + tabName);
+        if(target) {
+            target.style.display = 'block';
             window.scrollTo(0,0);
         }
 
-        // 3. Analytics Update
+        // 6. Analytics laden
         if(tabName === 'analytics') this.updateLiveDashboard();
     },
-
     // =================================================
     // 3. UI RENDERING (STRUKTUR FIX)
     // =================================================
