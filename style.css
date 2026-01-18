@@ -928,3 +928,36 @@ body.creator-active #perf-map-container { opacity: 1 !important; z-index: 100 !i
 #nav-perf { transition: all 0.3s ease; }
 #nav-perf.active-perf, .nav-item.active-perf { color: #ff3b30 !important; text-shadow: 0 0 15px rgba(255, 59, 48, 0.8) !important; }
 #nav-perf.active-perf i, .nav-item.active-perf i { color: #ff3b30 !important; transform: scale(1.1); }
+
+/* ================================================= */
+/* === GLOBAL NAV KILLER & LAYOUT FIX            === */
+/* ================================================= */
+
+/* 1. Die Sub-Nav (Track/Analytics) MUSS über allem liegen */
+.perf-sub-nav {
+    position: fixed !important;
+    bottom: 110px !important; /* Über deiner Main Nav */
+    z-index: 2147483647 !important; /* Max Z-Index */
+    transform: translateX(-50%) !important;
+    left: 50% !important;
+}
+
+/* 2. CREATOR MODE: TÖTE ALLE NAVIGATIONEN */
+/* Egal welche Klasse oder ID deine Home/Garage Nav hat, das hier blendet alles unten aus */
+body.creator-active nav,
+body.creator-active .nav-bar,
+body.creator-active .navbar,
+body.creator-active .navigation,
+body.creator-active .perf-sub-nav,
+body.creator-active #nav-bar {
+    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* 3. ANALYTICS VIEW SICHTBAR MACHEN */
+#view-analytics {
+    min-height: 100vh;
+    padding-bottom: 200px;
+    display: none; /* JS schaltet das um */
+}
