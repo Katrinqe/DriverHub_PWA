@@ -930,34 +930,37 @@ body.creator-active #perf-map-container { opacity: 1 !important; z-index: 100 !i
 #nav-perf.active-perf i, .nav-item.active-perf i { color: #ff3b30 !important; transform: scale(1.1); }
 
 /* ================================================= */
-/* === GLOBAL NAV KILLER & LAYOUT FIX            === */
+/* === GLOBAL NAV KILLER (FIXED FOR ID)          === */
 /* ================================================= */
 
-/* 1. Die Sub-Nav (Track/Analytics) MUSS über allem liegen */
+/* 1. Die Sub-Nav (Track/Analytics) fixieren & sichtbar machen */
 .perf-sub-nav {
     position: fixed !important;
-    bottom: 110px !important; /* Über deiner Main Nav */
-    z-index: 2147483647 !important; /* Max Z-Index */
-    transform: translateX(-50%) !important;
+    bottom: 110px !important;
     left: 50% !important;
+    transform: translateX(-50%) !important;
+    z-index: 20002 !important; /* HÖHER als alles andere */
+    display: flex !important;
 }
 
-/* 2. CREATOR MODE: TÖTE ALLE NAVIGATIONEN */
-/* Egal welche Klasse oder ID deine Home/Garage Nav hat, das hier blendet alles unten aus */
-body.creator-active nav,
-body.creator-active .nav-bar,
-body.creator-active .navbar,
-body.creator-active .navigation,
-body.creator-active .perf-sub-nav,
-body.creator-active #nav-bar {
+/* 2. ANALYTICS VIEW SICHTBARKEIT */
+#view-analytics {
+    min-height: 100vh;
+    width: 100%;
+    padding-bottom: 200px;
+    display: none; /* JS schaltet das an */
+}
+
+/* 3. HAUPT-NAVIGATION AUSBLENDEN (WENN CREATOR AKTIV) */
+/* Hier ist der Fix: Wir sprechen #global-nav direkt an */
+body.creator-active #global-nav {
     display: none !important;
+    visibility: hidden !important;
     opacity: 0 !important;
     pointer-events: none !important;
 }
 
-/* 3. ANALYTICS VIEW SICHTBAR MACHEN */
-#view-analytics {
-    min-height: 100vh;
-    padding-bottom: 200px;
-    display: none; /* JS schaltet das um */
+/* 4. PERFORMANCE SUB-NAV AUSBLENDEN (WENN CREATOR AKTIV) */
+body.creator-active .perf-sub-nav {
+    display: none !important;
 }
