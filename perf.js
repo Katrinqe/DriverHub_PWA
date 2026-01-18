@@ -43,34 +43,32 @@ window.PerfLogic = {
         this.renderTrackList();
     },
 
-// --- TAB SWITCHING LOGIC (FIXED) ---
+// --- TAB SWITCHING (SIMPLIFIED & ROBUST) ---
     switchTab: function(tabName) {
-        console.log("Switching to tab:", tabName);
+        console.log("Switching Tab to:", tabName); // Debug Check
 
-        // 1. Alle Views ausblenden
-        ['track', 'drag', 'analytics'].forEach(t => {
-            const view = document.getElementById('view-' + t);
-            if(view) {
-                view.style.display = 'none';
-                view.classList.add('hidden');
-            }
-            
-            const btn = document.getElementById('btn-tab-' + t);
-            if(btn) btn.classList.remove('active');
+        // 1. Buttons umschalten
+        document.querySelectorAll('.psn-item').forEach(btn => {
+            btn.classList.remove('active');
         });
-
-        // 2. Gewählten View anzeigen
-        const activeView = document.getElementById('view-' + tabName);
-        if(activeView) {
-            activeView.style.display = 'block'; 
-            activeView.classList.remove('hidden');
-        }
-
-        // 3. Button aktiv setzen
         const activeBtn = document.getElementById('btn-tab-' + tabName);
         if(activeBtn) activeBtn.classList.add('active');
 
-        // Refresh Logic für Analytics
+        // 2. Views umschalten
+        ['track', 'drag', 'analytics'].forEach(viewName => {
+            const el = document.getElementById('view-' + viewName);
+            if(el) el.style.display = 'none';
+        });
+
+        const targetView = document.getElementById('view-' + tabName);
+        if(targetView) {
+            targetView.style.display = 'block';
+            console.log("View displayed:", tabName);
+        } else {
+            alert("Error: View not found for " + tabName);
+        }
+
+        // 3. Analytics laden (falls nötig)
         if(tabName === 'analytics') {
             this.updateLiveDashboard();
         }
@@ -837,7 +835,6 @@ renderTrackList: function() {
         let bestTime = "---";
         let scoreInt = 0;
 
-        // Score Berechnung für Header
         if (trackCount > 0) {
             const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
             if(validTracks.length > 0) {
@@ -848,8 +845,8 @@ renderTrackList: function() {
 
         const contentArea = document.querySelector('.perf-content-scroll');
         
-        // HTML STRUKTUR
-        let html = `
+        // HTML STRUKTUR MIT ONCLICK (Kein bindNavEvents mehr nötig)
+        contentArea.innerHTML = `
             <div class="header-fade-overlay"></div>
 
             <div class="perf-dashboard-header">
@@ -860,7 +857,7 @@ renderTrackList: function() {
                 </div>
             </div>
             
-            <div id="view-track" style="display:block; padding-bottom:120px;">
+            <div id="view-track" style="display:block; padding-bottom:150px;">
                 <div id="perf-track-list"></div>
             </div>
 
@@ -869,7 +866,7 @@ renderTrackList: function() {
                 <p style="color:#666;">COMING SOON</p>
             </div>
 
-            <div id="view-analytics" style="display:none; padding-bottom:120px;">
+            <div id="view-analytics" style="display:none; padding-bottom:150px;">
                 <div class="live-dashboard-section">
                     <div class="ld-title"><div class="ld-pulse"></div> LIVE CONDITIONS</div>
                     <div class="ld-card" id="live-weather-card">
@@ -888,33 +885,22 @@ renderTrackList: function() {
                         </div>
                         <div class="weather-summary" id="ld-summary">Connecting to satellites...</div>
                     </div>
+
                     <div class="ld-title" style="margin-top:20px;">PERFORMANCE DATA</div>
                     <div class="stats-grid-row">
                         <div class="stat-mini-card"><label>AVG SCORE</label><div class="val" id="stat-avg">---</div></div>
                         <div class="stat-mini-card best"><label>BEST SCORE</label><div class="val" id="stat-best">---</div></div>
                         <div class="stat-mini-card"><label>WORST</label><div class="val" id="stat-worst">---</div></div>
                     </div>
-                    <div class="ld-card" id="best-track-card" style="display:none; margin-top:15px;">
-                        <div class="ld-title" style="color:#fff; opacity:0.5; margin-bottom:10px;">STRONGEST TRACK</div>
-                        <div class="best-track-layout">
-                            <div class="bt-info">
-                                <h3 id="bt-name">---</h3>
-                                <p><i class="fa-solid fa-road"></i> <span id="bt-dist">---</span> | Best: <span id="bt-time" style="color:#ff3b30">---</span></p>
-                            </div>
-                            <div class="bt-score-badge" id="bt-badge">A+</div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <div class="perf-sub-nav">
-                <div class="psn-item active" id="btn-tab-track" onclick="PerfLogic.switchTab('track')">TRACK</div>
-                <div class="psn-item" id="btn-tab-drag" onclick="PerfLogic.switchTab('drag')">DRAG</div>
-                <div class="psn-item" id="btn-tab-analytics" onclick="PerfLogic.switchTab('analytics')">ANALYTICS</div>
+                <div class="psn-item active" id="btn-tab-track" onclick="window.PerfLogic.switchTab('track')">TRACK</div>
+                <div class="psn-item" id="btn-tab-drag" onclick="window.PerfLogic.switchTab('drag')">DRAG</div>
+                <div class="psn-item" id="btn-tab-analytics" onclick="window.PerfLogic.switchTab('analytics')">ANALYTICS</div>
             </div>
         `;
-        
-        contentArea.innerHTML = html;
         
         if(trackCount > 0 && scoreInt > 0) {
             this.animateValue("global-score-display", 0, scoreInt, 1200);
@@ -922,8 +908,6 @@ renderTrackList: function() {
 
         // --- TRACKS RENDERN ---
         const list = document.getElementById('perf-track-list');
-        
-        // HIER STARTET DIE SCHLEIFE
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2';
@@ -935,7 +919,6 @@ renderTrackList: function() {
 
             div.innerHTML = `
                 <div class="tc-bg-map" id="mini-map-${t.id}"></div>
-                <div class="tc-overlay"></div>
                 <div class="tc-content">
                     <div class="tc-name">${nameDisplay}</div>
                     <div class="tc-details">
@@ -951,17 +934,19 @@ renderTrackList: function() {
 
             setTimeout(() => this.renderMiniMap(t), 200 + (index * 50));
             this.checkTrackConditions(t); 
-        }); // <--- HIER WURDE VORHER DIE KLAMMER VERGESSEN
+        });
 
         // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
         addBtn.style.animationDelay = (this.tracks.length * 0.1) + "s";
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
-        addBtn.onclick = (e) => {
-            e.stopPropagation(); 
-            this.enterCreatorMode();
-        };
+        addBtn.onclick = (e) => { e.stopPropagation(); this.enterCreatorMode(); };
+        list.appendChild(addBtn);
+
+        // Daten einmalig laden
+        this.updateLiveDashboard();
+    },
 
         list.appendChild(addBtn);
 
