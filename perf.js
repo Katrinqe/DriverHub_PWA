@@ -668,18 +668,16 @@ sendGhostMessage: async function() {
         const text = input.value.trim();
         
         // ===========================================================
-        // DEIN KEY HIER REIN (der mit ...4OZE am Anfang)
+        // HIER DEINEN KEY EINFÜGEN (Der mit ...4OZE)
         // ===========================================================
         const API_KEY = "AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE"; 
 
         if(!text) return;
-        
         if(API_KEY.includes("HIER_DEINEN") || API_KEY.length < 20) {
-            alert("API Key fehlt!");
-            return;
+            alert("API Key fehlt!"); return;
         }
 
-        // 1. User Nachricht anzeigen
+        // 1. User Nachricht
         const userMsg = document.createElement('div');
         userMsg.className = 'msg user';
         userMsg.innerText = text;
@@ -699,10 +697,10 @@ sendGhostMessage: async function() {
         const context = this.getGhostContext(); 
 
         try {
-            // === DER FINAL FIX ===
-            // 1. Wir nutzen "v1" (OHNE beta). Das ist entscheidend!
-            // 2. Wir nutzen "gemini-1.5-flash". Das ist das Standard-Modell für kostenlose Accounts.
-            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            // === DER FIX: GEMINI 2.5 FLASH ===
+            // Wir nutzen genau das Modell aus deinem Screenshot.
+            // Neue Modelle laufen meist über "v1beta".
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
 
             const response = await fetch(url, {
                 method: "POST",
@@ -718,9 +716,8 @@ sendGhostMessage: async function() {
                 const errorData = await response.json();
                 console.error("API ERROR:", errorData);
                 
-                // Falls "Quota" Fehler (zu schnell getippt)
                 if (response.status === 429) {
-                    throw new Error("Zu schnell! Warte kurz (Limit erreicht).");
+                    throw new Error("Quota Limit! Warte 1 Minute, dann geht es wieder.");
                 }
                 
                 throw new Error(errorData.error?.message || "Fehler beim API Zugriff");
@@ -729,16 +726,14 @@ sendGhostMessage: async function() {
             const data = await response.json();
             
             if(!data.candidates || data.candidates.length === 0) {
-                 throw new Error("Keine Antwort erhalten.");
+                 throw new Error("Keine Antwort.");
             }
 
             const aiText = data.candidates[0].content.parts[0].text;
-
             document.getElementById(loadingId).remove();
             
             const ghostMsg = document.createElement('div');
             ghostMsg.className = 'msg ghost';
-            // Markdown entfernen
             const cleanText = aiText.replace(/\*\*/g, "").replace(/\*/g, ""); 
             ghostMsg.innerText = cleanText;
             container.appendChild(ghostMsg);
@@ -755,7 +750,6 @@ sendGhostMessage: async function() {
             errorMsg.innerText = error.message; 
             container.appendChild(errorMsg);
         }
-        
         container.scrollTop = container.scrollHeight;
     }
 };
