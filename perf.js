@@ -127,7 +127,7 @@ renderTrackList: function() {
                 <h3 style="color:#444;">DRAG MODE</h3><p style="color:#666;">COMING SOON</p>
             </div>
 
-            <div id="view-analytics" style="display:none; padding-bottom:150px; width: 100%;">
+        <div id="view-analytics" style="display:none; padding-bottom:150px; width: 100%;">
                 
                 <div class="live-dashboard-section" style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
                     
@@ -138,25 +138,23 @@ renderTrackList: function() {
                             LIVE CONDITIONS
                         </div>
 
-                        <div onclick="PerfLogic.openGhostChat()" style="width: 40px; height: 40px; background: rgba(255,255,255,0.1); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 10px rgba(0,229,255,0.2);">
-                            <i class="fa-solid fa-ghost" style="color: #00e5ff; font-size: 1rem;"></i>
-                        </div>
+                        <button onclick="PerfLogic.openGhostChat()" style="
+                            width: 45px; height: 45px; 
+                            background: rgba(255,255,255,0.05); 
+                            border: 1px solid rgba(0, 229, 255, 0.4); 
+                            border-radius: 50%; 
+                            display: flex; align-items: center; justify-content: center; 
+                            cursor: pointer; 
+                            box-shadow: 0 0 15px rgba(0,229,255,0.15);
+                            z-index: 1000; pointer-events: auto; position: relative;">
+                            <i class="fa-solid fa-ghost" style="color: #00e5ff; font-size: 1.1rem;"></i>
+                        </button>
                     </div>
 
                     <div class="ld-card" id="live-weather-card">
-                        <div class="weather-main-row">
-                            <div class="weather-temp" id="ld-temp">--°</div>
-                            <div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div>
-                        </div>
-                        <div class="weather-grid">
-                            <div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div>
-                            <div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div>
-                            <div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div>
-                        </div>
-                        <div class="traction-index-box">
-                            <div class="ti-label">TRACTION INDEX</div>
-                            <div class="ti-value" id="ld-grip">---</div>
-                        </div>
+                        <div class="weather-main-row"><div class="weather-temp" id="ld-temp">--°</div><div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div></div>
+                        <div class="weather-grid"><div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div><div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div><div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div></div>
+                        <div class="traction-index-box"><div class="ti-label">TRACTION INDEX</div><div class="ti-value" id="ld-grip">---</div></div>
                         <div class="weather-summary" id="ld-summary">Connecting...</div>
                     </div>
 
@@ -169,13 +167,13 @@ renderTrackList: function() {
                         <div class="ghost-avatar"><i class="fa-solid fa-ghost"></i></div>
                         <div class="ghost-info"><h3>GHOST</h3><span>RACE ENGINEER AI</span></div>
                     </div>
-                    <button onclick="PerfLogic.closeGhostChat()" style="background:none; border:none; color:white; font-size:1.5rem;"><i class="fa-solid fa-xmark"></i></button>
+                    <button onclick="PerfLogic.closeGhostChat()" style="background:none; border:none; color:white; font-size:1.5rem; padding: 10px;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="ghost-messages" id="ghost-msg-container">
                     <div class="msg ghost">Yo Boss! Alles im grünen Bereich? Die Strecke sieht heute schnell aus. Was liegt an?</div>
                 </div>
                 <div class="ghost-input-area">
-                    <input type="text" class="ghost-input" placeholder="Ask Ghost..." id="ghost-user-input">
+                    <input type="text" class="ghost-input" placeholder="Frag Ghost..." id="ghost-user-input">
                     <button class="ghost-send" onclick="PerfLogic.sendGhostMessage()"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
