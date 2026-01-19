@@ -670,11 +670,11 @@ sendGhostMessage: async function() {
         // ===========================================================
         // DEIN KEY HIER REIN (den mit ...4OZE am Anfang)
         // ===========================================================
-        const API_KEY = "HIER_DEINEN_KEY_EINFÜGEN"; 
+        const API_KEY = "AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE"; 
 
         if(!text) return;
         
-        if(API_KEY.includes("AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE) || API_KEY.length < 20) {
+        if(API_KEY.includes("HIER_DEINEN") || API_KEY.length < 20) {
             alert("API Key fehlt!");
             return;
         }
