@@ -93,23 +93,20 @@ window.PerfLogic = {
     // =================================================
     // 3. UI RENDERING (STRUKTUR FIX)
     // =================================================
-    renderTrackList: function() {
+   renderTrackList: function() {
         const trackCount = this.tracks.length;
         let bestTime = "---";
         let scoreInt = 0;
 
         if (trackCount > 0) {
-            const validTracks = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
-            if(validTracks.length > 0) { bestTime = validTracks[0].bestTime; scoreInt = trackCount * 150; }
+            const valid = this.tracks.filter(t => t.bestTime && t.bestTime !== '---');
+            if(valid.length > 0) { bestTime = valid[0].bestTime; scoreInt = trackCount * 150; }
         }
 
         const contentArea = document.querySelector('.perf-content-scroll');
-        
-        // 1. Alte Nav entfernen (wichtig für den Fix)
         const oldNav = document.querySelector('.perf-sub-nav');
         if(oldNav) oldNav.remove();
 
-        // 2. Content HTML (OHNE Nav Bar drin!)
         contentArea.innerHTML = `
             <div class="header-fade-overlay"></div>
             <div class="perf-dashboard-header">
@@ -128,61 +125,62 @@ window.PerfLogic = {
                 <h3 style="color:#444;">DRAG MODE</h3><p style="color:#666;">COMING SOON</p>
             </div>
 
-   <div id="view-analytics" style="display:none; padding-bottom:150px; width: 100%;">
-                <div class="live-dashboard-section" style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
-                    
-                    <div style="display: flex; align-items: center; gap: 10px; color: #30d158; font-weight: 900; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; margin-left: 5px;">
-                        <div style="width: 8px; height: 8px; background: #30d158; border-radius: 50%; box-shadow: 0 0 10px #30d158; animation: prm-pulse 1.5s infinite;"></div> 
+            <div id="view-analytics" style="display:none; padding-bottom:150px; position:relative;">
+                
+                <div class="ghost-trigger-btn" onclick="PerfLogic.openGhostChat()">
+                    <i class="fa-solid fa-ghost"></i>
+                </div>
+
+                <div class="live-dashboard-section">
+                    <div class="ld-title" style="color: #30d158; margin-bottom: 10px;">
+                        <div class="ld-pulse" style="background: #30d158; box-shadow: 0 0 10px #30d158;"></div> 
                         LIVE CONDITIONS
                     </div>
-
                     <div class="ld-card" id="live-weather-card">
-                        <div class="weather-main-row">
-                            <div class="weather-temp" id="ld-temp">--°</div>
-                            <div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div>
-                        </div>
-                        <div class="weather-grid">
-                            <div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div>
-                            <div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div>
-                            <div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div>
-                        </div>
-                        <div class="traction-index-box">
-                            <div class="ti-label">TRACTION INDEX</div>
-                            <div class="ti-value" id="ld-grip">---</div>
-                        </div>
+                        <div class="weather-main-row"><div class="weather-temp" id="ld-temp">--°</div><div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div></div>
+                        <div class="weather-grid"><div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div><div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div><div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div></div>
+                        <div class="traction-index-box"><div class="ti-label">TRACTION INDEX</div><div class="ti-value" id="ld-grip">---</div></div>
                         <div class="weather-summary" id="ld-summary">Connecting...</div>
                     </div>
+                </div>
+            </div>
 
+            <div id="ghost-chat-overlay">
+                <div class="ghost-header">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div class="ghost-avatar"><i class="fa-solid fa-ghost"></i></div>
+                        <div class="ghost-info">
+                            <h3>GHOST</h3>
+                            <span>RACE ENGINEER AI</span>
+                        </div>
+                    </div>
+                    <button onclick="PerfLogic.closeGhostChat()" style="background:none; border:none; color:white; font-size:1.5rem;"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <div class="ghost-messages" id="ghost-msg-container">
+                    <div class="msg ghost">Yo Boss! Alles im grünen Bereich? Die Strecke sieht heute schnell aus. Was liegt an?</div>
+                </div>
+                <div class="ghost-input-area">
+                    <input type="text" class="ghost-input" placeholder="Ask Ghost..." id="ghost-user-input">
+                    <button class="ghost-send" onclick="PerfLogic.sendGhostMessage()"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </div>
         `;
 
-        // 3. NAV BAR GLOBAL INJIZIEREN (DAMIT KLICKS GEHEN)
-        const navHTML = `
-            <div class="perf-sub-nav">
-                <div class="psn-item active" data-tab="track">TRACK</div>
-                <div class="psn-item" data-tab="drag">DRAG</div>
-                <div class="psn-item" data-tab="analytics">ANALYTICS</div>
-            </div>
-        `;
+        const navHTML = `<div class="perf-sub-nav"><div class="psn-item active" id="btn-tab-track" onclick="window.PerfLogic.switchTab('track')">TRACK</div><div class="psn-item" id="btn-tab-drag" onclick="window.PerfLogic.switchTab('drag')">DRAG</div><div class="psn-item" id="btn-tab-analytics" onclick="window.PerfLogic.switchTab('analytics')">ANALYTICS</div></div>`;
         contentArea.insertAdjacentHTML('afterend', navHTML);
 
-        // Animation
         if(trackCount > 0 && scoreInt > 0) this.animateValue("global-score-display", 0, scoreInt, 1200);
 
-        // Track Liste
         const list = document.getElementById('perf-track-list');
         this.tracks.forEach((t, index) => {
             const div = document.createElement('div');
             div.className = 'track-card-v2'; div.style.animationDelay = (index * 0.1) + "s";
             div.innerHTML = `<div class="tc-bg-map" id="mini-map-${t.id}"></div><div class="tc-content"><div class="tc-name">${t.name}</div><div class="tc-details"><span><i class="fa-solid fa-road"></i> ${t.dist}</span><span><i class="fa-solid fa-stopwatch"></i> ${t.bestTime}</span></div></div>`;
-            div.onclick = () => this.selectTrack(t); 
-            list.appendChild(div);
+            div.onclick = () => this.selectTrack(t); list.appendChild(div);
             setTimeout(() => this.renderMiniMap(t), 200 + (index * 50));
             this.checkTrackConditions(t); 
         });
 
-        // Add Button
         const addBtn = document.createElement('div');
         addBtn.className = 'add-track-v2';
         addBtn.innerHTML = '<i class="fa-solid fa-plus-circle" style="font-size:1.8rem; margin-bottom:5px"></i><span>ADD TRACK</span>';
@@ -191,7 +189,6 @@ window.PerfLogic = {
 
         this.updateLiveDashboard();
     },
-
     // =================================================
     // 4. MAP & TRACKING
     // =================================================
@@ -596,6 +593,59 @@ window.PerfLogic = {
         };
         window.requestAnimationFrame(step);
     }
+
+// =================================================
+    // 12. GHOST AI LOGIC
+    // =================================================
+    openGhostChat: function() {
+        const overlay = document.getElementById('ghost-chat-overlay');
+        if(overlay) overlay.classList.add('active');
+    },
+
+    closeGhostChat: function() {
+        const overlay = document.getElementById('ghost-chat-overlay');
+        if(overlay) overlay.classList.remove('active');
+    },
+
+    sendGhostMessage: function() {
+        const input = document.getElementById('ghost-user-input');
+        const container = document.getElementById('ghost-msg-container');
+        const text = input.value.trim();
+        
+        if(!text) return;
+
+        // 1. User Nachricht anzeigen
+        const userMsg = document.createElement('div');
+        userMsg.className = 'msg user';
+        userMsg.innerText = text;
+        container.appendChild(userMsg);
+        input.value = '';
+        
+        // Auto Scroll
+        container.scrollTop = container.scrollHeight;
+
+        // 2. Simulierte "Ghost" Antwort (Später hier API Call!)
+        setTimeout(() => {
+            const ghostMsg = document.createElement('div');
+            ghostMsg.className = 'msg ghost';
+            
+            // Kleiner Dummy-Pool für den Start
+            const answers = [
+                "Gute Frage! Lass uns erstmal die Telemetrie checken.",
+                "Digga, bei dem Wetter würde ich aufpassen. Asphalt ist kalt.",
+                "Konzentrier dich auf den Kurvenausgang, da liegt die Zeit!",
+                "Check. Ich analysiere das... sieht stabil aus.",
+                "Ich bin noch nicht mit der Cloud verbunden, aber mein Bauchgefühl sagt: Vollgas."
+            ];
+            const randomAns = answers[Math.floor(Math.random() * answers.length)];
+            
+            ghostMsg.innerText = randomAns;
+            container.appendChild(ghostMsg);
+            container.scrollTop = container.scrollHeight;
+        }, 1000);
+    },
+
+    
 };
 
 PerfLogic.init();
