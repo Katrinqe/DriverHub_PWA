@@ -51,49 +51,50 @@ window.PerfLogic = {
         });
     },
 
-    switchTab: function(tabName) {
+ switchTab: function(tabName) {
         console.log("Switching to:", tabName);
 
-        // 1. HEADER LOGIC (NEU): Nur bei 'track' anzeigen
+        // 1. Header Logic (Nur bei Track sichtbar)
         const header = document.querySelector('.perf-dashboard-header');
-        if(header) {
-            if(tabName === 'track') {
-                header.style.display = 'flex'; // Oder 'block', je nach Layout
-            } else {
-                header.style.display = 'none'; // Weg damit bei Drag/Analytics
-            }
-        }
+        if(header) header.style.display = (tabName === 'track') ? 'flex' : 'none';
 
-        // 2. Buttons resetten
+        // 2. Buttons zurücksetzen (Alle inaktiv machen)
         document.querySelectorAll('.psn-item').forEach(b => {
             b.classList.remove('active');
-            b.style.color = ""; b.style.background = "";
+            // WICHTIG: Inline-Styles löschen, damit CSS greift
+            b.style.color = ""; 
+            b.style.background = "";
+            b.style.fontWeight = "";
         });
 
-        // 3. Aktiven Button setzen
-        const activeBtn = document.querySelector(`.psn-item[data-tab="${tabName}"]`);
-        if(activeBtn) activeBtn.classList.add('active');
+        // 3. Aktiven Button setzen (Gezielt per ID)
+        const activeBtn = document.getElementById('btn-tab-' + tabName);
+        if(activeBtn) {
+            activeBtn.classList.add('active');
+            // ZUR SICHERHEIT: Hartes Styling, falls CSS zickt
+            activeBtn.style.color = "#ff3b30";
+            activeBtn.style.background = "rgba(255, 59, 48, 0.15)";
+            activeBtn.style.fontWeight = "900";
+        }
 
-        // 4. Views resetten
+        // 4. Views umschalten
         ['track', 'drag', 'analytics'].forEach(t => {
-            const view = document.getElementById('view-' + t);
-            if(view) view.style.display = 'none';
+            const el = document.getElementById('view-' + t);
+            if(el) el.style.display = 'none';
         });
 
-        // 5. Ziel View anzeigen
         const target = document.getElementById('view-' + tabName);
         if(target) {
             target.style.display = 'block';
             window.scrollTo(0,0);
         }
 
-        // 6. Analytics laden
         if(tabName === 'analytics') this.updateLiveDashboard();
     },
     // =================================================
     // 3. UI RENDERING (STRUKTUR FIX)
     // =================================================
-   renderTrackList: function() {
+renderTrackList: function() {
         const trackCount = this.tracks.length;
         let bestTime = "---";
         let scoreInt = 0;
@@ -109,6 +110,7 @@ window.PerfLogic = {
 
         contentArea.innerHTML = `
             <div class="header-fade-overlay"></div>
+            
             <div class="perf-dashboard-header">
                 <div class="glass-stats-hub">
                     <div class="pd-side-stat"><label>BEST TIME</label><div class="val">${bestTime}</div></div>
@@ -125,23 +127,39 @@ window.PerfLogic = {
                 <h3 style="color:#444;">DRAG MODE</h3><p style="color:#666;">COMING SOON</p>
             </div>
 
-            <div id="view-analytics" style="display:none; padding-bottom:150px; position:relative;">
+            <div id="view-analytics" style="display:none; padding-bottom:150px; width: 100%;">
                 
-                <div class="ghost-trigger-btn" onclick="PerfLogic.openGhostChat()">
-                    <i class="fa-solid fa-ghost"></i>
-                </div>
+                <div class="live-dashboard-section" style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
+                    
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;">
+                        
+                        <div style="display: flex; align-items: center; gap: 10px; color: #30d158; font-weight: 900; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase;">
+                            <div style="width: 8px; height: 8px; background: #30d158; border-radius: 50%; box-shadow: 0 0 10px #30d158; animation: prm-pulse 1.5s infinite;"></div> 
+                            LIVE CONDITIONS
+                        </div>
 
-                <div class="live-dashboard-section">
-                    <div class="ld-title" style="color: #30d158; margin-bottom: 10px;">
-                        <div class="ld-pulse" style="background: #30d158; box-shadow: 0 0 10px #30d158;"></div> 
-                        LIVE CONDITIONS
+                        <div onclick="PerfLogic.openGhostChat()" style="width: 40px; height: 40px; background: rgba(255,255,255,0.1); border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 10px rgba(0,229,255,0.2);">
+                            <i class="fa-solid fa-ghost" style="color: #00e5ff; font-size: 1rem;"></i>
+                        </div>
                     </div>
+
                     <div class="ld-card" id="live-weather-card">
-                        <div class="weather-main-row"><div class="weather-temp" id="ld-temp">--°</div><div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div></div>
-                        <div class="weather-grid"><div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div><div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div><div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div></div>
-                        <div class="traction-index-box"><div class="ti-label">TRACTION INDEX</div><div class="ti-value" id="ld-grip">---</div></div>
+                        <div class="weather-main-row">
+                            <div class="weather-temp" id="ld-temp">--°</div>
+                            <div class="weather-icon" id="ld-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+                        </div>
+                        <div class="weather-grid">
+                            <div class="wg-item"><label>HUMIDITY</label><div id="ld-hum">--%</div></div>
+                            <div class="wg-item"><label>PRESSURE</label><div id="ld-press">-- hPa</div></div>
+                            <div class="wg-item"><label>WIND</label><div id="ld-wind">-- km/h</div></div>
+                        </div>
+                        <div class="traction-index-box">
+                            <div class="ti-label">TRACTION INDEX</div>
+                            <div class="ti-value" id="ld-grip">---</div>
+                        </div>
                         <div class="weather-summary" id="ld-summary">Connecting...</div>
                     </div>
+
                 </div>
             </div>
 
@@ -149,10 +167,7 @@ window.PerfLogic = {
                 <div class="ghost-header">
                     <div style="display:flex; align-items:center; gap:15px;">
                         <div class="ghost-avatar"><i class="fa-solid fa-ghost"></i></div>
-                        <div class="ghost-info">
-                            <h3>GHOST</h3>
-                            <span>RACE ENGINEER AI</span>
-                        </div>
+                        <div class="ghost-info"><h3>GHOST</h3><span>RACE ENGINEER AI</span></div>
                     </div>
                     <button onclick="PerfLogic.closeGhostChat()" style="background:none; border:none; color:white; font-size:1.5rem;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
@@ -166,7 +181,14 @@ window.PerfLogic = {
             </div>
         `;
 
-        const navHTML = `<div class="perf-sub-nav"><div class="psn-item active" id="btn-tab-track" onclick="window.PerfLogic.switchTab('track')">TRACK</div><div class="psn-item" id="btn-tab-drag" onclick="window.PerfLogic.switchTab('drag')">DRAG</div><div class="psn-item" id="btn-tab-analytics" onclick="window.PerfLogic.switchTab('analytics')">ANALYTICS</div></div>`;
+        // NAV BAR WIEDER EINBAUEN
+        const navHTML = `
+            <div class="perf-sub-nav">
+                <div class="psn-item active" id="btn-tab-track" data-tab="track" onclick="window.PerfLogic.switchTab('track')">TRACK</div>
+                <div class="psn-item" id="btn-tab-drag" data-tab="drag" onclick="window.PerfLogic.switchTab('drag')">DRAG</div>
+                <div class="psn-item" id="btn-tab-analytics" data-tab="analytics" onclick="window.PerfLogic.switchTab('analytics')">ANALYTICS</div>
+            </div>
+        `;
         contentArea.insertAdjacentHTML('afterend', navHTML);
 
         if(trackCount > 0 && scoreInt > 0) this.animateValue("global-score-display", 0, scoreInt, 1200);
