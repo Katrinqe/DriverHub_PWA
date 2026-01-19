@@ -617,17 +617,52 @@ renderTrackList: function() {
 // =================================================
     // 12. GHOST AI LOGIC
     // =================================================
-    openGhostChat: function() {
+   openGhostChat: function() {
         const overlay = document.getElementById('ghost-chat-overlay');
         if(overlay) overlay.classList.add('active');
+        document.body.classList.add('ghost-active'); // <--- DAS IST NEU (CSS Trigger)
     },
 
     closeGhostChat: function() {
         const overlay = document.getElementById('ghost-chat-overlay');
         if(overlay) overlay.classList.remove('active');
+        document.body.classList.remove('ghost-active'); // <--- DAS IST NEU
     },
 
-    sendGhostMessage: function() {
+  // --- DATEN SAMMELN FÜR DIE KI ---
+    getGhostContext: function() {
+        // 1. Wetter vom Dashboard ablesen
+        const temp = document.getElementById('ld-temp')?.innerText || "Unbekannt";
+        const hum = document.getElementById('ld-hum')?.innerText || "Unbekannt";
+        const grip = document.getElementById('ld-grip')?.innerText || "Unbekannt";
+        const condition = document.getElementById('ld-summary')?.innerText || "Keine Daten";
+
+        // 2. Garage Daten laden (LocalStorage)
+        const cars = JSON.parse(localStorage.getItem('driverhub_cars') || '[]');
+        const currentCar = cars.length > 0 ? `${cars[0].name} (${cars[0].model}, ${cars[0].hp}HP)` : "Kein Auto gewählt";
+
+        // 3. Performance Daten
+        const tracks = this.tracks.length;
+        const bestTime = this.tracks.find(t => t.bestTime !== '---')?.bestTime || "Keine";
+
+        // Das hier ist das "Gehirn", das wir an Gemini schicken
+        return `
+            CONTEXT DATA:
+            - Current Weather: ${temp}, Humidity: ${hum}
+            - Track Condition/Grip: ${grip} (${condition})
+            - User's Car: ${currentCar}
+            - Total Tracks: ${tracks}
+            - Personal Best Record: ${bestTime}
+            
+            ROLEPLAY INSTRUCTIONS:
+            Du bist "Ghost", ein elitärer, cooler Underground-Rennmechaniker und Daten-Analyst. 
+            Dein Stil: Kurz, prägnant, leichter Street-Slang ("Digga", "Boss", "Apex"), aber extrem kompetent.
+            Du analysierst die Daten oben. Wenn der Grip schlecht ist, warne mich. Wenn das Auto stark ist, hype mich.
+            Antworte NIE mit langen Texten. Maximal 2-3 Sätze.
+        `;
+    },
+
+    sendGhostMessage: async function() {
         const input = document.getElementById('ghost-user-input');
         const container = document.getElementById('ghost-msg-container');
         const text = input.value.trim();
@@ -640,31 +675,55 @@ renderTrackList: function() {
         userMsg.innerText = text;
         container.appendChild(userMsg);
         input.value = '';
-        
-        // Auto Scroll
         container.scrollTop = container.scrollHeight;
 
-        // 2. Simulierte "Ghost" Antwort (Später hier API Call!)
-        setTimeout(() => {
+        // 2. Loading State (Ghost denkt nach...)
+        const loadingId = 'ghost-loading-' + Date.now();
+        const loadingMsg = document.createElement('div');
+        loadingMsg.className = 'msg ghost';
+        loadingMsg.id = loadingId;
+        loadingMsg.innerHTML = '<i class="fa-solid fa-ellipsis fa-fade"></i>'; // Blinkende Punkte
+        container.appendChild(loadingMsg);
+        container.scrollTop = container.scrollHeight;
+
+        // --- GEMINI API CALL ---
+        const API_KEY = "HIER_DEINEN_GEMINI_KEY_EINFUEGEN"; // <--- HIER KEY REIN !!!
+        const context = this.getGhostContext(); // Daten holen
+
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: context + "\n\nUSER FRAGE: " + text }]
+                    }]
+                })
+            });
+
+            const data = await response.json();
+            const aiText = data.candidates[0].content.parts[0].text;
+
+            // Loading entfernen & Antwort zeigen
+            document.getElementById(loadingId).remove();
+            
             const ghostMsg = document.createElement('div');
             ghostMsg.className = 'msg ghost';
-            
-            // Kleiner Dummy-Pool für den Start
-            const answers = [
-                "Gute Frage! Lass uns erstmal die Telemetrie checken.",
-                "Digga, bei dem Wetter würde ich aufpassen. Asphalt ist kalt.",
-                "Konzentrier dich auf den Kurvenausgang, da liegt die Zeit!",
-                "Check. Ich analysiere das... sieht stabil aus.",
-                "Ich bin noch nicht mit der Cloud verbunden, aber mein Bauchgefühl sagt: Vollgas."
-            ];
-            const randomAns = answers[Math.floor(Math.random() * answers.length)];
-            
-            ghostMsg.innerText = randomAns;
+            ghostMsg.innerText = aiText;
             container.appendChild(ghostMsg);
-            container.scrollTop = container.scrollHeight;
-        }, 1000);
-    },
 
+        } catch (error) {
+            console.error("Ghost Error:", error);
+            document.getElementById(loadingId).remove();
+            const errorMsg = document.createElement('div');
+            errorMsg.className = 'msg ghost';
+            errorMsg.innerText = "Systemfehler. Verbindung zur Cloud unterbrochen.";
+            errorMsg.style.color = "#ff3b30";
+            container.appendChild(errorMsg);
+        }
+        
+        container.scrollTop = container.scrollHeight;
+    }
     
 };
 
