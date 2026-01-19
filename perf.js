@@ -592,7 +592,7 @@ window.PerfLogic = {
             if (progress < 1) window.requestAnimationFrame(step);
         };
         window.requestAnimationFrame(step);
-    }
+    },
 
 // =================================================
     // 12. GHOST AI LOGIC
