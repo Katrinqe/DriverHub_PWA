@@ -667,12 +667,17 @@ renderTrackList: function() {
         const container = document.getElementById('ghost-msg-container');
         const text = input.value.trim();
         
-        // DEIN API KEY HIER REIN (Achte darauf, dass er zwischen den " " steht!)
-        const API_KEY = "AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE"; 
+        // ===========================================================
+        // SCHRITT 1: HIER DEINEN KEY VOM SCREENSHOT EINFÜGEN !!!
+        // Nimm den Key, der mit "...4OZE" anfängt (aus deiner Liste)
+        // ===========================================================
+        const API_KEY = "HIER_DEN_LANGEN_KEY_EINFÜGEN"; 
 
         if(!text) return;
-        if(API_KEY === "HIER_DEINEN_KEY_EINFÜGEN" || API_KEY.length < 10) {
-            alert("ACHTUNG: Du hast den API Key noch nicht in den Code eingefügt!");
+        
+        // Sicherheits-Check
+        if(API_KEY.includes("HIER_DEN_LANGEN") || API_KEY.length < 20) {
+            alert("STOPP! Du musst erst den API Key in die Datei perf.js einfügen! Nimm den Key aus deinem Screenshot.");
             return;
         }
 
@@ -689,18 +694,20 @@ renderTrackList: function() {
         const loadingMsg = document.createElement('div');
         loadingMsg.className = 'msg ghost';
         loadingMsg.id = loadingId;
-        loadingMsg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+        loadingMsg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>'; 
         container.appendChild(loadingMsg);
         container.scrollTop = container.scrollHeight;
 
-        // Kontext laden
         const context = this.getGhostContext(); 
 
         try {
-            // API Call starten
-            console.log("Sende Anfrage an Gemini...");
+            // FIX: Wir probieren das 2.0 Modell, da 1.5 bei dir den Fehler warf.
+            // Falls das auch nicht geht, ändern wir es zu "gemini-pro"
+            const modelName = "gemini-2.0-flash-exp"; 
             
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
+
+            const response = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -710,34 +717,26 @@ renderTrackList: function() {
                 })
             });
 
-            // Prüfen ob Netzwerk-Antwort OK ist
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error("GEMINI API FEHLER:", errorData);
-                throw new Error(errorData.error?.message || "API verweigert Zugriff");
+                console.error("API ERROR:", errorData);
+                throw new Error(errorData.error?.message || "Fehler beim API Zugriff");
             }
 
             const data = await response.json();
-            
-            // Prüfen ob eine gültige Antwort da ist
-            if (!data.candidates || !data.candidates[0].content) {
-                console.error("LEERE ANTWORT:", data);
-                throw new Error("Ghost ist sprachlos (Leere Antwort).");
-            }
-
             const aiText = data.candidates[0].content.parts[0].text;
 
-            // Loading entfernen & Antwort zeigen
             document.getElementById(loadingId).remove();
             
             const ghostMsg = document.createElement('div');
             ghostMsg.className = 'msg ghost';
-            ghostMsg.innerText = aiText;
+            // Markdown Sterne entfernen
+            const cleanText = aiText.replace(/\*\*/g, "").replace(/\*/g, ""); 
+            ghostMsg.innerText = cleanText;
             container.appendChild(ghostMsg);
 
         } catch (error) {
             console.error("GHOST CRITICAL ERROR:", error);
-            
             const loadEl = document.getElementById(loadingId);
             if(loadEl) loadEl.remove();
             
@@ -745,8 +744,13 @@ renderTrackList: function() {
             errorMsg.className = 'msg ghost';
             errorMsg.style.color = "#ff3b30";
             errorMsg.style.border = "1px solid #ff3b30";
-            // Wir zeigen den Fehler jetzt direkt im Chat an, damit du siehst was los ist
-            errorMsg.innerText = "Fehler: " + error.message; 
+            
+            // Falls das Modell wieder nicht gefunden wird:
+            if(error.message.includes("not found")) {
+                errorMsg.innerText = "Fehler: Modell nicht gefunden. Versuche im Code 'gemini-2.0-flash-exp' durch 'gemini-pro' zu ersetzen.";
+            } else {
+                errorMsg.innerText = "Ghost Error: " + error.message; 
+            }
             container.appendChild(errorMsg);
         }
         
