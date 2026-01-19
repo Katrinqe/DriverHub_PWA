@@ -662,15 +662,15 @@ renderTrackList: function() {
         `;
     },
 
- sendGhostMessage: async function() {
+sendGhostMessage: async function() {
         const input = document.getElementById('ghost-user-input');
         const container = document.getElementById('ghost-msg-container');
         const text = input.value.trim();
         
         // ===========================================================
-        // DEIN KEY HIER REIN (den mit ...4OZE am Anfang)
+        // HIER DEINEN KEY VOM SCREENSHOT EINFÜGEN !!!
         // ===========================================================
-        const API_KEY = "AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE"; 
+        const API_KEY = "HIER_DEINEN_KEY_EINFÜGEN"; 
 
         if(!text) return;
         
@@ -699,9 +699,9 @@ renderTrackList: function() {
         const context = this.getGhostContext(); 
 
         try {
-            // FIX: Wir nutzen jetzt die STANDARD URL und das STANDARD Modell.
-            // Das ist am stabilsten für Free-Tier Keys.
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            // FIX: Wir nutzen "gemini-pro". Das ist das stabilste Modell (und kostenlos).
+            // Damit umgehen wir den "Not Found" Fehler der Flash-Versionen.
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
 
             const response = await fetch(url, {
                 method: "POST",
@@ -717,21 +717,28 @@ renderTrackList: function() {
                 const errorData = await response.json();
                 console.error("API ERROR:", errorData);
                 
-                // Spezielle Fehlermeldung für Quota (Limit)
-                if(errorData.error && errorData.error.message.includes("quota")) {
-                    throw new Error("Zu viele Fragen! Warte eine Minute, Ghost muss nachdenken.");
+                // Falls Limit erreicht (Quota)
+                if(response.status === 429) {
+                    throw new Error("Zu schnell! Der Ghost braucht eine kurze Pause (1 Min).");
                 }
                 
                 throw new Error(errorData.error?.message || "Fehler beim API Zugriff");
             }
 
             const data = await response.json();
+            
+            // Sicherheitscheck: Hat die KI geantwortet?
+            if(!data.candidates || data.candidates.length === 0) {
+                 throw new Error("Keine Antwort erhalten. Frag was anderes.");
+            }
+
             const aiText = data.candidates[0].content.parts[0].text;
 
             document.getElementById(loadingId).remove();
             
             const ghostMsg = document.createElement('div');
             ghostMsg.className = 'msg ghost';
+            // Sterne entfernen (Markdown Bereinigung)
             const cleanText = aiText.replace(/\*\*/g, "").replace(/\*/g, ""); 
             ghostMsg.innerText = cleanText;
             container.appendChild(ghostMsg);
