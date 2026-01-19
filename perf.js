@@ -662,22 +662,20 @@ renderTrackList: function() {
         `;
     },
 
-   sendGhostMessage: async function() {
+ sendGhostMessage: async function() {
         const input = document.getElementById('ghost-user-input');
         const container = document.getElementById('ghost-msg-container');
         const text = input.value.trim();
         
         // ===========================================================
-        // SCHRITT 1: HIER DEINEN KEY VOM SCREENSHOT EINFÜGEN !!!
-        // Nimm den Key, der mit "...4OZE" anfängt (aus deiner Liste)
+        // DEIN KEY HIER REIN (den mit ...4OZE am Anfang)
         // ===========================================================
         const API_KEY = "AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE"; 
 
         if(!text) return;
         
-        // Sicherheits-Check
-        if(API_KEY.includes("HIER_DEN_LANGEN") || API_KEY.length < 20) {
-            alert("STOPP! Du musst erst den API Key in die Datei perf.js einfügen! Nimm den Key aus deinem Screenshot.");
+        if(API_KEY.includes("HIER_DEINEN") || API_KEY.length < 20) {
+            alert("API Key fehlt!");
             return;
         }
 
@@ -701,11 +699,9 @@ renderTrackList: function() {
         const context = this.getGhostContext(); 
 
         try {
-            // FIX: Wir probieren das 2.0 Modell, da 1.5 bei dir den Fehler warf.
-            // Falls das auch nicht geht, ändern wir es zu "gemini-pro"
-            const modelName = "gemini-2.0-flash-exp"; 
-            
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`;
+            // FIX: Wir nutzen jetzt die STANDARD URL und das STANDARD Modell.
+            // Das ist am stabilsten für Free-Tier Keys.
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
             const response = await fetch(url, {
                 method: "POST",
@@ -720,6 +716,12 @@ renderTrackList: function() {
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("API ERROR:", errorData);
+                
+                // Spezielle Fehlermeldung für Quota (Limit)
+                if(errorData.error && errorData.error.message.includes("quota")) {
+                    throw new Error("Zu viele Fragen! Warte eine Minute, Ghost muss nachdenken.");
+                }
+                
                 throw new Error(errorData.error?.message || "Fehler beim API Zugriff");
             }
 
@@ -730,7 +732,6 @@ renderTrackList: function() {
             
             const ghostMsg = document.createElement('div');
             ghostMsg.className = 'msg ghost';
-            // Markdown Sterne entfernen
             const cleanText = aiText.replace(/\*\*/g, "").replace(/\*/g, ""); 
             ghostMsg.innerText = cleanText;
             container.appendChild(ghostMsg);
@@ -744,19 +745,12 @@ renderTrackList: function() {
             errorMsg.className = 'msg ghost';
             errorMsg.style.color = "#ff3b30";
             errorMsg.style.border = "1px solid #ff3b30";
-            
-            // Falls das Modell wieder nicht gefunden wird:
-            if(error.message.includes("not found")) {
-                errorMsg.innerText = "Fehler: Modell nicht gefunden. Versuche im Code 'gemini-2.0-flash-exp' durch 'gemini-pro' zu ersetzen.";
-            } else {
-                errorMsg.innerText = "Ghost Error: " + error.message; 
-            }
+            errorMsg.innerText = error.message; 
             container.appendChild(errorMsg);
         }
         
         container.scrollTop = container.scrollHeight;
     }
-    
 };
 
 PerfLogic.init();
