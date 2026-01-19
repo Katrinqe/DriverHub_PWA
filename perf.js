@@ -670,7 +670,7 @@ sendGhostMessage: async function() {
         // ===========================================================
         // HIER DEINEN KEY VOM SCREENSHOT EINFÜGEN !!!
         // ===========================================================
-        const API_KEY = "HIER_DEINEN_KEY_EINFÜGEN"; 
+        const API_KEY = "AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE"; 
 
         if(!text) return;
         
