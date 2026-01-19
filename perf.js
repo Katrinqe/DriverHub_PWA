@@ -668,7 +668,7 @@ sendGhostMessage: async function() {
         const text = input.value.trim();
         
         // ===========================================================
-        // DEIN KEY HIER REIN (den mit ...4OZE am Anfang)
+        // DEIN KEY HIER REIN (der mit ...4OZE am Anfang)
         // ===========================================================
         const API_KEY = "AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE"; 
 
@@ -699,9 +699,10 @@ sendGhostMessage: async function() {
         const context = this.getGhostContext(); 
 
         try {
-            // WIR NEHMEN WIEDER 2.0 - WEIL ES GEFUNDEN WURDE!
-            // Das ist das einzige Modell, das bei dir nicht "Not Found" wirft.
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${API_KEY}`;
+            // === DER FINAL FIX ===
+            // 1. Wir nutzen "v1" (OHNE beta). Das ist entscheidend!
+            // 2. Wir nutzen "gemini-1.5-flash". Das ist das Standard-Modell für kostenlose Accounts.
+            const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
             const response = await fetch(url, {
                 method: "POST",
@@ -713,21 +714,22 @@ sendGhostMessage: async function() {
                 })
             });
 
-            // Spezielle Behandlung für das "Quota" Problem (Fehler 429)
-            if (response.status === 429) {
-                throw new Error("Whoa, langsam Cowboy! 🏎️ Meine Leitungen glühen. Warte kurz (ca. 30sek).");
-            }
-
             if (!response.ok) {
                 const errorData = await response.json();
                 console.error("API ERROR:", errorData);
+                
+                // Falls "Quota" Fehler (zu schnell getippt)
+                if (response.status === 429) {
+                    throw new Error("Zu schnell! Warte kurz (Limit erreicht).");
+                }
+                
                 throw new Error(errorData.error?.message || "Fehler beim API Zugriff");
             }
 
             const data = await response.json();
             
             if(!data.candidates || data.candidates.length === 0) {
-                 throw new Error("Keine Antwort. Versuch es nochmal.");
+                 throw new Error("Keine Antwort erhalten.");
             }
 
             const aiText = data.candidates[0].content.parts[0].text;
@@ -736,18 +738,19 @@ sendGhostMessage: async function() {
             
             const ghostMsg = document.createElement('div');
             ghostMsg.className = 'msg ghost';
+            // Markdown entfernen
             const cleanText = aiText.replace(/\*\*/g, "").replace(/\*/g, ""); 
             ghostMsg.innerText = cleanText;
             container.appendChild(ghostMsg);
 
         } catch (error) {
-            console.error("GHOST CRITICAL ERROR:", error);
+            console.error("GHOST ERROR:", error);
             const loadEl = document.getElementById(loadingId);
             if(loadEl) loadEl.remove();
             
             const errorMsg = document.createElement('div');
             errorMsg.className = 'msg ghost';
-            errorMsg.style.color = "#ff3b30"; // Rot bei Fehlern
+            errorMsg.style.color = "#ff3b30";
             errorMsg.style.border = "1px solid #ff3b30";
             errorMsg.innerText = error.message; 
             container.appendChild(errorMsg);
