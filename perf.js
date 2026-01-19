@@ -668,7 +668,7 @@ renderTrackList: function() {
         const text = input.value.trim();
         
         // DEIN API KEY HIER REIN (Achte darauf, dass er zwischen den " " steht!)
-        const API_KEY = "AIzaSyAk7GObimsErYshNX8E16afk-MbdK8NPH0"; 
+        const API_KEY = "AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE"; 
 
         if(!text) return;
         if(API_KEY === "HIER_DEINEN_KEY_EINFÜGEN" || API_KEY.length < 10) {
