@@ -687,7 +687,7 @@ renderTrackList: function() {
         container.scrollTop = container.scrollHeight;
 
         // --- GEMINI API CALL ---
-        const API_KEY = "HIER_DEINEN_GEMINI_KEY_EINFUEGEN"; // <--- HIER KEY REIN !!!
+        const API_KEY = "AIzaSyAk7GObimsErYshNX8E16afk-MbdK8NPH0"; // <--- HIER KEY REIN !!!
         const context = this.getGhostContext(); // Daten holen
 
         try {
