@@ -662,12 +662,19 @@ renderTrackList: function() {
         `;
     },
 
-    sendGhostMessage: async function() {
+   sendGhostMessage: async function() {
         const input = document.getElementById('ghost-user-input');
         const container = document.getElementById('ghost-msg-container');
         const text = input.value.trim();
         
+        // DEIN API KEY HIER REIN (Achte darauf, dass er zwischen den " " steht!)
+        const API_KEY = "HIER_DEINEN_KEY_EINFÜGEN"; 
+
         if(!text) return;
+        if(API_KEY === "HIER_DEINEN_KEY_EINFÜGEN" || API_KEY.length < 10) {
+            alert("ACHTUNG: Du hast den API Key noch nicht in den Code eingefügt!");
+            return;
+        }
 
         // 1. User Nachricht anzeigen
         const userMsg = document.createElement('div');
@@ -677,20 +684,22 @@ renderTrackList: function() {
         input.value = '';
         container.scrollTop = container.scrollHeight;
 
-        // 2. Loading State (Ghost denkt nach...)
+        // 2. Loading State
         const loadingId = 'ghost-loading-' + Date.now();
         const loadingMsg = document.createElement('div');
         loadingMsg.className = 'msg ghost';
         loadingMsg.id = loadingId;
-        loadingMsg.innerHTML = '<i class="fa-solid fa-ellipsis fa-fade"></i>'; // Blinkende Punkte
+        loadingMsg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
         container.appendChild(loadingMsg);
         container.scrollTop = container.scrollHeight;
 
-        // --- GEMINI API CALL ---
-        const API_KEY = "AIzaSyAk7GObimsErYshNX8E16afk-MbdK8NPH0"; // <--- HIER KEY REIN !!!
-        const context = this.getGhostContext(); // Daten holen
+        // Kontext laden
+        const context = this.getGhostContext(); 
 
         try {
+            // API Call starten
+            console.log("Sende Anfrage an Gemini...");
+            
             const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -701,7 +710,21 @@ renderTrackList: function() {
                 })
             });
 
+            // Prüfen ob Netzwerk-Antwort OK ist
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error("GEMINI API FEHLER:", errorData);
+                throw new Error(errorData.error?.message || "API verweigert Zugriff");
+            }
+
             const data = await response.json();
+            
+            // Prüfen ob eine gültige Antwort da ist
+            if (!data.candidates || !data.candidates[0].content) {
+                console.error("LEERE ANTWORT:", data);
+                throw new Error("Ghost ist sprachlos (Leere Antwort).");
+            }
+
             const aiText = data.candidates[0].content.parts[0].text;
 
             // Loading entfernen & Antwort zeigen
@@ -713,12 +736,17 @@ renderTrackList: function() {
             container.appendChild(ghostMsg);
 
         } catch (error) {
-            console.error("Ghost Error:", error);
-            document.getElementById(loadingId).remove();
+            console.error("GHOST CRITICAL ERROR:", error);
+            
+            const loadEl = document.getElementById(loadingId);
+            if(loadEl) loadEl.remove();
+            
             const errorMsg = document.createElement('div');
             errorMsg.className = 'msg ghost';
-            errorMsg.innerText = "Systemfehler. Verbindung zur Cloud unterbrochen.";
             errorMsg.style.color = "#ff3b30";
+            errorMsg.style.border = "1px solid #ff3b30";
+            // Wir zeigen den Fehler jetzt direkt im Chat an, damit du siehst was los ist
+            errorMsg.innerText = "Fehler: " + error.message; 
             container.appendChild(errorMsg);
         }
         
