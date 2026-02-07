@@ -1271,3 +1271,181 @@ body.ghost-active #global-nav {
 body.ghost-active #ghost-chat-overlay {
     background: #000000; /* Komplett schwarz für Fokus */
 }
+
+/* ========================================= */
+/* === AUTHENTICATION SCREEN (LOGIN) === */
+/* ========================================= */
+
+.auth-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: #000;
+    z-index: 20000; /* Muss ÜBER dem Splash Screen (9999) liegen */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0; 
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.auth-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Background Effect */
+.auth-overlay::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(0, 122, 255, 0.15) 0%, transparent 60%);
+    animation: bg-pulse-move 15s infinite alternate;
+    z-index: -1;
+}
+
+.auth-content {
+    width: 85%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 40px;
+    position: relative;
+    z-index: 10;
+}
+
+.auth-logo-img {
+    width: 100px;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 20px rgba(0, 122, 255, 0.4));
+}
+
+.auth-title {
+    font-size: 2rem;
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: 2px;
+    font-style: italic;
+    text-align: center;
+    background: linear-gradient(to right, #fff, #888);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.auth-subtitle {
+    color: #666;
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    margin-top: 5px;
+    font-weight: 700;
+}
+
+.auth-forms-container {
+    width: 100%;
+}
+
+/* Buttons */
+.btn-auth-google {
+    width: 100%;
+    height: 55px;
+    background: white;
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.btn-auth-google:active { transform: scale(0.98); }
+
+.btn-auth-email {
+    width: 100%;
+    height: 55px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+}
+
+/* Email Form */
+#auth-email-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    animation: slideUpFade 0.3s ease-out;
+}
+
+.input-group-glass {
+    background: rgba(20, 20, 20, 0.8);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 0 15px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-group-glass i { color: #666; width: 20px; text-align: center; }
+.input-group-glass input {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    width: 100%;
+    outline: none;
+    font-family: sans-serif;
+}
+
+.auth-action-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-auth-action {
+    flex: 1;
+    height: 50px;
+    background: #007aff;
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.btn-auth-action.outline {
+    background: transparent;
+    border: 1px solid #333;
+    color: #888;
+}
+
+.btn-text-only {
+    background: none; border: none; color: #666; font-size: 0.8rem; margin-top: 10px; cursor: pointer; text-decoration: underline;
+}
+
+.auth-footer p {
+    color: #444;
+    font-size: 0.6rem;
+    text-align: center;
+    margin-top: 30px;
+}
