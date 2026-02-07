@@ -38,7 +38,51 @@
 
 <body>
 
+<div id="auth-screen" class="auth-overlay active"> <div class="auth-bg-video">
+            </div>
+        
+        <div class="auth-content">
+            <div class="auth-logo-area">
+                <img src="logo.png" class="auth-logo-img">
+                <h1 class="auth-title">DRIVERHUB</h1>
+                <p class="auth-subtitle">TRACK. ANALYZE. EVOLVE.</p>
+            </div>
 
+            <div class="auth-forms-container">
+                <div id="auth-main-options">
+                    <button class="btn-auth-google" onclick="AuthLogic.loginGoogle()">
+                        <i class="fa-brands fa-google"></i> Continue with Google
+                    </button>
+                    
+                    <button class="btn-auth-email" onclick="AuthLogic.toggleEmailMode()">
+                        <i class="fa-solid fa-envelope"></i> Sign in with Email
+                    </button>
+                </div>
+
+                <div id="auth-email-form" class="hidden">
+                    <div class="input-group-glass">
+                        <i class="fa-solid fa-at"></i>
+                        <input type="email" id="inp-email" placeholder="Email Address">
+                    </div>
+                    <div class="input-group-glass">
+                        <i class="fa-solid fa-key"></i>
+                        <input type="password" id="inp-pass" placeholder="Password">
+                    </div>
+                    
+                    <div class="auth-action-row">
+                        <button class="btn-auth-action" onclick="AuthLogic.loginEmail()">LOGIN</button>
+                        <button class="btn-auth-action outline" onclick="AuthLogic.registerEmail()">REGISTER</button>
+                    </div>
+                    
+                    <button class="btn-text-only" onclick="AuthLogic.toggleEmailMode()">Back</button>
+                </div>
+            </div>
+
+            <div class="auth-footer">
+                <p>By continuing, you agree to the Race Code.</p>
+            </div>
+        </div>
+    </div>
 
     <div id="splash-screen"><img src="logo.png" class="splash-logo"></div>
 
