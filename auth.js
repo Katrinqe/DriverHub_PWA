@@ -1,22 +1,24 @@
 /* ========================================== */
-/* === AUTH.JS - LOGIN & SECURITY LOGIC === */
+/* === AUTH.JS - CLEAN LOGIN LOGIC === */
 /* ========================================== */
 
 window.AuthLogic = {
     
     init: function() {
-        console.log("Auth System: Ready");
-        // Wir hören auf den Status, den firebase-init.js bereitstellt
+        console.log("Auth System: Checking Status...");
+        
+        // Der Listener entscheidet jetzt: Login AN oder AUS
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
-                console.log("AUTH: User ist eingeloggt:", user.email);
-                this.hideLoginScreen();
+                console.log("AUTH: User ist bereits drin:", user.email);
+                // WICHTIG: Wir machen NICHTS. Der Screen ist ja schon unsichtbar.
+                // Das verhindert das Aufblitzen komplett.
                 
-                // HIER SPÄTER: Check Onboarding (Profil komplett?)
-                // if (!user.profileComplete) showOnboarding();
-                
+                // Hier könnten wir später den Profil-Check starten
+                // checkOnboarding(user);
             } else {
                 console.log("AUTH: Niemand eingeloggt. Zeige Login.");
+                // Nur wenn wirklich keiner da ist, blenden wir den Screen ein
                 this.showLoginScreen();
             }
         });
@@ -25,7 +27,12 @@ window.AuthLogic = {
     // --- SCREEN MANAGEMENT ---
     showLoginScreen: function() {
         const screen = document.getElementById('auth-screen');
-        if(screen) screen.classList.add('active');
+        if(screen) {
+            // Kleine Verzögerung, damit es weich einfadet (nach dem Splash Screen)
+            setTimeout(() => {
+                screen.classList.add('active');
+            }, 500); 
+        }
     },
 
     hideLoginScreen: function() {
@@ -34,9 +41,18 @@ window.AuthLogic = {
             screen.style.opacity = '0';
             setTimeout(() => {
                 screen.classList.remove('active');
-                // Optional: Sound abspielen oder Begrüßung
+                // Style Reset für den nächsten Logout
+                screen.style.opacity = ''; 
             }, 500);
         }
+    },
+
+    // --- LOGOUT (Hilfsfunktion für später) ---
+    logout: function() {
+        firebase.auth().signOut().then(() => {
+            console.log("Ausgeloggt");
+            window.location.reload(); // Einfachste Methode für sauberen Reset
+        });
     },
 
     // --- GOOGLE LOGIN ---
@@ -44,10 +60,11 @@ window.AuthLogic = {
         const provider = new firebase.auth.GoogleAuthProvider();
         firebase.auth().signInWithPopup(provider)
             .then((result) => {
-                // Erfolgreich! onAuthStateChanged kümmert sich um den Rest.
                 console.log("Google Login Success");
+                this.hideLoginScreen();
             })
             .catch((error) => {
+                console.error(error);
                 alert("Login Error: " + error.message);
             });
     },
@@ -69,10 +86,12 @@ window.AuthLogic = {
     loginEmail: function() {
         const email = document.getElementById('inp-email').value;
         const pass = document.getElementById('inp-pass').value;
-        
         if(!email || !pass) { alert("Bitte alles ausfüllen!"); return; }
 
         firebase.auth().signInWithEmailAndPassword(email, pass)
+            .then(() => {
+                this.hideLoginScreen();
+            })
             .catch((error) => {
                 alert("Login fehlgeschlagen: " + error.message);
             });
@@ -81,14 +100,13 @@ window.AuthLogic = {
     registerEmail: function() {
         const email = document.getElementById('inp-email').value;
         const pass = document.getElementById('inp-pass').value;
-
         if(!email || !pass) { alert("Bitte alles ausfüllen!"); return; }
         if(pass.length < 6) { alert("Passwort zu kurz (min 6 Zeichen)."); return; }
 
         firebase.auth().createUserWithEmailAndPassword(email, pass)
-            .then((userCredential) => {
+            .then(() => {
                 console.log("Account erstellt!");
-                // Wir könnten hier noch User-Daten in Firestore anlegen
+                this.hideLoginScreen();
             })
             .catch((error) => {
                 alert("Fehler beim Erstellen: " + error.message);
@@ -96,5 +114,4 @@ window.AuthLogic = {
     }
 };
 
-// Startet sofort
 AuthLogic.init();
