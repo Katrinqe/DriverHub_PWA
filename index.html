@@ -82,6 +82,38 @@
         </div>
     </div>
 
+    <div id="onboarding-screen" class="hidden">
+        <div class="ob-bg-anim"></div>
+        
+        <div class="ob-content">
+            <div class="ob-step active" id="ob-step-profile">
+                <h2 class="ob-title">IDENTITY VERIFICATION</h2>
+                <p class="ob-subtitle">ESTABLISH YOUR DRIVER PROFILE</p>
+                
+                <div class="ob-avatar-picker" onclick="OnboardingLogic.triggerAvatarUpload()">
+                    <img id="ob-avatar-preview" src="https://www.w3schools.com/howto/img_avatar.png"> <div class="ob-cam-icon"><i class="fa-solid fa-camera"></i></div>
+                    <input type="file" id="ob-avatar-input" hidden accept="image/*" onchange="OnboardingLogic.previewAvatar(this)">
+                </div>
+
+                <div class="ob-form">
+                    <div class="input-group-line">
+                        <label>REAL NAME</label>
+                        <input type="text" id="ob-realname" placeholder="Max Verstappen">
+                    </div>
+                    
+                    <div class="input-group-line">
+                        <label>CALLSIGN (USERNAME)</label>
+                        <input type="text" id="ob-username" placeholder="GhostRider">
+                    </div>
+                </div>
+
+                <button class="btn-ob-next" onclick="OnboardingLogic.saveProfile()">
+                    INITIALIZE DRIVER <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="splash-screen"><img src="logo.png" class="splash-logo"></div>
 
     
