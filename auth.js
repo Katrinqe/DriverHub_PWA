@@ -7,18 +7,30 @@ window.AuthLogic = {
     init: function() {
         console.log("Auth System: Checking Status...");
         
-        // Der Listener entscheidet jetzt: Login AN oder AUS
-        firebase.auth().onAuthStateChanged((user) => {
+       // Der Listener entscheidet jetzt: Login, Onboarding oder Home
+        firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
-                console.log("AUTH: User ist bereits drin:", user.email);
-                // WICHTIG: Wir machen NICHTS. Der Screen ist ja schon unsichtbar.
-                // Das verhindert das Aufblitzen komplett.
+                console.log("AUTH: User erkannt:", user.email);
                 
-                // Hier könnten wir später den Profil-Check starten
-                // checkOnboarding(user);
+                // CHECK: Hat er schon ein Profil in der Datenbank?
+                const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+
+                if (userDoc.exists && userDoc.data().onboardingComplete) {
+                    console.log("AUTH: Profil vollständig. Ab nach Hause.");
+                    this.hideLoginScreen(); // Login weg -> App sichtbar
+                } else {
+                    console.log("AUTH: Profil fehlt oder unvollständig. Starte Onboarding.");
+                    // Login Screen muss weg, aber Onboarding muss her
+                    // Da wir auth.js nicht mit onboarding.js verknüpfen wollen ohne es geladen zu haben:
+                    if(window.OnboardingLogic) {
+                        window.OnboardingLogic.start(user);
+                    } else {
+                        console.error("Onboarding Script not loaded!");
+                    }
+                }
+
             } else {
                 console.log("AUTH: Niemand eingeloggt. Zeige Login.");
-                // Nur wenn wirklich keiner da ist, blenden wir den Screen ein
                 this.showLoginScreen();
             }
         });
