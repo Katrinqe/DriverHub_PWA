@@ -38,6 +38,28 @@
 
 <body>
 
+    <div id="welcome-screen">
+        <div class="ws-logo-corner">
+            <img src="logo.png" alt="DH">
+        </div>
+
+        <div class="ws-content">
+            <div class="typewriter">
+                <h1>Welcome to DriverHub.</h1>
+            </div>
+            
+            <div class="ws-actions">
+                <button class="btn-ws-outline" onclick="alert('Register Flow kommt gleich!')">
+                    REGISTER
+                </button>
+
+                <button class="btn-ws-fill" onclick="AuthLogic.goToLogin()">
+                    LOGIN
+                </button>
+            </div>
+        </div>
+    </div>
+
 <div id="auth-screen" class="auth-overlay"> 
         <div class="auth-bg-video"></div>
         
