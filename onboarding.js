@@ -22,11 +22,16 @@ window.OnboardingLogic = {
         document.getElementById('ob-avatar-input').click();
     },
 
-    previewAvatar: function(input) {
+previewAvatar: function(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById('ob-avatar-preview').src = e.target.result;
+                const img = document.getElementById('ob-avatar-preview');
+                const placeholder = document.getElementById('ob-avatar-placeholder');
+                
+                img.src = e.target.result;
+                img.classList.remove('hidden'); // Bild anzeigen
+                placeholder.style.display = 'none'; // Icon ausblenden
             }
             reader.readAsDataURL(input.files[0]);
         }
