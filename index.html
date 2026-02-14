@@ -101,41 +101,55 @@
         </div>
     </div>
 
-    <div id="onboarding-screen" class="hidden">
-        <div class="ob-bg-anim"></div>
+  <div id="story-screen" class="hidden">
         
-        <div class="ob-content">
-            <div class="ob-step active" id="ob-step-profile">
-                <h2 class="ob-title">IDENTITY VERIFICATION</h2>
-                <p class="ob-subtitle">ESTABLISH YOUR DRIVER PROFILE</p>
-                
-              <div class="ob-avatar-picker" onclick="OnboardingLogic.triggerAvatarUpload()">
-    <div id="ob-avatar-placeholder" class="avatar-placeholder-glass">
-        <i class="fa-solid fa-user-astronaut"></i>
-    </div>
-    <img id="ob-avatar-preview" src="" class="hidden"> 
-    
-    <div class="ob-cam-icon"><i class="fa-solid fa-plus"></i></div>
-    <input type="file" id="ob-avatar-input" hidden accept="image/*" onchange="OnboardingLogic.previewAvatar(this)">
-</div>
+        <div class="story-tap-left" onclick="StoryLogic.prevSlide()"></div>
+        <div class="story-tap-right" onclick="StoryLogic.nextSlide()"></div>
 
-                <div class="ob-form">
-                    <div class="input-group-line">
-                        <label>REAL NAME</label>
-                        <input type="text" id="ob-realname" placeholder="Max Verstappen">
+        <div class="story-progress-container">
+            <div class="story-dot active" id="dot-0"></div>
+            <div class="story-dot" id="dot-1"></div>
+        </div>
+
+        <div class="story-slide active" id="slide-0">
+            <div class="story-center-text">
+                <h2 class="fade-in-1">I see...</h2>
+                <h2 class="fade-in-2">You are new here.</h2>
+                <h1 class="fade-in-3">Let us begin.</h1>
+            </div>
+        </div>
+
+        <div class="story-slide" id="slide-1">
+            <div class="story-content-wrapper">
+                <h2 class="ob-title">IDENTITY</h2>
+                <p class="ob-subtitle">WHO IS DRIVING?</p>
+
+                <div class="ob-avatar-picker safe-zone" onclick="OnboardingLogic.triggerAvatarUpload()">
+                    <div id="ob-avatar-placeholder" class="avatar-placeholder-glass">
+                        <i class="fa-solid fa-user-astronaut"></i>
                     </div>
-                    
-                    <div class="input-group-line">
-                        <label>CALLSIGN (USERNAME)</label>
-                        <input type="text" id="ob-username" placeholder="GhostRider">
+                    <img id="ob-avatar-preview" src="" class="hidden">
+                    <div class="ob-cam-icon"><i class="fa-solid fa-plus"></i></div>
+                    <input type="file" id="ob-avatar-input" hidden accept="image/*" onchange="OnboardingLogic.previewAvatar(this)">
+                </div>
+
+                <div class="ob-form safe-zone">
+                    <div class="input-group-modern">
+                        <label>REAL NAME</label>
+                        <input type="text" id="ob-realname" placeholder="Name">
+                    </div>
+                    <div class="input-group-modern">
+                        <label>CALLSIGN</label>
+                        <input type="text" id="ob-username" placeholder="Username">
                     </div>
                 </div>
 
-                <button class="btn-ob-next" onclick="OnboardingLogic.saveProfile()">
-                    INITIALIZE DRIVER <i class="fa-solid fa-chevron-right"></i>
+                <button class="btn-ob-next safe-zone" onclick="OnboardingLogic.saveProfile()">
+                    CONFIRM IDENTITY <i class="fa-solid fa-check"></i>
                 </button>
             </div>
         </div>
+
     </div>
 
     <div id="splash-screen"><img src="logo.png" class="splash-logo"></div>
