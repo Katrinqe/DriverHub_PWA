@@ -1,38 +1,91 @@
 /* ========================================== */
-/* === ONBOARDING.JS - PROFILE CREATION === */
+/* === ONBOARDING.JS - STORY MODE EDITION === */
 /* ========================================== */
 
+window.StoryLogic = {
+    currentSlide: 0,
+    totalSlides: 2,
+    autoTimer: null,
 
+    // Startet die Story (wird von AuthLogic gerufen)
+    start: function() {
+        document.getElementById('story-screen').classList.remove('hidden');
+        this.showSlide(0);
+        
+        // Slide 1: Auto-Weiter nach 5 Sekunden
+        this.autoTimer = setTimeout(() => {
+            this.nextSlide();
+        }, 5000);
+    },
+
+    showSlide: function(index) {
+        // Bounds Check
+        if(index < 0) index = 0;
+        if(index >= this.totalSlides) return; // Ende erreicht
+
+        this.currentSlide = index;
+
+        // 1. Alle Slides verstecken
+        document.querySelectorAll('.story-slide').forEach(el => el.classList.remove('active'));
+        // 2. Aktuellen Slide zeigen
+        document.getElementById('slide-' + index).classList.add('active');
+
+        // 3. Dots updaten
+        document.querySelectorAll('.story-dot').forEach(d => d.classList.remove('active'));
+        document.getElementById('dot-' + index).classList.add('active');
+
+        // Logic pro Slide
+        if(index === 1) {
+            // Bei Slide 2 (Profil) stoppen wir den Timer, User muss tippen
+            if(this.autoTimer) clearTimeout(this.autoTimer);
+        }
+    },
+
+    nextSlide: function() {
+        // Timer killen falls User manuell tippt
+        if(this.autoTimer) clearTimeout(this.autoTimer);
+        
+        if(this.currentSlide < this.totalSlides - 1) {
+            this.showSlide(this.currentSlide + 1);
+        } else {
+            // Wenn wir am Ende sind (z.B. Profil Slide), passiert nichts per Tap.
+            // Der User MUSS den Button drücken.
+            console.log("End of tap navigation. Use button.");
+        }
+    },
+
+    prevSlide: function() {
+        if(this.autoTimer) clearTimeout(this.autoTimer);
+        if(this.currentSlide > 0) {
+            this.showSlide(this.currentSlide - 1);
+        }
+    }
+};
+
+// Alte Onboarding Logic integriert in Story
 window.OnboardingLogic = {
     currentUser: null,
 
-    // Wird von auth.js aufgerufen, wenn User neu ist oder Profil fehlt
+    // Wird von AuthLogic aufgerufen
     start: function(user) {
-        console.log("Starting Onboarding for:", user.email);
         this.currentUser = user;
-        
-        // UI Zeigen
-        document.getElementById('auth-screen').classList.remove('active'); // Login weg
-        document.getElementById('onboarding-screen').classList.remove('hidden'); // Onboarding her
-        
-        // Auto-Fill Email als Fallback, falls wir das wollen
-        // document.getElementById('ob-realname').value = user.displayName || "";
+        // Starte den Story Mode
+        StoryLogic.start();
     },
 
     triggerAvatarUpload: function() {
         document.getElementById('ob-avatar-input').click();
     },
 
-previewAvatar: function(input) {
+    previewAvatar: function(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = document.getElementById('ob-avatar-preview');
                 const placeholder = document.getElementById('ob-avatar-placeholder');
-                
                 img.src = e.target.result;
-                img.classList.remove('hidden'); // Bild anzeigen
-                placeholder.style.display = 'none'; // Icon ausblenden
+                img.classList.remove('hidden');
+                placeholder.style.display = 'none';
             }
             reader.readAsDataURL(input.files[0]);
         }
@@ -43,47 +96,33 @@ previewAvatar: function(input) {
         const userName = document.getElementById('ob-username').value.trim();
 
         if (!realName || !userName) {
-            alert("Identity incomplete. Fill all fields.");
+            alert("Identity incomplete.");
             return;
         }
 
         const uid = this.currentUser.uid;
         
-        // Daten für Firestore vorbereiten
+        // Simuliertes Speichern (oder echtes Firebase wenn aktiv)
+        // Hier in deinem Fall: Echtes Firebase
         const userProfile = {
             uid: uid,
             email: this.currentUser.email,
             realName: realName,
             username: userName,
-            onboardingComplete: true, // WICHTIG: Damit wir beim nächsten Mal wissen: Er ist fertig
+            onboardingComplete: true, 
             createdAt: new Date().toISOString(),
-            cars: [] // Leere Garage anlegen
+            cars: [] 
         };
 
-        // Speichern in "users" Collection
         window.db.collection("users").doc(uid).set(userProfile)
             .then(() => {
-                console.log("Profile initialized!");
-                this.finishOnboarding();
+                console.log("Profile ready!");
+                // Animation raus
+                document.getElementById('story-screen').style.opacity = '0';
+                setTimeout(() => window.location.reload(), 500);
             })
             .catch((error) => {
-                console.error("Error saving profile: ", error);
-                alert("Database Error: " + error.message);
+                alert("Error: " + error.message);
             });
-    },
-
-    finishOnboarding: function() {
-        // Animation raus
-        const screen = document.getElementById('onboarding-screen');
-        screen.style.transition = "opacity 0.8s ease";
-        screen.style.opacity = "0";
-        
-        setTimeout(() => {
-            screen.classList.add('hidden');
-            // Hier kommt später der Schritt zum Auto-Setup
-            // Für JETZT: Direkt zur App
-            // Wir laden die Seite neu oder rufen die Init-Funktionen auf
-            window.location.reload(); 
-        }, 800);
     }
 };
