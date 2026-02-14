@@ -8,26 +8,28 @@ window.AuthLogic = {
         console.log("Auth System: Checking Status...");
         
        // Der Listener entscheidet jetzt: Login, Onboarding oder Home
+    // ... in auth.js ...
+
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
                 console.log("AUTH: User erkannt:", user.email);
                 
-                // CHECK: Hat er schon ein Profil in der Datenbank?
-                const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
-
+                // === DEBUG MODE AN: IMMER ONBOARDING ZEIGEN ===
+                // Den Check, ob das Profil fertig ist, kommentieren wir aus:
+                
+                /* const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
                 if (userDoc.exists && userDoc.data().onboardingComplete) {
-                    console.log("AUTH: Profil vollständig. Ab nach Hause.");
-                    this.hideLoginScreen(); // Login weg -> App sichtbar
-                } else {
-                    console.log("AUTH: Profil fehlt oder unvollständig. Starte Onboarding.");
-                    // Login Screen muss weg, aber Onboarding muss her
-                    // Da wir auth.js nicht mit onboarding.js verknüpfen wollen ohne es geladen zu haben:
-                    if(window.OnboardingLogic) {
-                        window.OnboardingLogic.start(user);
-                    } else {
-                        console.error("Onboarding Script not loaded!");
-                    }
+                    this.hideLoginScreen(); 
+                    return; 
+                } 
+                */
+
+                // Stattdessen IMMER das hier feuern:
+                console.log("DEV MODE: Onboarding erzwungen.");
+                if(window.OnboardingLogic) {
+                    window.OnboardingLogic.start(user);
                 }
+                // ==============================================
 
             } else {
                 console.log("AUTH: Niemand eingeloggt. Zeige Login.");
