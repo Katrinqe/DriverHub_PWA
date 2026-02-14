@@ -1563,78 +1563,87 @@ body.ghost-active #ghost-chat-overlay {
 .btn-ob-next:active { transform: scale(0.97); box-shadow: 0 0 10px rgba(255,255,255,0.05); }
 
 /* ========================================= */
-/* === WELCOME SCREEN (REAL APP STYLE) === */
+/* === WELCOME SCREEN (DEEP BLUE NEON) === */
 /* ========================================= */
 
 #welcome-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000;
+    background: #050505; /* Fast schwarz */
     z-index: 30000;
     display: flex; flex-direction: column; 
-    align-items: center; justify-content: space-between; /* Verteilt Inhalt Oben/Mitte/Unten */
-    padding: 60px 30px 50px 30px; /* Handy-freundlicher Abstand */
+    align-items: center; justify-content: space-between;
+    padding: 60px 25px 50px 25px;
+    overflow: hidden; /* Damit der Nebel nicht scrollbar macht */
 }
 
-/* Hintergrund Effekt (Rot/Blau Nebel) */
-.ws-bg-pulse {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle at 50% 30%, rgba(0, 122, 255, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 50% 80%, rgba(255, 59, 48, 0.1) 0%, transparent 50%);
+/* Der NEON-EFFEKT (Wie auf deinem Inspo-Bild) */
+.neon-blob {
+    position: absolute;
+    top: -10%; left: -20%; /* Oben Links wie im Beispiel */
+    width: 120%; height: 60%;
+    background: radial-gradient(circle, rgba(0, 122, 255, 0.4) 0%, rgba(0, 50, 100, 0.1) 50%, transparent 80%);
+    filter: blur(60px); /* Macht es weich und neblig */
     z-index: -1;
     pointer-events: none;
+    animation: breatheLight 8s ease-in-out infinite alternate;
 }
 
-.ws-center-content {
-    flex: 1; /* Nimmt den Platz in der Mitte */
-    display: flex; flex-direction: column; 
+@keyframes breatheLight {
+    0% { opacity: 0.6; transform: scale(1); }
+    100% { opacity: 0.9; transform: scale(1.1); }
+}
+
+/* Zentraler Bereich */
+.ws-center-stage {
+    flex: 1;
+    display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    transform: translateY(-20px); /* Leicht nach oben versetzt */
+    width: 100%;
 }
 
-.ws-main-logo {
-    width: 140px; /* Groß und mittig */
-    margin-bottom: 20px;
-    filter: drop-shadow(0 0 20px rgba(0, 122, 255, 0.3));
-    animation: floatLogo 6s ease-in-out infinite;
+.ws-hero-logo {
+    width: 160px; /* Schön groß */
+    /* Leichter Glow um das Logo selbst */
+    filter: drop-shadow(0 0 30px rgba(0, 122, 255, 0.5));
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-@keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-
-.ws-title {
-    font-family: sans-serif; font-weight: 900; font-style: italic;
-    font-size: 2.2rem; margin: 0; color: white;
-    letter-spacing: -1px; text-transform: uppercase;
-    text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+.ws-hero-logo:active {
+    transform: scale(0.95);
+    filter: drop-shadow(0 0 50px rgba(0, 229, 255, 0.8)); /* Flash bei Klick */
 }
 
-.ws-divider {
-    width: 40px; height: 3px; background: #ff3b30;
-    margin: 15px 0; border-radius: 2px;
-    box-shadow: 0 0 10px #ff3b30;
-}
-
-.ws-subtitle {
-    font-size: 0.75rem; color: #888; font-weight: 700;
-    letter-spacing: 3px; margin: 0;
-}
-
-/* Bottom Area */
+/* Bottom Actions */
 .ws-bottom-actions {
-    width: 100%; max-width: 300px;
-    display: flex; flex-direction: column; align-items: center;
-    animation: slideUpFade 0.8s ease-out;
+    width: 100%;
+    max-width: 350px;
+    display: flex; flex-direction: column; gap: 15px;
+    z-index: 10;
 }
 
-/* Neuer Ghost Button Style (Nur Rahmen) */
-.btn-ghost-outline {
-    width: 100%; padding: 15px;
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 50px;
-    color: #888; font-weight: 700; font-size: 0.9rem;
-    cursor: pointer; letter-spacing: 1px;
-    transition: all 0.2s;
+/* Button 1: Filled Blue (Login) */
+.btn-neon-fill {
+    width: 100%; height: 55px;
+    background: linear-gradient(135deg, #007aff, #0055b3);
+    border: none; border-radius: 30px;
+    color: white; font-size: 1rem; font-weight: 800; letter-spacing: 1px;
+    box-shadow: 0 10px 30px rgba(0, 122, 255, 0.3); /* Blauer Schatten */
+    cursor: pointer; transition: transform 0.2s;
 }
-.btn-ghost-outline:active {
-    background: rgba(255,255,255,0.1); color: white; border-color: white;
+.btn-neon-fill:active { transform: scale(0.97); }
+
+/* Button 2: Glass / Outline (Register) */
+.btn-neon-glass {
+    width: 100%; height: 55px;
+    background: rgba(255, 255, 255, 0.05); /* Fast transparent */
+    border: 1px solid rgba(255, 255, 255, 0.15); /* Feine Linie */
+    border-radius: 30px;
+    color: #ccc; font-size: 0.9rem; font-weight: 700; letter-spacing: 1px;
+    backdrop-filter: blur(10px); /* Glas-Effekt */
+    cursor: pointer; transition: all 0.2s;
+}
+.btn-neon-glass:active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border-color: white;
 }
