@@ -1563,72 +1563,78 @@ body.ghost-active #ghost-chat-overlay {
 .btn-ob-next:active { transform: scale(0.97); box-shadow: 0 0 10px rgba(255,255,255,0.05); }
 
 /* ========================================= */
-/* === WELCOME SCREEN (TYPING INTRO) === */
+/* === WELCOME SCREEN (REAL APP STYLE) === */
 /* ========================================= */
 
 #welcome-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #000;
-    z-index: 30000; /* Muss das allerhöchste sein */
-    display: flex; align-items: center; padding-left: 10%; /* Links-Bündig mit Abstand */
-    color: white;
+    z-index: 30000;
+    display: flex; flex-direction: column; 
+    align-items: center; justify-content: space-between; /* Verteilt Inhalt Oben/Mitte/Unten */
+    padding: 60px 30px 50px 30px; /* Handy-freundlicher Abstand */
 }
 
-/* Dezent oben rechts */
-.ws-logo-corner {
-    position: absolute; top: 30px; right: 30px;
-    width: 40px; opacity: 0.5; /* Dezent */
-}
-.ws-logo-corner img { width: 100%; }
-
-.ws-content {
-    display: flex; flex-direction: column; gap: 40px;
-    align-items: flex-start; /* Alles linksbündig */
+/* Hintergrund Effekt (Rot/Blau Nebel) */
+.ws-bg-pulse {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at 50% 30%, rgba(0, 122, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 50% 80%, rgba(255, 59, 48, 0.1) 0%, transparent 50%);
+    z-index: -1;
+    pointer-events: none;
 }
 
-/* TYPEWRITER EFFECT */
-.typewriter h1 {
-    font-family: 'Courier New', monospace; /* Tech Look */
-    font-size: 1.8rem; font-weight: 700;
-    color: #fff;
-    overflow: hidden; /* Versteckt den Text bis er "getippt" wird */
-    border-right: 3px solid #ff3b30; /* Der blinkende Cursor */
-    white-space: nowrap; /* Kein Umbruch */
-    margin: 0;
-    width: 0; /* Start bei 0 */
-    animation: 
-        typing 2s steps(30, end) forwards, 
-        blink-caret .75s step-end infinite;
-    animation-delay: 0.5s; /* Kurz warten */
+.ws-center-content {
+    flex: 1; /* Nimmt den Platz in der Mitte */
+    display: flex; flex-direction: column; 
+    align-items: center; justify-content: center;
+    transform: translateY(-20px); /* Leicht nach oben versetzt */
 }
 
-/* Die Tipp-Animation */
-@keyframes typing { from { width: 0 } to { width: 100% } }
-@keyframes blink-caret { from, to { border-color: transparent } 50% { border-color: #ff3b30 } }
-
-/* BUTTONS */
-.ws-actions {
-    display: flex; gap: 20px;
-    opacity: 0; /* Erst unsichtbar */
-    animation: fadeInSimple 1s ease-out forwards;
-    animation-delay: 2.5s; /* Erscheint NACH dem Tippen */
+.ws-main-logo {
+    width: 140px; /* Groß und mittig */
+    margin-bottom: 20px;
+    filter: drop-shadow(0 0 20px rgba(0, 122, 255, 0.3));
+    animation: floatLogo 6s ease-in-out infinite;
 }
 
-@keyframes fadeInSimple { to { opacity: 1; } }
+@keyframes floatLogo { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-.btn-ws-outline {
-    background: transparent; border: 1px solid #fff;
-    color: #fff; padding: 12px 30px;
-    font-family: sans-serif; font-weight: 700; font-size: 0.9rem;
+.ws-title {
+    font-family: sans-serif; font-weight: 900; font-style: italic;
+    font-size: 2.2rem; margin: 0; color: white;
+    letter-spacing: -1px; text-transform: uppercase;
+    text-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+.ws-divider {
+    width: 40px; height: 3px; background: #ff3b30;
+    margin: 15px 0; border-radius: 2px;
+    box-shadow: 0 0 10px #ff3b30;
+}
+
+.ws-subtitle {
+    font-size: 0.75rem; color: #888; font-weight: 700;
+    letter-spacing: 3px; margin: 0;
+}
+
+/* Bottom Area */
+.ws-bottom-actions {
+    width: 100%; max-width: 300px;
+    display: flex; flex-direction: column; align-items: center;
+    animation: slideUpFade 0.8s ease-out;
+}
+
+/* Neuer Ghost Button Style (Nur Rahmen) */
+.btn-ghost-outline {
+    width: 100%; padding: 15px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50px;
+    color: #888; font-weight: 700; font-size: 0.9rem;
     cursor: pointer; letter-spacing: 1px;
     transition: all 0.2s;
 }
-.btn-ws-outline:active { background: #fff; color: #000; }
-
-.btn-ws-fill {
-    background: #fff; border: none;
-    color: #000; padding: 12px 30px;
-    font-family: sans-serif; font-weight: 900; font-size: 0.9rem;
-    cursor: pointer; letter-spacing: 1px;
+.btn-ghost-outline:active {
+    background: rgba(255,255,255,0.1); color: white; border-color: white;
 }
-.btn-ws-fill:active { opacity: 0.8; }
