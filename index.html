@@ -90,10 +90,15 @@
                 <h2 class="ob-title">IDENTITY VERIFICATION</h2>
                 <p class="ob-subtitle">ESTABLISH YOUR DRIVER PROFILE</p>
                 
-                <div class="ob-avatar-picker" onclick="OnboardingLogic.triggerAvatarUpload()">
-                    <img id="ob-avatar-preview" src="https://www.w3schools.com/howto/img_avatar.png"> <div class="ob-cam-icon"><i class="fa-solid fa-camera"></i></div>
-                    <input type="file" id="ob-avatar-input" hidden accept="image/*" onchange="OnboardingLogic.previewAvatar(this)">
-                </div>
+              <div class="ob-avatar-picker" onclick="OnboardingLogic.triggerAvatarUpload()">
+    <div id="ob-avatar-placeholder" class="avatar-placeholder-glass">
+        <i class="fa-solid fa-user-astronaut"></i>
+    </div>
+    <img id="ob-avatar-preview" src="" class="hidden"> 
+    
+    <div class="ob-cam-icon"><i class="fa-solid fa-plus"></i></div>
+    <input type="file" id="ob-avatar-input" hidden accept="image/*" onchange="OnboardingLogic.previewAvatar(this)">
+</div>
 
                 <div class="ob-form">
                     <div class="input-group-line">
