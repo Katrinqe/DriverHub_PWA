@@ -1451,74 +1451,113 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================= */
-/* === ONBOARDING SCREEN (GT STYLE) === */
+/* === ONBOARDING SCREEN (V2 - REAL GT STYLE) === */
 /* ========================================= */
 
 #onboarding-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #050505;
-    z-index: 15000; /* Unter Auth (20000), aber über App (100) */
+    background: #000;
+    z-index: 15000;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     color: white;
 }
 
-.ob-content {
-    width: 85%; max-width: 400px;
-    position: relative; z-index: 10;
-    animation: fadeInSlow 1s ease-out;
+/* Cooler Hintergrund-Effekt */
+#onboarding-screen::before {
+    content: ''; position: absolute; top: -20%; right: -20%; width: 80%; height: 80%;
+    background: radial-gradient(circle, rgba(0, 122, 255, 0.1) 0%, transparent 60%);
+    pointer-events: none;
 }
 
-@keyframes fadeInSlow { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.ob-content {
+    width: 85%; max-width: 380px;
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column; align-items: center;
+    animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 
 .ob-title {
-    font-family: sans-serif; font-weight: 900; font-size: 1.5rem; margin: 0;
-    letter-spacing: 2px; color: white; text-align: center;
-    border-bottom: 2px solid #ff3b30; display: inline-block; padding-bottom: 10px; margin-bottom: 10px;
+    font-family: sans-serif; font-weight: 800; font-size: 1.8rem; margin: 0;
+    font-style: italic; letter-spacing: -1px; color: white; text-align: center;
+    margin-bottom: 5px;
+    text-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
 .ob-subtitle {
-    font-size: 0.7rem; color: #666; letter-spacing: 4px; text-align: center; margin-bottom: 40px; font-weight: 700;
+    font-size: 0.75rem; color: #007aff; letter-spacing: 2px; text-transform: uppercase;
+    text-align: center; margin-bottom: 50px; font-weight: 800; opacity: 0.8;
 }
 
-/* Avatar Circle */
+/* AVATAR - TECH STYLE */
 .ob-avatar-picker {
-    width: 100px; height: 100px; margin: 0 auto 40px auto;
+    width: 120px; height: 120px; margin: 0 auto 40px auto;
     position: relative; cursor: pointer;
     transition: transform 0.2s;
 }
 .ob-avatar-picker:active { transform: scale(0.95); }
 
+.avatar-placeholder-glass {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: linear-gradient(135deg, #1a1a1a, #0a0a0a);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: #333; font-size: 3rem;
+}
+
 #ob-avatar-preview {
     width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
-    border: 2px solid #333; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    position: absolute; top: 0; left: 0;
+    border: 2px solid #333;
 }
+#ob-avatar-preview.hidden { display: none; }
 
 .ob-cam-icon {
-    position: absolute; bottom: 0; right: 0;
-    background: #007aff; color: white; width: 30px; height: 30px;
+    position: absolute; bottom: 5px; right: 5px;
+    background: #007aff; color: white; width: 35px; height: 35px;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    border: 2px solid #050505; font-size: 0.8rem;
+    border: 3px solid #000; font-size: 1rem;
+    box-shadow: 0 5px 15px rgba(0, 122, 255, 0.4);
 }
 
-/* GT Input Style (Nur Linie unten) */
-.input-group-line { margin-bottom: 25px; }
-.input-group-line label {
-    display: block; font-size: 0.6rem; color: #ff3b30; font-weight: 800; letter-spacing: 1px; margin-bottom: 5px;
-}
-.input-group-line input {
-    width: 100%; background: transparent; border: none;
-    border-bottom: 1px solid #333; color: white;
-    font-size: 1.1rem; padding: 10px 0; font-weight: 700;
-    border-radius: 0; outline: none; transition: border-color 0.3s;
-}
-.input-group-line input:focus { border-bottom-color: #fff; }
+/* INPUTS - GLASS CARDS (Wie beim Login) */
+.ob-form { width: 100%; display: flex; flex-direction: column; gap: 15px; }
 
+.input-group-modern {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 10px 20px;
+    display: flex; flex-direction: column;
+    transition: border-color 0.3s, background 0.3s;
+}
+
+.input-group-modern:focus-within {
+    border-color: #007aff;
+    background: rgba(0, 122, 255, 0.05);
+}
+
+.input-group-modern label {
+    font-size: 0.6rem; color: #666; font-weight: 800; letter-spacing: 1px;
+    margin-bottom: 2px; text-transform: uppercase;
+}
+
+.input-group-modern input {
+    background: transparent; border: none; color: white;
+    font-size: 1.1rem; font-weight: 700; outline: none; padding: 5px 0;
+    font-family: sans-serif;
+}
+
+/* BUTTON - PILL SHAPE (DriverHub Standard) */
 .btn-ob-next {
-    width: 100%; padding: 18px; margin-top: 20px;
+    width: 100%; height: 60px; margin-top: 30px;
+    border-radius: 30px; /* RUND */
     background: white; color: black; border: none;
-    font-weight: 900; font-size: 0.9rem; letter-spacing: 1px;
-    cursor: pointer; transition: transform 0.1s;
-    display: flex; justify-content: space-between; align-items: center;
-    padding-left: 30px; padding-right: 30px;
+    font-weight: 800; font-size: 1rem; letter-spacing: 0.5px;
+    cursor: pointer; 
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+    box-shadow: 0 0 20px rgba(255,255,255,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
-.btn-ob-next:active { transform: scale(0.98); opacity: 0.9; }
+
+.btn-ob-next:active { transform: scale(0.97); box-shadow: 0 0 10px rgba(255,255,255,0.05); }
