@@ -1707,24 +1707,68 @@ body.ghost-active #ghost-chat-overlay {
 
 @keyframes fadeInSlide { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
 
-/* SLIDE 1 TEXT ANIMATIONS */
-.story-center-text { text-align: center; padding: 20px; }
+/* SLIDE 1 TEXT ANIMATIONS (CLEAN V2) */
+.story-center-text { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 15px; /* Gleichmäßiger Abstand */
+    padding: 20px; 
+}
 
+/* Basis-Stil für alle Texte: Einheitlich & Hochwertig */
+.story-center-text h1, 
+.story-center-text h2 {
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    margin: 0;
+    text-align: center;
+    color: white;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+/* Zeile 1: "I see..." - Dezent */
 .fade-in-1 { 
-    opacity: 0; font-size: 1.5rem; font-weight: 300; color: #888;
-    animation: textFadeIn 1s forwards 0.5s; 
-}
-.fade-in-2 { 
-    opacity: 0; font-size: 1.8rem; font-weight: 700; margin-top: 10px;
-    animation: textFadeIn 1s forwards 2.0s; 
-}
-.fade-in-3 { 
-    opacity: 0; font-size: 2.5rem; font-weight: 900; color: #007aff; margin-top: 20px; font-style: italic;
-    text-shadow: 0 0 20px rgba(0,122,255,0.4);
-    animation: textFadeIn 1s forwards 3.5s; 
+    font-size: 1.4rem; 
+    font-weight: 600; /* Semibold */
+    opacity: 0; 
+    animation: textFadeUp 0.8s ease-out forwards 0.5s; 
 }
 
-@keyframes textFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+/* Zeile 2: "You are new here." - Klar */
+.fade-in-2 { 
+    font-size: 1.4rem; 
+    font-weight: 600; /* Gleiche Dicke wie oben */
+    opacity: 0; 
+    animation: textFadeUp 0.8s ease-out forwards 1.8s; 
+}
+
+/* Zeile 3: "Let us begin." - Der Akzent (Nur Glow, kein Font-Wechsel) */
+.fade-in-3 { 
+    font-size: 1.8rem; /* Etwas größer */
+    font-weight: 800; /* Extra Bold */
+    margin-top: 20px; /* Kleiner Abstand zum Block davor */
+    opacity: 0; 
+    
+    /* Blauer Glow, aber Text bleibt Weiß (cleaner) */
+    text-shadow: 0 0 20px rgba(0, 122, 255, 0.6); 
+    
+    animation: textFadeUp 0.8s ease-out forwards 3.2s; 
+}
+
+/* Eine saubere Animation für alle */
+@keyframes textFadeUp { 
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+        filter: blur(10px); /* Milchglas-Effekt beim Erscheinen */
+    } 
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+        filter: blur(0); 
+    } 
+}
 
 /* Content Wrapper für Slide 2 */
 .story-content-wrapper {
