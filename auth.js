@@ -1,7 +1,120 @@
 /* ========================================== */
 /* === AUTH.JS - MANUAL START FLOW (FIXED) === */
 /* ========================================== */
+/* ========================================== */
+/* === START SCREEN LOGIC (MAPBOX & KEYS) === */
+/* ========================================== */
 
+window.StartScreenLogic = {
+    map: null,
+    
+    init: function() {
+        // Prüfen ob Mapbox geladen ist
+        if (!mapboxgl) {
+            console.error("Mapbox JS nicht gefunden!");
+            return;
+        }
+
+        // DEIN API KEY
+        mapboxgl.accessToken = 'pk.eyJ1IjoibmlraXRhNzgiLCJhIjoiY21scDkyMG1wMThsaDNxc2duOWJoeHZ0MyJ9.T9e4gicDXQvrv4a2fdcVQw';
+
+        // Karte initialisieren
+        this.map = new mapboxgl.Map({
+            container: 'background-map',
+            style: 'mapbox://styles/mapbox/navigation-night-v1', // Sehr dunkler Style
+            center: [10.45, 51.16], // Startet grob über Europa/Deutschland
+            zoom: 1.5, // Weit rausgezoomt für Globus
+            projection: 'globe', // WICHTIG: Macht es rund (3D)
+            interactive: false, // User kann nicht steuern am Anfang
+            attributionControl: false
+        });
+
+        this.map.on('style.load', () => {
+            // Atmosphäre (Glow) hinzufügen
+            this.map.setFog({
+                'color': 'rgb(10, 10, 20)', // Unterer Himmel
+                'high-color': 'rgb(0, 20, 40)', // Oberer Himmel
+                'horizon-blend': 0.1, // Atmosphäre dicke
+                'space-color': 'rgb(0, 0, 0)', // Weltraum schwarz
+                'star-intensity': 0.6 // Sterne
+            });
+
+            // Langsame Drehung starten
+            this.spinGlobe();
+        });
+    },
+
+    spinGlobe: function() {
+        const secondsPerRevolution = 120; // Geschwindigkeit
+        const maxSpinZoom = 5;
+        const slowSpinZoom = 3;
+        let userInteracting = false;
+
+        const spinEnabled = true;
+
+        const animate = () => {
+            if(!this.map) return;
+            const zoom = this.map.getZoom();
+            if (spinEnabled && !userInteracting && zoom < maxSpinZoom) {
+                let distancePerSecond = 360 / secondsPerRevolution;
+                if (zoom > slowSpinZoom) {
+                    distancePerSecond *= (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
+                }
+                const center = this.map.getCenter();
+                center.lng -= distancePerSecond;
+                this.map.easeTo({ center, duration: 1000, easing: (n) => n });
+            }
+            requestAnimationFrame(animate);
+        };
+        animate();
+    },
+
+    // Wird bei DOUBLE TAP aufgerufen
+    ignite: function() {
+        console.log("Ignition Sequence Started...");
+        
+        // 1. Sound abspielen (Optional, später)
+        // const audio = new Audio('ignition.mp3'); audio.play();
+
+        // 2. Mapbox Effekt: Schnell reinzoomen oder Abdunkeln
+        const bg = document.getElementById('background-map');
+        bg.classList.add('dimmed');
+
+        // 3. UI Wechseln
+        const intro = document.getElementById('ws-intro-layer');
+        const keys = document.getElementById('ws-key-layer');
+
+        intro.classList.remove('active');
+        intro.classList.add('hidden');
+
+        setTimeout(() => {
+            keys.classList.remove('hidden');
+            keys.classList.add('active');
+        }, 500); // Kurze Verzögerung für Dramatik
+    },
+
+    // Zurück zum Globus
+    reset: function() {
+        const bg = document.getElementById('background-map');
+        bg.classList.remove('dimmed');
+
+        const intro = document.getElementById('ws-intro-layer');
+        const keys = document.getElementById('ws-key-layer');
+
+        keys.classList.remove('active');
+        keys.classList.add('hidden');
+
+        setTimeout(() => {
+            intro.classList.remove('hidden');
+            intro.classList.add('active');
+        }, 500);
+    }
+};
+
+// Starten, sobald Seite geladen
+document.addEventListener('DOMContentLoaded', () => {
+    StartScreenLogic.init();
+});
 window.AuthLogic = {
     
     init: function() {
