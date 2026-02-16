@@ -1563,215 +1563,127 @@ body.ghost-active #ghost-chat-overlay {
 .btn-ob-next:active { transform: scale(0.97); box-shadow: 0 0 10px rgba(255,255,255,0.05); }
 
 /* ========================================= */
-/* === WELCOME SCREEN (DEEP BLUE NEON) === */
+/* === START SCREEN: GLOBE & KEYS === */
 /* ========================================= */
 
 #welcome-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #050505; /* Fast schwarz */
-    z-index: 30000;
-    display: flex; flex-direction: column; 
-    align-items: center; justify-content: space-between;
-    padding: 60px 25px 50px 25px;
-    overflow: hidden; /* Damit der Nebel nicht scrollbar macht */
-}
-
-/* Der NEON-EFFEKT (Wie auf deinem Inspo-Bild) */
-.neon-blob {
-    position: absolute;
-    top: -10%; left: -20%; /* Oben Links wie im Beispiel */
-    width: 120%; height: 60%;
-    background: radial-gradient(circle, rgba(0, 122, 255, 0.4) 0%, rgba(0, 50, 100, 0.1) 50%, transparent 80%);
-    filter: blur(60px); /* Macht es weich und neblig */
-    z-index: -1;
-    pointer-events: none;
-    animation: breatheLight 8s ease-in-out infinite alternate;
-}
-
-@keyframes breatheLight {
-    0% { opacity: 0.6; transform: scale(1); }
-    100% { opacity: 0.9; transform: scale(1.1); }
-}
-
-/* Zentraler Bereich */
-.ws-center-stage {
-    flex: 1;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    width: 100%;
-}
-
-.ws-hero-logo {
-    width: 160px; /* Schön groß */
-    /* Leichter Glow um das Logo selbst */
-    filter: drop-shadow(0 0 30px rgba(0, 122, 255, 0.5));
-    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.ws-hero-logo:active {
-    transform: scale(0.95);
-    filter: drop-shadow(0 0 50px rgba(0, 229, 255, 0.8)); /* Flash bei Klick */
-}
-
-/* Bottom Actions */
-.ws-bottom-actions {
-    width: 100%;
-    max-width: 350px;
-    display: flex; flex-direction: column; gap: 15px;
-    z-index: 10;
-}
-
-/* Button 1: Filled Blue (Login) */
-.btn-neon-fill {
-    width: 100%; height: 55px;
-    background: linear-gradient(135deg, #007aff, #0055b3);
-    border: none; border-radius: 30px;
-    color: white; font-size: 1rem; font-weight: 800; letter-spacing: 1px;
-    box-shadow: 0 10px 30px rgba(0, 122, 255, 0.3); /* Blauer Schatten */
-    cursor: pointer; transition: transform 0.2s;
-}
-.btn-neon-fill:active { transform: scale(0.97); }
-
-/* Button 2: Glass / Outline (Register) */
-.btn-neon-glass {
-    width: 100%; height: 55px;
-    background: rgba(255, 255, 255, 0.05); /* Fast transparent */
-    border: 1px solid rgba(255, 255, 255, 0.15); /* Feine Linie */
-    border-radius: 30px;
-    color: #ccc; font-size: 0.9rem; font-weight: 700; letter-spacing: 1px;
-    backdrop-filter: blur(10px); /* Glas-Effekt */
-    cursor: pointer; transition: all 0.2s;
-}
-.btn-neon-glass:active {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border-color: white;
-}
-
-/* ========================================= */
-/* === STORY MODE (INSTA STYLE) === */
-/* ========================================= */
-
-#story-screen {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000;
-    z-index: 25000; /* Über Auth */
-    color: white;
+    background: #000; z-index: 30000;
     overflow: hidden;
 }
 
-/* Tap Zonen */
-.story-tap-left {
-    position: absolute; top: 0; left: 0; width: 30%; height: 100%;
-    z-index: 10; /* Über dem Inhalt, aber unter Inputs (Safe Zones) */
-}
-.story-tap-right {
-    position: absolute; top: 0; right: 0; width: 70%; height: 100%;
-    z-index: 10;
-}
-
-/* Elemente, die man klicken können MUSS (Inputs, Buttons) */
-.safe-zone {
-    position: relative; z-index: 50 !important; /* Höher als Tap Zones */
-    pointer-events: auto;
-}
-
-/* Progress Dots Unten */
-.story-progress-container {
-    position: absolute; bottom: 40px; left: 0; width: 100%;
-    display: flex; justify-content: center; gap: 10px;
-    z-index: 60;
-}
-
-.story-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: rgba(255,255,255,0.2);
-    transition: all 0.3s ease;
-}
-.story-dot.active {
-    background: #007aff; /* Neon Blau */
-    width: 25px; /* Wird zum Strich wenn aktiv */
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 122, 255, 0.5);
-}
-
-/* SLIDES */
-.story-slide {
+/* Mapbox Container */
+#background-map {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    display: none; /* Versteckt */
-    flex-direction: column; align-items: center; justify-content: center;
-    background: radial-gradient(circle at 50% 50%, rgba(20,20,30,1) 0%, #000 100%);
-    animation: fadeInSlide 0.5s ease-out;
+    opacity: 0.6; /* Etwas abgedunkelt damit UI poppt */
+    transition: all 1.5s ease-in-out;
 }
-.story-slide.active { display: flex; }
+/* Wenn Keys sichtbar sind, wird Map fast schwarz */
+#background-map.dimmed { opacity: 0.1; filter: blur(10px); transform: scale(1.1); }
 
-@keyframes fadeInSlide { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-
-/* SLIDE 1 TEXT ANIMATIONS (CLEAN V2) */
-.story-center-text { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    gap: 15px; /* Gleichmäßiger Abstand */
-    padding: 20px; 
+/* Vignette (Dunkle Ränder für Fokus) */
+.map-overlay-vignette {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle, transparent 40%, #000 100%);
+    pointer-events: none; z-index: 1;
 }
 
-/* Basis-Stil für alle Texte: Einheitlich & Hochwertig */
-.story-center-text h1, 
-.story-center-text h2 {
-    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
-    margin: 0;
-    text-align: center;
-    color: white;
-    letter-spacing: 0.5px;
-    line-height: 1.2;
+/* === LAYER 1: INTRO === */
+.ws-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    z-index: 10;
+    display: flex; flex-direction: column; 
+    align-items: center; justify-content: space-between;
+    padding: 60px 20px;
+    transition: opacity 0.8s ease, transform 0.8s ease;
 }
 
-/* Zeile 1: "I see..." - Dezent */
-.fade-in-1 { 
-    font-size: 1.4rem; 
-    font-weight: 600; /* Semibold */
-    opacity: 0; 
-    animation: textFadeUp 0.8s ease-out forwards 0.5s; 
+.ws-layer.hidden { opacity: 0; pointer-events: none; transform: scale(1.1); }
+.ws-layer.active { opacity: 1; pointer-events: auto; transform: scale(1); }
+
+/* Logo Oben */
+.ws-logo-img { width: 140px; filter: drop-shadow(0 0 20px rgba(0, 122, 255, 0.4)); }
+
+/* Touch Zone Unten */
+.ws-touch-zone {
+    text-align: center; margin-bottom: 40px;
+    animation: pulseText 3s infinite;
+}
+.ws-hint-text {
+    font-family: sans-serif; font-weight: 900; font-size: 1.2rem;
+    letter-spacing: 2px; color: white; margin-bottom: 5px;
+}
+.ws-hint-sub {
+    font-family: 'Courier New', monospace; font-size: 0.8rem; 
+    color: #007aff; letter-spacing: 3px;
 }
 
-/* Zeile 2: "You are new here." - Klar */
-.fade-in-2 { 
-    font-size: 1.4rem; 
-    font-weight: 600; /* Gleiche Dicke wie oben */
-    opacity: 0; 
-    animation: textFadeUp 0.8s ease-out forwards 1.8s; 
+@keyframes pulseText { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; text-shadow: 0 0 15px #007aff; } }
+
+/* === LAYER 2: KEY DOCKING STATION === */
+#ws-key-layer { justify-content: center; gap: 40px; }
+
+.ws-key-title {
+    font-family: sans-serif; font-weight: 300; color: #888; 
+    letter-spacing: 2px; font-size: 0.9rem; text-transform: uppercase;
 }
 
-/* Zeile 3: "Let us begin." - Der Akzent (Nur Glow, kein Font-Wechsel) */
-.fade-in-3 { 
-    font-size: 1.8rem; /* Etwas größer */
-    font-weight: 800; /* Extra Bold */
-    margin-top: 20px; /* Kleiner Abstand zum Block davor */
-    opacity: 0; 
-    
-    /* Blauer Glow, aber Text bleibt Weiß (cleaner) */
-    text-shadow: 0 0 20px rgba(0, 122, 255, 0.6); 
-    
-    animation: textFadeUp 0.8s ease-out forwards 3.2s; 
+.key-docking-station {
+    display: flex; gap: 20px;
+    align-items: center; justify-content: center;
 }
 
-/* Eine saubere Animation für alle */
-@keyframes textFadeUp { 
-    from { 
-        opacity: 0; 
-        transform: translateY(20px); 
-        filter: blur(10px); /* Milchglas-Effekt beim Erscheinen */
-    } 
-    to { 
-        opacity: 1; 
-        transform: translateY(0); 
-        filter: blur(0); 
-    } 
+/* Key Slot Container */
+.key-slot {
+    width: 140px; height: 220px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+    transition: all 0.3s;
+}
+.key-slot:active { transform: scale(0.95); }
+
+/* --- STYLE A: SMART KEY (LOGIN) --- */
+.smart-key {
+    width: 90px; height: 160px;
+    border-radius: 15px;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    padding: 20px 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
 }
 
-/* Content Wrapper für Slide 2 */
-.story-content-wrapper {
-    width: 85%; max-width: 380px;
-    z-index: 40; /* Unter Safe Zone, über Tap Zone */
+.key-blue {
+    background: linear-gradient(145deg, #1a1a2e, #0f0f1a);
+    border: 1px solid rgba(0, 122, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 122, 255, 0.1);
+}
+.key-led {
+    width: 8px; height: 8px; background: #00ff00; border-radius: 50%;
+    box-shadow: 0 0 10px #00ff00;
+}
+.key-label {
+    font-size: 0.6rem; color: #555; letter-spacing: 1px;
+}
+.key-icon {
+    font-size: 2rem; color: #007aff;
+    filter: drop-shadow(0 0 10px #007aff);
+}
+.key-sub { font-weight: 800; color: white; letter-spacing: 1px; font-size: 0.9rem; }
+
+/* --- STYLE B: GHOST KEY (REGISTER) --- */
+.key-ghost {
+    background: transparent;
+    border: 2px dashed rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.3);
+}
+.key-outline-icon { font-size: 2rem; margin-top: 40px; }
+
+/* Back Button */
+.ws-back-btn {
+    position: absolute; bottom: 40px;
+    color: #666; font-size: 0.8rem; cursor: pointer;
+    letter-spacing: 2px;
 }
