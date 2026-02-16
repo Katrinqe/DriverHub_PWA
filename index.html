@@ -42,21 +42,45 @@
 <body>
 
    <div id="welcome-screen">
-        <div class="neon-blob"></div>
         
-        <div class="ws-center-stage">
-            <img src="logo.png" class="ws-hero-logo">
-        </div>
-        
-        <div class="ws-bottom-actions">
-            <button class="btn-neon-fill" onclick="AuthLogic.goToLogin()">
-                LOGIN
-            </button>
+        <div id="background-map"></div>
+        <div class="map-overlay-vignette"></div> <div id="ws-intro-layer" class="ws-layer active" ondblclick="StartScreenLogic.ignite()">
+            <div class="ws-top-logo">
+                <img src="logo.png" class="ws-logo-img">
+            </div>
             
-            <button class="btn-neon-glass" onclick="AuthLogic.startRegisterFlow()">
-    CREATE ACCOUNT
-</button>
+            <div class="ws-touch-zone">
+                <div class="ws-hint-text">DOUBLE TAP TO IGNITE</div>
+                <div class="ws-hint-sub">SYSTEM READY</div>
+            </div>
         </div>
+
+        <div id="ws-key-layer" class="ws-layer hidden">
+            <h2 class="ws-key-title">SELECT IDENTIFICATION</h2>
+            
+            <div class="key-docking-station">
+                <div class="key-slot" onclick="AuthLogic.goToLogin()">
+                    <div class="smart-key key-blue">
+                        <div class="key-led"></div>
+                        <div class="key-label">MASTER KEY</div>
+                        <i class="fa-solid fa-power-off key-icon"></i>
+                        <div class="key-sub">LOGIN</div>
+                    </div>
+                </div>
+
+                <div class="key-slot" onclick="AuthLogic.startRegisterFlow()">
+                    <div class="smart-key key-ghost">
+                        <div class="key-outline-icon"><i class="fa-solid fa-plus"></i></div>
+                        <div class="key-sub">NEW DRIVER</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ws-back-btn" onclick="StartScreenLogic.reset()">
+                <i class="fa-solid fa-arrow-left"></i> ABORT
+            </div>
+        </div>
+
     </div>
     </div>
 
