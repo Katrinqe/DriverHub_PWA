@@ -4,1120 +4,1050 @@
 
 <head>
 
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<title>DriverHub 4.0</title>
+    <title>DriverHub 4.0</title>
 
+    
 
+    <meta name="apple-mobile-web-app-capable" content="yes">
 
-<meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-<link rel="apple-touch-icon" href="logo.png">
-
-
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="apple-touch-icon" href="logo.png">
 
 
 
-<link rel="stylesheet" href="style.css?v=70">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    
+
+    <link rel="stylesheet" href="style.css?v=70">
 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    
 </head>
 
 <body>
 
-<div id="welcome-screen">
-<div class="neon-blob"></div>
+<div id="auth-screen" class="auth-overlay active"> <div class="auth-bg-video">
+            </div>
+        
+        <div class="auth-content">
+            <div class="auth-logo-area">
+                <img src="logo.png" class="auth-logo-img">
+                <h1 class="auth-title">DRIVERHUB</h1>
+                <p class="auth-subtitle">TRACK. ANALYZE. EVOLVE.</p>
+            </div>
 
-<div class="ws-center-stage">
-<img src="logo.png" class="ws-hero-logo">
-</div>
+            <div class="auth-forms-container">
+                <div id="auth-main-options">
+                    <button class="btn-auth-google" onclick="AuthLogic.loginGoogle()">
+                        <i class="fa-brands fa-google"></i> Continue with Google
+                    </button>
+                    
+                    <button class="btn-auth-email" onclick="AuthLogic.toggleEmailMode()">
+                        <i class="fa-solid fa-envelope"></i> Sign in with Email
+                    </button>
+                </div>
 
-<div class="ws-bottom-actions">
-<button class="btn-neon-fill" onclick="AuthLogic.goToLogin()">
-LOGIN
-</button>
+                <div id="auth-email-form" class="hidden">
+                    <div class="input-group-glass">
+                        <i class="fa-solid fa-at"></i>
+                        <input type="email" id="inp-email" placeholder="Email Address">
+                    </div>
+                    <div class="input-group-glass">
+                        <i class="fa-solid fa-key"></i>
+                        <input type="password" id="inp-pass" placeholder="Password">
+                    </div>
+                    
+                    <div class="auth-action-row">
+                        <button class="btn-auth-action" onclick="AuthLogic.loginEmail()">LOGIN</button>
+                        <button class="btn-auth-action outline" onclick="AuthLogic.registerEmail()">REGISTER</button>
+                    </div>
+                    
+                    <button class="btn-text-only" onclick="AuthLogic.toggleEmailMode()">Back</button>
+                </div>
+            </div>
 
-            <button class="btn-neon-glass" onclick="alert('Register Flow kommt gleich!')">
-                CREATE ACCOUNT
+            <div class="auth-footer">
+                <p>By continuing, you agree to the Race Code.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="splash-screen"><img src="logo.png" class="splash-logo"></div>
+
+    
+
+    <div id="global-top-fade"></div>
+
+    
+
+    <div id="background-map"></div>
+
+
+
+    <div id="home-screen" class="screen active">
+
+        <div class="blur-zone-top">
+
+            <div class="weather-pill interactive-element">
+
+                <i class="fa-solid fa-location-arrow loc-icon"></i>
+
+                <span id="loc-text">Suche...</span>
+
+                <span class="divider">|</span>
+
+                <i id="weather-icon" class="fa-solid fa-cloud"></i>
+
+                <span id="weather-temp">--°</span>
+
+            </div>
+
+            <div class="logo-container"><img src="logo.png" alt="DriverHub" class="dh-logo"></div>
+
+        </div>
+
+        <div class="spacer-flex"></div>
+
+        <div class="blur-zone-bottom">
+
+            <button id="btn-start" class="btn-super-glass interactive-element">
+
+                <i class="fa-solid fa-road"></i> START DRIVE
+
             </button>
-</div>
-</div>
-</div>
 
-<div id="auth-screen" class="auth-overlay"> 
-<div class="auth-bg-video"></div>
+        </div>
 
-<div class="auth-content">
-<div class="auth-logo-area">
-<img src="logo.png" class="auth-logo-img" style="width: 120px; filter: drop-shadow(0 0 30px rgba(0,122,255,0.6));">
-</div>
-
-<div class="auth-forms-container">
-<div id="auth-main-options">
-<button class="btn-auth-google" onclick="AuthLogic.loginGoogle()">
-<i class="fa-brands fa-google"></i> Continue with Google
-</button>
-
-<button class="btn-auth-email" onclick="AuthLogic.toggleEmailMode()">
-<i class="fa-solid fa-envelope"></i> Sign in with Email
-</button>
-</div>
-
-<div id="auth-email-form" class="hidden">
-<div class="input-group-glass">
-<i class="fa-solid fa-at"></i>
-<input type="email" id="inp-email" placeholder="Email Address">
-</div>
-<div class="input-group-glass">
-<i class="fa-solid fa-key"></i>
-<input type="password" id="inp-pass" placeholder="Password">
-</div>
-
-<div class="auth-action-row">
-<button class="btn-auth-action" onclick="AuthLogic.loginEmail()">LOGIN</button>
-<button class="btn-auth-action outline" onclick="AuthLogic.registerEmail()">REGISTER</button>
-</div>
-
-<button class="btn-text-only" onclick="AuthLogic.toggleEmailMode()">Back</button>
-</div>
-</div>
-
-<div class="auth-footer">
-<p style="opacity: 0.5;">Race Code Agreement</p>
-</div>
-</div>
-</div>
-
-<div id="story-screen" class="hidden">
-
-<div class="story-tap-left" onclick="StoryLogic.prevSlide()"></div>
-<div class="story-tap-right" onclick="StoryLogic.nextSlide()"></div>
-
-<div class="story-progress-container">
-<div class="story-dot active" id="dot-0"></div>
-<div class="story-dot" id="dot-1"></div>
-</div>
-
-<div class="story-slide active" id="slide-0">
-<div class="story-center-text">
-<h2 class="fade-in-1">I see...</h2>
-<h2 class="fade-in-2">You are new here.</h2>
-<h1 class="fade-in-3">Let us begin.</h1>
-</div>
-</div>
-
-<div class="story-slide" id="slide-1">
-<div class="story-content-wrapper">
-<h2 class="ob-title">IDENTITY</h2>
-<p class="ob-subtitle">WHO IS DRIVING?</p>
-
-<div class="ob-avatar-picker safe-zone" onclick="OnboardingLogic.triggerAvatarUpload()">
-<div id="ob-avatar-placeholder" class="avatar-placeholder-glass">
-<i class="fa-solid fa-user-astronaut"></i>
-</div>
-<img id="ob-avatar-preview" src="" class="hidden">
-<div class="ob-cam-icon"><i class="fa-solid fa-plus"></i></div>
-<input type="file" id="ob-avatar-input" hidden accept="image/*" onchange="OnboardingLogic.previewAvatar(this)">
-</div>
-
-<div class="ob-form safe-zone">
-<div class="input-group-modern">
-<label>REAL NAME</label>
-<input type="text" id="ob-realname" placeholder="Name">
-</div>
-<div class="input-group-modern">
-<label>CALLSIGN</label>
-<input type="text" id="ob-username" placeholder="Username">
-</div>
-</div>
-
-<button class="btn-ob-next safe-zone" onclick="OnboardingLogic.saveProfile()">
-CONFIRM IDENTITY <i class="fa-solid fa-check"></i>
-</button>
-</div>
-</div>
-
-</div>
-
-<div id="splash-screen"><img src="logo.png" class="splash-logo"></div>
-
-
-
-<div id="global-top-fade"></div>
-
-
-
-<div id="background-map"></div>
-
-
-
-<div id="home-screen" class="screen active">
-
-<div class="blur-zone-top">
-
-<div class="weather-pill interactive-element">
-
-<i class="fa-solid fa-location-arrow loc-icon"></i>
-
-<span id="loc-text">Suche...</span>
-
-<span class="divider">|</span>
-
-<i id="weather-icon" class="fa-solid fa-cloud"></i>
-
-<span id="weather-temp">--°</span>
-
-</div>
-
-<div class="logo-container"><img src="logo.png" alt="DriverHub" class="dh-logo"></div>
-
-</div>
-
-<div class="spacer-flex"></div>
-
-<div class="blur-zone-bottom">
-
-<button id="btn-start" class="btn-super-glass interactive-element">
-
-<i class="fa-solid fa-road"></i> START DRIVE
-
-</button>
-
-</div>
-
-</div>
+    </div>
 
 
 <div id="performance-screen" class="hidden screen" style="background: #050505; position: relative; overflow: hidden;">
+    
+    <div id="perf-map-container">
+        <div id="perf-map"></div>
+        <div class="perf-map-fade"></div>
+        <div id="perf-map-overlay-text">
+            <div style="font-size: 0.7rem; opacity: 0.8;">TRACKS</div>
+            <div style="font-size: 2rem; line-height: 1;" id="perf-total-tracks">0</div>
+        </div>
+    </div>
 
-<div id="perf-map-container">
-<div id="perf-map"></div>
-<div class="perf-map-fade"></div>
-<div id="perf-map-overlay-text">
-<div style="font-size: 0.7rem; opacity: 0.8;">TRACKS</div>
-<div style="font-size: 2rem; line-height: 1;" id="perf-total-tracks">0</div>
-</div>
-</div>
+    <div id="perf-dashboard-ui">
+        
+        <div class="perf-content-scroll">
+            <div style="height: 50vh;"></div>
 
-<div id="perf-dashboard-ui">
+            <div id="track-action-bar" class="hidden">
+                <button class="btn-start-race">
+                    <span>START RACE</span>
+                    <div class="btn-glow"></div>
+                </button>
+            </div>
 
-<div class="perf-content-scroll">
-<div style="height: 50vh;"></div>
+            <div class="stats-container-wrapper">
+                <div id="btn-track-info" class="side-icon hidden"><i class="fa-solid fa-circle-info"></i></div>
+                <div class="perf-stats-row" id="main-stats-row">
+                    </div>
+                <div id="btn-track-edit" class="side-icon hidden" onclick="PerfLogic.editSelectedTrack()"><i class="fa-solid fa-pen-to-square"></i></div>
+            </div>
 
-<div id="track-action-bar" class="hidden">
-<button class="btn-start-race">
-<span>START RACE</span>
-<div class="btn-glow"></div>
-</button>
-</div>
+            <div class="perf-section-title">YOUR TRACKS</div>
+            <div class="track-list-horizontal" id="perf-track-list">
+                </div>
+            
+            <div style="height: 150px;"></div> 
+        </div>
 
-<div class="stats-container-wrapper">
-<div id="btn-track-info" class="side-icon hidden"><i class="fa-solid fa-circle-info"></i></div>
-<div class="perf-stats-row" id="main-stats-row">
-</div>
-<div id="btn-track-edit" class="side-icon hidden" onclick="PerfLogic.editSelectedTrack()"><i class="fa-solid fa-pen-to-square"></i></div>
-</div>
+        <div class="perf-sub-nav">
+            <div class="psn-item active">TRACK</div>
+            <div class="psn-item">DRAG</div>
+            <div class="psn-item">ANALYTICS</div>
+        </div>
+    </div>
 
-<div class="perf-section-title">YOUR TRACKS</div>
-<div class="track-list-horizontal" id="perf-track-list">
-</div>
+    <div id="perf-creator-ui" class="hidden">
+        <div class="creator-top-hud">
+            <div class="cth-item"><label>DIST</label><span id="ct-dist">0.0 km</span></div>
+            <div class="cth-item"><label>EST. TIME</label><span id="ct-time">--:--</span></div>
+            <div class="cth-item"><label>ELEVATION</label><span id="ct-elev">0 m</span></div>
+        </div>
+        
+        <div class="creator-crosshair"><i class="fa-solid fa-plus"></i></div>
+        
+        <div class="creator-bottom-bar">
+            <button class="cb-action-btn cancel" onclick="PerfLogic.leaveCreatorMode()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="cb-pins-container">
+                <div class="cb-pin active" id="pin-start" onclick="PerfLogic.selectPinType('start')">
+                    <div class="pin-dot green"></div><span>START</span>
+                </div>
+                <div class="cb-pin" id="pin-check" onclick="PerfLogic.selectPinType('check')">
+                    <div class="pin-dot white"></div><span>POINT</span>
+                </div>
+                <div class="cb-pin" id="pin-finish" onclick="PerfLogic.selectPinType('finish')">
+                    <div class="pin-dot red"></div><span>FINISH</span>
+                </div>
+                <div class="cb-pin" id="pin-remove" onclick="PerfLogic.selectPinType('remove')">
+                    <div class="pin-dot purple"></div><span>REMOVE</span>
+                </div>
+            </div>
+            <button class="cb-action-btn save" onclick="PerfLogic.saveTrack()">
+                <i class="fa-solid fa-check"></i>
+            </button>
+        </div>
+    </div>
 
-<div style="height: 150px;"></div> 
-</div>
+    <div id="track-setup-screen" class="hidden">
 
-<div class="perf-sub-nav">
-<div class="psn-item active">TRACK</div>
-<div class="psn-item">DRAG</div>
-<div class="psn-item">ANALYTICS</div>
-</div>
-</div>
+        <div id="sector-editor-overlay" class="hidden">
+        <div class="sec-hint"><i class="fa-solid fa-scissors"></i> TAP ON TRACK TO SPLIT SECTOR</div>
+        <div id="sector-map" style="width: 100%; height: 100%;"></div>
+        <div class="sec-editor-hud">
+            <button class="sec-btn" onclick="PerfLogic.closeSectorEditor()"><i class="fa-solid fa-xmark"></i> CANCEL</button>
+            <button class="sec-btn" onclick="PerfLogic.undoSectorSplit()"><i class="fa-solid fa-rotate-left"></i> UNDO</button>
+            <button class="sec-btn save" onclick="PerfLogic.saveSectors()"><i class="fa-solid fa-check"></i> SAVE SECTORS</button>
+        </div>
+    </div>
+    
+        <div class="setup-map-wrapper">
+            <div id="setup-map"></div> 
+        </div>
+    
+        <div class="setup-content-scroll"> <div class="setup-card">
+        
+                <h2><i class="fa-solid fa-sliders"></i> TRACK CONFIGURATION</h2>
 
-<div id="perf-creator-ui" class="hidden">
-<div class="creator-top-hud">
-<div class="cth-item"><label>DIST</label><span id="ct-dist">0.0 km</span></div>
-<div class="cth-item"><label>EST. TIME</label><span id="ct-time">--:--</span></div>
-<div class="cth-item"><label>ELEVATION</label><span id="ct-elev">0 m</span></div>
-</div>
+                <div class="config-group fancy-input-wrap">
+                    <label>TRACK NAME</label>
+                    <input type="text" id="setup-name" placeholder="e.g. Nürnberg Ring">
+                </div>
 
-<div class="creator-crosshair"><i class="fa-solid fa-plus"></i></div>
+                <div class="config-group">
+                    <label>START TYPE</label>
+                    <div class="fancy-toggle-row">
+                        <button class="fancy-toggle active" id="btn-standing" onclick="PerfLogic.setStartType('standing')"><i class="fa-solid fa-stopwatch"></i> STANDING</button>
+                        <button class="fancy-toggle" id="btn-flying" onclick="PerfLogic.setStartType('flying')"><i class="fa-solid fa-bolt"></i> FLYING</button>
+                    </div>
+                </div>
 
-<div class="creator-bottom-bar">
-<button class="cb-action-btn cancel" onclick="PerfLogic.leaveCreatorMode()">
-<i class="fa-solid fa-xmark"></i>
-</button>
-<div class="cb-pins-container">
-<div class="cb-pin active" id="pin-start" onclick="PerfLogic.selectPinType('start')">
-<div class="pin-dot green"></div><span>START</span>
-</div>
-<div class="cb-pin" id="pin-check" onclick="PerfLogic.selectPinType('check')">
-<div class="pin-dot white"></div><span>POINT</span>
-</div>
-<div class="cb-pin" id="pin-finish" onclick="PerfLogic.selectPinType('finish')">
-<div class="pin-dot red"></div><span>FINISH</span>
-</div>
-<div class="cb-pin" id="pin-remove" onclick="PerfLogic.selectPinType('remove')">
-<div class="pin-dot purple"></div><span>REMOVE</span>
-</div>
-</div>
-<button class="cb-action-btn save" onclick="PerfLogic.saveTrack()">
-<i class="fa-solid fa-check"></i>
-</button>
-</div>
-</div>
+                <div id="flying-settings" class="hidden">
+                    <div class="stepper-main">
+                        <label>TARGET ENTRY SPEED</label>
+                        <div class="tacho-container" ontouchstart="PerfLogic.handleTachoTouch(event)" ontouchmove="PerfLogic.handleTachoTouch(event)" onclick="PerfLogic.handleTachoTouch(event)">
+                            <div class="tacho-arc" id="tacho-visual-arc"></div>
+                            <div class="tacho-ticks"></div>
+                            <div class="tacho-value-display">
+                                <div class="tacho-val" id="tacho-val-text">120</div>
+                                <span class="tacho-unit">km/h</span>
+                            </div>
+                            <div class="tacho-input-overlay"></div>
+                        </div>
+                    </div>
 
-<div id="track-setup-screen" class="hidden">
+                    <div class="fly-grid-row">
+                        <div class="fly-col">
+                            <label>MIN</label>
+                            <div class="stepper-control">
+                                <button class="step-btn" onclick="PerfLogic.stepValue('fly-min', -5)">-</button>
+                                <div class="step-display"><input type="number" id="fly-min" value="115" readonly></div>
+                                <button class="step-btn" onclick="PerfLogic.stepValue('fly-min', 5)">+</button>
+                            </div>
+                        </div>
+                        <div class="fly-col">
+                            <label>MAX</label>
+                            <div class="stepper-control">
+                                <button class="step-btn" onclick="PerfLogic.stepValue('fly-max', -5)">-</button>
+                                <div class="step-display"><input type="number" id="fly-max" value="125" readonly></div>
+                                <button class="step-btn" onclick="PerfLogic.stepValue('fly-max', 5)">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
 
-<div id="sector-editor-overlay" class="hidden">
-<div class="sec-hint"><i class="fa-solid fa-scissors"></i> TAP ON TRACK TO SPLIT SECTOR</div>
-<div id="sector-map" style="width: 100%; height: 100%;"></div>
-<div class="sec-editor-hud">
-<button class="sec-btn" onclick="PerfLogic.closeSectorEditor()"><i class="fa-solid fa-xmark"></i> CANCEL</button>
-<button class="sec-btn" onclick="PerfLogic.undoSectorSplit()"><i class="fa-solid fa-rotate-left"></i> UNDO</button>
-<button class="sec-btn save" onclick="PerfLogic.saveSectors()"><i class="fa-solid fa-check"></i> SAVE SECTORS</button>
-</div>
-</div>
+                <div id="standing-info" class="config-group" style="margin-top: 20px;">
+        <label>SECTORS</label>
+        <div id="sector-config-container">
+            <div class="sector-add-card" onclick="PerfLogic.openSectorEditor()">
+                <i class="fa-solid fa-plus-circle"></i> ADD SECTORS
+            </div>
+        </div>
+    </div>
 
-<div class="setup-map-wrapper">
-<div id="setup-map"></div> 
-</div>
+              <div class="prm-engine-box">
+        <div class="prm-bg-stripes"></div>
+        <div class="prm-title"><i class="fa-solid fa-microchip"></i> PRM ENGINE</div>
+        <div class="prm-status"><div class="prm-dot"></div> UNDER CONSTRUCTION</div>
+    </div>
 
-<div class="setup-content-scroll"> <div class="setup-card">
+    <div class="setup-actions">
+        <button class="btn-discard-text" onclick="PerfLogic.cancelSetup()">DISCARD</button>
+        <button class="btn-save-final" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button>
+    </div>
 
-<h2><i class="fa-solid fa-sliders"></i> TRACK CONFIGURATION</h2>
+                
 
-<div class="config-group fancy-input-wrap">
-<label>TRACK NAME</label>
-<input type="text" id="setup-name" placeholder="e.g. Nürnberg Ring">
-</div>
-
-<div class="config-group">
-<label>START TYPE</label>
-<div class="fancy-toggle-row">
-<button class="fancy-toggle active" id="btn-standing" onclick="PerfLogic.setStartType('standing')"><i class="fa-solid fa-stopwatch"></i> STANDING</button>
-<button class="fancy-toggle" id="btn-flying" onclick="PerfLogic.setStartType('flying')"><i class="fa-solid fa-bolt"></i> FLYING</button>
-</div>
-</div>
-
-<div id="flying-settings" class="hidden">
-<div class="stepper-main">
-<label>TARGET ENTRY SPEED</label>
-<div class="tacho-container" ontouchstart="PerfLogic.handleTachoTouch(event)" ontouchmove="PerfLogic.handleTachoTouch(event)" onclick="PerfLogic.handleTachoTouch(event)">
-<div class="tacho-arc" id="tacho-visual-arc"></div>
-<div class="tacho-ticks"></div>
-<div class="tacho-value-display">
-<div class="tacho-val" id="tacho-val-text">120</div>
-<span class="tacho-unit">km/h</span>
-</div>
-<div class="tacho-input-overlay"></div>
-</div>
-</div>
-
-<div class="fly-grid-row">
-<div class="fly-col">
-<label>MIN</label>
-<div class="stepper-control">
-<button class="step-btn" onclick="PerfLogic.stepValue('fly-min', -5)">-</button>
-<div class="step-display"><input type="number" id="fly-min" value="115" readonly></div>
-<button class="step-btn" onclick="PerfLogic.stepValue('fly-min', 5)">+</button>
-</div>
-</div>
-<div class="fly-col">
-<label>MAX</label>
-<div class="stepper-control">
-<button class="step-btn" onclick="PerfLogic.stepValue('fly-max', -5)">-</button>
-<div class="step-display"><input type="number" id="fly-max" value="125" readonly></div>
-<button class="step-btn" onclick="PerfLogic.stepValue('fly-max', 5)">+</button>
-</div>
-</div>
-</div>
-</div> 
-
-<div id="standing-info" class="config-group" style="margin-top: 20px;">
-<label>SECTORS</label>
-<div id="sector-config-container">
-<div class="sector-add-card" onclick="PerfLogic.openSectorEditor()">
-<i class="fa-solid fa-plus-circle"></i> ADD SECTORS
-</div>
-</div>
-</div>
-
-<div class="prm-engine-box">
-<div class="prm-bg-stripes"></div>
-<div class="prm-title"><i class="fa-solid fa-microchip"></i> PRM ENGINE</div>
-<div class="prm-status"><div class="prm-dot"></div> UNDER CONSTRUCTION</div>
-</div>
-
-<div class="setup-actions">
-<button class="btn-discard-text" onclick="PerfLogic.cancelSetup()">DISCARD</button>
-<button class="btn-save-final" onclick="PerfLogic.finalizeSave()">SAVE TRACK</button>
-</div>
-
-
-
-</div> </div> </div> </div> ```
+            </div> </div> </div> </div> ```
 
 Zusätzlich solltest du den **doppelten `drive-history-screen`** weiter unten entfernen. Es gibt zwei fast identische Blöcke hintereinander. Behalte nur einen davon.
-<div id="explore-screen" class="screen hidden">
+    <div id="explore-screen" class="screen hidden">
 
-<div class="explore-top-ui interactive-element">
+        <div class="explore-top-ui interactive-element">
 
-<div class="search-bar-glass">
+            <div class="search-bar-glass">
 
-<i class="fa-solid fa-magnifying-glass"></i>
+                <i class="fa-solid fa-magnifying-glass"></i>
 
-<input type="text" id="nav-search-input" placeholder="Where to go?">
+                <input type="text" id="nav-search-input" placeholder="Where to go?">
 
-</div>
+            </div>
 
-<div id="nav-search-results" class="search-results-container interactive-element"></div>
+            <div id="nav-search-results" class="search-results-container interactive-element"></div>
 
 
 
-<div class="filter-row">
+            <div class="filter-row">
 
-<button class="filter-chip" id="filter-gas"><i class="fa-solid fa-gas-pump"></i> Gas</button>
+                <button class="filter-chip" id="filter-gas"><i class="fa-solid fa-gas-pump"></i> Gas</button>
 
-<button class="filter-chip" id="filter-cam"><i class="fa-solid fa-camera"></i> Cams</button>
+                <button class="filter-chip" id="filter-cam"><i class="fa-solid fa-camera"></i> Cams</button>
 
-<button class="filter-chip" id="filter-parking"><i class="fa-solid fa-square-parking"></i> Park</button>
+                <button class="filter-chip" id="filter-parking"><i class="fa-solid fa-square-parking"></i> Park</button>
 
-</div>
+            </div>
 
-</div>
+        </div>
 
 
 
-<div id="map-loading" class="loading-indicator">
+        <div id="map-loading" class="loading-indicator">
 
-<i class="fa-solid fa-spinner fa-spin"></i>
+            <i class="fa-solid fa-spinner fa-spin"></i>
 
-</div>
+        </div>
 
+        
 
+        <button id="btn-explore-recenter" class="icon-btn-floating interactive-element" style="top: auto; bottom: 120px;">
 
-<button id="btn-explore-recenter" class="icon-btn-floating interactive-element" style="top: auto; bottom: 120px;">
+            <i class="fa-solid fa-location-crosshairs"></i>
 
-<i class="fa-solid fa-location-crosshairs"></i>
+        </button>
 
-</button>
 
 
+        <div id="route-preview-modal" class="hidden interactive-element">
 
-<div id="route-preview-modal" class="hidden interactive-element">
+            <div class="filter-card">
 
-<div class="filter-card">
+                <div class="filter-title-row">
 
-<div class="filter-title-row">
+                    <h3>Route Preview</h3>
 
-<h3>Route Preview</h3>
+                    <button class="btn-close-filter" onclick="NaviLogic.cancelRoute()"><i class="fa-solid fa-xmark"></i></button>
 
-<button class="btn-close-filter" onclick="NaviLogic.cancelRoute()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
 
-</div>
+                
 
+                <div id="preview-map-container">
 
+                    <button class="map-expand-btn" onclick="NaviLogic.togglePreviewMap()"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
 
-<div id="preview-map-container">
+                    <button class="map-shrink-btn" onclick="NaviLogic.togglePreviewMap()"><i class="fa-solid fa-arrow-left"></i></button>
 
-<button class="map-expand-btn" onclick="NaviLogic.togglePreviewMap()"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+                    <div id="preview-map-obj"></div>
 
-<button class="map-shrink-btn" onclick="NaviLogic.togglePreviewMap()"><i class="fa-solid fa-arrow-left"></i></button>
+                </div>
 
-<div id="preview-map-obj"></div>
 
-</div>
 
+                <div class="preview-content-wrapper">
 
+                    <div class="route-preview-stats">
 
-<div class="preview-content-wrapper">
+                        <div class="rps-item">
 
-<div class="route-preview-stats">
+                            <span class="rps-label">DURATION</span>
 
-<div class="rps-item">
+                            <span class="rps-val" id="preview-time">0 min</span>
 
-<span class="rps-label">DURATION</span>
+                        </div>
 
-<span class="rps-val" id="preview-time">0 min</span>
+                        <div class="rps-item">
 
-</div>
+                            <span class="rps-label">DISTANCE</span>
 
-<div class="rps-item">
+                            <span class="rps-val" id="preview-dist">0 km</span>
 
-<span class="rps-label">DISTANCE</span>
+                        </div>
 
-<span class="rps-val" id="preview-dist">0 km</span>
+                    </div>
 
-</div>
+                    <div class="route-preview-dest">
 
-</div>
+                        <i class="fa-solid fa-flag-checkered"></i> <span id="preview-dest-name">Destination</span>
 
-<div class="route-preview-dest">
+                    </div>
 
-<i class="fa-solid fa-flag-checkered"></i> <span id="preview-dest-name">Destination</span>
+                    <div class="route-preview-actions">
 
-</div>
+                        <button class="btn-nav-start" onclick="NaviLogic.startNavigation('record')">
 
-<div class="route-preview-actions">
+                            <i class="fa-solid fa-play"></i> START & RECORD
 
-<button class="btn-nav-start" onclick="NaviLogic.startNavigation('record')">
+                        </button>
 
-<i class="fa-solid fa-play"></i> START & RECORD
+                        <button class="btn-nav-ghost" onclick="NaviLogic.startNavigation('ghost')">
 
-</button>
+                            <i class="fa-solid fa-ghost"></i> GHOST RIDE
 
-<button class="btn-nav-ghost" onclick="NaviLogic.startNavigation('ghost')">
+                        </button>
 
-<i class="fa-solid fa-ghost"></i> GHOST RIDE
+                    </div>
 
-</button>
+                </div>
 
-</div>
+            </div>
 
-</div>
+        </div>
 
-</div>
 
-</div>
 
+        <div id="gas-filter-modal" class="hidden interactive-element">
 
+            <div class="filter-card">
 
-<div id="gas-filter-modal" class="hidden interactive-element">
+                <div class="filter-title-row">
 
-<div class="filter-card">
+                    <h3>Gas Filter</h3>
 
-<div class="filter-title-row">
+                    <button class="btn-close-filter" onclick="ExploreLogic.closeFilter()"><i class="fa-solid fa-xmark"></i></button>
 
-<h3>Gas Filter</h3>
+                </div>
 
-<button class="btn-close-filter" onclick="ExploreLogic.closeFilter()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="filter-section">
 
-</div>
+                    <label>Fuel Type</label>
 
-<div class="filter-section">
+                    <div class="filter-grid">
 
-<label>Fuel Type</label>
+                        <button class="filter-btn active" id="btn-type-e10" onclick="ExploreLogic.setFuelFilter('e10')">E10</button>
 
-<div class="filter-grid">
+                        <button class="filter-btn" id="btn-type-e5" onclick="ExploreLogic.setFuelFilter('e5')">E5</button>
 
-<button class="filter-btn active" id="btn-type-e10" onclick="ExploreLogic.setFuelFilter('e10')">E10</button>
+                        <button class="filter-btn" id="btn-type-diesel" onclick="ExploreLogic.setFuelFilter('diesel')">Diesel</button>
 
-<button class="filter-btn" id="btn-type-e5" onclick="ExploreLogic.setFuelFilter('e5')">E5</button>
+                    </div>
 
-<button class="filter-btn" id="btn-type-diesel" onclick="ExploreLogic.setFuelFilter('diesel')">Diesel</button>
+                </div>
 
-</div>
+                <div class="filter-section">
 
-</div>
+                    <label>Radius</label>
 
-<div class="filter-section">
+                    <div class="radius-control">
 
-<label>Radius</label>
+                        <input type="range" id="filter-radius" min="1" max="50" value="10" oninput="ExploreLogic.updateRadiusDisplay(this.value)">
 
-<div class="radius-control">
+                        <span class="radius-val"><span id="rad-disp">10</span> km</span>
 
-<input type="range" id="filter-radius" min="1" max="50" value="10" oninput="ExploreLogic.updateRadiusDisplay(this.value)">
+                    </div>
 
-<span class="radius-val"><span id="rad-disp">10</span> km</span>
+                </div>
 
-</div>
+                <div class="filter-section">
 
-</div>
+                    <label>Brand</label>
 
-<div class="filter-section">
+                    <div class="filter-grid">
 
-<label>Brand</label>
+                        <button class="filter-btn active" id="btn-brand-all" onclick="ExploreLogic.setBrandFilter('all', this)">ALL BRANDS</button>
 
-<div class="filter-grid">
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('aral', this)">ARAL</button>
 
-<button class="filter-btn active" id="btn-brand-all" onclick="ExploreLogic.setBrandFilter('all', this)">ALL BRANDS</button>
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('shell', this)">SHELL</button>
 
-<button class="filter-btn" onclick="ExploreLogic.setBrandFilter('aral', this)">ARAL</button>
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('total', this)">TOTAL</button>
 
-<button class="filter-btn" onclick="ExploreLogic.setBrandFilter('shell', this)">SHELL</button>
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('esso', this)">ESSO</button>
 
-<button class="filter-btn" onclick="ExploreLogic.setBrandFilter('total', this)">TOTAL</button>
+                        <button class="filter-btn" onclick="ExploreLogic.setBrandFilter('jet', this)">JET</button>
 
-<button class="filter-btn" onclick="ExploreLogic.setBrandFilter('esso', this)">ESSO</button>
+                    </div>
 
-<button class="filter-btn" onclick="ExploreLogic.setBrandFilter('jet', this)">JET</button>
+                </div>
 
-</div>
+                <div class="filter-section">
 
-</div>
+                    <label>Best Deals Nearby</label>
 
-<div class="filter-section">
+                    <div id="filter-results" class="filter-results-list"></div>
 
-<label>Best Deals Nearby</label>
+                </div>
 
-<div id="filter-results" class="filter-results-list"></div>
+            </div>
 
-</div>
+        </div>
 
-</div>
 
-</div>
 
+        <div id="gas-totem-overlay" class="hidden interactive-element">
 
+            <div class="gas-totem-card">
 
-<div id="gas-totem-overlay" class="hidden interactive-element">
+                <div class="totem-header" id="totem-brand-header">
 
-<div class="gas-totem-card">
+                    <h2 id="totem-brand">BRAND</h2>
 
-<div class="totem-header" id="totem-brand-header">
+                    <button class="totem-close" onclick="ExploreLogic.closeTotem()"><i class="fa-solid fa-xmark"></i></button>
 
-<h2 id="totem-brand">BRAND</h2>
+                </div>
 
-<button class="totem-close" onclick="ExploreLogic.closeTotem()"><i class="fa-solid fa-xmark"></i></button>
+                <div class="totem-body">
 
-</div>
+                    <div class="price-row" id="row-diesel" onclick="ExploreLogic.selectFuel('diesel')">
 
-<div class="totem-body">
+                        <span class="fuel-type">DIESEL</span>
 
-<div class="price-row" id="row-diesel" onclick="ExploreLogic.selectFuel('diesel')">
+                        <div class="led-price-box"><span id="price-diesel">0.00</span><small>9</small></div>
 
-<span class="fuel-type">DIESEL</span>
+                    </div>
 
-<div class="led-price-box"><span id="price-diesel">0.00</span><small>9</small></div>
+                    <div class="price-row selected" id="row-e10" onclick="ExploreLogic.selectFuel('e10')">
 
-</div>
+                        <span class="fuel-type">SUPER E10</span>
 
-<div class="price-row selected" id="row-e10" onclick="ExploreLogic.selectFuel('e10')">
+                        <div class="led-price-box"><span id="price-e10">0.00</span><small>9</small></div>
 
-<span class="fuel-type">SUPER E10</span>
+                    </div>
 
-<div class="led-price-box"><span id="price-e10">0.00</span><small>9</small></div>
+                    <div class="price-row" id="row-e5" onclick="ExploreLogic.selectFuel('e5')">
 
-</div>
+                        <span class="fuel-type">SUPER E5</span>
 
-<div class="price-row" id="row-e5" onclick="ExploreLogic.selectFuel('e5')">
+                        <div class="led-price-box"><span id="price-e5">0.00</span><small>9</small></div>
 
-<span class="fuel-type">SUPER E5</span>
+                    </div>
 
-<div class="led-price-box"><span id="price-e5">0.00</span><small>9</small></div>
+                </div>
 
-</div>
+                <div class="totem-footer">
 
-</div>
+                    <span id="totem-status"><i class="fa-solid fa-circle-check"></i> OPEN 24/7</span>
 
-<div class="totem-footer">
+                    <button class="btn-navigate">GO</button>
 
-<span id="totem-status"><i class="fa-solid fa-circle-check"></i> OPEN 24/7</span>
+                </div>
 
-<button class="btn-navigate">GO</button>
+            </div>
 
-</div>
+        </div>
 
-</div>
+    </div>
 
-</div>
 
-</div>
 
+    <div id="navi-screen" class="screen hidden">
 
+        <div class="navi-top-hud interactive-element">
 
-<div id="navi-screen" class="screen hidden">
+            <div class="nav-arrow-box"><i id="nav-arrow-icon" class="fa-solid fa-arrow-up"></i></div>
 
-<div class="navi-top-hud interactive-element">
+            <div class="nav-instruction-box">
 
-<div class="nav-arrow-box"><i id="nav-arrow-icon" class="fa-solid fa-arrow-up"></i></div>
+                <h3 id="nav-instruction">Folgen Sie der Route</h3>
 
-<div class="nav-instruction-box">
+                <span id="nav-next-dist">in 0 m</span>
 
-<h3 id="nav-instruction">Folgen Sie der Route</h3>
+            </div>
 
-<span id="nav-next-dist">in 0 m</span>
+            <div class="nav-eta-box">
 
-</div>
+                <span class="label">ANKUNFT</span>
 
-<div class="nav-eta-box">
+                <span id="nav-eta-time" class="val">--:--</span>
 
-<span class="label">ANKUNFT</span>
+            </div>
 
-<span id="nav-eta-time" class="val">--:--</span>
+        </div>
 
-</div>
 
-</div>
 
+        <div id="nav-speed-limit" class="hidden"><span>50</span></div>
 
 
-<div id="nav-speed-limit" class="hidden"><span>50</span></div>
 
+        <button class="btn-nav-floating recenter interactive-element" id="btn-nav-recenter" onclick="NaviLogic.recenterNav()"><i class="fa-solid fa-location-arrow"></i></button>
 
+        <button class="btn-nav-floating cancel interactive-element" id="btn-nav-cancel" onclick="NaviLogic.stopNavigation()"><i class="fa-solid fa-xmark"></i></button>
 
-<button class="btn-nav-floating recenter interactive-element" id="btn-nav-recenter" onclick="NaviLogic.recenterNav()"><i class="fa-solid fa-location-arrow"></i></button>
 
-<button class="btn-nav-floating cancel interactive-element" id="btn-nav-cancel" onclick="NaviLogic.stopNavigation()"><i class="fa-solid fa-xmark"></i></button>
 
+        <div class="navi-bottom-hud interactive-element">
 
+            <div class="nbh-stats">
 
-<div class="navi-bottom-hud interactive-element">
+                <div class="nbh-item">
 
-<div class="nbh-stats">
+                    <span class="label">SPEED</span>
 
-<div class="nbh-item">
+                    <div class="nbh-value-group">
 
-<span class="label">SPEED</span>
+                        <span class="val" id="nav-speed">0</span>
 
-<div class="nbh-value-group">
+                        <span class="unit">km/h</span>
 
-<span class="val" id="nav-speed">0</span>
+                    </div>
 
-<span class="unit">km/h</span>
+                </div>
 
-</div>
+                <div class="nbh-divider"></div>
 
-</div>
+                <div class="nbh-item">
 
-<div class="nbh-divider"></div>
+                    <span class="label">REMAIN</span>
 
-<div class="nbh-item">
+                    <div class="nbh-value-group">
 
-<span class="label">REMAIN</span>
+                        <span class="val" id="nav-remain-time">0 min</span>
 
-<div class="nbh-value-group">
+                    </div>
 
-<span class="val" id="nav-remain-time">0 min</span>
+                </div>
 
-</div>
+                <div class="nbh-divider"></div>
 
-</div>
+                <div class="nbh-item">
 
-<div class="nbh-divider"></div>
+                    <span class="label">DIST</span>
 
-<div class="nbh-item">
+                    <div class="nbh-value-group">
 
-<span class="label">DIST</span>
+                        <span class="val" id="nav-remain-dist">0</span>
 
-<div class="nbh-value-group">
+                        <span class="unit">km</span>
 
-<span class="val" id="nav-remain-dist">0</span>
+                    </div>
 
-<span class="unit">km</span>
+                </div>
 
-</div>
+            </div>
 
-</div>
+        </div>
 
-</div>
+    </div>
 
-</div>
 
-</div>
 
+    <div id="drive-screen" class="screen hidden">
 
+        <div id="speed-limit" class="hidden"><span>--</span></div>
 
-<div id="drive-screen" class="screen hidden">
+        <div class="drive-hud-top interactive-element">
 
-<div id="speed-limit" class="hidden"><span>--</span></div>
+            <div class="hud-row">
 
-<div class="drive-hud-top interactive-element">
+                <div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="hud-time">00:00</span></div>
 
-<div class="hud-row">
+                <div class="hud-item main"><span class="hud-unit">km/h</span><span class="hud-value big" id="hud-speed">0</span></div>
 
-<div class="hud-item"><span class="hud-label">TIME</span><span class="hud-value" id="hud-time">00:00</span></div>
+                <div class="hud-item"><span class="hud-label">DIST</span><span class="hud-value" id="hud-dist">0.00</span></div>
 
-<div class="hud-item main"><span class="hud-unit">km/h</span><span class="hud-value big" id="hud-speed">0</span></div>
+            </div>
 
-<div class="hud-item"><span class="hud-label">DIST</span><span class="hud-value" id="hud-dist">0.00</span></div>
+        </div>
 
-</div>
+        <button id="btn-recenter" class="icon-btn-floating hidden interactive-element"><i class="fa-solid fa-crosshairs"></i></button>
 
-</div>
+        <div class="spacer-flex"></div>
 
-<button id="btn-recenter" class="icon-btn-floating hidden interactive-element"><i class="fa-solid fa-crosshairs"></i></button>
+        <div class="blur-zone-bottom">
 
-<div class="spacer-flex"></div>
+            <button id="btn-stop" class="btn-stop-glass interactive-element"><i class="fa-solid fa-stop"></i> END DRIVE</button>
 
-<div class="blur-zone-bottom">
+        </div>
 
-<button id="btn-stop" class="btn-stop-glass interactive-element"><i class="fa-solid fa-stop"></i> END DRIVE</button>
+    </div>
 
-</div>
 
-</div>
 
+    <div id="summary-screen" class="screen hidden">
 
+        <div class="solid-bg">
 
-<div id="summary-screen" class="screen hidden">
+            <h2 style="margin-top: 50px; margin-bottom: 20px;">Drive Summary</h2>
 
-<div class="solid-bg">
+            <div id="summary-map" class="interactive-element"></div>
 
-<h2 style="margin-top: 50px; margin-bottom: 20px;">Drive Summary</h2>
+            <div class="summary-card interactive-element">
 
-<div id="summary-map" class="interactive-element"></div>
+                <div class="sum-row">
 
-<div class="summary-card interactive-element">
+                    <div class="sum-item"><label>AVG SPEED</label><h3 id="sum-avg">0</h3><small>km/h</small></div>
 
-<div class="sum-row">
+                    <div class="sum-item"><label>DISTANCE</label><h3 id="sum-dist">0.0</h3><small>km</small></div>
 
-<div class="sum-item"><label>AVG SPEED</label><h3 id="sum-avg">0</h3><small>km/h</small></div>
+                </div>
 
-<div class="sum-item"><label>DISTANCE</label><h3 id="sum-dist">0.0</h3><small>km</small></div>
+                <div class="sum-divider"></div>
 
-</div>
+                <div class="sum-row">
 
-<div class="sum-divider"></div>
+                    <div class="sum-item"><label>DURATION</label><h3 id="sum-time">00:00</h3></div>
 
-<div class="sum-row">
+                </div>
 
-<div class="sum-item"><label>DURATION</label><h3 id="sum-time">00:00</h3></div>
+                <div id="sum-comparison-row" class="sum-row hidden" style="margin-top:10px; border-top:1px solid #333; padding-top:10px;">
 
-</div>
+                     <div class="sum-item"><label>ESTIMATED</label><h4 id="sum-est-time" style="color:#888; margin:0;">-- min</h4></div>
 
-<div id="sum-comparison-row" class="sum-row hidden" style="margin-top:10px; border-top:1px solid #333; padding-top:10px;">
+                     <div class="sum-item"><label>REALITY</label><h4 id="sum-real-time" style="color:#fff; margin:0;">-- min</h4></div>
 
-<div class="sum-item"><label>ESTIMATED</label><h4 id="sum-est-time" style="color:#888; margin:0;">-- min</h4></div>
+                </div>
 
-<div class="sum-item"><label>REALITY</label><h4 id="sum-real-time" style="color:#fff; margin:0;">-- min</h4></div>
+            </div>
 
-</div>
+            <div class="summary-actions">
 
-</div>
+                <button id="btn-save" class="btn-super-glass small interactive-element">SAVE TO GARAGE</button>
 
-<div class="summary-actions">
+                <button id="btn-discard" class="btn-danger-glass interactive-element">DISCARD</button>
 
-<button id="btn-save" class="btn-super-glass small interactive-element">SAVE TO GARAGE</button>
+            </div>
 
-<button id="btn-discard" class="btn-danger-glass interactive-element">DISCARD</button>
+        </div>
 
-</div>
-
-</div>
-
-</div>
+    </div>
 
 
 
 <div id="garage-screen" class="screen hidden">
-<div id="garage-bg"></div>
+        <div id="garage-bg"></div>
+        
+        <div class="garage-dashboard">
+            
+            <div id="card-car-profile" class="dashboard-card glass-panel">
+                <button class="card-header-btn" onclick="GarageLogic.openCarDetails()">
+                    <span>VIEW CAR DETAILS</span> <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <div class="card-body" id="car-card-content">
+                    </div>
+            </div>
 
-<div class="garage-dashboard">
+            <div id="card-last-drive" class="dashboard-card glass-panel">
+                <button class="card-header-btn" onclick="GarageLogic.showHistory()">
+                    <span>VIEW DRIVE HISTORY</span> <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <div class="card-body" id="drive-card-content">
+                    </div>
+            </div>
 
-<div id="card-car-profile" class="dashboard-card glass-panel">
-<button class="card-header-btn" onclick="GarageLogic.openCarDetails()">
-<span>VIEW CAR DETAILS</span> <i class="fa-solid fa-chevron-right"></i>
-</button>
-<div class="card-body" id="car-card-content">
+            <div id="card-last-race" class="dashboard-card glass-panel">
+                <button class="card-header-btn" onclick="alert('Race Mode coming soon!')">
+                    <span>VIEW RACE HISTORY</span> <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <div class="card-body" id="race-card-content">
+                    <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#666;">
+                        <i class="fa-solid fa-flag-checkered" style="font-size:1.5rem; margin-bottom:10px;"></i>
+                        <span style="font-size:0.8rem;">NO RECENT RACES</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        </div>
+
+       
+            
+          
+
+        <div id="detail-overlay" class="hidden interactive-element">
+            <div class="detail-header">
+                <h3 id="det-date">Date</h3>
+                <button class="close-detail-btn" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="detail-content">
+                <div id="detail-map-container"><div id="detail-map"></div></div>
+                <div class="detail-stats-row">
+                    <div class="d-stat-box"><span class="label">DIST</span><span class="val" id="det-dist">0 km</span></div>
+                    <div class="d-stat-box"><span class="label">AVG</span><span class="val" id="det-avg">0</span></div>
+                    <div class="d-stat-box"><span class="label">MAX</span><span class="val" id="det-max">0</span></div>
+                </div>
+                <div style="text-align: center; margin: 10px 0; font-size: 0.9rem; color: #888;">
+                    Duration: <span id="det-time" style="color:white; font-weight:700;">00:00</span>
+                </div>
+                <div class="chart-container"><canvas id="speedChart"></canvas></div>
+                <div style="height: 50px;"></div>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <div id="global-nav" class="bottom-nav interactive-element">
+
+        <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
+
+        <div class="nav-item" id="nav-perf">
+    <i class="fa-solid fa-gauge-high"></i>
+    <span>Perf</span>
 </div>
-</div>
+        
+        <div class="nav-item" id="nav-explore"><i class="fa-solid fa-map"></i><span>Map</span></div>
 
-<div id="card-last-drive" class="dashboard-card glass-panel">
-<button class="card-header-btn" onclick="GarageLogic.showHistory()">
-<span>VIEW DRIVE HISTORY</span> <i class="fa-solid fa-chevron-right"></i>
-</button>
-<div class="card-body" id="drive-card-content">
-</div>
-</div>
+        <div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
 
-<div id="card-last-race" class="dashboard-card glass-panel">
-<button class="card-header-btn" onclick="alert('Race Mode coming soon!')">
-<span>VIEW RACE HISTORY</span> <i class="fa-solid fa-chevron-right"></i>
-</button>
-<div class="card-body" id="race-card-content">
-<div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#666;">
-<i class="fa-solid fa-flag-checkered" style="font-size:1.5rem; margin-bottom:10px;"></i>
-<span style="font-size:0.8rem;">NO RECENT RACES</span>
-</div>
-</div>
-</div>
-
-</div>
-
-</div>
-
-
-
-
-
-<div id="detail-overlay" class="hidden interactive-element">
-<div class="detail-header">
-<h3 id="det-date">Date</h3>
-<button class="close-detail-btn" onclick="GarageLogic.closeDetails()"><i class="fa-solid fa-xmark"></i></button>
-</div>
-<div class="detail-content">
-<div id="detail-map-container"><div id="detail-map"></div></div>
-<div class="detail-stats-row">
-<div class="d-stat-box"><span class="label">DIST</span><span class="val" id="det-dist">0 km</span></div>
-<div class="d-stat-box"><span class="label">AVG</span><span class="val" id="det-avg">0</span></div>
-<div class="d-stat-box"><span class="label">MAX</span><span class="val" id="det-max">0</span></div>
-</div>
-<div style="text-align: center; margin: 10px 0; font-size: 0.9rem; color: #888;">
-Duration: <span id="det-time" style="color:white; font-weight:700;">00:00</span>
-</div>
-<div class="chart-container"><canvas id="speedChart"></canvas></div>
-<div style="height: 50px;"></div>
-</div>
-</div>
-</div>
-
-
-
-<div id="global-nav" class="bottom-nav interactive-element">
-
-<div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
-
-<div class="nav-item" id="nav-perf">
-<i class="fa-solid fa-gauge-high"></i>
-<span>Perf</span>
-</div>
-
-<div class="nav-item" id="nav-explore"><i class="fa-solid fa-map"></i><span>Map</span></div>
-
-<div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
-
-</div>
+    </div>
 
 
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
 
 <script src="firebase-init.js"></script> 
-<script src="onboarding.js"></script>
-<script src="auth.js"></script> <script src="explore.js?v=73"></script>
+    <script src="auth.js"></script> <script src="explore.js?v=73"></script>
+  
+    <script src="garage.js?v=test1"></script>
+    <script src="drive.js?v=73"></script>
+    <script src="navi.js?v=73"></script>
+    <script src="app.js?v=73"></script>
+    <script src="perf.js"></script>
 
-<script src="garage.js?v=test1"></script>
-<script src="drive.js?v=73"></script>
-<script src="navi.js?v=73"></script>
-<script src="app.js?v=73"></script>
-<script src="perf.js"></script>
-
-<script>
-// STANDARD START (Startet im Hintergrund, zeigt aber Home an)
-document.addEventListener('DOMContentLoaded', () => {
-setTimeout(() => {
-console.log("Starte System...");
-
-// Wir initialisieren die Garage leise im Hintergrund
-if(window.GarageLogic) {
-window.GarageLogic.init();
-}
-
-// HIER NICHTS MEHR ERZWINGEN!
-// Die app.js kümmert sich darum, den Home-Screen zu zeigen.
-}, 500);
-});
-</script>
+   <script>
+        // STANDARD START (Startet im Hintergrund, zeigt aber Home an)
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                console.log("Starte System...");
+                
+                // Wir initialisieren die Garage leise im Hintergrund
+                if(window.GarageLogic) {
+                    window.GarageLogic.init();
+                }
+                
+                // HIER NICHTS MEHR ERZWINGEN!
+                // Die app.js kümmert sich darum, den Home-Screen zu zeigen.
+            }, 500);
+        });
+    </script>
 <div id="car-editor-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 20000; align-items: center; justify-content: center;">
-<div class="editor-card" style="width: 90%; max-width: 400px; background: #111; border: 1px solid #333; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; max-height: 90vh;">
+    <div class="editor-card" style="width: 90%; max-width: 400px; background: #111; border: 1px solid #333; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; max-height: 90vh;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: white; margin: 0; font-style: italic; font-family: sans-serif;">CAR PROFILE</h2>
+            <button onclick="GarageLogic.closeEditor()" style="background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer;">✕</button>
+        </div>
+        
+        <div class="editor-scroll-content" style="overflow-y: auto; padding-right: 5px;">
+            
+            <div id="editor-3d-preview-container" style="width: 100%; height: 200px; background: radial-gradient(circle, #333 0%, #000 100%); margin-bottom: 20px; border-radius: 15px; border: 1px solid #444; overflow: hidden; position: relative;">
+                <model-viewer id="editor-preview-viewer" src="" auto-rotate camera-controls disable-zoom style="width: 100%; height: 100%;" shadow-intensity="1"></model-viewer>
+                <div style="position: absolute; bottom: 10px; width: 100%; text-align: center; color: #666; font-size: 0.7rem; pointer-events: none;">PREVIEW</div>
+            </div>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-<h2 style="color: white; margin: 0; font-style: italic; font-family: sans-serif;">CAR PROFILE</h2>
-<button onclick="GarageLogic.closeEditor()" style="background: transparent; border: none; color: white; font-size: 1.5rem; cursor: pointer;">✕</button>
-</div>
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">NICKNAME</label>
+                <input type="text" id="edit-car-name" placeholder="z.B. Drift King" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
+            </div>
 
-<div class="editor-scroll-content" style="overflow-y: auto; padding-right: 5px;">
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">CHOOSE MODEL</label>
+                <div id="model-selector" class="model-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
+            </div>
 
-<div id="editor-3d-preview-container" style="width: 100%; height: 200px; background: radial-gradient(circle, #333 0%, #000 100%); margin-bottom: 20px; border-radius: 15px; border: 1px solid #444; overflow: hidden; position: relative;">
-<model-viewer id="editor-preview-viewer" src="" auto-rotate camera-controls disable-zoom style="width: 100%; height: 100%;" shadow-intensity="1"></model-viewer>
-<div style="position: absolute; bottom: 10px; width: 100%; text-align: center; color: #666; font-size: 0.7rem; pointer-events: none;">PREVIEW</div>
-</div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">HP</label>
+                    <input type="number" id="edit-car-hp" placeholder="HP" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">WEIGHT</label>
+                    <input type="number" id="edit-car-weight" placeholder="KG" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
+                </div>
+            </div>
+            
+            <div class="input-group" style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">ENGINE</label>
+                <input type="text" id="edit-car-engine" placeholder="e.g. V8" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
+            </div>
 
-<div class="input-group" style="margin-bottom: 15px;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">NICKNAME</label>
-<input type="text" id="edit-car-name" placeholder="z.B. Drift King" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
-</div>
+            <div class="input-group" style="margin-bottom: 20px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">THEME COLOR</label>
+                <div id="color-picker-row" class="color-row" style="display: flex; gap: 10px; justify-content: center;"></div>
+                <input type="hidden" id="edit-car-color">
+            </div>
 
-<div class="input-group" style="margin-bottom: 15px;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">CHOOSE MODEL</label>
-<div id="model-selector" class="model-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"></div>
-</div>
-
-<div style="display: flex; gap: 10px; margin-bottom: 15px;">
-<div style="flex: 1;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">HP</label>
-<input type="number" id="edit-car-hp" placeholder="HP" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
-</div>
-<div style="flex: 1;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">WEIGHT</label>
-<input type="number" id="edit-car-weight" placeholder="KG" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
-</div>
-</div>
-
-<div class="input-group" style="margin-bottom: 15px;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">ENGINE</label>
-<input type="text" id="edit-car-engine" placeholder="e.g. V8" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box;">
-</div>
-
-<div class="input-group" style="margin-bottom: 20px;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">THEME COLOR</label>
-<div id="color-picker-row" class="color-row" style="display: flex; gap: 10px; justify-content: center;"></div>
-<input type="hidden" id="edit-car-color">
-</div>
-
-<button onclick="GarageLogic.saveCarEdit()" style="width: 100%; background: #007aff; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1rem; margin-bottom: 10px; cursor: pointer;">SAVE CAR</button>
-<button id="btn-delete-car" onclick="GarageLogic.deleteCurrentCar()" style="width: 100%; background: transparent; border: 1px solid #ff3b30; color: #ff3b30; padding: 10px; border-radius: 12px; font-weight: bold; cursor: pointer;">DELETE</button>
-
-</div>
-</div>
+            <button onclick="GarageLogic.saveCarEdit()" style="width: 100%; background: #007aff; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1rem; margin-bottom: 10px; cursor: pointer;">SAVE CAR</button>
+            <button id="btn-delete-car" onclick="GarageLogic.deleteCurrentCar()" style="width: 100%; background: transparent; border: 1px solid #ff3b30; color: #ff3b30; padding: 10px; border-radius: 12px; font-weight: bold; cursor: pointer;">DELETE</button>
+            
+        </div>
+    </div>
 </div>
 
 <script>
-// FÜGE DIESE ZEILE EINMALIG EIN:
-localStorage.removeItem('driverhub_cars'); 
-
-document.addEventListener('DOMContentLoaded', () => {
-// ... dein normaler Start Code ...
-});
+    // FÜGE DIESE ZEILE EINMALIG EIN:
+    localStorage.removeItem('driverhub_cars'); 
+    
+    document.addEventListener('DOMContentLoaded', () => {
+       // ... dein normaler Start Code ...
+    });
 </script>
 
 
 <div id="final-overlay" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; align-items: center; justify-content: center;">
+    
+    <div style="width: 90%; max-width: 400px; background: #111; border: 1px solid #333; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; max-height: 90vh;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: white; margin: 0; font-family: sans-serif; font-style: italic;">CAR PROFILE</h2>
+            <button onclick="document.getElementById('final-overlay').style.display='none'" style="background: transparent; border: 1px solid #444; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer;">✕</button>
+        </div>
+        
+        <div style="overflow-y: auto; padding-right: 5px;">
+            
+            <div style="width: 100%; height: 200px; background: radial-gradient(circle, #222 0%, #000 100%); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border: 1px solid #333;">
+                <model-viewer id="final-preview" src="" auto-rotate camera-controls disable-zoom style="width: 100%; height: 100%;" shadow-intensity="1"></model-viewer>
+            </div>
 
-<div style="width: 90%; max-width: 400px; background: #111; border: 1px solid #333; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; max-height: 90vh;">
+            <div style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">NICKNAME</label>
+                <input type="text" id="final-name" placeholder="z.B. Street Beast" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
+            </div>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-<h2 style="color: white; margin: 0; font-family: sans-serif; font-style: italic;">CAR PROFILE</h2>
-<button onclick="document.getElementById('final-overlay').style.display='none'" style="background: transparent; border: 1px solid #444; color: white; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer;">✕</button>
-</div>
+            <div style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">CHOOSE MODEL</label>
+                <div id="final-model-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 50px;">
+                    </div>
+            </div>
 
-<div style="overflow-y: auto; padding-right: 5px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">HP</label>
+                    <input type="number" id="final-hp" placeholder="PS" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">WEIGHT</label>
+                    <input type="number" id="final-weight" placeholder="KG" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">ENGINE</label>
+                <input type="text" id="final-engine" placeholder="z.B. V8 Biturbo" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
+            </div>
 
-<div style="width: 100%; height: 200px; background: radial-gradient(circle, #222 0%, #000 100%); border-radius: 15px; margin-bottom: 20px; overflow: hidden; border: 1px solid #333;">
-<model-viewer id="final-preview" src="" auto-rotate camera-controls disable-zoom style="width: 100%; height: 100%;" shadow-intensity="1"></model-viewer>
-</div>
+            <div style="margin-bottom: 20px;">
+                <label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">THEME COLOR</label>
+                <div id="final-color-list" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;"></div>
+                <input type="hidden" id="final-color-input">
+            </div>
 
-<div style="margin-bottom: 15px;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">NICKNAME</label>
-<input type="text" id="final-name" placeholder="z.B. Street Beast" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
-</div>
-
-<div style="margin-bottom: 15px;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">CHOOSE MODEL</label>
-<div id="final-model-list" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; min-height: 50px;">
-</div>
-</div>
-
-<div style="display: flex; gap: 10px; margin-bottom: 15px;">
-<div style="flex: 1;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">HP</label>
-<input type="number" id="final-hp" placeholder="PS" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
-</div>
-<div style="flex: 1;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">WEIGHT</label>
-<input type="number" id="final-weight" placeholder="KG" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
-</div>
-</div>
-
-<div style="margin-bottom: 15px;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">ENGINE</label>
-<input type="text" id="final-engine" placeholder="z.B. V8 Biturbo" style="width: 100%; background: #222; border: 1px solid #444; color: white; padding: 12px; border-radius: 10px; box-sizing: border-box; font-family: sans-serif;">
-</div>
-
-<div style="margin-bottom: 20px;">
-<label style="color: #666; font-size: 0.7rem; font-weight: bold; display: block; margin-bottom: 5px;">THEME COLOR</label>
-<div id="final-color-list" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;"></div>
-<input type="hidden" id="final-color-input">
-</div>
-
-<button onclick="GarageLogic.saveCarEdit()" style="width: 100%; background: #007aff; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1rem; margin-bottom: 10px; cursor: pointer;">SAVE CAR</button>
-<button onclick="GarageLogic.deleteCurrentCar()" style="width: 100%; background: transparent; border: 1px solid #ff3b30; color: #ff3b30; padding: 10px; border-radius: 12px; font-weight: bold; cursor: pointer;">DELETE ALL</button>
-
-</div>
-</div>
+            <button onclick="GarageLogic.saveCarEdit()" style="width: 100%; background: #007aff; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 1rem; margin-bottom: 10px; cursor: pointer;">SAVE CAR</button>
+            <button onclick="GarageLogic.deleteCurrentCar()" style="width: 100%; background: transparent; border: 1px solid #ff3b30; color: #ff3b30; padding: 10px; border-radius: 12px; font-weight: bold; cursor: pointer;">DELETE ALL</button>
+            
+        </div>
+    </div>
 </div>
 
 
 <div id="car-details-screen" class="hidden">
-<div class="details-header">
-<button onclick="GarageLogic.closeDetailScreen()" class="back-btn">
-<i class="fa-solid fa-chevron-left"></i> BACK
-</button>
-<h2></h2>
-<div style="width: 40px;"></div> </div>
+    <div class="details-header">
+        <button onclick="GarageLogic.closeDetailScreen()" class="back-btn">
+            <i class="fa-solid fa-chevron-left"></i> BACK
+        </button>
+        <h2></h2>
+        <div style="width: 40px;"></div> </div>
 
-<div id="car-details-list" class="details-scroll-area">
-</div>
+    <div id="car-details-list" class="details-scroll-area">
+        </div>
 </div>
 
-
-<div id="drive-history-screen" class="hidden" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#050505; z-index:2100; display:flex; flex-direction:column;">
-<div class="details-header">
-<button onclick="GarageLogic.closeHistoryScreen()" class="back-btn"><i class="fa-solid fa-chevron-left"></i> GARAGE</button>
-<div style="flex:1;"></div> 
-<div style="width:40px;"></div>
-</div>
-<div id="drive-history-list" class="details-scroll-area" style="gap:20px;">
-</div>
-</div>
 
 <div id="drive-history-screen" class="hidden" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#050505; z-index:2100; display:flex; flex-direction:column;">
-<div class="details-header">
-<button onclick="GarageLogic.closeHistoryScreen()" class="back-btn"><i class="fa-solid fa-chevron-left"></i> GARAGE</button>
-<div style="flex:1;"></div>
-<div style="width:40px;"></div>
+    <div class="details-header">
+        <button onclick="GarageLogic.closeHistoryScreen()" class="back-btn"><i class="fa-solid fa-chevron-left"></i> GARAGE</button>
+        <div style="flex:1;"></div> 
+        <div style="width:40px;"></div>
+    </div>
+    <div id="drive-history-list" class="details-scroll-area" style="gap:20px;">
+        </div>
 </div>
 
-<div id="drive-history-list" class="details-scroll-area" style="gap:20px; padding-top:10px;"></div>
+<div id="drive-history-screen" class="hidden" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#050505; z-index:2100; display:flex; flex-direction:column;">
+    <div class="details-header">
+        <button onclick="GarageLogic.closeHistoryScreen()" class="back-btn"><i class="fa-solid fa-chevron-left"></i> GARAGE</button>
+        <div style="flex:1;"></div>
+        <div style="width:40px;"></div>
+    </div>
+    
+    <div id="drive-history-list" class="details-scroll-area" style="gap:20px; padding-top:10px;"></div>
 </div>
 
 <div id="drive-detail-view" class="hidden" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:#050505; z-index:2200; display:flex; flex-direction:column;">
+    
+    <div class="details-header" style="flex-shrink: 0;">
+        <button onclick="GarageLogic.closeDriveDetail()" class="back-btn"><i class="fa-solid fa-chevron-left"></i> BACK</button>
+        <div style="flex:1;"></div>
+        <div style="width:40px;"></div>
+    </div>
+    
+    <div class="details-scroll-area" style="padding:0; display:flex; flex-direction:column;">
+        
+        <div style="width:100%; height:50vh; min-height:400px; background:#111; position:relative;">
+             <div id="detail-map-canvas" style="width:100%; height:100%;"></div>
+             <div style="position:absolute; bottom:0; left:0; width:100%; height:50px; background:linear-gradient(to top, #050505, transparent); pointer-events:none; z-index:400;"></div>
+        </div>
 
-<div class="details-header" style="flex-shrink: 0;">
-<button onclick="GarageLogic.closeDriveDetail()" class="back-btn"><i class="fa-solid fa-chevron-left"></i> BACK</button>
-<div style="flex:1;"></div>
-<div style="width:40px;"></div>
-</div>
+        <div style="padding: 20px; position:relative; top:-20px; z-index:500;">
+            
+            <div class="detail-stats-grid" style="border:1px solid rgba(255,255,255,0.1); background:#111; border-radius:20px; margin-bottom:25px; padding:20px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);">
+                 <div class="detail-stat">
+                     <label style="font-size:0.65rem; opacity:0.6; letter-spacing:1px;">TIME</label>
+                     <span id="dd-time" style="font-size:1.1rem; white-space:nowrap;">--:--</span>
+                 </div>
+                 <div class="detail-stat">
+                     <label style="font-size:0.65rem; opacity:0.6; letter-spacing:1px;">DIST</label>
+                     <span id="dd-dist" style="font-size:1.1rem; white-space:nowrap;">--</span>
+                 </div>
+                 <div class="detail-stat">
+                     <label style="font-size:0.65rem; opacity:0.6; letter-spacing:1px;">AVG</label>
+                     <span id="dd-avg" style="font-size:1.1rem; white-space:nowrap;">--</span>
+                 </div>
+                 <div class="detail-stat">
+                     <label style="font-size:0.65rem; opacity:0.6; letter-spacing:1px;">MAX</label>
+                     <span id="dd-max" style="color:#30d158; font-size:1.1rem; white-space:nowrap;">--</span>
+                 </div>
+            </div>
 
-<div class="details-scroll-area" style="padding:0; display:flex; flex-direction:column;">
+            <div class="detail-extra-box" style="border:none; padding:0; margin-bottom:20px;">
+                <span class="detail-label" style="margin-left:5px; font-size:0.7rem; margin-bottom:10px;">SPEED GRAPH</span>
+                <div style="width:100%; height:180px; background:rgba(255,255,255,0.03); border-radius:15px; border:1px solid rgba(255,255,255,0.1); position:relative; overflow:hidden;">
+                    <canvas id="speed-graph-canvas" style="width:100%; height:100%;"></canvas>
+                </div>
+            </div>
 
-<div style="width:100%; height:50vh; min-height:400px; background:#111; position:relative;">
-<div id="detail-map-canvas" style="width:100%; height:100%;"></div>
-<div style="position:absolute; bottom:0; left:0; width:100%; height:50px; background:linear-gradient(to top, #050505, transparent); pointer-events:none; z-index:400;"></div>
+            <div style="text-align:center; color:#444; font-size:0.7rem; margin-bottom:20px; font-family:monospace;" id="dd-date"></div>
+            <button onclick="GarageLogic.deleteDrive()" style="width:100%; padding:15px; border:1px solid #ff3b30; color:#ff3b30; background:transparent; border-radius:15px; font-weight:bold; font-size:0.9rem;">DELETE ENTRY</button>
+        </div>
+    </div>
 </div>
-
-<div style="padding: 20px; position:relative; top:-20px; z-index:500;">
-
-<div class="detail-stats-grid" style="border:1px solid rgba(255,255,255,0.1); background:#111; border-radius:20px; margin-bottom:25px; padding:20px; box-shadow: 0 5px 20px rgba(0,0,0,0.5);">
-<div class="detail-stat">
-<label style="font-size:0.65rem; opacity:0.6; letter-spacing:1px;">TIME</label>
-<span id="dd-time" style="font-size:1.1rem; white-space:nowrap;">--:--</span>
-</div>
-<div class="detail-stat">
-<label style="font-size:0.65rem; opacity:0.6; letter-spacing:1px;">DIST</label>
-<span id="dd-dist" style="font-size:1.1rem; white-space:nowrap;">--</span>
-</div>
-<div class="detail-stat">
-<label style="font-size:0.65rem; opacity:0.6; letter-spacing:1px;">AVG</label>
-<span id="dd-avg" style="font-size:1.1rem; white-space:nowrap;">--</span>
-</div>
-<div class="detail-stat">
-<label style="font-size:0.65rem; opacity:0.6; letter-spacing:1px;">MAX</label>
-<span id="dd-max" style="color:#30d158; font-size:1.1rem; white-space:nowrap;">--</span>
-</div>
-</div>
-
-<div class="detail-extra-box" style="border:none; padding:0; margin-bottom:20px;">
-<span class="detail-label" style="margin-left:5px; font-size:0.7rem; margin-bottom:10px;">SPEED GRAPH</span>
-<div style="width:100%; height:180px; background:rgba(255,255,255,0.03); border-radius:15px; border:1px solid rgba(255,255,255,0.1); position:relative; overflow:hidden;">
-<canvas id="speed-graph-canvas" style="width:100%; height:100%;"></canvas>
-</div>
-</div>
-
-<div style="text-align:center; color:#444; font-size:0.7rem; margin-bottom:20px; font-family:monospace;" id="dd-date"></div>
-<button onclick="GarageLogic.deleteDrive()" style="width:100%; padding:15px; border:1px solid #ff3b30; color:#ff3b30; background:transparent; border-radius:15px; font-weight:bold; font-size:0.9rem;">DELETE ENTRY</button>
-</div>
-</div>
-</div>
+    
 
 
-
-
+    
 </body>
 </html>
 
-~
