@@ -736,6 +736,6 @@ sendGhostMessage: async function() {
             loadEl.innerText = "Fehler: " + error.message;
         }
     }
-};
+
 
 PerfLogic.init();
