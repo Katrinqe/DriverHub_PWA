@@ -728,7 +728,7 @@ sendGhostMessage: async function() {
             throw new Error(resultData.error ? resultData.error.message : "Keine Antwort von Gemini erhalten.");
         }
 
-    } catch (error) {
+ } catch (error) {
         console.error("Ghost Fehler Details:", error);
         const loadEl = document.getElementById(loadingId);
         if (loadEl) {
@@ -736,6 +736,9 @@ sendGhostMessage: async function() {
             loadEl.innerText = "Fehler: " + error.message;
         }
     }
-
+    // Sorgt dafür, dass der Chat immer nach unten scrollt
+    container.scrollTop = container.scrollHeight;
+} // <--- Schließt die Funktion 'sendGhostMessage'
+}; // <--- Schließt das Objekt 'window.PerfLogic'
 
 PerfLogic.init();
