@@ -70,11 +70,11 @@ function initMap() {
         tap: false 
     }).setView([51.1657, 10.4515], 15);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
-        maxZoom: 20,
-        keepBuffer: 20, 
-        updateWhenIdle: false 
-    }).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
+    maxZoom: 20,
+    keepBuffer: 2, // VON 20 AUF 2 REDUZIEREN!
+    updateWhenIdle: true // Auf true setzen, um CPU während der Fahrt zu entlasten
+}).addTo(map);
 
     // FIX: Zwingt Leaflet dazu, die Container-Größe nach dem CSS-Transform neu zu berechnen
     setTimeout(() => {
