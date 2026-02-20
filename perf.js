@@ -670,13 +670,7 @@ sendGhostMessage: async function() {
         // ===========================================================
         // HIER DEINEN KEY EINFÜGEN (Der mit ...4OZE)
         // ===========================================================
-        const API_KEY = "AIzaSyA5phnWaPGC05ZgOJe0cH9S86NS3TI4OZE"; 
-
-        if(!text) return;
-        if(API_KEY.includes("HIER_DEINEN") || API_KEY.length < 20) {
-            alert("API Key fehlt!"); return;
-        }
-
+    
         // 1. User Nachricht
         const userMsg = document.createElement('div');
         userMsg.className = 'msg user';
@@ -696,21 +690,22 @@ sendGhostMessage: async function() {
 
         const context = this.getGhostContext(); 
 
-        try {
-            // === DER FIX: GEMINI 2.5 FLASH ===
-            // Wir nutzen genau das Modell aus deinem Screenshot.
-            // Neue Modelle laufen meist über "v1beta".
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${API_KEY}`;
-
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: context + "\n\nUSER FRAGE: " + text }]
-                    }]
-                })
+       try {
+            // Wir rufen die Cloud Function 'getGhostResponse' auf
+            const getGhostResponse = firebase.functions().httpsCallable('getGhostResponse');
+            
+            const result = await getGhostResponse({
+                prompt: context + "\n\nUSER FRAGE: " + text
             });
+
+            const aiText = result.data.text;
+            document.getElementById(loadingId).remove();
+            
+            const ghostMsg = document.createElement('div');
+            ghostMsg.className = 'msg ghost';
+            const cleanText = aiText.replace(/\*\*/g, "").replace(/\*/g, ""); 
+            ghostMsg.innerText = cleanText;
+            container.appendChild(ghostMsg);
 
             if (!response.ok) {
                 const errorData = await response.json();
