@@ -663,90 +663,59 @@ renderTrackList: function() {
     },
 
 sendGhostMessage: async function() {
-        const input = document.getElementById('ghost-user-input');
-        const container = document.getElementById('ghost-msg-container');
-        const text = input.value.trim();
-        
-        // ===========================================================
-        // HIER DEINEN KEY EINFÜGEN (Der mit ...4OZE)
-        // ===========================================================
-    
-        // 1. User Nachricht
-        const userMsg = document.createElement('div');
-        userMsg.className = 'msg user';
-        userMsg.innerText = text;
-        container.appendChild(userMsg);
-        input.value = '';
-        container.scrollTop = container.scrollHeight;
+    const input = document.getElementById('ghost-user-input');
+    const container = document.getElementById('ghost-msg-container');
+    const text = input.value.trim();
+    if(!text) return;
 
-        // 2. Loading State
-        const loadingId = 'ghost-loading-' + Date.now();
-        const loadingMsg = document.createElement('div');
-        loadingMsg.className = 'msg ghost';
-        loadingMsg.id = loadingId;
-        loadingMsg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>'; 
-        container.appendChild(loadingMsg);
-        container.scrollTop = container.scrollHeight;
+    // 1. User Nachricht anzeigen
+    const userMsg = document.createElement('div');
+    userMsg.className = 'msg user';
+    userMsg.innerText = text;
+    container.appendChild(userMsg);
+    input.value = '';
+
+    // 2. Loading State anzeigen
+    const loadingId = 'ghost-loading-' + Date.now();
+    const loadingMsg = document.createElement('div');
+    loadingMsg.className = 'msg ghost';
+    loadingMsg.id = loadingId;
+    loadingMsg.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>'; 
+    container.appendChild(loadingMsg);
+    container.scrollTop = container.scrollHeight;
+
+    try {
+        // --- DER TRESOR-TRICK ---
+        // Wir holen den Key aus Firestore statt ihn hier reinzuschreiben
+        const doc = await window.db.collection('secrets').doc('gemini').get();
+        const secureKey = doc.data().apiKey;
 
         const context = this.getGhostContext(); 
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${secureKey}`;
 
-       try {
-            // Wir rufen die Cloud Function 'getGhostResponse' auf
-            const getGhostResponse = firebase.functions().httpsCallable('getGhostResponse');
-            
-            const result = await getGhostResponse({
-                prompt: context + "\n\nUSER FRAGE: " + text
-            });
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: context + "\n\nUSER FRAGE: " + text }] }]
+            })
+        });
 
-            const aiText = result.data.text;
-            document.getElementById(loadingId).remove();
-            
-            const ghostMsg = document.createElement('div');
-            ghostMsg.className = 'msg ghost';
-            const cleanText = aiText.replace(/\*\*/g, "").replace(/\*/g, ""); 
-            ghostMsg.innerText = cleanText;
-            container.appendChild(ghostMsg);
+        const data = await response.json();
+        const aiText = data.candidates[0].content.parts[0].text;
+        
+        document.getElementById(loadingId).remove();
+        const ghostMsg = document.createElement('div');
+        ghostMsg.className = 'msg ghost';
+        ghostMsg.innerText = aiText.replace(/\*/g, "");
+        container.appendChild(ghostMsg);
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error("API ERROR:", errorData);
-                
-                if (response.status === 429) {
-                    throw new Error("Quota Limit! Warte 1 Minute, dann geht es wieder.");
-                }
-                
-                throw new Error(errorData.error?.message || "Fehler beim API Zugriff");
-            }
-
-            const data = await response.json();
-            
-            if(!data.candidates || data.candidates.length === 0) {
-                 throw new Error("Keine Antwort.");
-            }
-
-            const aiText = data.candidates[0].content.parts[0].text;
-            document.getElementById(loadingId).remove();
-            
-            const ghostMsg = document.createElement('div');
-            ghostMsg.className = 'msg ghost';
-            const cleanText = aiText.replace(/\*\*/g, "").replace(/\*/g, ""); 
-            ghostMsg.innerText = cleanText;
-            container.appendChild(ghostMsg);
-
-        } catch (error) {
-            console.error("GHOST ERROR:", error);
-            const loadEl = document.getElementById(loadingId);
-            if(loadEl) loadEl.remove();
-            
-            const errorMsg = document.createElement('div');
-            errorMsg.className = 'msg ghost';
-            errorMsg.style.color = "#ff3b30";
-            errorMsg.style.border = "1px solid #ff3b30";
-            errorMsg.innerText = error.message; 
-            container.appendChild(errorMsg);
-        }
-        container.scrollTop = container.scrollHeight;
+    } catch (error) {
+        console.error("Ghost Fehler:", error);
+        document.getElementById(loadingId).innerText = "Ghost ist gerade im Tunnel (Verbindungsfehler).";
     }
+    container.scrollTop = container.scrollHeight;
+}
 };
 
 PerfLogic.init();
