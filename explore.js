@@ -153,7 +153,7 @@ const ExploreLogic = {
         }, 500);
     },
 
-    fetchData: function(type) {
+   fetchData: function(type) {
         if (!map) return;
         const center = map.getCenter();
         let radius = 3000; 
@@ -169,11 +169,60 @@ const ExploreLogic = {
         const loader = document.getElementById('map-loading');
         if(loader) loader.classList.add('visible');
 
+        // ==========================================================
+        // NEU: LIVE-PREISE DIREKT VON TANKERKÖNIG FÜR DIE GANZE MAP
+        // ==========================================================
+        if (type === 'gas') {
+            // Tankerkönig nutzt km statt Meter (Maximal 25km erlaubt)
+            let tkRadius = radius / 1000;
+            if (tkRadius > 25) tkRadius = 25; 
+
+            const tkUrl = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${center.lat}&lng=${center.lng}&rad=${tkRadius}&sort=dist&type=all&apikey=${TANKERKOENIG_API_KEY}`;
+            
+            fetch(tkUrl)
+                .then(r => r.json())
+                .then(data => {
+                    if(loader) loader.classList.remove('visible');
+                    
+                    if (data.ok && data.stations) {
+                        // Wir wandeln das Tankerkönig-Format in dein bestehendes System um
+                        cachedGasStations = data.stations.map(st => ({
+                            lat: st.lat,
+                            lon: st.lng,
+                            center: { lat: st.lat, lon: st.lng },
+                            tags: { name: st.brand ? st.brand + " " + st.name : st.name },
+                            realData: st,
+                            // Die Zufallszahlen sind Geschichte - hier kommen die ECHTEN Werte rein!
+                            simPrices: {
+                                e10: st.e10 ? st.e10.toFixed(2) : "-.--",
+                                e5: st.e5 ? st.e5.toFixed(2) : "-.--",
+                                diesel: st.diesel ? st.diesel.toFixed(2) : "-.--",
+                                isOpen: st.isOpen
+                            },
+                            _tempDist: st.dist
+                        }));
+                        
+                        this.redrawGasMarkers();
+                        if(!document.getElementById('gas-filter-modal').classList.contains('hidden')) {
+                            this.filterGasStations(); 
+                        }
+                    }
+                }).catch(err => {
+                    if(loader) loader.classList.remove('visible');
+                    console.log("Tankerkoenig Live-Map Error:", err);
+                });
+                
+            // Beendet die Funktion hier, Overpass wird für Sprit übersprungen!
+            return; 
+        }
+        // ==========================================================
+
+
+        // --- OVERPASS API FÜR BLITZER & PARKPLÄTZE BLEIBT WIE GEHABT ---
         let query = "";
         let endTag = "out center;"; 
 
-        if (type === 'gas') query = `[out:json][timeout:25];nwr["amenity"="fuel"](around:${radius},${center.lat},${center.lng});${endTag}`;
-        else if (type === 'cam') query = `[out:json][timeout:25];node["highway"="speed_camera"](around:${radius},${center.lat},${center.lng});out;`;
+        if (type === 'cam') query = `[out:json][timeout:25];node["highway"="speed_camera"](around:${radius},${center.lat},${center.lng});out;`;
         else if (type === 'parking') query = `[out:json][timeout:25];nwr["amenity"="parking"](around:${radius},${center.lat},${center.lng});${endTag}`;
 
         const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
@@ -183,21 +232,13 @@ const ExploreLogic = {
             .then(data => {
                 if(loader) loader.classList.remove('visible');
                 
-                if (type === 'gas') {
-                    cachedGasStations = data.elements || [];
-                    this.redrawGasMarkers();
-                    if(!document.getElementById('gas-filter-modal').classList.contains('hidden')) {
-                        this.filterGasStations(); 
-                    }
-                } else {
-                    if(exploreLayers[type]) exploreLayers[type].clearLayers();
-                    if (!data.elements) return;
-                    this.renderGenericMarkers(type, data.elements);
-                }
+                if(exploreLayers[type]) exploreLayers[type].clearLayers();
+                if (!data.elements) return;
+                this.renderGenericMarkers(type, data.elements);
             })
             .catch(err => {
                 if(loader) loader.classList.remove('visible');
-                console.log("API Error:", err);
+                console.log("Overpass API Error:", err);
             });
     },
 
