@@ -150,7 +150,7 @@ const ExploreLogic = {
             if (exploreState.gas) ExploreLogic.fetchData('gas');
             if (exploreState.cam) ExploreLogic.fetchData('cam');
             if (exploreState.parking) ExploreLogic.fetchData('parking');
-        }, 500);
+        }, 1500);
     },
 
    fetchData: function(type) {
@@ -172,8 +172,7 @@ const ExploreLogic = {
         // ==========================================================
         // NEU: LIVE-PREISE DIREKT VON TANKERKÖNIG FÜR DIE GANZE MAP
         // ==========================================================
-        if (type === 'gas') {
-            // Tankerkönig nutzt km statt Meter (Maximal 25km erlaubt)
+    if (type === 'gas') {
             let tkRadius = radius / 1000;
             if (tkRadius > 25) tkRadius = 25; 
 
@@ -184,35 +183,41 @@ const ExploreLogic = {
                 .then(data => {
                     if(loader) loader.classList.remove('visible');
                     
+                    // WENN TANKERKÖNIG SEINEN SEGEN GIBT:
                     if (data.ok && data.stations) {
-                        // Wir wandeln das Tankerkönig-Format in dein bestehendes System um
-                        cachedGasStations = data.stations.map(st => ({
-                            lat: st.lat,
-                            lon: st.lng,
-                            center: { lat: st.lat, lon: st.lng },
-                            tags: { name: st.brand ? st.brand + " " + st.name : st.name },
-                            realData: st,
-                            // Die Zufallszahlen sind Geschichte - hier kommen die ECHTEN Werte rein!
-                            simPrices: {
-                                e10: st.e10 ? st.e10.toFixed(2) : "-.--",
-                                e5: st.e5 ? st.e5.toFixed(2) : "-.--",
-                                diesel: st.diesel ? st.diesel.toFixed(2) : "-.--",
-                                isOpen: st.isOpen
-                            },
-                            _tempDist: st.dist
-                        }));
+                        cachedGasStations = data.stations.map(st => {
+                            return {
+                                lat: st.lat,
+                                lon: st.lng,
+                                center: { lat: st.lat, lon: st.lng },
+                                tags: { name: (st.brand ? st.brand + " " : "") + st.name },
+                                realData: st,
+                                simPrices: {
+                                    // Besserer Schutz, falls mal ein Preis fehlt (dann bleibt es bei "-.--")
+                                    e10: (typeof st.e10 === 'number') ? st.e10.toFixed(2) : "-.--",
+                                    e5: (typeof st.e5 === 'number') ? st.e5.toFixed(2) : "-.--",
+                                    diesel: (typeof st.diesel === 'number') ? st.diesel.toFixed(2) : "-.--",
+                                    isOpen: st.isOpen
+                                },
+                                _tempDist: st.dist
+                            };
+                        });
                         
                         this.redrawGasMarkers();
                         if(!document.getElementById('gas-filter-modal').classList.contains('hidden')) {
                             this.filterGasStations(); 
                         }
+                    } 
+                    // WENN TANKERKÖNIG UNS BLOCKIERT:
+                    else {
+                        console.error("Tankerkönig API Fehler:", data.message);
+                        alert("Tankerkönig blockiert: " + (data.message || "Key ungültig oder zu viele Anfragen!"));
                     }
                 }).catch(err => {
                     if(loader) loader.classList.remove('visible');
-                    console.log("Tankerkoenig Live-Map Error:", err);
+                    console.error("Tankerkönig Fetch Error:", err);
                 });
                 
-            // Beendet die Funktion hier, Overpass wird für Sprit übersprungen!
             return; 
         }
         // ==========================================================
