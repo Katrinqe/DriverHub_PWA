@@ -76,6 +76,13 @@ function initMap() {
         updateWhenIdle: false 
     }).addTo(map);
 
+    // FIX: Zwingt Leaflet dazu, die Container-Größe nach dem CSS-Transform neu zu berechnen
+    setTimeout(() => {
+        if (map) {
+            map.invalidateSize();
+        }
+    }, 500);
+
     if (navigator.geolocation) {
         watchId = navigator.geolocation.watchPosition(handlePositionUpdate, 
             (err) => console.warn(err), 
