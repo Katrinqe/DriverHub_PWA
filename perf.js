@@ -684,15 +684,26 @@ sendGhostMessage: async function() {
     container.appendChild(loadingMsg);
     container.scrollTop = container.scrollHeight;
 
-    try {
-        // --- DER TRESOR-TRICK ---
-        // Wir holen den Key aus Firestore statt ihn hier reinzuschreiben
+ try {
+        // 1. Key aus Firestore holen
         const doc = await window.db.collection('secrets').doc('gemini').get();
-        const secureKey = doc.data().apiKey;
+        
+        // Prüfen, ob das Dokument überhaupt existiert
+        if (!doc.exists) {
+            throw new Error("Datenbank-Dokument 'secrets/gemini' nicht gefunden!");
+        }
+
+        const dataStore = doc.data();
+        const secureKey = dataStore.apiKey; // Muss exakt so in Firestore heißen!
+
+        if (!secureKey || secureKey === "undefined") {
+            throw new Error("API Key im Firestore ist leer oder falsch benannt!");
+        }
 
         const context = this.getGhostContext(); 
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${secureKey}`;
 
+        // 2. Anfrage an Google
         const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -701,21 +712,30 @@ sendGhostMessage: async function() {
             })
         });
 
-        const data = await response.json();
-        const aiText = data.candidates[0].content.parts[0].text;
-        
-        document.getElementById(loadingId).remove();
-        const ghostMsg = document.createElement('div');
-        ghostMsg.className = 'msg ghost';
-        ghostMsg.innerText = aiText.replace(/\*/g, "");
-        container.appendChild(ghostMsg);
+        const resultData = await response.json();
+
+        // 3. Prüfen, ob Google eine gültige Antwort geschickt hat
+        if (resultData.candidates && resultData.candidates[0]) {
+            const aiText = resultData.candidates[0].content.parts[0].text;
+            
+            document.getElementById(loadingId).remove();
+            const ghostMsg = document.createElement('div');
+            ghostMsg.className = 'msg ghost';
+            ghostMsg.innerText = aiText.replace(/\*/g, "");
+            container.appendChild(ghostMsg);
+        } else {
+            console.error("Google API Fehler:", resultData);
+            throw new Error(resultData.error ? resultData.error.message : "Keine Antwort von Gemini erhalten.");
+        }
 
     } catch (error) {
-        console.error("Ghost Fehler:", error);
-        document.getElementById(loadingId).innerText = "Ghost ist gerade im Tunnel (Verbindungsfehler).";
+        console.error("Ghost Fehler Details:", error);
+        const loadEl = document.getElementById(loadingId);
+        if (loadEl) {
+            loadEl.style.color = "#ff3b30";
+            loadEl.innerText = "Fehler: " + error.message;
+        }
     }
-    container.scrollTop = container.scrollHeight;
-}
 };
 
 PerfLogic.init();
