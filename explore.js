@@ -481,7 +481,7 @@ if(station.e5) elementRef.simPrices.e5 = (Math.floor(station.e5 * 100) / 100).to
         }
     },
 
-    updateTotemUI: function(isOpen, diesel, e10, e5) {
+   updateTotemUI: function(isOpen, diesel, e10, e5) {
         const statusEl = document.getElementById('totem-status');
         if (isOpen) {
             statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> OPEN';
@@ -490,9 +490,12 @@ if(station.e5) elementRef.simPrices.e5 = (Math.floor(station.e5 * 100) / 100).to
             statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
             statusEl.style.color = '#ff3b30';
         }
-        document.getElementById('price-diesel').innerText = diesel ? Number(diesel).toFixed(2) : "-.--";
-        document.getElementById('price-e10').innerText = e10 ? Number(e10).toFixed(2) : "-.--";
-        document.getElementById('price-e5').innerText = e5 ? Number(e5).toFixed(2) : "-.--";
+        
+        // FIX: Auch im Detail-Fenster (Totem) gnadenlos abschneiden statt runden!
+        document.getElementById('price-diesel').innerText = diesel ? (Math.floor(Number(diesel) * 100) / 100).toFixed(2) : "-.--";
+        document.getElementById('price-e10').innerText = e10 ? (Math.floor(Number(e10) * 100) / 100).toFixed(2) : "-.--";
+        document.getElementById('price-e5').innerText = e5 ? (Math.floor(Number(e5) * 100) / 100).toFixed(2) : "-.--";
+        
         this.updateTotemSelectionUI();
     },
 
