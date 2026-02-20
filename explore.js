@@ -192,13 +192,12 @@ const ExploreLogic = {
                                 center: { lat: st.lat, lon: st.lng },
                                 tags: { name: (st.brand ? st.brand + " " : "") + st.name },
                                 realData: st,
-                                simPrices: {
-                                    // Besserer Schutz, falls mal ein Preis fehlt (dann bleibt es bei "-.--")
-                                    e10: (typeof st.e10 === 'number') ? st.e10.toFixed(2) : "-.--",
-                                    e5: (typeof st.e5 === 'number') ? st.e5.toFixed(2) : "-.--",
-                                    diesel: (typeof st.diesel === 'number') ? st.diesel.toFixed(2) : "-.--",
-                                    isOpen: st.isOpen
-                                },
+                            simPrices: {
+    e10: (typeof st.e10 === 'number') ? (Math.floor(st.e10 * 100) / 100).toFixed(2) : "-.--",
+    e5: (typeof st.e5 === 'number') ? (Math.floor(st.e5 * 100) / 100).toFixed(2) : "-.--",
+    diesel: (typeof st.diesel === 'number') ? (Math.floor(st.diesel * 100) / 100).toFixed(2) : "-.--",
+    isOpen: st.isOpen
+},
                                 _tempDist: st.dist
                             };
                         });
@@ -461,9 +460,9 @@ const ExploreLogic = {
                     if(elementRef) {
                         elementRef.realData = station; 
                         elementRef.simPrices.isOpen = station.isOpen; 
-                        if(station.diesel) elementRef.simPrices.diesel = station.diesel.toFixed(2);
-                        if(station.e10) elementRef.simPrices.e10 = station.e10.toFixed(2);
-                        if(station.e5) elementRef.simPrices.e5 = station.e5.toFixed(2);
+                     if(station.diesel) elementRef.simPrices.diesel = (Math.floor(station.diesel * 100) / 100).toFixed(2);
+if(station.e10) elementRef.simPrices.e10 = (Math.floor(station.e10 * 100) / 100).toFixed(2);
+if(station.e5) elementRef.simPrices.e5 = (Math.floor(station.e5 * 100) / 100).toFixed(2);
                     }
                     this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
                     this.redrawGasMarkers(); 
