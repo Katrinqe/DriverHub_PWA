@@ -1333,7 +1333,7 @@ body.ghost-active #ghost-chat-overlay {
 .brand-top-logo {
     width: 190px; /* Hier kannst du es massiv vergrößern (z.B. 160px) */
     height: auto;
-    max-height: 50px;
+    max-height: 190px;
     object-fit: contain;
     opacity: 1; 
 }
