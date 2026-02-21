@@ -178,6 +178,62 @@ window.GarageLogic = {
         const screen = document.getElementById('brand-selector-screen');
         if(screen) screen.classList.remove('hidden');
     },
+    // ==========================================
+    // === NEW: MODEL SELECTOR FLOW           ===
+    // ==========================================
+    openModelSelector: function(brandKey) {
+        const screen = document.getElementById('model-selector-screen');
+        if(!screen) return;
+        
+        // 1. Das Logo oben im Header dynamisch anpassen
+        const logoImg = document.getElementById('model-top-logo');
+        if(logoImg) logoImg.src = brandKey + '.png'; // Lädt automatisch honda.png oder nissan.png
+
+        // 2. Grid leeren
+        const grid = document.getElementById('model-grid-container');
+        if(!grid) return;
+        grid.innerHTML = ''; 
+        
+        // 3. Hier kommt später die Datenbank hin. Für jetzt hartcodiert:
+        let models = [];
+        if(brandKey === 'honda') {
+            models = [
+                { name: "Civic EJ2", file: "car2.glb" },
+                { name: "Civic EK", file: "car3.glb" }
+            ];
+        }
+
+        // 4. Autos als HTML-Cards reinladen
+        models.forEach((mod, idx) => {
+            const delay = (idx * 0.1) + 's';
+            const card = document.createElement('div');
+            card.className = 'model-card';
+            card.style.animationDelay = delay;
+            
+            // Erstmal nur ein Alert, hier kommt später das Studio hin
+            card.onclick = () => { alert('Gehe in Studio mit: ' + mod.name); };
+            
+            // WICHTIG: camera-controls ist hier aus, damit man beim Wischen auf dem Handy nicht aus Versehen das Auto dreht!
+            card.innerHTML = `
+                <div class="model-3d-box">
+                    <model-viewer src="${mod.file}" auto-rotate disable-zoom shadow-intensity="1" interaction-prompt="none" style="width:100%; height:100%;"></model-viewer>
+                </div>
+                <div class="model-name-label">${mod.name}</div>
+            `;
+            grid.appendChild(card);
+        });
+        
+        screen.classList.remove('hidden');
+    },
+
+    closeModelSelector: function() {
+        const screen = document.getElementById('model-selector-screen');
+        if(screen) screen.classList.add('hidden');
+        
+        // Optional: Die 3D-Modelle entladen, um den RAM zu schonen, wenn der Screen zugeht
+        const grid = document.getElementById('model-grid-container');
+        if(grid) grid.innerHTML = '';
+    },
 
     closeBrandSelector: function() {
         const screen = document.getElementById('brand-selector-screen');
