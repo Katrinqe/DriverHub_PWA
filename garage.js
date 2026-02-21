@@ -181,44 +181,81 @@ window.GarageLogic = {
     // ==========================================
     // === NEW: MODEL SELECTOR FLOW           ===
     // ==========================================
-    openModelSelector: function(brandKey) {
+ openModelSelector: function(brandKey) {
         const screen = document.getElementById('model-selector-screen');
         if(!screen) return;
         
-        // 1. Das Logo oben im Header dynamisch anpassen
         const logoImg = document.getElementById('model-top-logo');
-        if(logoImg) logoImg.src = brandKey + '.png'; // Lädt automatisch honda.png oder nissan.png
+        if(logoImg) logoImg.src = brandKey + '.png'; 
 
-        // 2. Grid leeren
         const grid = document.getElementById('model-grid-container');
         if(!grid) return;
         grid.innerHTML = ''; 
         
-        // 3. Hier kommt später die Datenbank hin. Für jetzt hartcodiert:
         let models = [];
         if(brandKey === 'honda') {
+            // Reale Dummy-Daten für den Vibe
             models = [
-                { name: "Civic EJ2", file: "car2.glb" },
-                { name: "Civic EK", file: "car3.glb" }
+                { 
+                    name: "Civic EJ2", file: "car.glb", logo: "civic.png",
+                    year: "1994", weight: 1025, engine: "1.5L D15B7",
+                    ps: 101, nm: 133, pw: 10.1
+                },
+                { 
+                    name: "Civic EK", file: "car3.glb", logo: "civic.png",
+                    year: "1999", weight: 1040, engine: "1.4L D14A4",
+                    ps: 90, nm: 124, pw: 11.5
+                }
             ];
         }
 
-        // 4. Autos als HTML-Cards reinladen
         models.forEach((mod, idx) => {
             const delay = (idx * 0.1) + 's';
             const card = document.createElement('div');
             card.className = 'model-card';
             card.style.animationDelay = delay;
             
-            // Erstmal nur ein Alert, hier kommt später das Studio hin
-            card.onclick = () => { alert('Gehe in Studio mit: ' + mod.name); };
-            
-            // WICHTIG: camera-controls ist hier aus, damit man beim Wischen auf dem Handy nicht aus Versehen das Auto dreht!
+            // Balken-Mathematik (Max-Werte für visuelle Skala)
+            const psPercent = Math.min(100, (mod.ps / 300) * 100); 
+            const nmPercent = Math.min(100, (mod.nm / 400) * 100);
+            // Power-to-Weight (Weniger ist besser. 15kg/ps = 0%, 3kg/ps = 100%)
+            const pwPercent = Math.max(5, 100 - ((mod.pw - 3) / 12) * 100);
+
+            // WICHTIG: camera-controls ist hier EINGESCHALTET! Der Nutzer kann das 3D-Modell in der Card drehen.
             card.innerHTML = `
-                <div class="model-3d-box">
-                    <model-viewer src="${mod.file}" auto-rotate disable-zoom shadow-intensity="1" interaction-prompt="none" style="width:100%; height:100%;"></model-viewer>
+                <div class="model-logo-stage">
+                    <img src="${mod.logo}" alt="${mod.name}">
                 </div>
-                <div class="model-name-label">${mod.name}</div>
+                
+                <div class="model-3d-box">
+                    <model-viewer src="${mod.file}" auto-rotate camera-controls disable-zoom shadow-intensity="1" interaction-prompt="none" style="width:100%; height:100%;"></model-viewer>
+                </div>
+                
+                <div class="model-specs-row">
+                    <div class="model-spec-item"><label>CHASSIS</label><span>${mod.name}</span></div>
+                    <div class="model-spec-item"><label>YEAR</label><span>${mod.year}</span></div>
+                    <div class="model-spec-item"><label>WEIGHT</label><span>${mod.weight} kg</span></div>
+                    <div class="model-spec-item"><label>ENGINE</label><span>${mod.engine}</span></div>
+                </div>
+
+                <div class="stat-bar-wrap">
+                    <div class="stat-bar-header">POWER <span>${mod.ps} PS</span></div>
+                    <div class="stat-bar-track"><div class="stat-bar-fill" style="width: ${psPercent}%;"></div></div>
+                </div>
+                
+                <div class="stat-bar-wrap">
+                    <div class="stat-bar-header">TORQUE <span>${mod.nm} NM</span></div>
+                    <div class="stat-bar-track"><div class="stat-bar-fill" style="width: ${nmPercent}%;"></div></div>
+                </div>
+                
+                <div class="stat-bar-wrap">
+                    <div class="stat-bar-header">POWER-TO-WEIGHT <span>${mod.pw} kg/PS</span></div>
+                    <div class="stat-bar-track"><div class="stat-bar-fill" style="width: ${pwPercent}%; background: linear-gradient(90deg, #0a84ff, #30d158);"></div></div>
+                </div>
+                
+                <button class="btn-choose-model" onclick="alert('Gehe in Studio mit: ${mod.name}')">
+                    CHOOSE MODEL
+                </button>
             `;
             grid.appendChild(card);
         });
