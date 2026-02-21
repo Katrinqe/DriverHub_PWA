@@ -153,7 +153,7 @@ window.GarageLogic = {
         const addBtn = document.createElement('div');
         addBtn.className = 'detail-add-btn';
         addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> ADD ANOTHER CAR';
-        addBtn.onclick = () => { this.openEditor(-1); };
+        addBtn.onclick = () => { this.openBrandSelector(); };
         container.appendChild(addBtn);
     },
 
@@ -169,6 +169,20 @@ window.GarageLogic = {
         this.renderDetailList();
     },
 
+
+
+    // ==========================================
+    // === NEW: BRAND SELECTOR FLOW           ===
+    // ==========================================
+    openBrandSelector: function() {
+        const screen = document.getElementById('brand-selector-screen');
+        if(screen) screen.classList.remove('hidden');
+    },
+
+    closeBrandSelector: function() {
+        const screen = document.getElementById('brand-selector-screen');
+        if(screen) screen.classList.add('hidden');
+    },
     // ==========================================
     // === SECTION 4: CAR EDITOR ===
     // ==========================================
@@ -495,7 +509,7 @@ window.GarageLogic = {
             // CHECK: Haben wir überhaupt ein Auto?
             if(!this.cars || this.cars.length === 0) {
                 if(headerBtn) headerBtn.style.display='none';
-                carCont.innerHTML = `<div onclick="GarageLogic.openEditor(-1)" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;"><div style="font-size:2rem; color:#555; border:2px dashed #444; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;"><i class="fa-solid fa-plus"></i></div><span style="color:#888; font-weight:800; font-size:0.8rem; letter-spacing:1px;">ADD YOUR CAR</span></div>`;
+                carCont.innerHTML = `<div onclick="GarageLogic.openBrandSelector()" style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;"><div style="font-size:2rem; color:#555; border:2px dashed #444; border-radius:50%; width:60px; height:60px; display:flex; align-items:center; justify-content:center; margin-bottom:10px;"><i class="fa-solid fa-plus"></i></div><span style="color:#888; font-weight:800; font-size:0.8rem; letter-spacing:1px;">ADD YOUR CAR</span></div>`;
             } else {
                 if(headerBtn) headerBtn.style.display='flex';
                 // Safety Fallback für UI
