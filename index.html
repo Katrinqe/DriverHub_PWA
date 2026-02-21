@@ -999,21 +999,23 @@
 </div>
     
 <div id="brand-selector-screen" class="hidden">
+        <div class="brand-top-fade"></div>
+        
         <div class="brand-header">
             <button class="brand-back-btn" onclick="GarageLogic.closeBrandSelector()">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <h2>CHOOSE BRAND</h2>
+            <img src="logo.png" alt="DriverHub" class="brand-top-logo">
             <div style="width: 45px;"></div> </div>
         
         <div class="brand-grid">
-            <div class="brand-card" onclick="alert('Nissan ausgewählt - Modelle kommen bald!')">
-                <div class="brand-logo-text">NISSAN</div>
-                </div>
+            <div class="brand-card" style="animation-delay: 0.1s;" onclick="alert('Nissan ausgewählt')">
+                <img src="nissan.png" alt="Nissan" class="brand-logo-img">
+            </div>
             
-            <div class="brand-card" onclick="alert('Honda ausgewählt - Modelle kommen bald!')">
-                <div class="brand-logo-text">HONDA</div>
-                </div>
+            <div class="brand-card" style="animation-delay: 0.2s;" onclick="alert('Honda ausgewählt')">
+                <img src="honda.png" alt="Honda" class="brand-logo-img">
+            </div>
         </div>
     </div>
 
