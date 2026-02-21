@@ -1331,7 +1331,7 @@ body.ghost-active #ghost-chat-overlay {
 
 /* FIX: Logo über die Breite (width) gezwungen, damit es dominant wird */
 .brand-top-logo {
-    width: 140px; /* Hier kannst du es massiv vergrößern (z.B. 160px) */
+    width: 190px; /* Hier kannst du es massiv vergrößern (z.B. 160px) */
     height: auto;
     max-height: 50px;
     object-fit: contain;
