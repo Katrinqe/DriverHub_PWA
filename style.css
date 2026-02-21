@@ -1298,7 +1298,8 @@ body.ghost-active #ghost-chat-overlay {
 #brand-selector-screen {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: #09090b; /* Extrem tiefes Schwarz/Grau */
+    /* FIX: Leichter radialer Glow in der Mitte, tiefschwarz an den Rändern */
+    background: radial-gradient(circle at center 30%, #1c1c1e 0%, #050505 80%);
     z-index: 10000;
     display: flex;
     flex-direction: column;
@@ -1308,13 +1309,13 @@ body.ghost-active #ghost-chat-overlay {
     display: none !important;
 }
 
-/* Der Fade-Effekt oben - FIX: Höher und weicher */
+/* FIX: Jetzt ist der Fade sichtbar, weil der Hintergrund nicht mehr 100% flach schwarz ist */
 .brand-top-fade {
     position: absolute;
     top: 0; left: 0; width: 100%; 
-    height: 160px; /* Viel höher für einen weicheren Übergang */
-    background: linear-gradient(to bottom, rgba(9,9,11,1) 20%, rgba(9,9,11,0) 100%);
-    z-index: 1; /* Liegt jetzt sicher über dem Hintergrund */
+    height: 120px; 
+    background: linear-gradient(to bottom, #000000 10%, rgba(0,0,0,0) 100%);
+    z-index: 1; 
     pointer-events: none;
 }
 
@@ -1322,16 +1323,19 @@ body.ghost-active #ghost-chat-overlay {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 40px 20px 20px 20px; /* Mehr Padding oben wegen der Statusleiste */
+    /* FIX: env(safe-area) nutzt den echten iPhone-Notch-Abstand, Cards rutschen hoch */
+    padding: env(safe-area-inset-top, 30px) 20px 0px 20px; 
     position: relative;
-    z-index: 10; /* Bleibt über dem Fade */
+    z-index: 10; 
 }
 
-/* Das App-Logo in der Mitte - FIX: Deutlich größer */
+/* FIX: Logo über die Breite (width) gezwungen, damit es dominant wird */
 .brand-top-logo {
-    height: 55px; /* Das ist jetzt eine ordentliche Größe */
+    width: 140px; /* Hier kannst du es massiv vergrößern (z.B. 160px) */
+    height: auto;
+    max-height: 50px;
     object-fit: contain;
-    opacity: 1; /* Volle Deckkraft */
+    opacity: 1; 
 }
 
 /* Cleaner, simpler Pfeil */
@@ -1340,7 +1344,7 @@ body.ghost-active #ghost-chat-overlay {
     border: none;
     color: #fff;
     width: 45px; height: 45px;
-    font-size: 1.6rem; /* Bisschen größer */
+    font-size: 1.6rem; 
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1354,13 +1358,13 @@ body.ghost-active #ghost-chat-overlay {
     color: #888; 
 }
 
-/* Das Grid für die Autos */
+/* Das Grid für die Autos - FIX: Margin weg, Padding reduziert */
 .brand-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    padding: 20px;
-    margin-top: 20px;
+    padding: 15px 20px; /* Dichter an den Header gerückt */
+    margin-top: 0; /* Unnötiger Abstand entfernt */
     position: relative;
     z-index: 10;
 }
@@ -1378,10 +1382,9 @@ body.ghost-active #ghost-chat-overlay {
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     transition: all 0.2s ease;
     
-    /* Animations-Startwerte */
     opacity: 0;
-    transform: translateY(40px);
-    animation: slideInBrand 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transform: translateY(30px);
+    animation: slideInBrand 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .brand-card:active {
