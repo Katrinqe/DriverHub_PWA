@@ -1414,3 +1414,73 @@ body.ghost-active #ghost-chat-overlay {
         transform: translateY(0);
     }
 }
+
+/* ========================================== */
+/* === MODEL SELECTOR (3D CARDS)           == */
+/* ========================================== */
+#model-selector-screen {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center 30%, #1c1c1e 0%, #050505 80%);
+    z-index: 10001; /* Liegt EINE Stufe über dem Brand-Selector! */
+    display: flex;
+    flex-direction: column;
+}
+
+#model-selector-screen.hidden {
+    display: none !important;
+}
+
+.model-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 15px 20px;
+    position: relative;
+    z-index: 10;
+    overflow-y: auto; /* Falls es mal 10 Hondas werden */
+}
+
+/* Die Karte für das einzelne Auto */
+.model-card {
+    background: linear-gradient(145deg, rgba(30,30,32,0.6), rgba(15,15,18,0.8));
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    height: 170px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 5px;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    
+    /* Gleiche Slide-In Animation wie beim Brand-Screen */
+    opacity: 0;
+    transform: translateY(30px);
+    animation: slideInBrand 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.model-card:active {
+    transform: scale(0.95) translateY(0) !important;
+    border-color: rgba(255,255,255,0.2);
+}
+
+/* Die Box, in der das 3D-Modell rotiert */
+.model-3d-box {
+    width: 100%;
+    height: 110px;
+    position: relative;
+}
+
+/* Der Text unter dem Auto */
+.model-name-label {
+    color: #fff;
+    font-weight: 900;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 5px;
+    opacity: 0.8;
+}
