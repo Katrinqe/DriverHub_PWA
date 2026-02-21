@@ -1013,12 +1013,24 @@
                 <img src="nissan.png" alt="Nissan" class="brand-logo-img">
             </div>
             
-            <div class="brand-card" style="animation-delay: 0.2s;" onclick="alert('Honda ausgewählt')">
+            <div class="brand-card" style="animation-delay: 0.2s;" onclick="GarageLogic.openModelSelector('honda')">
                 <img src="honda.png" alt="Honda" class="brand-logo-img">
             </div>
         </div>
     </div>
-
+<div id="model-selector-screen" class="hidden">
+        <div class="brand-top-fade"></div>
+        
+        <div class="brand-header">
+            <button class="brand-back-btn" onclick="GarageLogic.closeModelSelector()">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <img src="" id="model-top-logo" alt="Brand Logo" class="brand-top-logo">
+            <div style="width: 45px;"></div> 
+        </div>
+        
+        <div class="model-grid" id="model-grid-container"></div>
+    </div>
     
 </body>
 </html>
