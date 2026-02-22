@@ -1571,7 +1571,7 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================== */
-/* === TUNING STUDIO (AAA EXPERIENCE)      == */
+/* === TUNING STUDIO (ULTIMATE PRO VIBE)   == */
 /* ========================================== */
 #studio-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -1580,41 +1580,36 @@ body.ghost-active #ghost-chat-overlay {
 }
 #studio-screen.hidden { display: none !important; }
 
-/* Der Deckenspot-Effekt */
+/* FIX: Top Fade - Er geht jetzt von solidem Schwarz (#050505) in Transparent über */
+.studio-top-fade {
+    position: absolute; top: 0; left: 0; width: 100%; height: 150px;
+    background: linear-gradient(to bottom, #050505 10%, transparent 100%);
+    z-index: 11; pointer-events: none; /* z-index erhöht, damit er über dem Licht liegt */
+}
+
+/* Das Studio Licht */
 .studio-ambient-light {
     position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
     width: 300px; height: 300px;
-    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
+    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
     z-index: 1; pointer-events: none;
 }
 
 .studio-header {
     display: flex; justify-content: space-between; align-items: center;
     padding: env(safe-area-inset-top, 30px) 20px 10px 20px;
-    position: relative; z-index: 10;
+    position: relative; z-index: 12;
 }
 
 .studio-dominant-logo {
     height: 60px; width: auto; max-width: 180px; object-fit: contain;
-    /* Leuchtet leicht im Deckenlicht */
-    filter: drop-shadow(0 0 15px rgba(255,255,255,0.3)); 
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.25)); 
 }
 
 /* Main Stage */
-.studio-stage {
-    flex: 1; width: 100%; position: relative;
-    margin-top: -30px; z-index: 5;
-}
+.studio-stage { flex: 1; width: 100%; position: relative; margin-top: -30px; z-index: 5; }
 
-/* Subtiler Schatten unter dem Auto */
-.car-floor-shadow {
-    position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%);
-    width: 70%; height: 20px;
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 70%);
-    z-index: -1; pointer-events: none;
-}
-
-/* Das Glas-Panel */
+/* Das Glas-Panel unten */
 .studio-bottom-panel {
     background: rgba(15, 15, 18, 0.65);
     backdrop-filter: blur(30px) saturate(150%);
@@ -1628,74 +1623,88 @@ body.ghost-active #ghost-chat-overlay {
 
 /* === MAGIC NAVBAR === */
 .studio-nav-pro {
-    display: flex; position: relative; margin-bottom: 30px;
-    background: rgba(0,0,0,0.4); border-radius: 20px; padding: 5px;
+    display: flex; position: relative; margin-bottom: 25px;
+    background: rgba(255,255,255,0.03); border-radius: 20px; padding: 5px;
     border: 1px solid rgba(255,255,255,0.05);
 }
 
 .pro-nav-item {
     flex: 1; text-align: center; padding: 12px 0;
     color: #666; font-size: 0.75rem; font-weight: 900; letter-spacing: 1px;
-    position: relative; z-index: 2; cursor: pointer;
-    transition: color 0.3s;
+    position: relative; z-index: 2; cursor: pointer; transition: color 0.3s;
 }
-
 .pro-nav-item.active { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
 
-/* Die Lila Neon-Pille, die slidet */
+/* FIX: Die Lila Pille ist jetzt echtes Glas mit Glow! */
 .nav-magic-pill {
     position: absolute; top: 5px; left: 5px;
-    height: calc(100% - 10px); width: calc(25% - 2.5px); /* 25% weil 4 Items */
-    background: linear-gradient(135deg, rgba(191, 90, 242, 0.8), rgba(10, 132, 255, 0.8));
+    height: calc(100% - 10px); width: calc(25% - 2.5px);
+    background: rgba(255, 255, 255, 0.1); /* Glas */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 15px; z-index: 1;
     transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-    box-shadow: 0 0 15px rgba(191, 90, 242, 0.5);
+    box-shadow: 0 0 20px rgba(191, 90, 242, 0.4), inset 0 0 10px rgba(191, 90, 242, 0.2); /* Dezenter Lila Glow */
 }
 
-/* === PRO SLIDERS === */
+/* Tab Content */
 .studio-tab-content { display: none; flex: 1; }
 .studio-tab-content.active { display: block; animation: fadeInTab 0.3s ease; }
-
 @keyframes fadeInTab { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-.pro-slider-group { margin-bottom: 25px; }
-.slider-header {
-    display: flex; justify-content: space-between;
-    font-size: 0.7rem; color: #aaa; font-weight: 800; letter-spacing: 1px; margin-bottom: 12px;
-}
-#hue-val-disp { color: #bf5af2; font-family: monospace; font-size: 0.8rem; }
+/* === DER ECHTE FARBKREIS (WHEEL) === */
+.paint-pro-area { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
 
-/* Custom Range Sliders */
-.neon-slider {
-    -webkit-appearance: none; width: 100%; height: 12px;
-    border-radius: 6px; outline: none; padding: 0; margin: 0;
+/* Das Rad */
+.color-wheel-container { position: relative; width: 160px; height: 160px; touch-action: none; flex-shrink: 0; }
+.color-wheel { 
+    width: 100%; height: 100%; border-radius: 50%; 
+    background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); 
+    mask-image: radial-gradient(transparent 52%, black 53%); 
+    -webkit-mask-image: radial-gradient(transparent 52%, black 53%); 
 }
-.neon-slider::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none;
-    width: 26px; height: 26px; border-radius: 50%;
-    background: #fff; cursor: pointer;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5), inset 0 0 0 4px rgba(0,0,0,0.1);
-    border: 2px solid rgba(255,255,255,0.8);
+.wheel-thumb { 
+    position: absolute; width: 26px; height: 26px; border-radius: 50%; 
+    background: transparent; border: 3px solid #fff; box-shadow: 0 0 15px rgba(0,0,0,0.8); 
+    top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; 
 }
 
-/* Der Regenbogen! */
-.slider-hue {
-    background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
+/* Das Innere des Rades (Live Farbe + HEX) */
+.wheel-center-display { 
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+    width: 76px; height: 76px; border-radius: 50%; 
+    border: 2px solid rgba(255,255,255,0.1); box-shadow: inset 0 5px 15px rgba(0,0,0,0.5); 
+    display:flex; align-items:center; justify-content:center; flex-direction:column; background: #bf5af2;
 }
-/* Die Helligkeit */
-.slider-lightness {
-    background: linear-gradient(to right, #111 0%, #888 50%, #eee 100%);
-    border: 1px solid rgba(255,255,255,0.1);
+.wheel-center-display span { font-size: 0.65rem; color: #fff; font-family: monospace; font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 5px; }
+
+/* Der vertikale Helligkeits-Slider daneben */
+.depth-slider-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 160px; width: 40px; position: relative;}
+.depth-label { font-size: 0.6rem; color: #888; font-weight: bold; position: absolute; top: -15px; letter-spacing: 1px;}
+.vertical-slider { 
+    -webkit-appearance: none; width: 130px; height: 12px; 
+    background: linear-gradient(to right, #111, #888, #fff); 
+    border-radius: 6px; transform: rotate(-90deg); transform-origin: center; outline: none; border: 1px solid rgba(255,255,255,0.1);
+}
+.vertical-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5); border: 2px solid rgba(0,0,0,0.2);
 }
 
-/* Buttons */
-.finish-btn-grid { display: flex; gap: 10px; }
-.finish-btn {
-    flex: 1; padding: 14px; background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.05); color: #888; border-radius: 12px;
-    font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.2s;
+/* === SEGMENTIERTER FINISH SLIDER === */
+.finish-segmented { 
+    position: relative; display: flex; background: rgba(0,0,0,0.4); 
+    border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); padding: 5px; margin-top: 10px; 
 }
-.finish-btn.active {
-    background: rgba(255,255,255,0.1); border-color: #fff; color: #fff;
-    box-shadow: 0 5px 15px rgba(255,255,255,0.1);
+.finish-pill { 
+    position: absolute; top: 5px; left: 5px; height: calc(100% - 10px); width: calc(33.33% - 3.33px); 
+    background: rgba(255,255,255,0.15); border-radius: 10px; z-index: 1; 
+    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); 
+    border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
 }
+.finish-opt { 
+    flex: 1; text-align: center; padding: 12px 0; color: #888; 
+    font-size: 0.75rem; font-weight: 800; z-index: 2; cursor: pointer; transition: color 0.3s; 
+}
+.finish-opt.active { color: #fff; }
