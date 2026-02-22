@@ -295,7 +295,8 @@ window.GarageLogic = {
         
         // Reset Tabs und UI
         this.switchStudioTab('paint', 0, document.querySelector('.pro-nav-item:first-child'));
-        this.setCarFinish('glossy', document.querySelector('.finish-btn:first-child'), true);
+       // So muss der Aufruf in openStudio aussehen:
+this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
         
         
         // Farbe init
@@ -416,12 +417,14 @@ window.GarageLogic = {
     },
 
     // NEU: Segmentierter Slider für Finish
-    setCarFinish: function(type, index, btnElement, skipUIUpdate) {
+setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         this.currentStudioSetup.finish = type;
 
-        if(!skipUIUpdate && btnElement) {
+        // Wir prüfen hier ganz genau: Ist ein btnElement da? 
+        if(!skipUIUpdate && btnElement && btnElement.classList) {
             const pill = document.getElementById('finish-pill');
             if(pill) pill.style.transform = `translateX(${index * 100}%)`;
+            
             document.querySelectorAll('.finish-opt').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
         }
