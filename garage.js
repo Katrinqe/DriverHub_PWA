@@ -414,7 +414,7 @@ window.GarageLogic = {
             }
         }
     }
-}; // HIER ENDET GARAGE LOGIC SAUBER!
+}, // HIER ENDET GARAGE LOGIC SAUBER!
 
 
     // ==========================================
