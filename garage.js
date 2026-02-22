@@ -405,7 +405,7 @@ window.GarageLogic = {
             metallic = 0.0; roughness = 0.8; 
         }
 
-        const materials = viewer.model.materials;
+       const materials = viewer.model.materials;
         for (let i = 0; i < materials.length; i++) {
             const matName = materials[i].name ? materials[i].name.toLowerCase() : "";
             if (matName.includes("paint") || matName.includes("body") || matName.includes("carrosserie") || matName.includes("color") || i===0) {
@@ -413,9 +413,7 @@ window.GarageLogic = {
                 materials[i].pbrMetallicRoughness.setRoughnessFactor(roughness);
             }
         }
-    }
-}, // HIER ENDET GARAGE LOGIC SAUBER!
-
+    }, // <--- HIER: Das ist das wichtige Komma, das die Funktion sauber abschließt!
 
     // ==========================================
     // === SECTION 4: CAR EDITOR ===
