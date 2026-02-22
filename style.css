@@ -1580,16 +1580,7 @@ body.ghost-active #ghost-chat-overlay {
 }
 #studio-screen.hidden { display: none !important; }
 
-/* FIX: Top Fade - Er geht jetzt von solidem Schwarz (#050505) in Transparent über */
-.studio-top-fade {
-    position: absolute; top: 0; left: 0; width: 100%; height: 160px;
-    /* Zwingt den Fade über alles andere */
-    background: linear-gradient(to bottom, #050505 20%, transparent 100%) !important;
-    z-index: 9999 !important; 
-    pointer-events: none;
-}
-
-/* Das Studio Licht */
+/* Das Studio Licht für das Logo */
 .studio-ambient-light {
     position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
     width: 300px; height: 300px;
@@ -1605,77 +1596,69 @@ body.ghost-active #ghost-chat-overlay {
 
 .studio-dominant-logo {
     height: 60px; width: auto; max-width: 180px; object-fit: contain;
-    filter: drop-shadow(0 0 10px rgba(255,255,255,0.25)); 
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); 
 }
 
-/* Main Stage */
-.studio-stage { flex: 1; width: 100%; position: relative; margin-top: -30px; z-index: 5; }
+/* FIX 1: DER FADE! Eine CSS-Maske lässt das Auto sanft oben verschwinden */
+.studio-stage { 
+    flex: 1; width: 100%; position: relative; margin-top: -30px; z-index: 5; 
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+}
 
-/* Das Glas-Panel unten */
+/* FIX 2: PANEL HÖHE - Kein Abschneiden mehr! */
 .studio-bottom-panel {
-    background: rgba(15, 15, 18, 0.65);
-    backdrop-filter: blur(30px) saturate(150%);
-    -webkit-backdrop-filter: blur(30px) saturate(150%);
-    border-top: 1px solid rgba(255,255,255,0.1);
-    height: 420px; padding: 25px 25px 30px 25px;
+    background: rgba(15, 15, 18, 0.7);
+    backdrop-filter: blur(40px) saturate(150%);
+    -webkit-backdrop-filter: blur(40px) saturate(150%);
+    border-top: 1px solid rgba(255,255,255,0.15);
+    height: auto; min-height: 400px; 
+    /* Wichtig: Padding unten dynamisch für iPhones */
+    padding: 25px 25px calc(env(safe-area-inset-bottom, 20px) + 20px) 25px;
     border-top-left-radius: 35px; border-top-right-radius: 35px;
     box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
     display: flex; flex-direction: column;
 }
 
-/* === MAGIC NAVBAR === */
+/* === ECHTER GLASMORPHISMUS NAVBAR === */
 .studio-nav-pro {
     display: flex; position: relative; margin-bottom: 25px;
-    background: rgba(255,255,255,0.03); border-radius: 20px; padding: 5px;
-    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(30, 30, 35, 0.5); border-radius: 16px; padding: 6px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
 }
 
 .pro-nav-item {
     flex: 1; text-align: center; padding: 12px 0;
-    color: #666; font-size: 0.75rem; font-weight: 900; letter-spacing: 1px;
+    color: #777; font-size: 0.75rem; font-weight: 900; letter-spacing: 1px;
     position: relative; z-index: 2; cursor: pointer; transition: color 0.3s;
 }
-.pro-nav-item.active { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+.pro-nav-item.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
 
-/* FIX: Die Lila Pille ist jetzt echtes Glas mit Glow! */
+/* Die Lila Pille - Apple VisionOS Style */
 .nav-magic-pill {
-    position: absolute; top: 4px; left: 4px;
-    height: calc(100% - 8px); width: calc(25% - 2px);
-    background: rgba(255, 255, 255, 0.1); 
-    backdrop-filter: blur(15px) saturate(180%);
-    -webkit-backdrop-filter: blur(15px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 14px; z-index: 1;
+    position: absolute; top: 6px; left: 6px;
+    height: calc(100% - 12px); width: calc(25% - 3px);
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05)); 
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 12px; z-index: 1;
     transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1);
-    /* Der edle Lila Glow */
-    box-shadow: 0 0 20px rgba(191, 90, 242, 0.4), inset 0 0 10px rgba(255,255,255,0.1);
+    box-shadow: 0 4px 15px rgba(191, 90, 242, 0.6), inset 0 1px 1px rgba(255,255,255,0.6);
 }
+
 /* Tab Content */
 .studio-tab-content { display: none; flex: 1; }
 .studio-tab-content.active { display: block; animation: fadeInTab 0.3s ease; }
 @keyframes fadeInTab { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* === DER ECHTE FARBKREIS (WHEEL) === */
-/* === DER ECHTE FARBKREIS (WHEEL) === */
+/* === FIX 3: LAYOUT KREIS LINKS, SLIDER RECHTS === */
 .paint-pro-area { 
-    display: flex; 
-    flex-direction: column; /* Stapelt Rad und Slider sauber untereinander */
-    align-items: center; 
-    gap: 35px; 
-    margin-bottom: 30px; 
-    width: 100%;
+    display: flex; flex-direction: row; align-items: center; justify-content: center; 
+    gap: 40px; margin-bottom: 20px; height: 160px;
 }
 
-/* Das Rad fest im Griff */
-.color-wheel-container { 
-    position: relative; 
-    width: 180px; 
-    height: 180px; 
-    touch-action: none; 
-    flex-shrink: 0;
-    margin: 0 auto; /* Zentrierung erzwingen */
-}
-
+/* Das Rad */
+.color-wheel-container { position: relative; width: 160px; height: 160px; touch-action: none; flex-shrink: 0; }
 .color-wheel { 
     width: 100%; height: 100%; border-radius: 50%; 
     background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); 
@@ -1683,78 +1666,67 @@ body.ghost-active #ghost-chat-overlay {
     -webkit-mask-image: radial-gradient(transparent 52%, black 53%); 
 }
 
+/* Der Cursor (Jetzt immer sichtbar) */
+.wheel-thumb { 
+    position: absolute; width: 30px; height: 30px; border-radius: 50%; 
+    background: transparent; border: 4px solid #fff; box-shadow: 0 0 15px rgba(0,0,0,0.8); 
+    top: 50%; left: 50%; transform: translate(-50%, -50%); 
+    pointer-events: none; z-index: 10; 
+}
+
 /* Das Innere des Rades */
 .wheel-center-display { 
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-    width: 85px; height: 85px; border-radius: 50%; 
-    border: 1px solid rgba(255,255,255,0.2); 
-    box-shadow: inset 0 5px 15px rgba(0,0,0,0.4); 
+    width: 76px; height: 76px; border-radius: 50%; 
+    border: 2px solid rgba(255,255,255,0.2); box-shadow: inset 0 5px 15px rgba(0,0,0,0.5); 
     display:flex; align-items:center; justify-content:center;
-    transition: background 0.2s ease;
 }
-
 .wheel-center-display span { 
-    font-size: 0.7rem; color: #fff; font-family: monospace; font-weight: bold; 
-    background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; 
-    backdrop-filter: blur(4px);
+    font-size: 0.65rem; color: #fff; font-family: monospace; font-weight: bold; 
+    background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 6px; backdrop-filter: blur(5px);
 }
 
-/* === DER DYNAMISCHE DEPTH SLIDER (HORIZONTAL) === */
+/* === FIX 4: DER FETTE, BREITE SLIDER === */
 .depth-slider-container { 
-    width: 100%; 
-    max-width: 320px; /* Begrenzt die Breite auf großen Bildschirmen */
+    position: relative; height: 160px; width: 40px; 
+    display: flex; align-items: center; justify-content: center;
 }
 
-.slider-header {
-    display: flex; justify-content: space-between;
-    font-size: 0.65rem; color: #888; font-weight: 800; letter-spacing: 1px; margin-bottom: 10px;
-}
-
-/* FIX: Nur noch EINE Definition für den Slider */
 .vertical-slider { 
     -webkit-appearance: none; 
-    width: 100%; 
-    height: 10px; 
-    background: #222; /* Wird per JS dynamisch gefärbt */
-    border-radius: 20px; 
-    outline: none; 
-    border: 1px solid rgba(255,255,255,0.1);
-    margin: 10px 0;
+    width: 160px; /* Die tatsächliche HÖHE durch die Rotation */
+    height: 28px; /* Die DICKE des Sliders */
+    background: #222; border-radius: 14px; outline: none; 
+    transform: rotate(-90deg); transform-origin: center;
+    border: 2px solid rgba(255,255,255,0.15);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
 }
-
 .vertical-slider::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    -webkit-appearance: none; width: 34px; height: 34px; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.6); border: 3px solid rgba(0,0,0,0.2);
 }
 
-/* === PAINT FINISH SLIDER (PREMIUM GLAS) === */
+/* === PAINT FINISH SLIDER (PREMIUM) === */
 .finish-segmented { 
-    background: rgba(0, 0, 0, 0.4); 
-    border-radius: 20px; 
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 5px; 
-    display: flex; 
-    position: relative;
-    margin-top: 5px;
+    background: rgba(30, 30, 35, 0.5); 
+    border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 5px; display: flex; position: relative; margin-top: 8px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
 }
 
 .finish-pill { 
     position: absolute; top: 5px; left: 5px; 
     height: calc(100% - 10px); width: calc(33.33% - 3.33px); 
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(15px) saturate(180%);
-    -webkit-backdrop-filter: blur(15px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 15px; z-index: 1; 
-    transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1); 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 12px; z-index: 1; 
+    transition: transform 0.3s cubic-bezier(0.2, 1, 0.3, 1); 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 
 .finish-opt { 
-    flex: 1; text-align: center; padding: 14px 0; color: #666; 
+    flex: 1; text-align: center; padding: 14px 0; color: #777; 
     font-size: 0.75rem; font-weight: 900; z-index: 2; cursor: pointer; transition: all 0.3s; 
 }
-.finish-opt.active { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.3); }
+.finish-opt.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.6); }
