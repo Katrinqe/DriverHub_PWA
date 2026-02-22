@@ -272,20 +272,28 @@ window.GarageLogic = {
         if(grid) grid.innerHTML = '';
     },
 
+   // ==========================================
+    // === NEW: TUNING STUDIO (PRO EDITOR)    ===
     // ==========================================
-    // === NEW: TUNING STUDIO (EDITOR)        ===
-    // ==========================================
+    
+    // Temporärer Speicher für das aktuelle Tuning
+    currentStudioSetup: { color: '#bf5af2', finish: 'glossy' },
+
     openStudio: function(brandKey, modelLogo, glbFile) {
         const screen = document.getElementById('studio-screen');
         if(!screen) return;
         
-        // Logos setzen
-        document.getElementById('studio-brand-logo').src = brandKey + '.png';
+        // Logo setzen (Brand Logo ist raus!)
         document.getElementById('studio-model-logo').src = modelLogo;
         
         // 3D Modell laden
         const viewer = document.getElementById('studio-model-viewer');
         viewer.src = glbFile;
+        
+        // Reset auf Paint Tab
+        this.switchStudioTab('paint', document.querySelector('.studio-nav-item:first-child'));
+        // Reset Finish UI
+        this.setCarFinish('glossy', document.querySelector('.finish-btn:first-child'), true);
         
         screen.classList.remove('hidden');
     },
@@ -293,44 +301,102 @@ window.GarageLogic = {
     closeStudio: function() {
         const screen = document.getElementById('studio-screen');
         if(screen) screen.classList.add('hidden');
-        // RAM leeren
-        document.getElementById('studio-model-viewer').src = '';
+        document.getElementById('studio-model-viewer').src = ''; // RAM leeren
     },
 
-    changeCarColor: function(hexColor) {
+    // Tab Switcher Logik
+    switchStudioTab: function(tabId, btnElement) {
+        // Nav Buttons resetten
+        document.querySelectorAll('.studio-nav-item').forEach(el => el.classList.remove('active'));
+        btnElement.classList.add('active');
+        
+        // Content verstecken und richtigen zeigen
+        document.querySelectorAll('.studio-tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+    },
+
+    // === PAINT LOGIC ===
+
+    // Wird aufgerufen, wenn man am Color Picker dreht
+    handleColorInput: function(hexValue) {
+        // Update HEX Input Feld
+        document.getElementById('studio-hex-input').value = hexValue.substring(1).toUpperCase();
+        this.applyCarColor(hexValue);
+    },
+
+    // Wird aufgerufen, wenn man einen HEX Code eintippt
+    handleHexInput: function(hexValue) {
+        // Validierung: Muss 6 Zeichen lang sein
+        if(hexValue.length === 6 && /^[0-9A-F]{6}$/i.test(hexValue)) {
+            const fullHex = '#' + hexValue;
+            // Update Color Picker
+            document.getElementById('studio-color-picker').value = fullHex;
+            this.applyCarColor(fullHex);
+        }
+    },
+
+    // Die Kern-Funktion, die die Farbe auf das 3D-Modell anwendet
+    applyCarColor: function(hexColor) {
+        this.currentStudioSetup.color = hexColor;
         const viewer = document.getElementById('studio-model-viewer');
         if(!viewer || !viewer.model) return;
 
-        // HEX (#ff0000) in RGB umwandeln (0.0 bis 1.0)
+        // HEX zu Linear RGB umrechnen
         let r = parseInt(hexColor.slice(1, 3), 16) / 255;
         let g = parseInt(hexColor.slice(3, 5), 16) / 255;
         let b = parseInt(hexColor.slice(5, 7), 16) / 255;
+        // WICHTIG: Für PBR Materials muss man sRGB zu Linear RGB konvertieren, sonst sehen Farben ausgewaschen aus
+        r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+        g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+        b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
         const colorArray = [r, g, b, 1.0];
 
-        // Wir loopen durch alle Materialien des 3D Modells.
-        // Ein sauberes Modell hat den Lack meistens auf Index 0 oder der Name enthält "paint"/"body".
         const materials = viewer.model.materials;
-        let painted = false;
-
         for (let i = 0; i < materials.length; i++) {
             const matName = materials[i].name ? materials[i].name.toLowerCase() : "";
-            // Sucht nach typischen Namen für Autolack
-            if (matName.includes("paint") || matName.includes("body") || matName.includes("carrosserie") || matName.includes("color")) {
+            if (matName.includes("paint") || matName.includes("body") || matName.includes("carrosserie") || matName.includes("color") || i===0) {
                 materials[i].pbrMetallicRoughness.setBaseColorFactor(colorArray);
-                painted = true;
             }
         }
+    },
 
-        // Fallback: Wenn das 3D-Modell schlecht benannt ist, färben wir einfach das allererste Material (Index 0), das ist zu 90% der Lack.
-        if (!painted && materials.length > 0) {
-            materials[0].pbrMetallicRoughness.setBaseColorFactor(colorArray);
+    // Die Magie für Matt / Metallic / Glossy
+    setCarFinish: function(type, btnElement, skipUIUpdate) {
+        this.currentStudioSetup.finish = type;
+
+        // UI Update (Buttons)
+        if(!skipUIUpdate && btnElement) {
+            document.querySelectorAll('.finish-btn').forEach(btn => btn.classList.remove('active'));
+            btnElement.classList.add('active');
         }
-    },
 
-    closeBrandSelector: function() {
-        const screen = document.getElementById('brand-selector-screen');
-        if(screen) screen.classList.add('hidden');
-    },
+        const viewer = document.getElementById('studio-model-viewer');
+        if(!viewer || !viewer.model) return;
+
+        // PBR Werte definieren (Metallic-Faktor & Rauheits-Faktor)
+        let metallic = 0.0;
+        let roughness = 0.5;
+
+        if(type === 'glossy') {
+            metallic = 0.4; roughness = 0.1; // Standard Autolack
+        } else if (type === 'metallic') {
+            metallic = 0.9; roughness = 0.15; // Stark spiegelndes Metall
+        } else if (type === 'matt') {
+            metallic = 0.0; roughness = 0.85; // Stumpf, kaum Reflexionen
+        }
+
+        const materials = viewer.model.materials;
+        for (let i = 0; i < materials.length; i++) {
+            const matName = materials[i].name ? materials[i].name.toLowerCase() : "";
+            if (matName.includes("paint") || matName.includes("body") || matName.includes("carrosserie") || matName.includes("color") || i===0) {
+                // Hier passiert die Magie:
+                materials[i].pbrMetallicRoughness.setMetallicFactor(metallic);
+                materials[i].pbrMetallicRoughness.setRoughnessFactor(roughness);
+            }
+        }
+    }
+
+}; // END GarageLogic
     // ==========================================
     // === SECTION 4: CAR EDITOR ===
     // ==========================================
