@@ -403,9 +403,9 @@ updateProColor: function() {
         document.getElementById('wheel-center-bg').style.background = hexStr;
 
         // FIX: Den iOS-Balken über CSS-Variablen mit dem Gradienten füttern!
-        const slider = document.getElementById('pro-light');
-        const gradient = `linear-gradient(to right, hsl(${hue}, 80%, 10%), hsl(${hue}, 85%, 50%), hsl(${hue}, 80%, 90%))`;
-        slider.style.setProperty('--track-bg', gradient);
+       const slider = document.getElementById('pro-light');
+    const gradient = `linear-gradient(to right, hsl(${hue}, 80%, 10%), hsl(${hue}, 85%, 50%), hsl(${hue}, 80%, 90%))`;
+    slider.style.setProperty('--track-bg', gradient);
 
         this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
     },
