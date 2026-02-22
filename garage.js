@@ -332,13 +332,20 @@ this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
    // === DIE NEUE PRO FARB LOGIK (COLOR WHEEL) ===
 
     // Wird einmal aufgerufen, wenn das Studio öffnet
+   // === DIE NEUE PRO FARB LOGIK (COLOR WHEEL) ===
     initColorWheel: function() {
         const wrapper = document.getElementById('color-wheel-wrapper');
         const thumb = document.getElementById('wheel-thumb');
         if(!wrapper || !thumb) return;
 
         let isDragging = false;
-        const ringOffset = 62; // Abstand der Kugel vom Zentrum
+        const ringOffset = 62; 
+
+        // FIX: Den Cursor beim Start sofort sichtbar auf den Kreis legen!
+        let initialAngle = (this.currentStudioSetup.h - 90) * (Math.PI / 180);
+        let initialTx = ringOffset * Math.cos(initialAngle);
+        let initialTy = ringOffset * Math.sin(initialAngle);
+        thumb.style.transform = `translate(calc(-50% + ${initialTx}px), calc(-50% + ${initialTy}px))`;
 
         const updateWheel = (e) => {
             const rect = wrapper.getBoundingClientRect();
@@ -352,12 +359,10 @@ this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
             let dy = clientY - cy;
             let angle = Math.atan2(dy, dx);
             
-            // Kugel-Position berechnen
             let tx = ringOffset * Math.cos(angle);
             let ty = ringOffset * Math.sin(angle);
             thumb.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
 
-            // Winkel (Radians) in Hue (0-360) umwandeln
             let hue = (angle * 180 / Math.PI) + 90; 
             if (hue < 0) hue += 360;
             
