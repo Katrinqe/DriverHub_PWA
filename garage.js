@@ -253,7 +253,7 @@ window.GarageLogic = {
                     <div class="stat-bar-track"><div class="stat-bar-fill" style="width: ${pwPercent}%; background: linear-gradient(90deg, #0a84ff, #30d158);"></div></div>
                 </div>
                 
-                <button class="btn-choose-model" onclick="alert('Gehe in Studio mit: ${mod.name}')">
+               <button class="btn-choose-model" onclick="GarageLogic.openStudio('${brandKey}', '${mod.logo}', '${mod.file}')">
                     CHOOSE MODEL
                 </button>
             `;
