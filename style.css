@@ -1656,65 +1656,105 @@ body.ghost-active #ghost-chat-overlay {
 @keyframes fadeInTab { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 /* === DER ECHTE FARBKREIS (WHEEL) === */
-.paint-pro-area { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
+/* === DER ECHTE FARBKREIS (WHEEL) === */
+.paint-pro-area { 
+    display: flex; 
+    flex-direction: column; /* Stapelt Rad und Slider sauber untereinander */
+    align-items: center; 
+    gap: 35px; 
+    margin-bottom: 30px; 
+    width: 100%;
+}
 
-/* Das Rad */
-.color-wheel-container { position: relative; width: 160px; height: 160px; touch-action: none; flex-shrink: 0; }
+/* Das Rad fest im Griff */
+.color-wheel-container { 
+    position: relative; 
+    width: 180px; 
+    height: 180px; 
+    touch-action: none; 
+    flex-shrink: 0;
+    margin: 0 auto; /* Zentrierung erzwingen */
+}
+
 .color-wheel { 
     width: 100%; height: 100%; border-radius: 50%; 
     background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); 
     mask-image: radial-gradient(transparent 52%, black 53%); 
     -webkit-mask-image: radial-gradient(transparent 52%, black 53%); 
 }
-.wheel-thumb { 
-    position: absolute; width: 26px; height: 26px; border-radius: 50%; 
-    background: transparent; border: 3px solid #fff; box-shadow: 0 0 15px rgba(0,0,0,0.8); 
-    top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; 
-}
 
-/* Das Innere des Rades (Live Farbe + HEX) */
+/* Das Innere des Rades */
 .wheel-center-display { 
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-    width: 76px; height: 76px; border-radius: 50%; 
-    border: 2px solid rgba(255,255,255,0.1); box-shadow: inset 0 5px 15px rgba(0,0,0,0.5); 
-    display:flex; align-items:center; justify-content:center; flex-direction:column; background: #bf5af2;
+    width: 85px; height: 85px; border-radius: 50%; 
+    border: 1px solid rgba(255,255,255,0.2); 
+    box-shadow: inset 0 5px 15px rgba(0,0,0,0.4); 
+    display:flex; align-items:center; justify-content:center;
+    transition: background 0.2s ease;
 }
-.wheel-center-display span { font-size: 0.65rem; color: #fff; font-family: monospace; font-weight: bold; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 5px; }
 
-/* Der vertikale Helligkeits-Slider daneben */
-.depth-slider-container { width: 100%; margin-top: 20px; }
-.depth-label { font-size: 0.6rem; color: #888; font-weight: bold; position: absolute; top: -15px; letter-spacing: 1px;}
-.vertical-slider { 
-    -webkit-appearance: none; width: 130px; height: 12px; 
-    background: linear-gradient(to right, #111, #888, #fff); 
-    border-radius: 6px; transform: rotate(-90deg); transform-origin: center; outline: none; border: 1px solid rgba(255,255,255,0.1);
+.wheel-center-display span { 
+    font-size: 0.7rem; color: #fff; font-family: monospace; font-weight: bold; 
+    background: rgba(0,0,0,0.6); padding: 3px 8px; border-radius: 6px; 
+    backdrop-filter: blur(4px);
 }
+
+/* === DER DYNAMISCHE DEPTH SLIDER (HORIZONTAL) === */
+.depth-slider-container { 
+    width: 100%; 
+    max-width: 320px; /* Begrenzt die Breite auf großen Bildschirmen */
+}
+
+.slider-header {
+    display: flex; justify-content: space-between;
+    font-size: 0.65rem; color: #888; font-weight: 800; letter-spacing: 1px; margin-bottom: 10px;
+}
+
+/* FIX: Nur noch EINE Definition für den Slider */
 .vertical-slider { 
-    -webkit-appearance: none; width: 100%; height: 10px; 
-    background: #222; border-radius: 20px; outline: none; 
+    -webkit-appearance: none; 
+    width: 100%; 
+    height: 10px; 
+    background: #222; /* Wird per JS dynamisch gefärbt */
+    border-radius: 20px; 
+    outline: none; 
     border: 1px solid rgba(255,255,255,0.1);
-    margin: 15px 0;
+    margin: 10px 0;
 }
 
-/* === SEGMENTIERTER FINISH SLIDER === */
-/* --- PAINT FINISH SLIDER --- */
+.vertical-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+/* === PAINT FINISH SLIDER (PREMIUM GLAS) === */
 .finish-segmented { 
-    background: rgba(255, 255, 255, 0.05); 
-    border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 4px; display: flex; position: relative;
+    background: rgba(0, 0, 0, 0.4); 
+    border-radius: 20px; 
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 5px; 
+    display: flex; 
+    position: relative;
+    margin-top: 5px;
 }
 
 .finish-pill { 
-    position: absolute; top: 4px; left: 4px; 
-    height: calc(100% - 8px); width: calc(33.33% - 2.6px); 
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 14px; z-index: 1; 
-    transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1); 
+    position: absolute; top: 5px; left: 5px; 
+    height: calc(100% - 10px); width: calc(33.33% - 3.33px); 
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 15px; z-index: 1; 
+    transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1); 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
+
 .finish-opt { 
-    flex: 1; text-align: center; padding: 12px 0; color: #888; 
-    font-size: 0.75rem; font-weight: 800; z-index: 2; cursor: pointer; transition: color 0.3s; 
+    flex: 1; text-align: center; padding: 14px 0; color: #666; 
+    font-size: 0.75rem; font-weight: 900; z-index: 2; cursor: pointer; transition: all 0.3s; 
 }
-.finish-opt.active { color: #fff; }
+.finish-opt.active { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.3); }
