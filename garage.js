@@ -279,28 +279,26 @@ window.GarageLogic = {
         if(grid) grid.innerHTML = '';
     },
 
-   // ==========================================
-    // === NEW: TUNING STUDIO (PRO EDITOR)    ===
+// ==========================================
+    // === NEW: TUNING STUDIO (AAA EDITOR)    ===
     // ==========================================
     
-    // Temporärer Speicher für das aktuelle Tuning
-    currentStudioSetup: { color: '#bf5af2', finish: 'glossy' },
+    currentStudioSetup: { h: 275, s: 85, l: 50, finish: 'glossy' },
 
     openStudio: function(brandKey, modelLogo, glbFile) {
         const screen = document.getElementById('studio-screen');
         if(!screen) return;
         
-        // Logo setzen (Brand Logo ist raus!)
         document.getElementById('studio-model-logo').src = modelLogo;
-        
-        // 3D Modell laden
         const viewer = document.getElementById('studio-model-viewer');
         viewer.src = glbFile;
         
-        // Reset auf Paint Tab
-        this.switchStudioTab('paint', document.querySelector('.studio-nav-item:first-child'));
-        // Reset Finish UI
+        // Reset Tabs und UI
+        this.switchStudioTab('paint', 0, document.querySelector('.pro-nav-item:first-child'));
         this.setCarFinish('glossy', document.querySelector('.finish-btn:first-child'), true);
+        
+        // Farbe init
+        setTimeout(() => this.updateProColor(), 300); // Kurz warten bis Modell da ist
         
         screen.classList.remove('hidden');
     },
@@ -308,55 +306,73 @@ window.GarageLogic = {
     closeStudio: function() {
         const screen = document.getElementById('studio-screen');
         if(screen) screen.classList.add('hidden');
-        document.getElementById('studio-model-viewer').src = ''; // RAM leeren
+        document.getElementById('studio-model-viewer').src = ''; 
     },
 
-    // Tab Switcher Logik
-    switchStudioTab: function(tabId, btnElement) {
-        // Nav Buttons resetten
-        document.querySelectorAll('.studio-nav-item').forEach(el => el.classList.remove('active'));
-        btnElement.classList.add('active');
+    // Der Magische Tab Switcher (Bewegt die Pille)
+    switchStudioTab: function(tabId, index, btnElement) {
+        // Pille bewegen (Jeder Tab ist 25% breit)
+        const pill = document.getElementById('nav-active-pill');
+        if(pill) pill.style.transform = `translateX(${index * 100}%)`;
+
+        // Text Farbe
+        document.querySelectorAll('.pro-nav-item').forEach(el => el.classList.remove('active'));
+        if(btnElement) btnElement.classList.add('active');
         
-        // Content verstecken und richtigen zeigen
+        // Content
         document.querySelectorAll('.studio-tab-content').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active');
     },
 
-    // === PAINT LOGIC ===
+    // === DIE NEUE PRO FARB LOGIK ===
+    
+    // Konvertiert HSL (Slider) in RGB für das 3D Modell
+    hslToRgb: function(h, s, l) {
+        s /= 100; l /= 100;
+        let c = (1 - Math.abs(2 * l - 1)) * s,
+            x = c * (1 - Math.abs((h / 60) % 2 - 1)),
+            m = l - c/2, r = 0, g = 0, b = 0;
 
-    // Wird aufgerufen, wenn man am Color Picker dreht
-    handleColorInput: function(hexValue) {
-        // Update HEX Input Feld
-        document.getElementById('studio-hex-input').value = hexValue.substring(1).toUpperCase();
-        this.applyCarColor(hexValue);
+        if (0 <= h && h < 60) { r = c; g = x; b = 0; }
+        else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
+        else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
+        else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
+        else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
+        else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
+        
+        return [r + m, g + m, b + m];
     },
 
-    // Wird aufgerufen, wenn man einen HEX Code eintippt
-    handleHexInput: function(hexValue) {
-        // Validierung: Muss 6 Zeichen lang sein
-        if(hexValue.length === 6 && /^[0-9A-F]{6}$/i.test(hexValue)) {
-            const fullHex = '#' + hexValue;
-            // Update Color Picker
-            document.getElementById('studio-color-picker').value = fullHex;
-            this.applyCarColor(fullHex);
-        }
+    // Wandelt RGB in HEX um (für die Text-Anzeige)
+    rgbToHex: function(r, g, b) {
+        const toHex = (x) => { const hex = Math.round(x * 255).toString(16); return hex.length === 1 ? '0' + hex : hex; };
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
     },
 
-    // Die Kern-Funktion, die die Farbe auf das 3D-Modell anwendet
-    applyCarColor: function(hexColor) {
-        this.currentStudioSetup.color = hexColor;
+    // Wird in Echtzeit bei jedem Wischen über den Slider gefeuert
+    updateProColor: function() {
+        const hue = document.getElementById('pro-hue').value;
+        const light = document.getElementById('pro-light').value;
+        
+        // Saturation bleibt fest hoch, damit der Lack immer satt wirkt
+        const rgb = this.hslToRgb(hue, 85, light); 
+        
+        // UI Text updaten
+        const hexStr = this.rgbToHex(rgb[0], rgb[1], rgb[2]);
+        document.getElementById('hue-val-disp').innerText = hexStr;
+        document.getElementById('hue-val-disp').style.color = hexStr;
+
+        // Auto färben
+        this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
+    },
+
+    applyRgbToCar: function(r, g, b) {
         const viewer = document.getElementById('studio-model-viewer');
         if(!viewer || !viewer.model) return;
 
-        // HEX zu Linear RGB umrechnen
-        let r = parseInt(hexColor.slice(1, 3), 16) / 255;
-        let g = parseInt(hexColor.slice(3, 5), 16) / 255;
-        let b = parseInt(hexColor.slice(5, 7), 16) / 255;
-        // WICHTIG: Für PBR Materials muss man sRGB zu Linear RGB konvertieren, sonst sehen Farben ausgewaschen aus
-        r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-        g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-        b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-        const colorArray = [r, g, b, 1.0];
+        // Physikalisch korrekte Gamma-Korrektur für realistische PBR-Spiegelungen!
+        const toLinear = (c) => c > 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
+        const colorArray = [toLinear(r), toLinear(g), toLinear(b), 1.0];
 
         const materials = viewer.model.materials;
         for (let i = 0; i < materials.length; i++) {
@@ -367,11 +383,9 @@ window.GarageLogic = {
         }
     },
 
-    // Die Magie für Matt / Metallic / Glossy
     setCarFinish: function(type, btnElement, skipUIUpdate) {
         this.currentStudioSetup.finish = type;
 
-        // UI Update (Buttons)
         if(!skipUIUpdate && btnElement) {
             document.querySelectorAll('.finish-btn').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
@@ -380,28 +394,27 @@ window.GarageLogic = {
         const viewer = document.getElementById('studio-model-viewer');
         if(!viewer || !viewer.model) return;
 
-        // PBR Werte definieren (Metallic-Faktor & Rauheits-Faktor)
         let metallic = 0.0;
         let roughness = 0.5;
 
         if(type === 'glossy') {
-            metallic = 0.4; roughness = 0.1; // Standard Autolack
+            metallic = 0.3; roughness = 0.1; 
         } else if (type === 'metallic') {
-            metallic = 0.9; roughness = 0.15; // Stark spiegelndes Metall
+            metallic = 0.9; roughness = 0.15; 
         } else if (type === 'matt') {
-            metallic = 0.0; roughness = 0.85; // Stumpf, kaum Reflexionen
+            metallic = 0.0; roughness = 0.8; 
         }
 
         const materials = viewer.model.materials;
         for (let i = 0; i < materials.length; i++) {
             const matName = materials[i].name ? materials[i].name.toLowerCase() : "";
             if (matName.includes("paint") || matName.includes("body") || matName.includes("carrosserie") || matName.includes("color") || i===0) {
-                // Hier passiert die Magie:
                 materials[i].pbrMetallicRoughness.setMetallicFactor(metallic);
                 materials[i].pbrMetallicRoughness.setRoughnessFactor(roughness);
             }
         }
-    },
+    }
+}; // HIER ENDET GARAGE LOGIC SAUBER!
 
 
     // ==========================================
