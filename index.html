@@ -1033,14 +1033,13 @@
     </div>
 
     <div id="studio-screen" class="hidden">
-        <div class="brand-header">
+        <div class="studio-top-fade"></div>
+
+        <div class="studio-header">
             <button class="brand-back-btn" onclick="GarageLogic.closeStudio()">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
-            <div class="studio-logo-stack">
-                <img src="" id="studio-brand-logo" alt="Brand">
-                <img src="" id="studio-model-logo" alt="Model">
-            </div>
+            <img src="" id="studio-model-logo" alt="Model" class="studio-dominant-logo">
             <div style="width: 45px;"></div> </div>
 
         <div class="studio-stage">
@@ -1049,26 +1048,42 @@
 
         <div class="studio-bottom-panel">
             <div class="studio-nav">
-                <div class="studio-nav-item active"><i class="fa-solid fa-spray-can"></i> PAINT</div>
-                <div class="studio-nav-item"><i class="fa-solid fa-weight-hanging"></i> SETUP</div>
-                <div class="studio-nav-item"><i class="fa-solid fa-gears"></i> ENGINE</div>
-                <div class="studio-nav-item"><i class="fa-solid fa-book-open"></i> LORE</div>
+                <div class="studio-nav-item active" onclick="GarageLogic.switchStudioTab('paint', this)"><i class="fa-solid fa-spray-can"></i> PAINT</div>
+                <div class="studio-nav-item" onclick="GarageLogic.switchStudioTab('setup', this)"><i class="fa-solid fa-weight-hanging"></i> SETUP</div>
+                <div class="studio-nav-item" onclick="GarageLogic.switchStudioTab('engine', this)"><i class="fa-solid fa-gears"></i> ENGINE</div>
+                <div class="studio-nav-item" onclick="GarageLogic.switchStudioTab('summary', this)"><i class="fa-solid fa-flag-checkered"></i> FINISH</div>
             </div>
 
             <div id="tab-paint" class="studio-tab-content active">
-                <div class="paint-colors-grid">
-                    <div class="color-swatch" style="background: #ffffff;" onclick="GarageLogic.changeCarColor('#ffffff')"></div>
-                    <div class="color-swatch" style="background: #ff3b30;" onclick="GarageLogic.changeCarColor('#ff3b30')"></div>
-                    <div class="color-swatch" style="background: #0a84ff;" onclick="GarageLogic.changeCarColor('#0a84ff')"></div>
-                    <div class="color-swatch" style="background: #30d158;" onclick="GarageLogic.changeCarColor('#30d158')"></div>
-                    <div class="color-swatch" style="background: #ff9f0a;" onclick="GarageLogic.changeCarColor('#ff9f0a')"></div>
-                    <div class="color-swatch" style="background: #1c1c1e;" onclick="GarageLogic.changeCarColor('#1c1c1e')"></div>
+                
+                <div class="paint-pro-row">
+                    <div class="paint-picker-wrapper">
+                        <input type="color" id="studio-color-picker" value="#bf5af2" oninput="GarageLogic.handleColorInput(this.value)">
+                    </div>
+                    
+                    <div class="paint-info-wrapper">
+                        <label for="studio-hex-input">HEX CODE</label>
+                        <div class="hex-input-box">
+                            <span>#</span>
+                            <input type="text" id="studio-hex-input" value="bf5af2" maxlength="6" onchange="GarageLogic.handleHexInput(this.value)">
+                        </div>
+                    </div>
                 </div>
-                <div style="text-align: center; margin-top: 15px;">
-                    <input type="color" id="studio-custom-color" value="#bf5af2" onchange="GarageLogic.changeCarColor(this.value)">
-                    <label for="studio-custom-color" style="color:#888; font-size:0.8rem; margin-left:10px;">CUSTOM PAINT</label>
+
+                <div class="paint-finish-row">
+                    <label>FINISH TYPE</label>
+                    <div class="finish-btn-grid">
+                        <button class="finish-btn active" onclick="GarageLogic.setCarFinish('glossy', this)">GLOSSY</button>
+                        <button class="finish-btn" onclick="GarageLogic.setCarFinish('metallic', this)">METALLIC</button>
+                        <button class="finish-btn" onclick="GarageLogic.setCarFinish('matt', this)">MATT</button>
+                    </div>
                 </div>
+
             </div>
+            
+            <div id="tab-setup" class="studio-tab-content">Coming Soon: Weight & Tires</div>
+            <div id="tab-engine" class="studio-tab-content">Coming Soon: Engine Swaps & Dyno</div>
+            <div id="tab-summary" class="studio-tab-content">Coming Soon: Summary & Save</div>
         </div>
     </div>
     
