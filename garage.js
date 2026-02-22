@@ -394,7 +394,7 @@ window.GarageLogic = {
                 materials[i].pbrMetallicRoughness.setRoughnessFactor(roughness);
             }
         }
-    }
+    },
 
 
     // ==========================================
