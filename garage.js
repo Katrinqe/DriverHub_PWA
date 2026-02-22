@@ -171,13 +171,20 @@ window.GarageLogic = {
 
 
 
-    // ==========================================
+  // ==========================================
     // === NEW: BRAND SELECTOR FLOW           ===
     // ==========================================
     openBrandSelector: function() {
         const screen = document.getElementById('brand-selector-screen');
         if(screen) screen.classList.remove('hidden');
     },
+
+    closeBrandSelector: function() {
+        const screen = document.getElementById('brand-selector-screen');
+        if(screen) screen.classList.add('hidden');
+    },
+
+
     // ==========================================
     // === NEW: MODEL SELECTOR FLOW           ===
     // ==========================================
