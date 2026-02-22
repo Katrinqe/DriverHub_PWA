@@ -1580,13 +1580,6 @@ body.ghost-active #ghost-chat-overlay {
 }
 #studio-screen.hidden { display: none !important; }
 
-.studio-top-fade {
-    position: absolute; top: 0; left: 0; width: 100%; height: 180px;
-    background: linear-gradient(to bottom, #050505 10%, rgba(5,5,5,0.9) 40%, transparent 100%) !important;
-    z-index: 10005 !important; 
-    pointer-events: none;
-}
-
 /* Das Studio Licht für das Logo */
 .studio-ambient-light {
     position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
@@ -1606,12 +1599,18 @@ body.ghost-active #ghost-chat-overlay {
     filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); 
 }
 
-/* FIX 1: DER FADE! Eine CSS-Maske lässt das Auto sanft oben verschwinden */
+/* FIX 1: DER PERFEKTE FADE! Maske wendet sich auf den Container an */
 .studio-stage { 
-    flex: 1; width: 100%; position: relative; 
-    margin-top: -10px; /* Weniger aggressiv nach oben gezogen, damit es Luft hat */
+    flex: 1; 
+    width: 100%; 
+    position: relative; 
+    margin-top: -20px; 
     z-index: 5; 
+    /* Diese Maske sorgt dafür, dass das Auto oben unsichtbar wird! */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 100%);
 }
+
 /* FIX 2: PANEL HÖHE - Kein Abschneiden mehr! */
 .studio-bottom-panel {
     background: rgba(15, 15, 18, 0.7);
@@ -1619,7 +1618,6 @@ body.ghost-active #ghost-chat-overlay {
     -webkit-backdrop-filter: blur(40px) saturate(150%);
     border-top: 1px solid rgba(255,255,255,0.15);
     height: auto; min-height: 400px; 
-    /* Wichtig: Padding unten dynamisch für iPhones */
     padding: 25px 25px calc(env(safe-area-inset-bottom, 20px) + 20px) 25px;
     border-top-left-radius: 35px; border-top-right-radius: 35px;
     box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
@@ -1672,7 +1670,7 @@ body.ghost-active #ghost-chat-overlay {
     -webkit-mask-image: radial-gradient(transparent 52%, black 53%); 
 }
 
-/* Der Cursor (Jetzt immer sichtbar) */
+/* Der Cursor */
 .wheel-thumb { 
     position: absolute; width: 30px; height: 30px; border-radius: 50%; 
     background: transparent; border: 4px solid #fff; box-shadow: 0 0 15px rgba(0,0,0,0.8); 
@@ -1692,30 +1690,30 @@ body.ghost-active #ghost-chat-overlay {
     background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 6px; backdrop-filter: blur(5px);
 }
 
-/* === DER FETTE DEPTH SLIDER & TRANSPARENTER RING === */
+/* === FIX 4: DER FETTE, BREITE SLIDER === */
 .depth-slider-container { 
     position: relative; height: 160px; width: 50px; 
     display: flex; align-items: center; justify-content: center;
 }
 
+/* Nur eine saubere Klasse für den Slider! */
 .vertical-slider { 
     -webkit-appearance: none; appearance: none;
     width: 160px; /* Die Länge */
-    height: 38px; /* FIX: Ein richtig dicker, satter Balken! */
-    background: #222; /* Wird durch dein JS in Echtzeit übermalt */
+    height: 38px; /* Die Dicke des Balkens */
+    background: #222; /* Wird durch JS mit Gradient gefüllt */
     border-radius: 18px; outline: none; 
     transform: rotate(-90deg); transform-origin: center;
     border: 2px solid rgba(255,255,255,0.1);
     box-shadow: inset 0 4px 15px rgba(0,0,0,0.6);
 }
 
-/* Der transparente Glas-Ring (Thumb) */
+/* Der transparente Glas-Ring */
 .vertical-slider::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
     width: 48px; height: 48px; border-radius: 50%;
-    /* FIX: Komplett durchsichtig, damit man den Farbverlauf darunter sieht! */
     background: transparent; 
-    border: 4px solid rgba(255, 255, 255, 0.95); /* Dicker, scharfer Rand */
+    border: 4px solid rgba(255, 255, 255, 0.95); 
     box-shadow: 0 4px 15px rgba(0,0,0,0.7), inset 0 0 8px rgba(0,0,0,0.4);
     cursor: pointer;
 }
