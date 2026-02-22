@@ -1571,113 +1571,139 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================== */
-/* === TUNING STUDIO (EDITOR VIBE)         == */
+/* === TUNING STUDIO (NFS UNDERGROUND VIBE) = */
 /* ========================================== */
 #studio-screen {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle at center 40%, #1c1c1e 0%, #050505 90%);
-    z-index: 10002; /* Liegt über ALLEM */
+    background: radial-gradient(circle at center 40%, #1c1c1e 0%, #000000 90%);
+    z-index: 10002;
     display: flex;
     flex-direction: column;
 }
 
-#studio-screen.hidden {
-    display: none !important;
+#studio-screen.hidden { display: none !important; }
+
+/* Top Fade */
+.studio-top-fade {
+    position: absolute; top: 0; left: 0; width: 100%; height: 150px;
+    background: linear-gradient(to bottom, #000000 20%, transparent 100%);
+    z-index: 1; pointer-events: none;
 }
 
-/* Gestapelte Logos oben mittig */
-.studio-logo-stack {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
+/* Header - Dominantes Logo */
+.studio-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: env(safe-area-inset-top, 30px) 20px 10px 20px;
+    position: relative; z-index: 10;
 }
 
-#studio-brand-logo {
-    height: 30px; /* Honda Logo etwas kleiner */
-    opacity: 0.6;
+.studio-dominant-logo {
+    height: 70px; /* RIESIG! */
+    width: auto; max-width: 180px;
     object-fit: contain;
+    filter: drop-shadow(0 0 12px rgba(255,255,255,0.2)); /* Starker Glow */
 }
 
-#studio-model-logo {
-    height: 40px; /* Civic Logo prominenter */
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));
-    object-fit: contain;
-}
-
-/* Die Bühne nimmt den ganzen restlichen Platz ein */
+/* Main Stage - Auto nach oben gezogen */
 .studio-stage {
-    flex: 1; /* Zieht sich dynamisch auf */
-    width: 100%;
-    position: relative;
-    /* Negativer Margin, damit das Auto noch höher ins Logo ragt! */
-    margin-top: -20px; 
+    flex: 1; width: 100%; position: relative;
+    margin-top: -50px; /* Zieht das Auto aggressiv ins Logo */
+    z-index: 5;
 }
 
-/* Das Kontrollzentrum unten */
+/* Ultra Glassmorphism Panel - Viel höher jetzt! */
 .studio-bottom-panel {
-    background: linear-gradient(to top, rgba(10,10,12,1) 0%, rgba(20,20,22,0.85) 100%);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border-top: 1px solid rgba(255,255,255,0.05);
-    padding: 15px 20px 30px 20px;
-    border-top-left-radius: 25px;
-    border-top-right-radius: 25px;
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+    /* Hintergrund etwas dunkler und undurchsichtiger für besseren Kontrast */
+    background: linear-gradient(to top, rgba(5,5,7,1) 0%, rgba(20,20,25,0.9) 100%);
+    backdrop-filter: blur(25px) saturate(180%); /* Heavy Blur */
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border-top: 1px solid rgba(255,255,255,0.1);
+    /* FIX: Panel ist viel höher, gibt dem Editor Platz */
+    height: 420px; 
+    padding: 15px 25px 30px 25px;
+    border-top-left-radius: 30px; border-top-right-radius: 30px;
+    box-shadow: 0 -15px 50px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1);
+    display: flex; flex-direction: column;
 }
 
+/* Neon Navbar */
 .studio-nav {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    padding-bottom: 10px;
+    display: flex; justify-content: space-between;
+    margin-bottom: 30px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 15px;
 }
 
 .studio-nav-item {
-    color: #666;
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 1px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    transition: color 0.2s;
+    color: #555; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    cursor: pointer; transition: all 0.3s ease;
+}
+.studio-nav-item i { font-size: 1.4rem; }
+
+/* Aktiver Neon State */
+.studio-nav-item.active { 
+    color: #0a84ff; /* Neon Blau */
+    text-shadow: 0 0 12px rgba(10,132,255,0.6);
+}
+.studio-nav-item.active i {
+    filter: drop-shadow(0 0 8px rgba(10,132,255,0.8));
 }
 
-.studio-nav-item i { font-size: 1.2rem; }
-.studio-nav-item.active { color: #fff; }
-
-.studio-tab-content { display: none; }
+/* Tab Content Area */
+.studio-tab-content { display: none; flex: 1; overflow-y: auto; }
 .studio-tab-content.active { display: block; }
 
-/* Die Farb-Auswahl */
-.paint-colors-grid {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    flex-wrap: wrap;
+/* --- PRO PAINT EDITOR CSS --- */
+.paint-pro-row {
+    display: flex; align-items: center; gap: 25px; margin-bottom: 35px;
 }
 
-.color-swatch {
-    width: 40px; height: 40px;
+/* Linke Seite: Der Picker Wrapper */
+.paint-picker-wrapper {
+    width: 100px; height: 100px; flex-shrink: 0;
     border-radius: 50%;
-    cursor: pointer;
-    border: 2px solid rgba(255,255,255,0.1);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: transform 0.2s, border-color 0.2s;
+    border: 3px solid rgba(255,255,255,0.1);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    overflow: hidden; position: relative;
 }
 
-.color-swatch:active { transform: scale(0.9); border-color: #fff; }
-
-/* Custom Color Picker Input anpassen */
-#studio-custom-color {
-    background: none; border: none;
-    width: 40px; height: 40px; cursor: pointer;
-    padding: 0;
+/* Das native Input Feld unsichtbar darüber legen */
+#studio-color-picker {
+    position: absolute; top: -10%; left: -10%; width: 120%; height: 120%;
+    cursor: pointer; border: none; background: none; padding: 0;
 }
-#studio-custom-color::-webkit-color-swatch-wrapper { padding: 0; }
-#studio-custom-color::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; }
+
+/* Rechte Seite: HEX Input */
+.paint-info-wrapper { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+.paint-info-wrapper label { font-size: 0.75rem; color: #888; letter-spacing: 1px; }
+
+.hex-input-box {
+    display: flex; align-items: center;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 0 15px; height: 50px;
+}
+.hex-input-box span { color: #888; font-size: 1.2rem; margin-right: 5px; }
+#studio-hex-input {
+    background: none; border: none; color: #fff; font-size: 1.4rem;
+    font-family: monospace; width: 100%; outline: none; text-transform: uppercase;
+}
+
+/* Finish Row */
+.paint-finish-row label { display: block; font-size: 0.75rem; color: #888; letter-spacing: 1px; margin-bottom: 12px; }
+.finish-btn-grid { display: flex; gap: 10px; }
+
+.finish-btn {
+    flex: 1; padding: 12px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #888; border-radius: 10px;
+    font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.2s;
+}
+.finish-btn.active {
+    background: rgba(255,255,255,0.15);
+    border-color: #fff; color: #fff;
+    box-shadow: 0 0 15px rgba(255,255,255,0.1);
+}
