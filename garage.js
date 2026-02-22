@@ -392,25 +392,23 @@ this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
     },
 
-   updateProColor: function() {
-    const hue = this.currentStudioSetup.h;
-    const light = document.getElementById('pro-light').value;
-    const rgb = this.hslToRgb(hue, 85, light); 
-    const hexStr = this.rgbToHex(rgb[0], rgb[1], rgb[2]);
-    
-    // UI updaten
-    document.getElementById('hue-val-disp').innerText = hexStr;
-    document.getElementById('wheel-center-bg').style.background = hexStr;
+updateProColor: function() {
+        const hue = this.currentStudioSetup.h;
+        const light = document.getElementById('pro-light').value;
+        const rgb = this.hslToRgb(hue, 85, light); 
+        const hexStr = this.rgbToHex(rgb[0], rgb[1], rgb[2]);
+        
+        // UI Text & Center updaten
+        document.getElementById('hue-val-disp').innerText = hexStr;
+        document.getElementById('wheel-center-bg').style.background = hexStr;
 
-    // DYNAMISCH: Slider-Hintergrund anpassen (Gradient von Dunkel -> Farbe -> Hell)
-    const slider = document.getElementById('pro-light');
-    const darkColor = `hsl(${hue}, 80%, 20%)`;
-    const midColor = `hsl(${hue}, 85%, 50%)`;
-    const lightColor = `hsl(${hue}, 80%, 85%)`;
-    slider.style.background = `linear-gradient(to right, ${darkColor}, ${midColor}, ${lightColor})`;
+        // FIX: Den iOS-Balken über CSS-Variablen mit dem Gradienten füttern!
+        const slider = document.getElementById('pro-light');
+        const gradient = `linear-gradient(to right, hsl(${hue}, 80%, 10%), hsl(${hue}, 85%, 50%), hsl(${hue}, 80%, 90%))`;
+        slider.style.setProperty('--track-bg', gradient);
 
-    this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
-},
+        this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
+    },
     applyRgbToCar: function(r, g, b) {
         const viewer = document.getElementById('studio-model-viewer');
         if(!viewer || !viewer.model) return;
