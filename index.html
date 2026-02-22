@@ -1060,20 +1060,20 @@
 
             <div id="tab-paint" class="studio-tab-content active">
                 
-                <div class="paint-pro-area">
-                    <div class="color-wheel-container" id="color-wheel-wrapper">
-                        <div class="color-wheel" id="color-wheel"></div>
-                        <div class="wheel-center-display" id="wheel-center-bg">
-                            <span id="hue-val-disp">#BF5AF2</span>
-                        </div>
-                        <div class="wheel-thumb" id="wheel-thumb"></div>
-                    </div>
+              <div class="paint-pro-area" style="flex-direction: column; align-items: stretch; gap: 30px;">
+    <div class="color-wheel-container" id="color-wheel-wrapper" style="margin: 0 auto;">
+        <div class="color-wheel" id="color-wheel"></div>
+        <div class="wheel-center-display" id="wheel-center-bg">
+            <span id="hue-val-disp">#BF5AF2</span>
+        </div>
+        <div class="wheel-thumb" id="wheel-thumb"></div>
+    </div>
 
-                    <div class="depth-slider-container">
-                        <div class="depth-label">DEPTH</div>
-                        <input type="range" class="vertical-slider" id="pro-light" min="10" max="90" value="50" oninput="GarageLogic.updateProColor()">
-                    </div>
-                </div>
+    <div class="depth-slider-container">
+        <div class="slider-header"><span>COLOR DEPTH / LIGHTNESS</span></div>
+        <input type="range" class="vertical-slider" id="pro-light" min="15" max="85" value="50" oninput="GarageLogic.updateProColor()">
+    </div>
+</div>
 
                 <div style="margin-top: 15px;">
                     <label style="font-size: 0.7rem; color: #888; letter-spacing: 1px; font-weight: bold; margin-left: 5px;">PAINT FINISH</label>
