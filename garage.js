@@ -272,6 +272,61 @@ window.GarageLogic = {
         if(grid) grid.innerHTML = '';
     },
 
+    // ==========================================
+    // === NEW: TUNING STUDIO (EDITOR)        ===
+    // ==========================================
+    openStudio: function(brandKey, modelLogo, glbFile) {
+        const screen = document.getElementById('studio-screen');
+        if(!screen) return;
+        
+        // Logos setzen
+        document.getElementById('studio-brand-logo').src = brandKey + '.png';
+        document.getElementById('studio-model-logo').src = modelLogo;
+        
+        // 3D Modell laden
+        const viewer = document.getElementById('studio-model-viewer');
+        viewer.src = glbFile;
+        
+        screen.classList.remove('hidden');
+    },
+
+    closeStudio: function() {
+        const screen = document.getElementById('studio-screen');
+        if(screen) screen.classList.add('hidden');
+        // RAM leeren
+        document.getElementById('studio-model-viewer').src = '';
+    },
+
+    changeCarColor: function(hexColor) {
+        const viewer = document.getElementById('studio-model-viewer');
+        if(!viewer || !viewer.model) return;
+
+        // HEX (#ff0000) in RGB umwandeln (0.0 bis 1.0)
+        let r = parseInt(hexColor.slice(1, 3), 16) / 255;
+        let g = parseInt(hexColor.slice(3, 5), 16) / 255;
+        let b = parseInt(hexColor.slice(5, 7), 16) / 255;
+        const colorArray = [r, g, b, 1.0];
+
+        // Wir loopen durch alle Materialien des 3D Modells.
+        // Ein sauberes Modell hat den Lack meistens auf Index 0 oder der Name enthält "paint"/"body".
+        const materials = viewer.model.materials;
+        let painted = false;
+
+        for (let i = 0; i < materials.length; i++) {
+            const matName = materials[i].name ? materials[i].name.toLowerCase() : "";
+            // Sucht nach typischen Namen für Autolack
+            if (matName.includes("paint") || matName.includes("body") || matName.includes("carrosserie") || matName.includes("color")) {
+                materials[i].pbrMetallicRoughness.setBaseColorFactor(colorArray);
+                painted = true;
+            }
+        }
+
+        // Fallback: Wenn das 3D-Modell schlecht benannt ist, färben wir einfach das allererste Material (Index 0), das ist zu 90% der Lack.
+        if (!painted && materials.length > 0) {
+            materials[0].pbrMetallicRoughness.setBaseColorFactor(colorArray);
+        }
+    },
+
     closeBrandSelector: function() {
         const screen = document.getElementById('brand-selector-screen');
         if(screen) screen.classList.add('hidden');
