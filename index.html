@@ -1031,6 +1031,46 @@
         
         <div class="model-grid" id="model-grid-container"></div>
     </div>
+
+    <div id="studio-screen" class="hidden">
+        <div class="brand-header">
+            <button class="brand-back-btn" onclick="GarageLogic.closeStudio()">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="studio-logo-stack">
+                <img src="" id="studio-brand-logo" alt="Brand">
+                <img src="" id="studio-model-logo" alt="Model">
+            </div>
+            <div style="width: 45px;"></div> </div>
+
+        <div class="studio-stage">
+            <model-viewer id="studio-model-viewer" src="" auto-rotate camera-controls disable-zoom shadow-intensity="1" interaction-prompt="none" style="width:100%; height:100%;"></model-viewer>
+        </div>
+
+        <div class="studio-bottom-panel">
+            <div class="studio-nav">
+                <div class="studio-nav-item active"><i class="fa-solid fa-spray-can"></i> PAINT</div>
+                <div class="studio-nav-item"><i class="fa-solid fa-weight-hanging"></i> SETUP</div>
+                <div class="studio-nav-item"><i class="fa-solid fa-gears"></i> ENGINE</div>
+                <div class="studio-nav-item"><i class="fa-solid fa-book-open"></i> LORE</div>
+            </div>
+
+            <div id="tab-paint" class="studio-tab-content active">
+                <div class="paint-colors-grid">
+                    <div class="color-swatch" style="background: #ffffff;" onclick="GarageLogic.changeCarColor('#ffffff')"></div>
+                    <div class="color-swatch" style="background: #ff3b30;" onclick="GarageLogic.changeCarColor('#ff3b30')"></div>
+                    <div class="color-swatch" style="background: #0a84ff;" onclick="GarageLogic.changeCarColor('#0a84ff')"></div>
+                    <div class="color-swatch" style="background: #30d158;" onclick="GarageLogic.changeCarColor('#30d158')"></div>
+                    <div class="color-swatch" style="background: #ff9f0a;" onclick="GarageLogic.changeCarColor('#ff9f0a')"></div>
+                    <div class="color-swatch" style="background: #1c1c1e;" onclick="GarageLogic.changeCarColor('#1c1c1e')"></div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <input type="color" id="studio-custom-color" value="#bf5af2" onchange="GarageLogic.changeCarColor(this.value)">
+                    <label for="studio-custom-color" style="color:#888; font-size:0.8rem; margin-left:10px;">CUSTOM PAINT</label>
+                </div>
+            </div>
+        </div>
+    </div>
     
 </body>
 </html>
