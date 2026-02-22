@@ -1569,3 +1569,115 @@ body.ghost-active #ghost-chat-overlay {
     border-color: rgba(0, 229, 255, 0.5); /* Neon Cyan Akzent beim Klicken */
     box-shadow: 0 0 20px rgba(0, 229, 255, 0.2), inset 0 0 10px rgba(255,255,255,0.1);
 }
+
+/* ========================================== */
+/* === TUNING STUDIO (EDITOR VIBE)         == */
+/* ========================================== */
+#studio-screen {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center 40%, #1c1c1e 0%, #050505 90%);
+    z-index: 10002; /* Liegt über ALLEM */
+    display: flex;
+    flex-direction: column;
+}
+
+#studio-screen.hidden {
+    display: none !important;
+}
+
+/* Gestapelte Logos oben mittig */
+.studio-logo-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+#studio-brand-logo {
+    height: 30px; /* Honda Logo etwas kleiner */
+    opacity: 0.6;
+    object-fit: contain;
+}
+
+#studio-model-logo {
+    height: 40px; /* Civic Logo prominenter */
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));
+    object-fit: contain;
+}
+
+/* Die Bühne nimmt den ganzen restlichen Platz ein */
+.studio-stage {
+    flex: 1; /* Zieht sich dynamisch auf */
+    width: 100%;
+    position: relative;
+    /* Negativer Margin, damit das Auto noch höher ins Logo ragt! */
+    margin-top: -20px; 
+}
+
+/* Das Kontrollzentrum unten */
+.studio-bottom-panel {
+    background: linear-gradient(to top, rgba(10,10,12,1) 0%, rgba(20,20,22,0.85) 100%);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding: 15px 20px 30px 20px;
+    border-top-left-radius: 25px;
+    border-top-right-radius: 25px;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.5);
+}
+
+.studio-nav {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding-bottom: 10px;
+}
+
+.studio-nav-item {
+    color: #666;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.studio-nav-item i { font-size: 1.2rem; }
+.studio-nav-item.active { color: #fff; }
+
+.studio-tab-content { display: none; }
+.studio-tab-content.active { display: block; }
+
+/* Die Farb-Auswahl */
+.paint-colors-grid {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.color-swatch {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid rgba(255,255,255,0.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.color-swatch:active { transform: scale(0.9); border-color: #fff; }
+
+/* Custom Color Picker Input anpassen */
+#studio-custom-color {
+    background: none; border: none;
+    width: 40px; height: 40px; cursor: pointer;
+    padding: 0;
+}
+#studio-custom-color::-webkit-color-swatch-wrapper { padding: 0; }
+#studio-custom-color::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; }
