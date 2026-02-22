@@ -1467,26 +1467,32 @@ body.ghost-active #ghost-chat-overlay {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 45px;
-    margin-bottom: 5px;
-    /* FIX: Der alte "Fleck" ist weg. Das Ambiente kommt jetzt von der Karte selbst! */
+    /* FIX: Höher gemacht (von 45px auf 60px), damit das Logo größer werden kann */
+    height: 60px;
+    /* FIX: Kein Margin nach unten mehr! */
+    margin-bottom: 0px;
     background: transparent; 
+    /* Wichtig, damit das Auto sich "darunter" schieben kann */
+    position: relative;
+    z-index: 2; 
 }
 
 .model-logo-stage img {
     height: 100%;
     object-fit: contain;
-    /* Lässt das schwarze Logo extrem dezent "glühen", damit es perfekt ablesbar ist */
     filter: drop-shadow(0 0 8px rgba(255,255,255,0.15));
 }
 
 /* Die 3D-Bühne */
 .model-3d-box {
     width: 100%;
-    /* FIX: Ca. 10-15% größer, damit das Auto richtig massiv wirkt */
-    height: 250px; 
+    /* FIX: Höhe leicht reduziert, damit es kompakt bleibt */
+    height: 240px; 
     position: relative;
-    margin-bottom: 15px;
+    z-index: 1;
+    /* FIX: DER MAGNET-TRICK! Zieht das Auto 30px nach oben ins Logo rein */
+    margin-top: -30px;
+    margin-bottom: 5px;
 }
 
 /* Steckbrief / Specs */
