@@ -297,8 +297,12 @@ window.GarageLogic = {
         this.switchStudioTab('paint', 0, document.querySelector('.pro-nav-item:first-child'));
         this.setCarFinish('glossy', document.querySelector('.finish-btn:first-child'), true);
         
+        
         // Farbe init
-        setTimeout(() => this.updateProColor(), 300); // Kurz warten bis Modell da ist
+        setTimeout(() => {
+            this.initColorWheel(); // Startet die Mathe für den Kreis
+            this.updateProColor();
+        }, 300);// Kurz warten bis Modell da ist
         
         screen.classList.remove('hidden');
     },
@@ -324,45 +328,74 @@ window.GarageLogic = {
         document.getElementById('tab-' + tabId).classList.add('active');
     },
 
-    // === DIE NEUE PRO FARB LOGIK ===
-    
-    // Konvertiert HSL (Slider) in RGB für das 3D Modell
+   // === DIE NEUE PRO FARB LOGIK (COLOR WHEEL) ===
+
+    // Wird einmal aufgerufen, wenn das Studio öffnet
+    initColorWheel: function() {
+        const wrapper = document.getElementById('color-wheel-wrapper');
+        const thumb = document.getElementById('wheel-thumb');
+        if(!wrapper || !thumb) return;
+
+        let isDragging = false;
+        const ringOffset = 62; // Abstand der Kugel vom Zentrum
+
+        const updateWheel = (e) => {
+            const rect = wrapper.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            let dx = clientX - cx;
+            let dy = clientY - cy;
+            let angle = Math.atan2(dy, dx);
+            
+            // Kugel-Position berechnen
+            let tx = ringOffset * Math.cos(angle);
+            let ty = ringOffset * Math.sin(angle);
+            thumb.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
+
+            // Winkel (Radians) in Hue (0-360) umwandeln
+            let hue = (angle * 180 / Math.PI) + 90; 
+            if (hue < 0) hue += 360;
+            
+            this.currentStudioSetup.h = hue;
+            this.updateProColor();
+        };
+
+        wrapper.addEventListener('pointerdown', (e) => { isDragging = true; updateWheel(e); wrapper.setPointerCapture(e.pointerId); });
+        wrapper.addEventListener('pointermove', (e) => { if(isDragging) updateWheel(e); });
+        wrapper.addEventListener('pointerup', (e) => { isDragging = false; wrapper.releasePointerCapture(e.pointerId); });
+    },
+
     hslToRgb: function(h, s, l) {
         s /= 100; l /= 100;
-        let c = (1 - Math.abs(2 * l - 1)) * s,
-            x = c * (1 - Math.abs((h / 60) % 2 - 1)),
-            m = l - c/2, r = 0, g = 0, b = 0;
-
+        let c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c/2, r = 0, g = 0, b = 0;
         if (0 <= h && h < 60) { r = c; g = x; b = 0; }
         else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
         else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
         else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
         else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
         else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
-        
         return [r + m, g + m, b + m];
     },
 
-    // Wandelt RGB in HEX um (für die Text-Anzeige)
     rgbToHex: function(r, g, b) {
         const toHex = (x) => { const hex = Math.round(x * 255).toString(16); return hex.length === 1 ? '0' + hex : hex; };
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
     },
 
-    // Wird in Echtzeit bei jedem Wischen über den Slider gefeuert
     updateProColor: function() {
-        const hue = document.getElementById('pro-hue').value;
+        const hue = this.currentStudioSetup.h;
         const light = document.getElementById('pro-light').value;
-        
-        // Saturation bleibt fest hoch, damit der Lack immer satt wirkt
         const rgb = this.hslToRgb(hue, 85, light); 
-        
-        // UI Text updaten
         const hexStr = this.rgbToHex(rgb[0], rgb[1], rgb[2]);
+        
+        // UI updaten
         document.getElementById('hue-val-disp').innerText = hexStr;
-        document.getElementById('hue-val-disp').style.color = hexStr;
+        document.getElementById('wheel-center-bg').style.background = hexStr;
 
-        // Auto färben
         this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
     },
 
@@ -370,7 +403,6 @@ window.GarageLogic = {
         const viewer = document.getElementById('studio-model-viewer');
         if(!viewer || !viewer.model) return;
 
-        // Physikalisch korrekte Gamma-Korrektur für realistische PBR-Spiegelungen!
         const toLinear = (c) => c > 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92;
         const colorArray = [toLinear(r), toLinear(g), toLinear(b), 1.0];
 
@@ -383,29 +415,26 @@ window.GarageLogic = {
         }
     },
 
-    setCarFinish: function(type, btnElement, skipUIUpdate) {
+    // NEU: Segmentierter Slider für Finish
+    setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         this.currentStudioSetup.finish = type;
 
         if(!skipUIUpdate && btnElement) {
-            document.querySelectorAll('.finish-btn').forEach(btn => btn.classList.remove('active'));
+            const pill = document.getElementById('finish-pill');
+            if(pill) pill.style.transform = `translateX(${index * 100}%)`;
+            document.querySelectorAll('.finish-opt').forEach(btn => btn.classList.remove('active'));
             btnElement.classList.add('active');
         }
 
         const viewer = document.getElementById('studio-model-viewer');
         if(!viewer || !viewer.model) return;
 
-        let metallic = 0.0;
-        let roughness = 0.5;
+        let metallic = 0.0; let roughness = 0.5;
+        if(type === 'glossy') { metallic = 0.3; roughness = 0.1; } 
+        else if (type === 'metallic') { metallic = 0.9; roughness = 0.15; } 
+        else if (type === 'matt') { metallic = 0.0; roughness = 0.8; }
 
-        if(type === 'glossy') {
-            metallic = 0.3; roughness = 0.1; 
-        } else if (type === 'metallic') {
-            metallic = 0.9; roughness = 0.15; 
-        } else if (type === 'matt') {
-            metallic = 0.0; roughness = 0.8; 
-        }
-
-       const materials = viewer.model.materials;
+        const materials = viewer.model.materials;
         for (let i = 0; i < materials.length; i++) {
             const matName = materials[i].name ? materials[i].name.toLowerCase() : "";
             if (matName.includes("paint") || matName.includes("body") || matName.includes("carrosserie") || matName.includes("color") || i===0) {
@@ -413,7 +442,7 @@ window.GarageLogic = {
                 materials[i].pbrMetallicRoughness.setRoughnessFactor(roughness);
             }
         }
-    }, // <--- HIER: Das ist das wichtige Komma, das die Funktion sauber abschließt!
+    }, // Komma nicht vergessen!
 
     // ==========================================
     // === SECTION 4: CAR EDITOR ===
