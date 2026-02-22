@@ -1599,16 +1599,14 @@ body.ghost-active #ghost-chat-overlay {
     filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); 
 }
 
-/* FIX 1: DER PERFEKTE FADE! Maske wendet sich auf den Container an */
+/* === 1. DER FADE ÜBER DEM AUTO === */
 .studio-stage { 
-    flex: 1; 
-    width: 100%; 
-    position: relative; 
-    margin-top: -20px; 
-    z-index: 5; 
-    /* Diese Maske sorgt dafür, dass das Auto oben unsichtbar wird! */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 100%);
+    flex: 1; width: 100%; position: relative; margin-top: -10px; z-index: 5; 
+}
+.studio-top-fade {
+    position: absolute; top: -10px; left: 0; width: 100%; height: 160px;
+    background: linear-gradient(to bottom, #050505 15%, transparent 100%);
+    z-index: 100; pointer-events: none;
 }
 
 /* FIX 2: PANEL HÖHE - Kein Abschneiden mehr! */
@@ -1638,16 +1636,16 @@ body.ghost-active #ghost-chat-overlay {
 }
 .pro-nav-item.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
 
-/* Die Lila Pille - Apple VisionOS Style */
+/* === 3. NAVBAR GLAS BOOST === */
 .nav-magic-pill {
-    position: absolute; top: 6px; left: 6px;
-    height: calc(100% - 12px); width: calc(25% - 3px);
-    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05)); 
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    position: absolute; top: 5px; left: 5px;
+    height: calc(100% - 10px); width: calc(25% - 2.5px);
+    background: rgba(255, 255, 255, 0.15); /* Helleres Glas! */
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.5); /* Scharfe Kante */
     border-radius: 12px; z-index: 1;
     transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1);
-    box-shadow: 0 4px 15px rgba(191, 90, 242, 0.6), inset 0 1px 1px rgba(255,255,255,0.6);
+    box-shadow: 0 0 20px rgba(191, 90, 242, 0.8), inset 0 1px 1px rgba(255,255,255,0.8);
 }
 
 /* Tab Content */
@@ -1670,7 +1668,7 @@ body.ghost-active #ghost-chat-overlay {
     -webkit-mask-image: radial-gradient(transparent 52%, black 53%); 
 }
 
-/* Der Cursor */
+/* Der Cursor (Jetzt immer sichtbar) */
 .wheel-thumb { 
     position: absolute; width: 30px; height: 30px; border-radius: 50%; 
     background: transparent; border: 4px solid #fff; box-shadow: 0 0 15px rgba(0,0,0,0.8); 
@@ -1690,38 +1688,38 @@ body.ghost-active #ghost-chat-overlay {
     background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 6px; backdrop-filter: blur(5px);
 }
 
-/* === FIX 4: DER FETTE, BREITE SLIDER === */
+/* === 2. DER DICKE DEPTH SLIDER (iOS PROOF) === */
 .depth-slider-container { 
-    position: relative; height: 160px; width: 50px; 
+    position: relative; height: 160px; width: 40px; 
     display: flex; align-items: center; justify-content: center;
 }
 
-/* Nur eine saubere Klasse für den Slider! */
+/* Der unsichtbare Container des Sliders */
 .vertical-slider { 
     -webkit-appearance: none; appearance: none;
-    width: 160px; /* Die Länge */
-    height: 38px; /* Die Dicke des Balkens */
-    background: #222; /* Wird durch JS mit Gradient gefüllt */
-    border-radius: 18px; outline: none; 
-    transform: rotate(-90deg); transform-origin: center;
-    border: 2px solid rgba(255,255,255,0.1);
-    box-shadow: inset 0 4px 15px rgba(0,0,0,0.6);
+    width: 160px; height: 40px; 
+    background: transparent; /* WICHTIG FÜR iOS */
+    transform: rotate(-90deg); outline: none;
 }
 
-/* Der transparente Glas-Ring */
+/* FIX: Das ist der eigentliche dicke Balken auf dem iPhone! */
+.vertical-slider::-webkit-slider-runnable-track {
+    width: 100%; 
+    height: 36px; /* Die Dicke! */
+    background: var(--track-bg, #222); /* Wird von JS gesteuert */
+    border-radius: 18px;
+    border: 2px solid rgba(255,255,255,0.15);
+    box-shadow: inset 0 3px 10px rgba(0,0,0,0.5);
+}
+
+/* FIX: Der komplett durchsichtige Ring! */
 .vertical-slider::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
-    width: 48px; height: 48px; border-radius: 50%;
-    background: transparent; 
-    border: 4px solid rgba(255, 255, 255, 0.95); 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.7), inset 0 0 8px rgba(0,0,0,0.4);
-    cursor: pointer;
-}
-.vertical-slider::-moz-range-thumb {
-    width: 48px; height: 48px; border-radius: 50%;
-    background: transparent; 
-    border: 4px solid rgba(255, 255, 255, 0.95);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.7), inset 0 0 8px rgba(0,0,0,0.4);
+    width: 44px; height: 44px; border-radius: 50%;
+    background: transparent; /* Durchsichtig! */
+    border: 4px solid #fff; /* Der weiße Rand */
+    box-shadow: 0 0 12px rgba(0,0,0,0.8);
+    margin-top: -6px; /* Zentriert den Ring auf dem dicken Balken */
     cursor: pointer;
 }
 
