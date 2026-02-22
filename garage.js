@@ -179,16 +179,16 @@ window.GarageLogic = {
         if(screen) screen.classList.remove('hidden');
     },
 
-    closeBrandSelector: function() {
+   closeBrandSelector: function() {
         const screen = document.getElementById('brand-selector-screen');
         if(screen) screen.classList.add('hidden');
     },
 
-
     // ==========================================
     // === NEW: MODEL SELECTOR FLOW           ===
     // ==========================================
- openModelSelector: function(brandKey) {
+    
+    openModelSelector: function(brandKey) {
         const screen = document.getElementById('model-selector-screen');
         if(!screen) return;
         
