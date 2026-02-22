@@ -1435,16 +1435,22 @@ body.ghost-active #ghost-chat-overlay {
 .model-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 30px; /* Mehr Platz zwischen den Autos */
-    padding: 10px 20px 40px 20px;
+    gap: 30px; 
+    /* FIX: Oben 40px Padding für mehr Abstand zum Header */
+    padding: 40px 20px 40px 20px;
     position: relative;
     z-index: 10;
     overflow-y: auto; 
+    
+    /* FIX: Der magische Scroll-Fade! Die oberen 50px des scrollbaren Bereichs verblassen sanft */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
 }
 
-/* Die neue Premium-Card */
+/* Die neue Premium-Card mit weichem Ambiente */
 .model-card {
-    background: linear-gradient(145deg, rgba(30,30,32,0.8), rgba(10,10,12,0.9));
+    /* FIX: Ein weicher, edler Lichtkegel strahlt jetzt von der Oberkante der Karte herab */
+    background: radial-gradient(ellipse at top center, rgba(255,255,255,0.07) 0%, rgba(30,30,32,0.8) 40%, rgba(10,10,12,0.9) 100%);
     border: 1px solid rgba(255,255,255,0.05);
     border-radius: 20px;
     padding: 20px;
@@ -1455,27 +1461,29 @@ body.ghost-active #ghost-chat-overlay {
     animation: slideInBrand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Der dezente weiße Glow hinter dem schwarzen Civic-Logo */
+/* Die Bühne für das Civic Logo */
 .model-logo-stage {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 45px;
-    margin-bottom: 10px;
-    /* Subtiler Glow, der nach außen verblasst */
-    background: radial-gradient(ellipse at center, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 60%);
+    margin-bottom: 5px;
+    /* FIX: Der alte "Fleck" ist weg. Das Ambiente kommt jetzt von der Karte selbst! */
+    background: transparent; 
 }
 
 .model-logo-stage img {
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    /* Lässt das schwarze Logo extrem dezent "glühen", damit es perfekt ablesbar ist */
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.15));
 }
 
-/* Die 3D-Bühne - Deutlich größer! */
+/* Die 3D-Bühne */
 .model-3d-box {
     width: 100%;
-    height: 220px; /* 3D Modell bekommt richtig Platz */
+    /* FIX: Ca. 10-15% größer, damit das Auto richtig massiv wirkt */
+    height: 250px; 
     position: relative;
     margin-bottom: 15px;
 }
