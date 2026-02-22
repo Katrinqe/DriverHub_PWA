@@ -1580,14 +1580,7 @@ body.ghost-active #ghost-chat-overlay {
 }
 #studio-screen.hidden { display: none !important; }
 
-/* Das Studio Licht für das Logo */
-.studio-ambient-light {
-    position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
-    width: 300px; height: 300px;
-    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
-    z-index: 1; pointer-events: none;
-}
-
+/* CLEANE HEADER-BELEUCHTUNG OHNE FLECKEN */
 .studio-header {
     display: flex; justify-content: space-between; align-items: center;
     padding: env(safe-area-inset-top, 30px) 20px 10px 20px;
@@ -1596,20 +1589,18 @@ body.ghost-active #ghost-chat-overlay {
 
 .studio-dominant-logo {
     height: 60px; width: auto; max-width: 180px; object-fit: contain;
-    filter: drop-shadow(0 0 10px rgba(255,255,255,0.3)); 
+    /* Ein sanfter, edler Glow direkt auf dem Logo, kein hässlicher Background-Spot */
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4)); 
 }
 
-/* === 1. DER FADE ÜBER DEM AUTO === */
+/* FIX 1: DER ECHTE FADE (CSS MASKE AUF DEM AUTO-CONTAINER) */
 .studio-stage { 
-    flex: 1; width: 100%; position: relative; margin-top: -10px; z-index: 5; 
-}
-.studio-top-fade {
-    position: absolute; top: -10px; left: 0; width: 100%; height: 160px;
-    background: linear-gradient(to bottom, #050505 15%, transparent 100%);
-    z-index: 100; pointer-events: none;
+    flex: 1; width: 100%; position: relative; margin-top: -10px; z-index: 5;
+    /* Das macht das Auto oben (0% bis 25%) transparent! */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 100%);
 }
 
-/* FIX 2: PANEL HÖHE - Kein Abschneiden mehr! */
 .studio-bottom-panel {
     background: rgba(15, 15, 18, 0.7);
     backdrop-filter: blur(40px) saturate(150%);
@@ -1622,7 +1613,7 @@ body.ghost-active #ghost-chat-overlay {
     display: flex; flex-direction: column;
 }
 
-/* === ECHTER GLASMORPHISMUS NAVBAR === */
+/* === NAVBAR === */
 .studio-nav-pro {
     display: flex; position: relative; margin-bottom: 25px;
     background: rgba(30, 30, 35, 0.5); border-radius: 16px; padding: 6px;
@@ -1636,30 +1627,27 @@ body.ghost-active #ghost-chat-overlay {
 }
 .pro-nav-item.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.8); }
 
-/* === 3. NAVBAR GLAS BOOST === */
 .nav-magic-pill {
-    position: absolute; top: 5px; left: 5px;
-    height: calc(100% - 10px); width: calc(25% - 2.5px);
-    background: rgba(255, 255, 255, 0.15); /* Helleres Glas! */
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.5); /* Scharfe Kante */
+    position: absolute; top: 6px; left: 6px;
+    height: calc(100% - 12px); width: calc(25% - 3px);
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05)); 
+    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 12px; z-index: 1;
     transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1);
-    box-shadow: 0 0 20px rgba(191, 90, 242, 0.8), inset 0 1px 1px rgba(255,255,255,0.8);
+    box-shadow: 0 4px 15px rgba(191, 90, 242, 0.6), inset 0 1px 1px rgba(255,255,255,0.6);
 }
 
-/* Tab Content */
 .studio-tab-content { display: none; flex: 1; }
 .studio-tab-content.active { display: block; animation: fadeInTab 0.3s ease; }
 @keyframes fadeInTab { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* === FIX 3: LAYOUT KREIS LINKS, SLIDER RECHTS === */
+/* === LAYOUT KREIS LINKS, SLIDER RECHTS === */
 .paint-pro-area { 
     display: flex; flex-direction: row; align-items: center; justify-content: center; 
     gap: 40px; margin-bottom: 20px; height: 160px;
 }
 
-/* Das Rad */
 .color-wheel-container { position: relative; width: 160px; height: 160px; touch-action: none; flex-shrink: 0; }
 .color-wheel { 
     width: 100%; height: 100%; border-radius: 50%; 
@@ -1668,7 +1656,6 @@ body.ghost-active #ghost-chat-overlay {
     -webkit-mask-image: radial-gradient(transparent 52%, black 53%); 
 }
 
-/* Der Cursor (Jetzt immer sichtbar) */
 .wheel-thumb { 
     position: absolute; width: 30px; height: 30px; border-radius: 50%; 
     background: transparent; border: 4px solid #fff; box-shadow: 0 0 15px rgba(0,0,0,0.8); 
@@ -1676,7 +1663,6 @@ body.ghost-active #ghost-chat-overlay {
     pointer-events: none; z-index: 10; 
 }
 
-/* Das Innere des Rades */
 .wheel-center-display { 
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
     width: 76px; height: 76px; border-radius: 50%; 
@@ -1688,42 +1674,47 @@ body.ghost-active #ghost-chat-overlay {
     background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 6px; backdrop-filter: blur(5px);
 }
 
-/* === 2. DER DICKE DEPTH SLIDER (iOS PROOF) === */
+/* === FIX 2: DER DICKE SLIDER OHNE BLAUEN PUNKT === */
 .depth-slider-container { 
     position: relative; height: 160px; width: 40px; 
     display: flex; align-items: center; justify-content: center;
 }
 
-/* Der unsichtbare Container des Sliders */
 .vertical-slider { 
-    -webkit-appearance: none; appearance: none;
-    width: 160px; height: 40px; 
-    background: transparent; /* WICHTIG FÜR iOS */
-    transform: rotate(-90deg); outline: none;
-}
-
-/* FIX: Das ist der eigentliche dicke Balken auf dem iPhone! */
-.vertical-slider::-webkit-slider-runnable-track {
-    width: 100%; 
-    height: 36px; /* Die Dicke! */
-    background: var(--track-bg, #222); /* Wird von JS gesteuert */
-    border-radius: 18px;
-    border: 2px solid rgba(255,255,255,0.15);
+    -webkit-appearance: none !important; 
+    appearance: none !important;
+    width: 160px; 
+    height: 38px; 
+    background: var(--track-bg, #222); 
+    border-radius: 19px; 
+    outline: none;
+    transform: rotate(-90deg);
+    border: 2px solid rgba(255,255,255,0.2);
     box-shadow: inset 0 3px 10px rgba(0,0,0,0.5);
+    margin: 0; padding: 0;
 }
 
-/* FIX: Der komplett durchsichtige Ring! */
+/* Der Apple-Kill-Switch: 1% weißes Bild statt transparent */
 .vertical-slider::-webkit-slider-thumb {
-    -webkit-appearance: none; appearance: none;
-    width: 44px; height: 44px; border-radius: 50%;
-    background: transparent; /* Durchsichtig! */
-    border: 4px solid #fff; /* Der weiße Rand */
-    box-shadow: 0 0 12px rgba(0,0,0,0.8);
-    margin-top: -6px; /* Zentriert den Ring auf dem dicken Balken */
+    -webkit-appearance: none !important; 
+    appearance: none !important;
+    width: 46px; 
+    height: 46px; 
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.01) !important; 
+    border: 4px solid #fff !important; 
+    box-shadow: 0 0 10px rgba(0,0,0,0.8);
+    cursor: pointer;
+}
+.vertical-slider::-moz-range-thumb {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.01) !important; 
+    border: 4px solid #fff !important; 
+    box-shadow: 0 0 10px rgba(0,0,0,0.8);
     cursor: pointer;
 }
 
-/* === PAINT FINISH SLIDER (PREMIUM) === */
+/* === PAINT FINISH SLIDER === */
 .finish-segmented { 
     background: rgba(30, 30, 35, 0.5); 
     border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05);
