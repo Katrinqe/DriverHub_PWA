@@ -1571,27 +1571,23 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================== */
-/* === TUNING STUDIO (NFS UNDERGROUND VIBE) = */
+/* === TUNING STUDIO (AAA EXPERIENCE)      == */
 /* ========================================== */
 #studio-screen {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle at center 40%, #1c1c1e 0%, #000000 90%);
-    z-index: 10002;
-    display: flex;
-    flex-direction: column;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #050505; z-index: 10002;
+    display: flex; flex-direction: column;
 }
-
 #studio-screen.hidden { display: none !important; }
 
-/* Top Fade */
-.studio-top-fade {
-    position: absolute; top: 0; left: 0; width: 100%; height: 150px;
-    background: linear-gradient(to bottom, #000000 20%, transparent 100%);
+/* Der Deckenspot-Effekt */
+.studio-ambient-light {
+    position: absolute; top: -50px; left: 50%; transform: translateX(-50%);
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 70%);
     z-index: 1; pointer-events: none;
 }
 
-/* Header - Dominantes Logo */
 .studio-header {
     display: flex; justify-content: space-between; align-items: center;
     padding: env(safe-area-inset-top, 30px) 20px 10px 20px;
@@ -1599,111 +1595,107 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 .studio-dominant-logo {
-    height: 70px; /* RIESIG! */
-    width: auto; max-width: 180px;
-    object-fit: contain;
-    filter: drop-shadow(0 0 12px rgba(255,255,255,0.2)); /* Starker Glow */
+    height: 60px; width: auto; max-width: 180px; object-fit: contain;
+    /* Leuchtet leicht im Deckenlicht */
+    filter: drop-shadow(0 0 15px rgba(255,255,255,0.3)); 
 }
 
-/* Main Stage - Auto nach oben gezogen */
+/* Main Stage */
 .studio-stage {
     flex: 1; width: 100%; position: relative;
-    margin-top: -50px; /* Zieht das Auto aggressiv ins Logo */
-    z-index: 5;
+    margin-top: -30px; z-index: 5;
 }
 
-/* Ultra Glassmorphism Panel - Viel höher jetzt! */
+/* Subtiler Schatten unter dem Auto */
+.car-floor-shadow {
+    position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%);
+    width: 70%; height: 20px;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 70%);
+    z-index: -1; pointer-events: none;
+}
+
+/* Das Glas-Panel */
 .studio-bottom-panel {
-    /* Hintergrund etwas dunkler und undurchsichtiger für besseren Kontrast */
-    background: linear-gradient(to top, rgba(5,5,7,1) 0%, rgba(20,20,25,0.9) 100%);
-    backdrop-filter: blur(25px) saturate(180%); /* Heavy Blur */
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    background: rgba(15, 15, 18, 0.65);
+    backdrop-filter: blur(30px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
     border-top: 1px solid rgba(255,255,255,0.1);
-    /* FIX: Panel ist viel höher, gibt dem Editor Platz */
-    height: 420px; 
-    padding: 15px 25px 30px 25px;
-    border-top-left-radius: 30px; border-top-right-radius: 30px;
-    box-shadow: 0 -15px 50px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1);
+    height: 420px; padding: 25px 25px 30px 25px;
+    border-top-left-radius: 35px; border-top-right-radius: 35px;
+    box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
     display: flex; flex-direction: column;
 }
 
-/* Neon Navbar */
-.studio-nav {
+/* === MAGIC NAVBAR === */
+.studio-nav-pro {
+    display: flex; position: relative; margin-bottom: 30px;
+    background: rgba(0,0,0,0.4); border-radius: 20px; padding: 5px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.pro-nav-item {
+    flex: 1; text-align: center; padding: 12px 0;
+    color: #666; font-size: 0.75rem; font-weight: 900; letter-spacing: 1px;
+    position: relative; z-index: 2; cursor: pointer;
+    transition: color 0.3s;
+}
+
+.pro-nav-item.active { color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.5); }
+
+/* Die Lila Neon-Pille, die slidet */
+.nav-magic-pill {
+    position: absolute; top: 5px; left: 5px;
+    height: calc(100% - 10px); width: calc(25% - 2.5px); /* 25% weil 4 Items */
+    background: linear-gradient(135deg, rgba(191, 90, 242, 0.8), rgba(10, 132, 255, 0.8));
+    border-radius: 15px; z-index: 1;
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    box-shadow: 0 0 15px rgba(191, 90, 242, 0.5);
+}
+
+/* === PRO SLIDERS === */
+.studio-tab-content { display: none; flex: 1; }
+.studio-tab-content.active { display: block; animation: fadeInTab 0.3s ease; }
+
+@keyframes fadeInTab { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.pro-slider-group { margin-bottom: 25px; }
+.slider-header {
     display: flex; justify-content: space-between;
-    margin-bottom: 30px;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
-    padding-bottom: 15px;
+    font-size: 0.7rem; color: #aaa; font-weight: 800; letter-spacing: 1px; margin-bottom: 12px;
+}
+#hue-val-disp { color: #bf5af2; font-family: monospace; font-size: 0.8rem; }
+
+/* Custom Range Sliders */
+.neon-slider {
+    -webkit-appearance: none; width: 100%; height: 12px;
+    border-radius: 6px; outline: none; padding: 0; margin: 0;
+}
+.neon-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #fff; cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5), inset 0 0 0 4px rgba(0,0,0,0.1);
+    border: 2px solid rgba(255,255,255,0.8);
 }
 
-.studio-nav-item {
-    color: #555; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px;
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    cursor: pointer; transition: all 0.3s ease;
+/* Der Regenbogen! */
+.slider-hue {
+    background: linear-gradient(to right, #ff0000 0%, #ffff00 17%, #00ff00 33%, #00ffff 50%, #0000ff 67%, #ff00ff 83%, #ff0000 100%);
 }
-.studio-nav-item i { font-size: 1.4rem; }
-
-/* Aktiver Neon State */
-.studio-nav-item.active { 
-    color: #0a84ff; /* Neon Blau */
-    text-shadow: 0 0 12px rgba(10,132,255,0.6);
-}
-.studio-nav-item.active i {
-    filter: drop-shadow(0 0 8px rgba(10,132,255,0.8));
-}
-
-/* Tab Content Area */
-.studio-tab-content { display: none; flex: 1; overflow-y: auto; }
-.studio-tab-content.active { display: block; }
-
-/* --- PRO PAINT EDITOR CSS --- */
-.paint-pro-row {
-    display: flex; align-items: center; gap: 25px; margin-bottom: 35px;
-}
-
-/* Linke Seite: Der Picker Wrapper */
-.paint-picker-wrapper {
-    width: 100px; height: 100px; flex-shrink: 0;
-    border-radius: 50%;
-    border: 3px solid rgba(255,255,255,0.1);
-    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-    overflow: hidden; position: relative;
-}
-
-/* Das native Input Feld unsichtbar darüber legen */
-#studio-color-picker {
-    position: absolute; top: -10%; left: -10%; width: 120%; height: 120%;
-    cursor: pointer; border: none; background: none; padding: 0;
-}
-
-/* Rechte Seite: HEX Input */
-.paint-info-wrapper { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-.paint-info-wrapper label { font-size: 0.75rem; color: #888; letter-spacing: 1px; }
-
-.hex-input-box {
-    display: flex; align-items: center;
-    background: rgba(0,0,0,0.3);
+/* Die Helligkeit */
+.slider-lightness {
+    background: linear-gradient(to right, #111 0%, #888 50%, #eee 100%);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px; padding: 0 15px; height: 50px;
-}
-.hex-input-box span { color: #888; font-size: 1.2rem; margin-right: 5px; }
-#studio-hex-input {
-    background: none; border: none; color: #fff; font-size: 1.4rem;
-    font-family: monospace; width: 100%; outline: none; text-transform: uppercase;
 }
 
-/* Finish Row */
-.paint-finish-row label { display: block; font-size: 0.75rem; color: #888; letter-spacing: 1px; margin-bottom: 12px; }
+/* Buttons */
 .finish-btn-grid { display: flex; gap: 10px; }
-
 .finish-btn {
-    flex: 1; padding: 12px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    color: #888; border-radius: 10px;
+    flex: 1; padding: 14px; background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05); color: #888; border-radius: 12px;
     font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: all 0.2s;
 }
 .finish-btn.active {
-    background: rgba(255,255,255,0.15);
-    border-color: #fff; color: #fff;
-    box-shadow: 0 0 15px rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.1); border-color: #fff; color: #fff;
+    box-shadow: 0 5px 15px rgba(255,255,255,0.1);
 }
