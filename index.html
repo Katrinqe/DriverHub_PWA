@@ -1061,8 +1061,8 @@
                 <div class="paint-pro-area">
                     <div class="color-wheel-container" id="color-wheel-wrapper">
                         <div class="color-wheel" id="color-wheel"></div>
-                        <div class="wheel-center-display" id="wheel-center-bg">
-                            <span id="hue-val-disp">#BF5AF2</span>
+                       <div class="wheel-center-display" id="wheel-center-bg">
+                            <input type="text" id="hue-val-disp" value="#BF5AF2" onchange="GarageLogic.applyManualHex(this.value)" onfocus="this.select()">
                         </div>
                         <div class="wheel-thumb" id="wheel-thumb"></div>
                     </div>
