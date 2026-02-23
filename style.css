@@ -1669,9 +1669,13 @@ body.ghost-active #ghost-chat-overlay {
     border: 2px solid rgba(255,255,255,0.2); box-shadow: inset 0 5px 15px rgba(0,0,0,0.5); 
     display:flex; align-items:center; justify-content:center;
 }
-.wheel-center-display span { 
+.wheel-center-display input { 
     font-size: 0.65rem; color: #fff; font-family: monospace; font-weight: bold; 
-    background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 6px; backdrop-filter: blur(5px);
+    background: rgba(0,0,0,0.6); padding: 4px 6px; border-radius: 6px; 
+    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
+    width: 65px; text-align: center; outline: none;
+    text-transform: uppercase; margin: 0; box-shadow: none;
+    -webkit-appearance: none; /* Wichtig für iOS */
 }
 /* === DER FINALE SLIDER (FEINSCHLIFF) === */
 .depth-slider-container { 
