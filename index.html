@@ -1060,10 +1060,12 @@
                 
                 <div class="paint-pro-area">
                     <div class="color-wheel-container" id="color-wheel-wrapper">
-                        <div class="color-wheel" id="color-wheel"></div>
-                       <div class="wheel-center-display" id="wheel-center-bg">
-                            <input type="text" id="hue-val-disp" value="#BF5AF2" onchange="GarageLogic.applyManualHex(this.value)" onfocus="this.select()">
+                       <div class="color-wheel" id="color-wheel"></div>
+                        
+                        <div class="wheel-center-display" id="wheel-center-bg" onclick="GarageLogic.openHexModal()">
+                            <span id="hue-val-disp">#BF5AF2</span>
                         </div>
+                        
                         <div class="wheel-thumb" id="wheel-thumb"></div>
                     </div>
 
@@ -1087,6 +1089,17 @@
             <div id="tab-setup" class="studio-tab-content">Coming Soon: Setup</div>
             <div id="tab-engine" class="studio-tab-content">Coming Soon: Engine</div>
             <div id="tab-summary" class="studio-tab-content">Coming Soon: Summary</div>
+        </div>
+
+      <div id="hex-modal-overlay" class="hidden">
+            <div class="hex-modal-card">
+                <h3>MANUAL COLOR CODE</h3>
+                <input type="text" id="modal-hex-input" placeholder="#FFFFFF" maxlength="7">
+                <div class="hex-modal-actions">
+                    <button class="hex-btn-cancel" onclick="GarageLogic.closeHexModal()">CANCEL</button>
+                    <button class="hex-btn-apply" onclick="GarageLogic.applyModalHex()">APPLY</button>
+                </div>
+            </div>
         </div>
     </div>
     
