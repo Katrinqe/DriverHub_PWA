@@ -933,7 +933,7 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
                 }
             }, 300);
         }
-    }
+    },
 
 
 
