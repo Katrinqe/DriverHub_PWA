@@ -289,7 +289,8 @@ window.GarageLogic = {
         const screen = document.getElementById('studio-screen');
         if(!screen) return;
         
-        document.getElementById('studio-model-logo').src = modelLogo;
+      const logoEl = document.getElementById('studio-model-logo');
+        if(logoEl) logoEl.src = modelLogo;
         const viewer = document.getElementById('studio-model-viewer');
         viewer.src = glbFile;
         
