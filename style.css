@@ -1593,20 +1593,23 @@ body.ghost-active #ghost-chat-overlay {
     filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4)); 
 }
 
-/* FIX 1: DER ECHTE FADE (CSS MASKE AUF DEM AUTO-CONTAINER) */
+/* FIX: Auto weiter nach oben gezogen */
 .studio-stage { 
-    flex: 1; width: 100%; position: relative; margin-top: -10px; z-index: 5;
-    /* Das macht das Auto oben (0% bis 25%) transparent! */
+    flex: 1; width: 100%; position: relative; 
+    margin-top: -40px; /* Zieht das 3D-Modell weiter in den Header-Bereich */
+    z-index: 5;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 100%);
     mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 100%);
 }
 
+/* FIX: Panel vergrößert für mehr Platz */
 .studio-bottom-panel {
     background: rgba(15, 15, 18, 0.7);
     backdrop-filter: blur(40px) saturate(150%);
     -webkit-backdrop-filter: blur(40px) saturate(150%);
     border-top: 1px solid rgba(255,255,255,0.15);
-    height: auto; min-height: 400px; 
+    height: auto; 
+    min-height: 480px; /* MASSIVES UPGRADE: Vorher 400px, jetzt deutlich mehr Platz */
     padding: 25px 25px calc(env(safe-area-inset-bottom, 20px) + 20px) 25px;
     border-top-left-radius: 35px; border-top-right-radius: 35px;
     box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
