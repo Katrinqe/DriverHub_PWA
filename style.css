@@ -1805,53 +1805,54 @@ body.ghost-active #ghost-chat-overlay {
 .hex-btn-apply { background: #bf5af2; border: none; color: #fff; box-shadow: 0 4px 15px rgba(191,90,242,0.4); }
 
 /* ========================================== */
-/* === EPIC AR BUTTON (GIF VERSION)        == */
+/* === EPIC AR BUTTON (PURE GIF VERSION)   == */
 /* ========================================== */
 .ar-epic-btn {
-    /* Glasmorphismus Basis (BLEIBT) */
-    background: rgba(20, 20, 25, 0.6);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    padding: 6px 12px 6px 8px; 
+    /* --- CONTAINER STYLING ENTFERNT --- */
+    /* Keine Box, kein Glas, kein Rahmen mehr. Der Button ist unsichtbar. */
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1);
-    
-    /* Layout für GIF und Text (BLEIBT) */
+
+    /* Layout bleibt, damit Text neben GIF steht */
     display: flex;
     align-items: center;
-    gap: 10px;
-    transition: all 0.3s ease;
+    gap: 8px; /* Kleinerer Abstand, damit es kompakter wirkt */
+    transition: transform 0.2s ease; /* Nur noch Bewegung beim Klick */
+    /* Wichtig, damit der Blend-Mode nicht durch den Header glitcht */
+    isolation: isolate; 
 }
 
-/* Klick-Effekt (BLEIBT) */
+/* Klick-Effekt: Nur noch kurzes, knackiges Schrumpfen */
 .ar-epic-btn:active {
-    background: rgba(191, 90, 242, 0.4);
-    border-color: rgba(191, 90, 242, 0.8);
-    transform: scale(0.96);
-    box-shadow: 0 2px 10px rgba(191, 90, 242, 0.5);
+    transform: scale(0.9);
+    filter: brightness(1.2); /* Leuchtet kurz auf beim Klick */
 }
 
-/* Der Text "AR" (BLEIBT) */
+/* Der Text "AR" (Passt gut neben das leuchtende GIF) */
 .ar-text {
     color: #fff;
-    font-size: 0.8rem;
+    font-size: 1rem; /* Etwas größer und dominanter */
     font-weight: 900;
     letter-spacing: 1px;
-    text-shadow: 0 0 5px rgba(255,255,255,0.5);
+    /* Lila Glow passend zum Vibe */
+    text-shadow: 0 0 15px rgba(191, 90, 242, 0.8); 
 }
 
-/* --- NEU: DEIN CUSTOM GIF ICON --- */
+/* --- DEIN GROSSES, FREIGESTELLTES GIF --- */
 .ar-gif-icon {
-    width: 28px; 
-    height: 28px;
+    width: 60px;  /* VIEL GRÖSSER (vorher 28px) - Das ist jetzt der Star! */
+    height: 60px;
     object-fit: contain;
-    border-radius: 4px;
-    
-    /* MAGIC TRICK: Mach die // Striche in der nächsten Zeile weg, 
-       falls dein GIF einen schwarzen Hintergrund hat, den du unsichtbar machen willst! */
-    /* mix-blend-mode: screen; */
+
+    /* --- DER MAGIC TRICK --- */
+    /* mix-blend-mode: screen; macht alles was schwarz ist transparent! */
+    /* Das GIF leuchtet jetzt direkt auf dem Hintergrund ohne viereckigen Kasten. */
+    mix-blend-mode: screen;
+    /* Optional: Leichter extra Glow um das GIF herum */
+    filter: drop-shadow(0 0 10px rgba(191, 90, 242, 0.5));
 }
 
 /* Standard-Button verstecken (BLEIBT) */
