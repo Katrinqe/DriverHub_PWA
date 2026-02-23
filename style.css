@@ -1852,3 +1852,57 @@ body.ghost-active #ghost-chat-overlay {
 #studio-model-viewer::part(default-ar-button) {
     display: none !important;
 }
+/* ========================================== */
+/* === CAMERA COLOR PICKER OVERLAY         == */
+/* ========================================== */
+#camera-color-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000; z-index: 30000;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+}
+#camera-color-overlay.hidden { display: none !important; }
+
+#camera-video-feed {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 1;
+}
+
+/* UI Elemente über dem Video */
+.camera-ui-top, .camera-ui-bottom, .camera-crosshair { position: relative; z-index: 2; }
+
+.camera-ui-top {
+    margin-top: env(safe-area-inset-top, 40px);
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    padding: 10px 20px; border-radius: 20px; text-align: center;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.camera-ui-top h3 { color: #fff; font-size: 0.8rem; margin: 0; letter-spacing: 1px; }
+.camera-ui-top p { color: #aaa; font-size: 0.6rem; margin: 4px 0 0 0; text-transform: uppercase; }
+
+/* Das Fadenkreuz in der exakten Mitte */
+.camera-crosshair {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    display: flex; align-items: center; justify-content: center;
+}
+.crosshair-ring {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.8);
+    box-shadow: 0 0 10px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.5);
+}
+.crosshair-dot {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff;
+    box-shadow: 0 0 5px rgba(0,0,0,0.8);
+}
+
+.camera-ui-bottom {
+    margin-bottom: env(safe-area-inset-bottom, 30px);
+    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px;
+    padding: 0 20px; box-sizing: border-box;
+}
+
+/* Die Live-Vorschau der erkannten Farbe */
+.scanned-color-preview {
+    width: 60px; height: 60px; border-radius: 50%;
+    border: 3px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+    background: #ffffff; transition: background-color 0.1s;
+}
