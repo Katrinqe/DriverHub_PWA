@@ -1587,19 +1587,65 @@ body.ghost-active #ghost-chat-overlay {
     position: relative; z-index: 12;
 }
 
-.studio-dominant-logo {
-    height: 60px; width: auto; max-width: 180px; object-fit: contain;
-    /* Ein sanfter, edler Glow direkt auf dem Logo, kein hässlicher Background-Spot */
-    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.4)); 
+
+
+/* ========================================== */
+/* === NEU: HERO STAGE (STATISCHES AUTO)   == */
+/* ========================================== */
+.studio-hero-stage {
+    position: relative;
+    width: 100%;
+    height: 40vh; /* Nimmt ca. 40% der oberen Bildschirmhälfte ein */
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: -20px; /* Zieht das Auto leicht in den Header-Bereich für bessere Platznutzung */
+    overflow: hidden; 
 }
 
-/* FIX: Auto weiter nach oben gezogen */
-.studio-stage { 
-    flex: 1; width: 100%; position: relative; 
-    margin-top: -40px; /* Zieht das 3D-Modell weiter in den Header-Bereich */
+/* Der weiche, flächendeckende "Eclipse" Glow */
+.hero-ambient-glow {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%; height: 80%;
+    /* Sehr sanfter Übergang: Von 15% Weiß in der Mitte zu komplett transparent außen */
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 40%, transparent 70%);
+    z-index: 1;
+    pointer-events: none;
+    filter: blur(25px); /* Macht den Glow extrem weich */
+}
+
+/* Das Logo (steht jetzt als Silhouette vor dem Glow) */
+.hero-background-logo {
+    position: absolute;
+    top: 45%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    height: 50px; /* Schön groß, aber nicht übertrieben */
+    z-index: 2;
+    opacity: 0.9; 
+    pointer-events: none;
+    filter: drop-shadow(0 4px 15px rgba(0,0,0,0.8)); /* Gibt dem Logo Tiefe gegen das Licht */
+}
+
+/* Das 3D Modell im Vordergrund */
+#studio-model-viewer {
+    position: relative;
     z-index: 5;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 25%, rgba(0,0,0,1) 100%);
+    pointer-events: none; /* Blockiert absolut jede Touch-Eingabe auf dem Auto */
+    /* Macht das Rendering noch plastischer */
+    filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6));
+}
+
+/* Der Übergang nach unten zum zukünftigen Editor */
+.hero-bottom-fade {
+    position: absolute;
+    bottom: 0; left: 0; width: 100%; height: 80px;
+    background: linear-gradient(to top, #050505 0%, transparent 100%);
+    z-index: 10;
+    pointer-events: none;
 }
 
 /* FIX: Panel vergrößert für mehr Platz */
