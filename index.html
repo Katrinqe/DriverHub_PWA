@@ -1078,9 +1078,13 @@
                         <div class="wheel-thumb" id="wheel-thumb"></div>
                     </div>
 
-                    <div class="depth-slider-container">
+                <div class="depth-slider-container">
                         <input type="range" class="vertical-slider" id="pro-light" min="15" max="85" value="50" oninput="GarageLogic.updateProColor()">
                     </div>
+                </div> <div class="auto-color-btn-container">
+                    <button class="auto-color-btn" onclick="GarageLogic.startAutoColorDetection()">
+                        <i class="fa-solid fa-camera-retro"></i> AUTOMATIC COLOR DETECTION
+                    </button>
                 </div>
 
                 <div style="margin-top: 25px;">
