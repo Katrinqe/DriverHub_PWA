@@ -1617,17 +1617,19 @@ body.ghost-active #ghost-chat-overlay {
     filter: blur(25px); /* Macht den Glow extrem weich */
 }
 
-/* Das Logo (steht jetzt als Silhouette vor dem Glow) */
+/* Das Logo (steht jetzt massiv als Silhouette vor dem Glow) */
 .hero-background-logo {
     position: absolute;
-    top: 45%; left: 50%;
+    top: 35%; /* Etwas weiter nach oben gezogen, damit es über das Auto ragt */
+    left: 50%;
     transform: translate(-50%, -50%);
-    width: auto;
-    height: 50px; /* Schön groß, aber nicht übertrieben */
+    width: 85%; /* Nimmt jetzt fast die ganze Breite im Hintergrund ein */
+    max-width: 350px; /* Verhindert, dass es auf Tablets riesig wird */
+    height: auto; /* Passt sich proportional an */
     z-index: 2;
-    opacity: 0.9; 
+    opacity: 0.6; /* Etwas transparenter, damit es subtil und edel bleibt */
     pointer-events: none;
-    filter: drop-shadow(0 4px 15px rgba(0,0,0,0.8)); /* Gibt dem Logo Tiefe gegen das Licht */
+    filter: drop-shadow(0 4px 15px rgba(0,0,0,0.8));
 }
 
 /* Das 3D Modell im Vordergrund */
