@@ -1110,6 +1110,30 @@
                 </div>
             </div>
         </div>
+<div id="camera-color-overlay" class="hidden">
+            <video id="camera-video-feed" autoplay playsinline></video>
+            
+            <div class="camera-ui-top">
+                <h3>SCAN CAR PAINT</h3>
+                <p>Point crosshair at well-lit area</p>
+            </div>
+
+            <div class="camera-crosshair">
+                <div class="crosshair-ring"></div>
+                <div class="crosshair-dot"></div>
+            </div>
+
+            <div class="camera-ui-bottom">
+                <div class="scanned-color-preview" id="scanned-color-preview"></div>
+                <div class="hex-modal-actions" style="width: 100%; max-width: 340px;">
+                    <button class="hex-btn-cancel" onclick="GarageLogic.stopCamera()">CANCEL</button>
+                    <button class="hex-btn-apply" onclick="GarageLogic.applyCameraColor()">APPLY</button>
+                </div>
+            </div>
+
+            <canvas id="camera-canvas" width="1" height="1" style="display:none;"></canvas>
+        </div>
+      
     </div>
     
 </body>
