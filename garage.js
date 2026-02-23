@@ -402,10 +402,9 @@ updateProColor: function() {
         document.getElementById('hue-val-disp').innerText = hexStr;
         document.getElementById('wheel-center-bg').style.background = hexStr;
 
-        // FIX: Den iOS-Balken über CSS-Variablen mit dem Gradienten füttern!
-       const slider = document.getElementById('pro-light');
-    const gradient = `linear-gradient(to right, hsl(${hue}, 80%, 10%), hsl(${hue}, 85%, 50%), hsl(${hue}, 80%, 90%))`;
-    slider.style.setProperty('--track-bg', gradient);
+        // FIX: Farbe DIREKT als Background setzen, das kapiert jeder Browser sofort!
+        const slider = document.getElementById('pro-light');
+        slider.style.background = `linear-gradient(to right, hsl(${hue}, 80%, 10%), hsl(${hue}, 85%, 50%), hsl(${hue}, 80%, 90%))`;
 
         this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
     },
