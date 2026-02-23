@@ -1805,27 +1805,27 @@ body.ghost-active #ghost-chat-overlay {
 .hex-btn-apply { background: #bf5af2; border: none; color: #fff; box-shadow: 0 4px 15px rgba(191,90,242,0.4); }
 
 /* ========================================== */
-/* === EPIC AR BUTTON (ENERGY TESSERACT)   == */
+/* === EPIC AR BUTTON (GIF VERSION)        == */
 /* ========================================== */
 .ar-epic-btn {
-    /* Glasmorphismus Basis */
+    /* Glasmorphismus Basis (BLEIBT) */
     background: rgba(20, 20, 25, 0.6);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 16px;
-    padding: 6px 12px 6px 8px; /* Links weniger Padding, damit der Spinner Platz hat */
+    padding: 6px 12px 6px 8px; 
     cursor: pointer;
     box-shadow: 0 4px 20px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1);
     
-    /* Layout für Spinner und Text */
+    /* Layout für GIF und Text (BLEIBT) */
     display: flex;
     align-items: center;
     gap: 10px;
     transition: all 0.3s ease;
 }
 
-/* Klick-Effekt: Wird heller und zieht sich zusammen */
+/* Klick-Effekt (BLEIBT) */
 .ar-epic-btn:active {
     background: rgba(191, 90, 242, 0.4);
     border-color: rgba(191, 90, 242, 0.8);
@@ -1833,7 +1833,7 @@ body.ghost-active #ghost-chat-overlay {
     box-shadow: 0 2px 10px rgba(191, 90, 242, 0.5);
 }
 
-/* Der Text "AR" */
+/* Der Text "AR" (BLEIBT) */
 .ar-text {
     color: #fff;
     font-size: 0.8rem;
@@ -1842,41 +1842,19 @@ body.ghost-active #ghost-chat-overlay {
     text-shadow: 0 0 5px rgba(255,255,255,0.5);
 }
 
-/* --- DER 3D SPINNER --- */
-.ar-spinner-box {
-    width: 24px; height: 24px;
-    position: relative;
-    transform-style: preserve-3d; /* WICHTIG: Aktiviert 3D */
-    /* Langsame, komplexe Drehung */
-    animation: spinTesseract 8s linear infinite;
-}
-
-/* Die einzelnen Flächen des Tesserakts */
-.ar-face {
-    position: absolute;
-    width: 100%; height: 100%;
+/* --- NEU: DEIN CUSTOM GIF ICON --- */
+.ar-gif-icon {
+    width: 28px; 
+    height: 28px;
+    object-fit: contain;
     border-radius: 4px;
-    /* Der "keine klaren Ränder" Look: Dicker, unscharfer Rahmen */
-    border: 3px solid rgba(191, 90, 242, 0.8);
-    /* Massiver Glow für den Energie-Effekt */
-    box-shadow: 0 0 15px rgba(191, 90, 242, 0.8), inset 0 0 10px rgba(191, 90, 242, 0.5);
-    /* Weichzeichner für den Plasma-Look */
-    filter: blur(1px);
-    opacity: 0.9;
+    
+    /* MAGIC TRICK: Mach die // Striche in der nächsten Zeile weg, 
+       falls dein GIF einen schwarzen Hintergrund hat, den du unsichtbar machen willst! */
+    /* mix-blend-mode: screen; */
 }
 
-/* Die 3 Flächen werden im Raum verdreht */
-.face1 { transform: rotateX(0deg) rotateY(0deg); }
-.face2 { transform: rotateX(60deg) rotateY(60deg); }
-.face3 { transform: rotateX(-60deg) rotateY(-60deg); }
-
-/* Die Animation: Dreht sich um alle Achsen */
-@keyframes spinTesseract {
-    0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
-    100% { transform: rotateX(360deg) rotateY(720deg) rotateZ(360deg); }
-}
-
-/* Standard-Button verstecken (bleibt gleich) */
+/* Standard-Button verstecken (BLEIBT) */
 #studio-model-viewer::part(default-ar-button) {
     display: none !important;
 }
