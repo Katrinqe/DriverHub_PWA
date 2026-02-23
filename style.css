@@ -1805,36 +1805,78 @@ body.ghost-active #ghost-chat-overlay {
 .hex-btn-apply { background: #bf5af2; border: none; color: #fff; box-shadow: 0 4px 15px rgba(191,90,242,0.4); }
 
 /* ========================================== */
-/* === AR BUTTON (HEADER INTEGRATION)      == */
+/* === EPIC AR BUTTON (ENERGY TESSERACT)   == */
 /* ========================================== */
-.ar-header-btn {
-    background: rgba(30, 30, 35, 0.6);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff;
-    padding: 8px 14px;
+.ar-epic-btn {
+    /* Glasmorphismus Basis */
+    background: rgba(20, 20, 25, 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 16px;
-    font-size: 0.75rem;
-    font-weight: 900;
-    letter-spacing: 1px;
+    padding: 6px 12px 6px 8px; /* Links weniger Padding, damit der Spinner Platz hat */
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1);
+    
+    /* Layout für Spinner und Text */
     display: flex;
     align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
-    /* Damit er etwa so breit ist wie der Zurück-Pfeil (Symmetrie) */
-    min-width: 60px; justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
 }
 
-.ar-header-btn:active {
-    background: rgba(191, 90, 242, 0.5);
+/* Klick-Effekt: Wird heller und zieht sich zusammen */
+.ar-epic-btn:active {
+    background: rgba(191, 90, 242, 0.4);
     border-color: rgba(191, 90, 242, 0.8);
-    transform: scale(0.95);
+    transform: scale(0.96);
+    box-shadow: 0 2px 10px rgba(191, 90, 242, 0.5);
 }
 
-/* WICHTIG: Versteckt den hässlichen Standard-Button des Model-Viewers */
+/* Der Text "AR" */
+.ar-text {
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px rgba(255,255,255,0.5);
+}
+
+/* --- DER 3D SPINNER --- */
+.ar-spinner-box {
+    width: 24px; height: 24px;
+    position: relative;
+    transform-style: preserve-3d; /* WICHTIG: Aktiviert 3D */
+    /* Langsame, komplexe Drehung */
+    animation: spinTesseract 8s linear infinite;
+}
+
+/* Die einzelnen Flächen des Tesserakts */
+.ar-face {
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 4px;
+    /* Der "keine klaren Ränder" Look: Dicker, unscharfer Rahmen */
+    border: 3px solid rgba(191, 90, 242, 0.8);
+    /* Massiver Glow für den Energie-Effekt */
+    box-shadow: 0 0 15px rgba(191, 90, 242, 0.8), inset 0 0 10px rgba(191, 90, 242, 0.5);
+    /* Weichzeichner für den Plasma-Look */
+    filter: blur(1px);
+    opacity: 0.9;
+}
+
+/* Die 3 Flächen werden im Raum verdreht */
+.face1 { transform: rotateX(0deg) rotateY(0deg); }
+.face2 { transform: rotateX(60deg) rotateY(60deg); }
+.face3 { transform: rotateX(-60deg) rotateY(-60deg); }
+
+/* Die Animation: Dreht sich um alle Achsen */
+@keyframes spinTesseract {
+    0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    100% { transform: rotateX(360deg) rotateY(720deg) rotateZ(360deg); }
+}
+
+/* Standard-Button verstecken (bleibt gleich) */
 #studio-model-viewer::part(default-ar-button) {
     display: none !important;
 }
