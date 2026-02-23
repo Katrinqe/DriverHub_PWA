@@ -934,6 +934,94 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
             }, 300);
         }
     }
+
+
+
+// === CAMERA COLOR DETECTION LOGIK ===
+    cameraStream: null,
+    scanInterval: null,
+    lastScannedHex: '#FFFFFF',
+
+    startAutoColorDetection: async function() {
+        const overlay = document.getElementById('camera-color-overlay');
+        const video = document.getElementById('camera-video-feed');
+
+        // Fordert Zugriff auf die RÜCKKAMERA an
+        try {
+            this.cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: "environment" } 
+            });
+            video.srcObject = this.cameraStream;
+            overlay.classList.remove('hidden');
+
+            // Startet den Loop: Alle 100ms die Farbe auslesen
+            this.scanInterval = setInterval(() => this.scanCenterPixel(), 100);
+        } catch (err) {
+            alert("Kamera-Zugriff verweigert oder auf diesem Gerät nicht verfügbar.");
+            console.error(err);
+        }
+    },
+
+    scanCenterPixel: function() {
+        const video = document.getElementById('camera-video-feed');
+        const canvas = document.getElementById('camera-canvas');
+        const preview = document.getElementById('scanned-color-preview');
+        
+        if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // Finde die exakte Mitte des Video-Feeds
+        const vx = video.videoWidth / 2;
+        const vy = video.videoHeight / 2;
+        
+        // PRO-TIPP: Wir lesen nicht 1 Pixel aus (zu viel Rauschen), 
+        // sondern zeichnen einen 30x30 Pixel Bereich in unseren 1x1 Canvas. 
+        // Der Browser berechnet dadurch automatisch die perfekte Durchschnittsfarbe!
+        ctx.drawImage(video, vx - 15, vy - 15, 30, 30, 0, 0, 1, 1);
+        
+        const pixelData = ctx.getImageData(0, 0, 1, 1).data;
+        const r = pixelData[0];
+        const g = pixelData[1];
+        const b = pixelData[2];
+        
+        // RGB zu HEX umwandeln
+        const hex = "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
+        this.lastScannedHex = hex;
+        
+        // UI aktualisieren
+        if(preview) preview.style.backgroundColor = hex;
+    },
+
+    stopCamera: function() {
+        const overlay = document.getElementById('camera-color-overlay');
+        
+        // Kamera Hardware abschalten
+        if (this.cameraStream) {
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            this.cameraStream = null;
+        }
+        
+        // Scan-Loop stoppen
+        if (this.scanInterval) {
+            clearInterval(this.scanInterval);
+            this.scanInterval = null;
+        }
+        
+        if(overlay) overlay.classList.add('hidden');
+    },
+
+    applyCameraColor: function() {
+        const hex = this.lastScannedHex;
+        this.stopCamera();
+        
+        // Wir recyceln unsere bombensichere Funktion vom manuellen Hex-Input!
+        if(typeof this.applyManualHex === 'function') {
+            this.applyManualHex(hex);
+        } else {
+            console.error("applyManualHex Funktion nicht gefunden!");
+        }
+    }
 };
 
 
