@@ -1805,12 +1805,19 @@ body.ghost-active #ghost-chat-overlay {
 .hex-btn-apply { background: #bf5af2; border: none; color: #fff; box-shadow: 0 4px 15px rgba(191,90,242,0.4); }
 
 /* ========================================== */
-/* === NEU: AR BUTTON (ISOLIERT)           == */
+/* === NEU: AR BUTTON (ISOLIERT & GEFIXT)  == */
 /* ========================================== */
 .ar-fab-btn {
-    position: absolute;
-    top: env(safe-area-inset-top, 30px); /* Respektiert die iPhone Notch */
-    right: 20px;
+    /* FIX 1: 'fixed' holt den Button aus dem 3D-Bereich und bindet ihn an den Screen */
+    position: fixed !important; 
+    
+    /* FIX 2: Perfekte Höhe für den Header (SafeArea + 14px für die vertikale Mittelextraktion) */
+    top: calc(env(safe-area-inset-top, 30px) + 14px) !important; 
+    right: 20px !important;
+    
+    /* FIX 3: Zwingt den Button ÜBER den schwarzen Fade */
+    z-index: 99999 !important; 
+    
     background: rgba(30, 30, 35, 0.6);
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
@@ -1826,7 +1833,6 @@ body.ghost-active #ghost-chat-overlay {
     display: flex;
     align-items: center;
     gap: 8px;
-    z-index: 1000; /* Bleibt über dem Auto und dem Fade */
     transition: all 0.2s ease;
 }
 
