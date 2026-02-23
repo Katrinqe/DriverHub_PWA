@@ -370,7 +370,12 @@ this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
             this.updateProColor();
         };
 
-        wrapper.addEventListener('pointerdown', (e) => { isDragging = true; updateWheel(e); wrapper.setPointerCapture(e.pointerId); });
+        wrapper.addEventListener('pointerdown', (e) => { 
+            // FIX: Wenn der Klick auf der Mitte landet, ABRECHEN! Rad darf sich nicht bewegen!
+            if(e.target.closest('#wheel-center-bg')) return; 
+            
+            isDragging = true; updateWheel(e); wrapper.setPointerCapture(e.pointerId); 
+        });
         wrapper.addEventListener('pointermove', (e) => { if(isDragging) updateWheel(e); });
         wrapper.addEventListener('pointerup', (e) => { isDragging = false; wrapper.releasePointerCapture(e.pointerId); });
     },
@@ -461,8 +466,8 @@ updateProColor: function() {
         const rgb = this.hslToRgb(hue, 85, light); 
         const hexStr = this.rgbToHex(rgb[0], rgb[1], rgb[2]);
         
-       // UI updaten (Muss jetzt .value sein!)
-        document.getElementById('hue-val-disp').value = hexStr;
+       // UI Text & Center updaten (innerText ist wieder korrekt)
+        document.getElementById('hue-val-disp').innerText = hexStr;
         document.getElementById('wheel-center-bg').style.background = hexStr;
 
         // FIX: Farbe DIREKT als Background setzen, das kapiert jeder Browser sofort!
@@ -868,6 +873,34 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         this.renderDriveCard();
     },
 
+
+    // === MODAL LOGIK ===
+    openHexModal: function() {
+        const modal = document.getElementById('hex-modal-overlay');
+        const input = document.getElementById('modal-hex-input');
+        const currentHex = document.getElementById('hue-val-disp').innerText;
+        
+        if(modal && input) {
+            input.value = currentHex;
+            modal.classList.remove('hidden');
+            // Minimal warten, dann Input fokussieren -> öffnet Tastatur automatisch
+            setTimeout(() => { input.focus(); }, 100); 
+        }
+    },
+
+    closeHexModal: function() {
+        const modal = document.getElementById('hex-modal-overlay');
+        if(modal) modal.classList.add('hidden');
+    },
+
+    applyModalHex: function() {
+        const input = document.getElementById('modal-hex-input');
+        if(input) {
+            this.applyManualHex(input.value); // Die Funktion von vorhin erledigt die Mathe
+            this.closeHexModal();
+        }
+    },
+
     renderDriveCard: function() {
         const driveCont = document.getElementById('drive-card-content');
         if(!driveCont) return;
@@ -902,6 +935,8 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         }
     }
 };
+
+
 
 // === WICHTIG: STARTEN AM ENDE ===
 // Hier wird die Logik erst ausgeführt, wenn alles geladen ist.
