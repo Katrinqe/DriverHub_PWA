@@ -1674,54 +1674,65 @@ body.ghost-active #ghost-chat-overlay {
     background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 6px; backdrop-filter: blur(5px);
 }
 
-/* === FIX 2: DER DICKE SLIDER OHNE BLAUEN PUNKT === */
-/* === FIX 2: DER RICHTIG DICKE SLIDER === */
+/* === FIX: DER FETTE, ZENTRIERTE SLIDER === */
 .depth-slider-container { 
-    position: relative; height: 160px; width: 60px; /* Platz für den breiten Balken */
+    position: relative; height: 160px; width: 80px; /* Mehr Platz für Breite */
     display: flex; align-items: center; justify-content: center;
 }
 
 .vertical-slider { 
     -webkit-appearance: none !important; 
     appearance: none !important;
-    width: 160px; 
-    height: 46px; /* DEUTLICH BREITER (vorher 38px) */
-    background: #222; 
-    border-radius: 23px; /* Perfekt rund (Hälfte von 46) */
+    width: 160px; /* Visuelle Länge */
+    height: 50px !important; /* Visuelle Dicke */
+    background: transparent !important; /* MUSS transparent sein, damit der Track greift */
     outline: none;
     transform: rotate(-90deg);
-    border: 2px solid rgba(255,255,255,0.2);
-    box-shadow: inset 0 3px 10px rgba(0,0,0,0.5);
     margin: 0; padding: 0;
 }
 
+/* HIER IST DER FETTE BALKEN: Der Track */
 .vertical-slider::-webkit-slider-runnable-track {
     width: 100%; 
-    height: 100%;
-    background: transparent; 
-    border-radius: 23px;
+    height: 50px !important; /* EXTREM FETT */
+    background: var(--track-bg, #222); 
+    border-radius: 25px; 
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: inset 0 3px 10px rgba(0,0,0,0.5);
 }
 
-/* Der Apple-Kill-Switch und exakte Zentrierung */
+.vertical-slider::-moz-range-track {
+    width: 100%; 
+    height: 50px !important; 
+    background: var(--track-bg, #222); 
+    border-radius: 25px; 
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: inset 0 3px 10px rgba(0,0,0,0.5);
+}
+
+/* DER RING - Exakt zentriert, da gleiche Größe (50px) wie der Balken */
 .vertical-slider::-webkit-slider-thumb {
     -webkit-appearance: none !important; 
     appearance: none !important;
-    width: 46px;  /* Exakt so groß wie der Balken dick ist */
-    height: 46px; /* Exakt so groß wie der Balken dick ist */
+    width: 50px !important; 
+    height: 50px !important; 
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.01) !important; 
     border: 4px solid #fff !important; 
     box-shadow: 0 0 10px rgba(0,0,0,0.8);
     cursor: pointer;
-    margin-top: 0px; /* <--- DAS ZENTRIERT IHN JETZT ZU 100% */
+    margin-top: 0px !important; /* Bei gleicher Höhe zentriert das perfekt */
 }
 
 .vertical-slider::-moz-range-thumb {
-    width: 46px; height: 46px; border-radius: 50%;
+    width: 50px !important; 
+    height: 50px !important; 
+    border-radius: 50%;
     background: rgba(255, 255, 255, 0.01) !important; 
     border: 4px solid #fff !important; 
     box-shadow: 0 0 10px rgba(0,0,0,0.8);
     cursor: pointer;
+    margin-top: 0px !important;
 }
 
 /* === PAINT FINISH SLIDER === */
