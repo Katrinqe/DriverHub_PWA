@@ -1673,53 +1673,59 @@ body.ghost-active #ghost-chat-overlay {
     font-size: 0.65rem; color: #fff; font-family: monospace; font-weight: bold; 
     background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 6px; backdrop-filter: blur(5px);
 }
-
-/* === DER PERFEKTE SLIDER (EDEL & ZENTRIERT) === */
+/* === DER FINALE SLIDER (FEINSCHLIFF) === */
 .depth-slider-container { 
-    position: relative; height: 160px; width: 40px; 
-    display: flex; align-items: center; justify-content: center;
+    position: relative; 
+    height: 160px; 
+    width: 60px; /* Mehr Breite für den Container, damit Rotation nicht schneidet */
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    overflow: visible; /* WICHTIG: Nichts abschneiden */
 }
 
 .vertical-slider { 
     -webkit-appearance: none !important; 
     appearance: none !important;
-    width: 160px; 
-    height: 32px !important; /* Elegant, nicht zu fett, nicht zu dünn */
-    /* Farbe wird via JS genau hier reingeladen */
-    border-radius: 16px; 
+    width: 160px; /* Länge */
+    height: 24px !important; /* DÜNNER & EDLER */
+    background: #222; 
+    border-radius: 12px; 
     outline: none;
+    cursor: pointer;
+    /* Rotation zentriert erzwingen */
     transform: rotate(-90deg);
-    border: 2px solid rgba(255,255,255,0.2);
-    box-shadow: inset 0 3px 10px rgba(0,0,0,0.5);
+    position: absolute;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
     margin: 0; padding: 0;
 }
 
-/* Track komplett unsichtbar machen, damit der JS-Hintergrund durchscheint */
+/* Track-Fix für Webkit/iOS */
 .vertical-slider::-webkit-slider-runnable-track {
-    width: 100%; height: 100%; background: transparent; border: none;
-}
-.vertical-slider::-moz-range-track {
-    width: 100%; height: 100%; background: transparent; border: none;
+    width: 100%; height: 24px; background: transparent; border: none;
 }
 
-/* Der zentrierte Ring */
+/* Der perfekt zentrierte Regler-Ring */
 .vertical-slider::-webkit-slider-thumb {
     -webkit-appearance: none !important; 
     appearance: none !important;
-    width: 32px !important; /* Exakt so groß wie der Balken */
+    width: 32px !important; /* Etwas größer als der Balken für Griffigkeit */
     height: 32px !important; 
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.01) !important; 
-    border: 4px solid #fff !important; 
-    box-shadow: 0 0 10px rgba(0,0,0,0.8);
+    border: 3px solid #fff !important; 
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
     cursor: pointer;
-    margin-top: 0px !important; 
+    /* MAGIC FIX: Exakte vertikale Zentrierung auf dem 24px Balken */
+    margin-top: -4px; 
 }
+
+/* Firefox Support */
 .vertical-slider::-moz-range-thumb {
-    width: 32px !important; height: 32px !important; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.01) !important; 
-    border: 4px solid #fff !important; 
-    box-shadow: 0 0 10px rgba(0,0,0,0.8); cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.01); border: 3px solid #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5); cursor: pointer;
 }
 /* === PAINT FINISH SLIDER === */
 .finish-segmented { 
