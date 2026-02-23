@@ -392,14 +392,77 @@ this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
     },
 
+    // Rechnet einen HEX-Code in den Winkel für den Kreis und den Wert für den Slider um
+    hexToHsl: function(hex) {
+        let shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, function(m, r, g, b) { return r + r + g + g + b + b; });
+        let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        if (!result) return null; // Abbrechen, wenn es kein echtes Hex ist
+        
+        let r = parseInt(result[1], 16) / 255;
+        let g = parseInt(result[2], 16) / 255;
+        let b = parseInt(result[3], 16) / 255;
+
+        let max = Math.max(r, g, b), min = Math.min(r, g, b);
+        let h, s, l = (max + min) / 2;
+
+        if (max === min) { h = s = 0; } 
+        else {
+            let d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+        }
+        return [h * 360, s * 100, l * 100];
+    },
+
+    // Wird aufgerufen, wenn du "Enter/Fertig" auf der Tastatur drückst
+    applyManualHex: function(hexValue) {
+        let hex = hexValue.trim();
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        
+        const hsl = this.hexToHsl(hex);
+        if (!hsl) {
+            // Falls der Nutzer Quatsch eingetippt hat, setze es auf die aktuelle Farbe zurück
+            this.updateProColor(); 
+            return;
+        }
+
+        let h = hsl[0];
+        let l = hsl[2];
+        
+        // 1. Speichere den neuen Winkel
+        this.currentStudioSetup.h = h;
+        
+        // 2. Setze den Helligkeits-Slider (limitiert zwischen 15 und 85)
+        let clampedL = Math.max(15, Math.min(85, l));
+        document.getElementById('pro-light').value = clampedL;
+
+        // 3. Setze den Ring auf dem Farbrad auf die korrekte Position
+        const thumb = document.getElementById('wheel-thumb');
+        if(thumb) {
+            let angle = (h - 90) * (Math.PI / 180);
+            let tx = 62 * Math.cos(angle);
+            let ty = 62 * Math.sin(angle);
+            thumb.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
+        }
+
+        // 4. Lade die Farbe aufs Auto
+        this.updateProColor();
+    },
+
 updateProColor: function() {
         const hue = this.currentStudioSetup.h;
         const light = document.getElementById('pro-light').value;
         const rgb = this.hslToRgb(hue, 85, light); 
         const hexStr = this.rgbToHex(rgb[0], rgb[1], rgb[2]);
         
-        // UI Text & Center updaten
-        document.getElementById('hue-val-disp').innerText = hexStr;
+       // UI updaten (Muss jetzt .value sein!)
+        document.getElementById('hue-val-disp').value = hexStr;
         document.getElementById('wheel-center-bg').style.background = hexStr;
 
         // FIX: Farbe DIREKT als Background setzen, das kapiert jeder Browser sofort!
