@@ -1805,54 +1805,34 @@ body.ghost-active #ghost-chat-overlay {
 .hex-btn-apply { background: #bf5af2; border: none; color: #fff; box-shadow: 0 4px 15px rgba(191,90,242,0.4); }
 
 /* ========================================== */
-/* === EPIC AR BUTTON (PURE GIF VERSION)   == */
+/* === PURE GIF AR BUTTON                  == */
 /* ========================================== */
 .ar-epic-btn {
-    /* --- CONTAINER STYLING ENTFERNT --- */
-    /* Keine Box, kein Glas, kein Rahmen mehr. Der Button ist unsichtbar. */
     background: transparent;
     border: none;
     padding: 0;
+    margin: 0;
     box-shadow: none;
     cursor: pointer;
-
-    /* Layout bleibt, damit Text neben GIF steht */
-    display: flex;
-    align-items: center;
-    gap: 8px; /* Kleinerer Abstand, damit es kompakter wirkt */
-    transition: transform 0.2s ease; /* Nur noch Bewegung beim Klick */
-    /* Wichtig, damit der Blend-Mode nicht durch den Header glitcht */
-    isolation: isolate; 
+    transition: transform 0.2s ease;
+    outline: none;
+    -webkit-tap-highlight-color: transparent; /* Verhindert das graue Flackern beim Tippen auf iOS */
 }
 
-/* Klick-Effekt: Nur noch kurzes, knackiges Schrumpfen */
 .ar-epic-btn:active {
-    transform: scale(0.9);
-    filter: brightness(1.2); /* Leuchtet kurz auf beim Klick */
+    transform: scale(0.9); /* Zuckt kurz zusammen beim Klicken */
 }
 
-/* Der Text "AR" (Passt gut neben das leuchtende GIF) */
-.ar-text {
-    color: #fff;
-    font-size: 1rem; /* Etwas größer und dominanter */
-    font-weight: 900;
-    letter-spacing: 1px;
-    /* Lila Glow passend zum Vibe */
-    text-shadow: 0 0 15px rgba(191, 90, 242, 0.8); 
-}
-
-/* --- DEIN GROSSES, FREIGESTELLTES GIF --- */
 .ar-gif-icon {
-    width: 60px;  /* VIEL GRÖSSER (vorher 28px) - Das ist jetzt der Star! */
+    width: 60px;  
     height: 60px;
     object-fit: contain;
-
-    /* --- DER MAGIC TRICK --- */
-    /* mix-blend-mode: screen; macht alles was schwarz ist transparent! */
-    /* Das GIF leuchtet jetzt direkt auf dem Hintergrund ohne viereckigen Kasten. */
+    
+    /* Der Magic Trick, um Schwarz unsichtbar zu machen (inkl. Apple-Fix) */
     mix-blend-mode: screen;
-    /* Optional: Leichter extra Glow um das GIF herum */
-    filter: drop-shadow(0 0 10px rgba(191, 90, 242, 0.5));
+    -webkit-mix-blend-mode: screen;
+    
+    /* KEINE Filter, keine Schatten, pures GIF */
 }
 
 /* Standard-Button verstecken (BLEIBT) */
