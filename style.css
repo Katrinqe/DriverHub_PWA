@@ -1900,3 +1900,79 @@ body.ghost-active #ghost-chat-overlay {
 .slide-up-config {
     animation: slideUpConfig 0.5s cubic-bezier(0.2, 1, 0.3, 1) forwards;
 }
+
+/* ========================================== */
+/* === SHOWROOM TELEMETRY UI               == */
+/* ========================================== */
+
+/* Der Haupt-Container für den Showroom muss jetzt relatic sein für die Sticky-Buttons */
+#showroom-panel {
+    position: relative;
+    padding: 0; /* Padding entfernen, da Scroll-Bereich das übernimmt */
+}
+
+.showroom-content-scroll { 
+    flex: 1; overflow-y: auto; overflow-x: hidden; 
+    padding: 20px 20px 0 20px; 
+    -ms-overflow-style: none; scrollbar-width: none; 
+}
+.showroom-content-scroll::-webkit-scrollbar { display: none; }
+
+.quick-facts-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+.qf-badge { 
+    background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); 
+    padding: 6px 12px; border-radius: 20px; font-family: monospace; 
+    font-size: 0.7rem; color: #ccc; letter-spacing: 1px; 
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5); backdrop-filter: blur(5px); 
+}
+
+.showroom-card { 
+    background: rgba(20, 20, 25, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
+    border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; 
+    display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+    margin-bottom: 20px; box-sizing: border-box;
+}
+.showroom-card.full-width { width: 100%; }
+.showroom-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+
+.card-header { 
+    font-size: 0.75rem; color: #888; font-weight: 900; letter-spacing: 1.5px; 
+    margin-bottom: 15px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; 
+}
+.card-header i { color: #bf5af2; }
+
+/* === Dyno Peaks === */
+.dyno-peaks { display: flex; justify-content: space-around; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
+.peak-box { display: flex; flex-direction: column; align-items: center; }
+.peak-box.hp .peak-val { color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.8); }
+.peak-box.nm .peak-val { color: #bf5af2; text-shadow: 0 0 15px rgba(191,90,242,0.8); }
+.peak-val { font-size: 1.2rem; font-weight: 900; font-family: sans-serif; }
+.peak-rpm { font-size: 0.65rem; color: #666; font-family: monospace; margin-top: 3px; }
+
+/* === Balance Bar === */
+.balance-visual { display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center; flex: 1; }
+.bal-bar-container { width: 100%; height: 12px; background: #111; border-radius: 6px; display: flex; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+.bal-bar { display: flex; align-items: center; justify-content: center; font-size: 0.55rem; font-weight: bold; color: #000; }
+.bal-bar.front { background: #fff; }
+.bal-bar.rear { background: #bf5af2; color: #fff; }
+.bal-labels { width: 100%; display: flex; justify-content: space-between; font-size: 0.65rem; color: #888; font-weight: bold; letter-spacing: 1px; }
+
+/* === 0-100 Gauge === */
+.gauge-container { position: relative; width: 100%; height: 70px; display: flex; justify-content: center; align-items: flex-end; overflow: hidden; margin-top: 10px; }
+.gauge-arc { 
+    width: 110px; height: 110px; border-radius: 50%; border: 8px solid #222; 
+    border-top-color: #ff3b30; border-right-color: #ff3b30; transform: rotate(-45deg); 
+    position: absolute; top: 10px; box-shadow: 0 0 20px rgba(255,59,48,0.2), inset 0 0 20px rgba(255,59,48,0.2); 
+}
+.gauge-value { font-size: 1.8rem; font-weight: 900; color: #fff; margin-bottom: -5px; z-index: 2; text-shadow: 0 4px 10px rgba(0,0,0,0.8); }
+.gauge-value small { font-size: 0.8rem; color: #888; margin-left: 2px; }
+
+/* === Nerd Specs === */
+.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+.spec-item { display: flex; flex-direction: column; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.02); }
+.spec-item span { font-size: 0.6rem; color: #666; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px; }
+.spec-item strong { font-size: 0.85rem; color: #ddd; font-family: monospace; }
+
+/* === Charts === */
+.chart-container-dyno { position: relative; height: 180px; width: 100%; }
+.chart-container-gear { position: relative; height: 180px; width: 100%; }
