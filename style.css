@@ -1909,32 +1909,47 @@ body.ghost-active #ghost-chat-overlay {
     --glow-color: #bf5af2; /* Das binden wir später an die Lack-Farbe! */
 }
 
+/* ========================================== */
+/* === LAYER 1: THE AMBIENT ORBS (DYNAMIC) == */
+/* ========================================== */
+
+/* Hauptpanel: Weiche Maske gegen harte Kanten */
 #showroom-panel { 
     flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0; position: relative; 
     background: transparent;
+    /* FIX: Die Maske lässt das Licht oben sanft zum Auto hin ausfaden. Keine Kante mehr! */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
 }
 
-/* === LAYER 1: THE AMBIENT ORB (Das pulsierende Licht im Hintergrund) === */
-/* === LAYER 1: THE AMBIENT ORBS (Das Geheimnis von Pinterest) === */
-#showroom-panel { 
-    flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0; position: relative; 
-    background: #030305; /* Abgrundtiefes Schwarz, damit Neon knallt */
+/* === ANIMATIONEN: Das "Atmen" der Lichter === */
+@keyframes orbDrift1 {
+    0% { transform: translate(0, 0) scale(1); opacity: 0.25; }
+    50% { transform: translate(30px, 40px) scale(1.1); opacity: 0.12; }
+    100% { transform: translate(0, 0) scale(1); opacity: 0.25; }
+}
+@keyframes orbDrift2 {
+    0% { transform: translate(0, 0) scale(1); opacity: 0.20; }
+    50% { transform: translate(-40px, -20px) scale(1.15); opacity: 0.10; }
+    100% { transform: translate(0, 0) scale(1); opacity: 0.20; }
 }
 
-/* Leuchtkugel 1: Oben Links (Lila) */
+/* Leuchtkugel 1: Oben Links (Lila, weicher, dynamisch) */
 #showroom-panel::before {
-    content: ''; position: absolute; top: 5%; left: -10%;
-    width: 250px; height: 250px; border-radius: 50%;
+    content: ''; position: absolute; top: 0%; left: -10%;
+    width: 300px; height: 300px; border-radius: 50%;
     background: var(--glow-color); 
-    filter: blur(90px); opacity: 0.55; z-index: 0; pointer-events: none;
+    filter: blur(120px); z-index: 0; pointer-events: none;
+    animation: orbDrift1 12s ease-in-out infinite;
 }
 
-/* Leuchtkugel 2: Unten Rechts (Cyan-Kontrast für den kranken Look) */
+/* Leuchtkugel 2: Unten Rechts (Cyan, weicher, dynamisch) */
 #showroom-panel::after {
-    content: ''; position: absolute; bottom: 20%; right: -15%;
-    width: 300px; height: 300px; border-radius: 50%;
+    content: ''; position: absolute; bottom: 10%; right: -15%;
+    width: 350px; height: 350px; border-radius: 50%;
     background: #00f0ff; 
-    filter: blur(100px); opacity: 0.35; z-index: 0; pointer-events: none;
+    filter: blur(130px); z-index: 0; pointer-events: none;
+    animation: orbDrift2 15s ease-in-out infinite;
 }
 
 /* === LAYER 2: SCROLL AREA & FADE === */
