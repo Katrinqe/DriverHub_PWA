@@ -1062,11 +1062,70 @@
         </div>
 
       <div id="showroom-panel" class="showroom-panel">
-            <div class="showroom-placeholder">
-                <h3>VEHICLE TELEMETRY</h3>
-                <p>Data & Specs coming soon...</p>
+            <div id="showroom-panel" class="showroom-panel">
+            
+            <div class="showroom-content-scroll" id="showroom-content-scroll">
+                
+                <div class="quick-facts-row">
+                    <span class="qf-badge">MODEL: EJ2 (1.5 DX)</span>
+                    <span class="qf-badge">YEAR: 1994</span>
+                    <span class="qf-badge">WEIGHT: 1040 KG</span>
+                </div>
+
+                <div class="showroom-card full-width">
+                    <div class="card-header"><i class="fa-solid fa-chart-line"></i> DYNO PERFORMANCE</div>
+                    <div class="chart-container-dyno">
+                        <canvas id="dynoChart"></canvas>
+                    </div>
+                    <div class="dyno-peaks">
+                        <div class="peak-box hp"><span class="peak-val">103 HP</span><span class="peak-rpm">@ 5900 RPM</span></div>
+                        <div class="peak-box nm"><span class="peak-val">133 NM</span><span class="peak-rpm">@ 5000 RPM</span></div>
+                    </div>
+                </div>
+
+                <div class="showroom-grid-2">
+                    <div class="showroom-card">
+                        <div class="card-header"><i class="fa-solid fa-balance-scale"></i> BALANCE</div>
+                        <div class="balance-visual">
+                            <div class="bal-bar-container">
+                                <div class="bal-bar front" style="width: 60%;">60%</div>
+                                <div class="bal-bar rear" style="width: 40%;">40%</div>
+                            </div>
+                            <div class="bal-labels"><span>FRONT</span><span>REAR</span></div>
+                        </div>
+                    </div>
+                    <div class="showroom-card">
+                        <div class="card-header"><i class="fa-solid fa-stopwatch"></i> 0-100 KM/H</div>
+                        <div class="gauge-container">
+                            <div class="gauge-arc"></div>
+                            <div class="gauge-value">9.8<small>s</small></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="showroom-card full-width">
+                    <div class="card-header"><i class="fa-solid fa-cogs"></i> GEAR RATIOS (S20)</div>
+                    <div class="chart-container-gear">
+                        <canvas id="gearChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="showroom-card full-width spec-sheet">
+                    <div class="card-header"><i class="fa-solid fa-list-check"></i> TECHNICAL BLUEPRINT</div>
+                    <div class="spec-grid">
+                        <div class="spec-item"><span>ENGINE CODE</span><strong>D15B7</strong></div>
+                        <div class="spec-item"><span>BORE x STROKE</span><strong>75.0 x 84.5 mm</strong></div>
+                        <div class="spec-item"><span>DRIVETRAIN</span><strong>FWD</strong></div>
+                        <div class="spec-item"><span>AERO (Cd)</span><strong>0.31</strong></div>
+                        <div class="spec-item"><span>FUEL</span><strong>Gasoline (45L)</strong></div>
+                        <div class="spec-item"><span>ENGINE WEIGHT</span><strong>140 KG</strong></div>
+                    </div>
+                </div>
+                
+                <div style="height: 140px;"></div>
             </div>
-            <div class="showroom-buttons">
+
+            <div class="showroom-buttons" style="position: absolute; bottom: 20px; left: 20px; right: 20px; z-index: 20;">
                 <button class="btn-config" onclick="GarageLogic.startConfigurator()">
                     <i class="fa-solid fa-wrench"></i> CONFIGURE CAR
                 </button>
@@ -1075,6 +1134,7 @@
                 </button>
             </div>
         </div>
+            
 
         <div id="configurator-panel" class="studio-bottom-panel" style="display: none;">
             <div class="studio-editor-layout">
