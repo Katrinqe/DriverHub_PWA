@@ -516,6 +516,39 @@ window.GarageLogic = {
         if(box) box.style.background = hexStr;
         
         this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
+        const disp = document.getElementById('hue-val-disp');
+        const box = document.getElementById('current-color-preview');
+        if(disp) disp.innerText = hexStr;
+        if(box) box.style.background = hexStr;
+        
+        this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
+        
+        // NEU: Zünde die UI-Illusion und verbinde Auto mit App
+        this.updateGlobalGlow(hexStr, h, s, v);
+    },
+
+
+    updateGlobalGlow: function(hexStr, h, s, v) {
+        // 1. Setze Hauptfarbe für das gesamte UI und das Auto-Licht
+        document.documentElement.style.setProperty('--glow-color', hexStr);
+        
+        // 2. Berechne harmonische Zweitfarbe (Farbkreis um 40 Grad verschoben, leicht abgedunkelt)
+        let altH = (h + 40) % 360;
+        let altRgb = this.hsvToRgb(altH, s, Math.max(v - 20, 20));
+        let altHexStr = this.rgbToHex(altRgb[0], altRgb[1], altRgb[2]);
+        
+        // Setze die Zweitfarbe für die rechte untere Leuchtkugel
+        document.documentElement.style.setProperty('--glow-color-alt', altHexStr);
+
+        // 3. Färbe die Diagramme in Echtzeit um!
+        if(window.dynoChartInstance && window.dynoChartInstance.data.datasets[1]) {
+            window.dynoChartInstance.data.datasets[1].borderColor = hexStr;
+            window.dynoChartInstance.update();
+        }
+        if(window.gearChartInstance && window.gearChartInstance.data.datasets[0]) {
+            window.gearChartInstance.data.datasets[0].backgroundColor = hexStr;
+            window.gearChartInstance.update();
+        }
     },
 
     hsvToRgb: function(h, s, v) {
