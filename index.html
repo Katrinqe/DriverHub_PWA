@@ -1034,24 +1034,26 @@
 
   <div id="studio-screen" class="hidden">
 
-  <div class="studio-header" style="z-index: 50;">
+ <div class="studio-header" style="z-index: 50;">
             <button class="brand-back-btn" onclick="GarageLogic.closeStudio()">
                 <i class="fa-solid fa-chevron-left"></i>
             </button>
             
-            <button class="ar-epic-btn" onclick="document.getElementById('studio-model-viewer').activateAR()">
-                <img src="DEIN_GIF_NAME.gif" class="ar-gif-icon" alt="AR Icon">
+            <button class="ar-modern-btn" onclick="document.getElementById('studio-model-viewer').activateAR()">
+                <i class="fa-solid fa-cube"></i> AR
             </button>
         </div>
 
-      <div class="studio-hero-stage">
+        <div class="studio-hero-stage">
+            <div class="hero-top-fade"></div> 
+            
             <div class="hero-ambient-glow"></div>
 
             <img src="civic_logo.png" id="studio-model-logo" alt="Model Logo" class="hero-background-logo">
 
             <model-viewer id="studio-model-viewer" src="" 
                 ar ar-modes="webxr scene-viewer quick-look" 
-                camera-orbit="40deg 85deg 105%"
+                camera-orbit="40deg 85deg 85%"
                 shadow-intensity="1.5" exposure="1" interaction-prompt="none" 
                 style="width:100%; height:100%; z-index: 5;">
             </model-viewer>
