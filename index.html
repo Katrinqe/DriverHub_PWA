@@ -1058,54 +1058,65 @@
 
             <div class="hero-bottom-fade"></div>
         </div>
-        <div class="studio-bottom-panel">
-            <div class="studio-nav-pro">
-                <div class="nav-magic-pill" id="nav-active-pill"></div>
-                <div class="pro-nav-item active" onclick="GarageLogic.switchStudioTab('paint', 0, this)">PAINT</div>
-                <div class="pro-nav-item" onclick="GarageLogic.switchStudioTab('setup', 1, this)">SETUP</div>
-                <div class="pro-nav-item" onclick="GarageLogic.switchStudioTab('engine', 2, this)">ENGINE</div>
-                <div class="pro-nav-item" onclick="GarageLogic.switchStudioTab('summary', 3, this)">FINISH</div>
-            </div>
-
-        <div id="tab-paint" class="studio-tab-content active">
+     <div class="studio-bottom-panel">
+            <div class="studio-editor-layout">
                 
-                <div class="paint-pro-area">
-                    <div class="color-wheel-container" id="color-wheel-wrapper">
-                       <div class="color-wheel" id="color-wheel"></div>
-                        
-                        <div class="wheel-center-display" id="wheel-center-bg" onclick="GarageLogic.openHexModal()">
-                            <span id="hue-val-disp">#BF5AF2</span>
+                <div class="editor-side-nav">
+                    <div class="side-nav-item active" onclick="GarageLogic.scrollToSection('section-paint')">PAINT</div>
+                    <div class="side-nav-item" onclick="GarageLogic.scrollToSection('section-setup')">SETUP</div>
+                    <div class="side-nav-item" onclick="GarageLogic.scrollToSection('section-engine')">ENGINE</div>
+                    <div class="side-nav-item" onclick="GarageLogic.scrollToSection('section-finish')">FINISH</div>
+                </div>
+
+                <div class="editor-scroll-area" id="editor-main-scroll" onscroll="GarageLogic.handleEditorScroll()">
+                    
+                    <div id="section-paint" class="editor-section">
+                        <div class="paint-pro-area">
+                            <div class="color-wheel-container" id="color-wheel-wrapper">
+                               <div class="color-wheel" id="color-wheel"></div>
+                                <div class="wheel-center-display" id="wheel-center-bg" onclick="GarageLogic.openHexModal()">
+                                    <span id="hue-val-disp">#BF5AF2</span>
+                                </div>
+                                <div class="wheel-thumb" id="wheel-thumb"></div>
+                            </div>
+                            <div class="depth-slider-container">
+                                <input type="range" class="vertical-slider" id="pro-light" min="15" max="85" value="50" oninput="GarageLogic.updateProColor()">
+                            </div>
+                        </div> 
+                        <div class="auto-color-btn-container">
+                            <button class="auto-color-btn" onclick="GarageLogic.startAutoColorDetection()">
+                                <i class="fa-solid fa-camera-retro"></i> AUTOMATIC COLOR DETECTION
+                            </button>
                         </div>
-                        
-                        <div class="wheel-thumb" id="wheel-thumb"></div>
+                        <div style="margin-top: 25px;">
+                            <label style="font-size: 0.7rem; color: #888; letter-spacing: 1px; font-weight: bold; margin-left: 5px;">PAINT FINISH</label>
+                            <div class="finish-segmented">
+                                <div class="finish-pill" id="finish-pill"></div>
+                                <div class="finish-opt active" id="btn-finish-glossy" onclick="GarageLogic.setCarFinish('glossy', 0, this)">GLOSSY</div>
+                                <div class="finish-opt" onclick="GarageLogic.setCarFinish('metallic', 1, this)">METALLIC</div>
+                                <div class="finish-opt" onclick="GarageLogic.setCarFinish('matt', 2, this)">MATTE</div>
+                            </div>
+                        </div>
                     </div>
 
-                <div class="depth-slider-container">
-                        <input type="range" class="vertical-slider" id="pro-light" min="15" max="85" value="50" oninput="GarageLogic.updateProColor()">
+                    <div id="section-setup" class="editor-section">
+                        <label style="font-size: 0.7rem; color: #888; letter-spacing: 1px; font-weight: bold; margin-left: 5px;">AERODYNAMICS & STANCE</label>
+                        <div style="color:#555; text-align:center; padding: 40px 0; border: 1px dashed #333; border-radius: 15px; margin-top: 10px;">Setup Editor (Coming Soon)</div>
                     </div>
-                </div> <div class="auto-color-btn-container">
-                    <button class="auto-color-btn" onclick="GarageLogic.startAutoColorDetection()">
-                        <i class="fa-solid fa-camera-retro"></i> AUTOMATIC COLOR DETECTION
-                    </button>
+                    
+                    <div id="section-engine" class="editor-section">
+                        <label style="font-size: 0.7rem; color: #888; letter-spacing: 1px; font-weight: bold; margin-left: 5px;">POWERTRAIN</label>
+                        <div style="color:#555; text-align:center; padding: 40px 0; border: 1px dashed #333; border-radius: 15px; margin-top: 10px;">Engine Editor (Coming Soon)</div>
+                    </div>
+                    
+                    <div id="section-finish" class="editor-section">
+                        <label style="font-size: 0.7rem; color: #888; letter-spacing: 1px; font-weight: bold; margin-left: 5px;">SUMMARY</label>
+                        <div style="color:#555; text-align:center; padding: 40px 0; border: 1px dashed #333; border-radius: 15px; margin-top: 10px;">Final Save (Coming Soon)</div>
+                        <div style="height: 100px;"></div> </div>
+                    
                 </div>
-
-                <div style="margin-top: 25px;">
-                    <label style="font-size: 0.7rem; color: #888; letter-spacing: 1px; font-weight: bold; margin-left: 5px;">PAINT FINISH</label>
-                    <div class="finish-segmented">
-                        <div class="finish-pill" id="finish-pill"></div>
-                        <div class="finish-opt active" id="btn-finish-glossy" onclick="GarageLogic.setCarFinish('glossy', 0, this)">GLOSSY</div>
-                        <div class="finish-opt" onclick="GarageLogic.setCarFinish('metallic', 1, this)">METALLIC</div>
-                        <div class="finish-opt" onclick="GarageLogic.setCarFinish('matt', 2, this)">MATTE</div>
-                    </div>
-                </div>
-
             </div>
-            
-            <div id="tab-setup" class="studio-tab-content">Coming Soon: Setup</div>
-            <div id="tab-engine" class="studio-tab-content">Coming Soon: Engine</div>
-            <div id="tab-summary" class="studio-tab-content">Coming Soon: Summary</div>
         </div>
-
       <div id="hex-modal-overlay" class="hidden">
             <div class="hex-modal-card">
                 <h3>MANUAL COLOR CODE</h3>
