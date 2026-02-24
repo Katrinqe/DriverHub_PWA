@@ -285,20 +285,27 @@ window.GarageLogic = {
     
     currentStudioSetup: { h: 275, s: 85, l: 50, finish: 'glossy' },
 
-    openStudio: function(brandKey, modelLogo, glbFile) {
+openStudio: function(brandKey, modelLogo, glbFile) {
         const screen = document.getElementById('studio-screen');
         if(!screen) return;
         
-      const logoEl = document.getElementById('studio-model-logo');
+        const logoEl = document.getElementById('studio-model-logo');
         if(logoEl) logoEl.src = modelLogo;
         const viewer = document.getElementById('studio-model-viewer');
         viewer.src = glbFile;
         
-        // Reset Tabs und UI
-        this.switchStudioTab('paint', 0, document.querySelector('.pro-nav-item:first-child'));
-       // So muss der Aufruf in openStudio aussehen:
-this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
+        // === FIX: SCROLL-RESET STATT TAB-RESET ===
+        // Scrollt den Editor beim Öffnen wieder ganz nach oben
+        const scrollContainer = document.getElementById('editor-main-scroll');
+        if(scrollContainer) scrollContainer.scrollTop = 0;
         
+        // Setzt das linke Menü wieder auf "PAINT" (erstes Element)
+        document.querySelectorAll('.side-nav-item').forEach(nav => nav.classList.remove('active'));
+        const firstNav = document.querySelector('.side-nav-item');
+        if(firstNav) firstNav.classList.add('active');
+        // =========================================
+
+        this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
         
         // Farbe init
         setTimeout(() => {
