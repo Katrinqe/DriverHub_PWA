@@ -1575,430 +1575,136 @@ body.ghost-active #ghost-chat-overlay {
 /* ========================================== */
 #studio-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #050505; z-index: 10002;
-    display: flex; flex-direction: column;
+    background: #050505; z-index: 10002; display: flex; flex-direction: column;
 }
 #studio-screen.hidden { display: none !important; }
 
-/* CLEANE HEADER-BELEUCHTUNG OHNE FLECKEN */
+/* === HEADER & AR BUTTON === */
 .studio-header {
     display: flex; justify-content: space-between; align-items: center;
     padding: env(safe-area-inset-top, 30px) 20px 10px 20px;
-    position: relative; z-index: 12;
+    position: relative; z-index: 50;
 }
+.brand-back-btn {
+    background: transparent; border: none; color: #fff; font-size: 1.2rem; cursor: pointer; padding: 10px;
+}
+.ar-modern-btn {
+    background: rgba(30, 30, 35, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 12px;
+    color: #fff; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px;
+    padding: 8px 14px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.ar-modern-btn:active { transform: scale(0.95); background: rgba(191, 90, 242, 0.4); border-color: #bf5af2; }
+#studio-model-viewer::part(default-ar-button) { display: none !important; }
 
-
-
-/* ========================================== */
-/* === HERO STAGE & AMBIENTE LIGHT         == */
-/* ========================================== */
+/* === HERO STAGE & AMBIENTE LIGHT === */
 .studio-hero-stage {
-    position: relative; width: 100%;
-    /* Etwas flacher und weiter oben, für maximalen Editor-Platz */
-    height: 30vh; min-height: 250px; 
+    position: relative; width: 100%; height: 30vh; min-height: 250px; 
     display: flex; align-items: center; justify-content: center;
     margin-top: -65px; overflow: hidden; 
 }
-
-.hero-ambient-glow {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    /* Massive Ausbreitung (150%) für weiches, flächiges Raumlicht statt Spot */
-    width: 150%; height: 150%; 
-    background: radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 50%, transparent 80%);
-    z-index: 1; pointer-events: none;
-    filter: blur(40px); /* Extrem weich für edlen Kontrast zum schwarzen Logo */
-}
-
-/* Logo und Auto bleiben wie sie sind */
-.hero-background-logo { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 350px; height: auto; z-index: 2; opacity: 0.6; pointer-events: none; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.8)); }
-#studio-model-viewer { position: relative; z-index: 5; pointer-events: none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6)); }
-.hero-bottom-fade { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: linear-gradient(to top, #050505 0%, transparent 100%); z-index: 10; pointer-events: none; }
-
-/* ========================================== */
-/* === NEU: SCROLL EDITOR LAYOUT           == */
-/* ========================================== */
-.studio-bottom-panel {
-    background: rgba(15, 15, 18, 0.7);
-    backdrop-filter: blur(40px) saturate(150%); -webkit-backdrop-filter: blur(40px) saturate(150%);
-    border-top: 1px solid rgba(255,255,255,0.15);
-    flex: 1; height: 60vh; /* Nimmt den Rest des Bildschirms ein */
-    padding: 0; /* WICHTIG: Padding auf 0, damit die Sidebar ganz links klebt */
-    border-top-left-radius: 35px; border-top-right-radius: 35px;
-    box-shadow: 0 -20px 60px rgba(0,0,0,0.8);
-    display: flex; flex-direction: column; overflow: hidden;
-}
-
-.studio-editor-layout { display: flex; flex-direction: row; width: 100%; height: 100%; }
-
-/* ========================================== */
-/* === MODERN AR BUTTON (CLEAN & DEZENT)   == */
-/* ========================================== */
-.ar-modern-btn {
-    background: rgba(30, 30, 35, 0.6);
-    backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    color: #fff; font-size: 0.75rem; font-weight: 800; letter-spacing: 1px;
-    padding: 8px 14px; display: flex; align-items: center; gap: 8px;
-    cursor: pointer; transition: all 0.2s;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-}
-.ar-modern-btn:active { 
-    transform: scale(0.95); 
-    background: rgba(191, 90, 242, 0.4); 
-    border-color: #bf5af2; 
-}
-
-/* ========================================== */
-/* === DER FEHLENDE FADE OBEN              == */
-/* ========================================== */
 .hero-top-fade {
     position: absolute; top: 0; left: 0; width: 100%; height: 80px;
     background: linear-gradient(to bottom, #050505 0%, rgba(5,5,5,0.5) 40%, transparent 100%);
     z-index: 20; pointer-events: none;
 }
+.hero-ambient-glow {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 150%; height: 150%; 
+    background: radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.05) 50%, transparent 80%);
+    z-index: 1; pointer-events: none; filter: blur(40px);
+}
+.hero-background-logo { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 350px; height: auto; z-index: 2; opacity: 0.6; pointer-events: none; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.8)); }
+#studio-model-viewer { position: relative; z-index: 5; pointer-events: none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6)); }
+.hero-bottom-fade { position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; background: linear-gradient(to top, #050505 0%, transparent 100%); z-index: 10; pointer-events: none; }
 
-/* ========================================== */
-/* === EDITOR LAYOUT (KARTEN & SCROLL)     == */
-/* ========================================== */
+/* === SCROLL EDITOR LAYOUT === */
+.studio-bottom-panel {
+    background: rgba(15, 15, 18, 0.7); backdrop-filter: blur(40px) saturate(150%); -webkit-backdrop-filter: blur(40px) saturate(150%);
+    border-top: 1px solid rgba(255,255,255,0.15); flex: 1; height: 60vh; 
+    padding: 0; border-top-left-radius: 35px; border-top-right-radius: 35px;
+    box-shadow: 0 -20px 60px rgba(0,0,0,0.8); display: flex; flex-direction: column; overflow: hidden;
+}
+.studio-editor-layout { display: flex; flex-direction: row; width: 100%; height: 100%; }
+
+/* Linke Sidebar (Ohne Strich) */
 .editor-side-nav {
-    width: 50px; flex-shrink: 0;
-    background: transparent;
-    /* FIX: Der hässliche Trennstrich ist weg */
-    border-right: none; 
+    width: 50px; flex-shrink: 0; background: transparent; border-right: none; 
     display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
     padding-top: 40px; gap: 45px; z-index: 10;
 }
-
-.editor-scroll-area {
-    flex: 1; overflow-y: auto; scroll-behavior: smooth;
-    padding: 20px 20px 50px 10px; /* Etwas Luft angepasst für die Cards */
-    -ms-overflow-style: none; scrollbar-width: none;
-    
-    /* FIX: Der "Schmelz"-Effekt beim Scrollen */
-    /* Macht die oberen und unteren 5% des Scroll-Bereichs unsichtbar/weich */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,1) 95%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,1) 95%, transparent 100%);
-}
-.editor-scroll-area::-webkit-scrollbar { display: none; }
-
-.editor-section {
-    margin-bottom: 40px; 
-    min-height: auto; 
-    
-    /* FIX: Das neue, edle Card-Design für die Menüs */
-    background: rgba(25, 25, 30, 0.5);
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 24px;
-    padding: 25px 20px;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.5);
-}
-
 .side-nav-item {
-    /* Dreht den Text um 90 Grad */
     writing-mode: vertical-rl; transform: rotate(180deg);
     color: #555; font-size: 0.7rem; font-weight: 900; letter-spacing: 2px;
     cursor: pointer; transition: all 0.3s ease; text-transform: uppercase;
 }
-.side-nav-item.active {
-    color: #fff;
-    /* Weißer Text mit lila Ambiente-Glow */
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 15px rgba(191, 90, 242, 0.6); 
+.side-nav-item.active { color: #fff; text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 15px rgba(191, 90, 242, 0.6); }
+
+/* Rechter Scrollbereich (Mit Fade) */
+.editor-scroll-area {
+    flex: 1; overflow-y: auto; scroll-behavior: smooth; padding: 20px 20px 50px 10px; 
+    -ms-overflow-style: none; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,1) 95%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 8%, rgba(0,0,0,1) 95%, transparent 100%);
+}
+.editor-scroll-area::-webkit-scrollbar { display: none; }
+.editor-section {
+    margin-bottom: 40px; min-height: auto; 
+    background: rgba(25, 25, 30, 0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px; padding: 25px 20px;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.5);
 }
 
+/* === PRO COLOR SQUARE & HUE SLIDER === */
+.paint-pro-area { display: flex; flex-direction: column; gap: 15px; width: 100%; margin-bottom: 25px; }
+.color-square-area {
+    position: relative; width: 100%; height: 200px;
+    border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);
+    overflow: hidden; touch-action: none; cursor: crosshair; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+}
+.color-square-bg { position: absolute; top:0; left:0; width:100%; height:100%; background: hsl(275, 100%, 50%); }
+.color-square-white { position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(to right, #fff, rgba(255,255,255,0)); }
+.color-square-black { position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(to top, #000, rgba(0,0,0,0)); }
+.picker-thumb {
+    position: absolute; width: 26px; height: 26px; border-radius: 50%;
+    border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.8), inset 0 0 4px rgba(0,0,0,0.4);
+    transform: translate(-50%, -50%); pointer-events: none; z-index: 10;
+}
+.hue-slider-area { width: 100%; padding: 5px 0; }
+.pro-hue-slider {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 20px;
+    border-radius: 10px; outline: none; margin: 0;
+    background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
+    border: 1px solid rgba(255,255,255,0.2); box-shadow: inset 0 1px 5px rgba(0,0,0,0.5);
+}
+.pro-hue-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 50%;
+    background: #fff; border: 2px solid rgba(0,0,0,0.2); box-shadow: 0 2px 8px rgba(0,0,0,0.6); cursor: pointer;
+}
+.color-preview-row { display: flex; justify-content: center; width: 100%; margin-top: 5px; }
+.color-preview-box {
+    background: #bf5af2; padding: 12px 30px; border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    font-family: monospace; font-size: 1rem; font-weight: bold; color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8); cursor: pointer; transition: transform 0.2s;
+}
+.color-preview-box:active { transform: scale(0.95); }
 
-.studio-tab-content { display: none; flex: 1; }
-.studio-tab-content.active { display: block; animation: fadeInTab 0.3s ease; }
-@keyframes fadeInTab { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* === LAYOUT KREIS LINKS, SLIDER RECHTS === */
-.paint-pro-area { 
-    display: flex; flex-direction: row; align-items: center; justify-content: center; 
-    gap: 40px; margin-bottom: 20px; height: 160px;
-}
-
-.color-wheel-container { position: relative; width: 160px; height: 160px; touch-action: none; flex-shrink: 0; }
-.color-wheel { 
-    width: 100%; height: 100%; border-radius: 50%; 
-    background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red); 
-    mask-image: radial-gradient(transparent 52%, black 53%); 
-    -webkit-mask-image: radial-gradient(transparent 52%, black 53%); 
-}
-
-.wheel-thumb { 
-    position: absolute; width: 30px; height: 30px; border-radius: 50%; 
-    background: transparent; border: 4px solid #fff; box-shadow: 0 0 15px rgba(0,0,0,0.8); 
-    top: 50%; left: 50%; transform: translate(-50%, -50%); 
-    pointer-events: none; z-index: 10; 
-}
-
-.wheel-center-display { 
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-    width: 76px; height: 76px; border-radius: 50%; 
-    border: 2px solid rgba(255,255,255,0.2); box-shadow: inset 0 5px 15px rgba(0,0,0,0.5); 
-    display:flex; align-items:center; justify-content:center;
-}
-.wheel-center-display input { 
-    font-size: 0.65rem; color: #fff; font-family: monospace; font-weight: bold; 
-    background: rgba(0,0,0,0.6); padding: 4px 6px; border-radius: 6px; 
-    backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
-    width: 65px; text-align: center; outline: none;
-    text-transform: uppercase; margin: 0; box-shadow: none;
-    -webkit-appearance: none; /* Wichtig für iOS */
-}
-/* === DER FINALE SLIDER (FEINSCHLIFF) === */
-.depth-slider-container { 
-    position: relative; 
-    height: 160px; 
-    width: 60px; /* Mehr Breite für den Container, damit Rotation nicht schneidet */
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    overflow: visible; /* WICHTIG: Nichts abschneiden */
-}
-
-.vertical-slider { 
-    -webkit-appearance: none !important; 
-    appearance: none !important;
-    width: 160px; /* Länge */
-    height: 24px !important; /* DÜNNER & EDLER */
-    background: #222; 
-    border-radius: 12px; 
-    outline: none;
-    cursor: pointer;
-    /* Rotation zentriert erzwingen */
-    transform: rotate(-90deg);
-    position: absolute;
-    border: 1px solid rgba(255,255,255,0.15);
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
-    margin: 0; padding: 0;
-}
-
-/* Track-Fix für Webkit/iOS */
-.vertical-slider::-webkit-slider-runnable-track {
-    width: 100%; height: 24px; background: transparent; border: none;
-}
-
-/* Der perfekt zentrierte Regler-Ring */
-.vertical-slider::-webkit-slider-thumb {
-    -webkit-appearance: none !important; 
-    appearance: none !important;
-    width: 32px !important; /* Etwas größer als der Balken für Griffigkeit */
-    height: 32px !important; 
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.01) !important; 
-    border: 3px solid #fff !important; 
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    cursor: pointer;
-    /* MAGIC FIX: Exakte vertikale Zentrierung auf dem 24px Balken */
-    margin-top: -4px; 
-}
-
-/* Firefox Support */
-.vertical-slider::-moz-range-thumb {
-    width: 32px; height: 32px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.01); border: 3px solid #fff;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5); cursor: pointer;
-}
-/* === PAINT FINISH SLIDER === */
-.finish-segmented { 
-    background: rgba(30, 30, 35, 0.5); 
-    border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 5px; display: flex; position: relative; margin-top: 8px;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
-}
-
-.finish-pill { 
-    position: absolute; top: 5px; left: 5px; 
-    height: calc(100% - 10px); width: calc(33.33% - 3.33px); 
-    background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 12px; z-index: 1; 
-    transition: transform 0.3s cubic-bezier(0.2, 1, 0.3, 1); 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-
-.finish-opt { 
-    flex: 1; text-align: center; padding: 14px 0; color: #777; 
-    font-size: 0.75rem; font-weight: 900; z-index: 2; cursor: pointer; transition: all 0.3s; 
-}
-.finish-opt.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.6); }
-/* Das Innere des Rades */
-.wheel-center-display { 
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-    width: 76px; height: 76px; border-radius: 50%; 
-    border: 2px solid rgba(255,255,255,0.2); box-shadow: inset 0 5px 15px rgba(0,0,0,0.5); 
-    display:flex; align-items:center; justify-content:center;
-    cursor: pointer; /* Zeigt an, dass man tippen kann */
-}
-/* WICHTIG: pointer-events: none sorgt dafür, dass der Klick sicher vom Parent erkannt wird */
-.wheel-center-display span { 
-    font-size: 0.65rem; color: #fff; font-family: monospace; font-weight: bold; 
-    background: rgba(0,0,0,0.6); padding: 3px 6px; border-radius: 6px; backdrop-filter: blur(5px);
-    pointer-events: none; 
-}
-
-/* === DAS NEUE HEX MODAL (Oben positioniert) === */
-#hex-modal-overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7); z-index: 20000;
-    display: flex; align-items: flex-start; justify-content: center;
-    padding-top: 15vh; /* Schiebt es nach oben, weg von der Tastatur! */
-    backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
-}
-#hex-modal-overlay.hidden { display: none !important; }
-
-.hex-modal-card {
-    background: rgba(25, 25, 30, 0.85);
-    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-    border: 1px solid rgba(255,255,255,0.15); border-radius: 20px;
-    padding: 25px; width: 85%; max-width: 340px;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.8); text-align: center;
-}
-.hex-modal-card h3 { color: #888; font-size: 0.75rem; margin: 0 0 15px 0; letter-spacing: 1px; }
-
-#modal-hex-input {
-    width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2);
-    color: #fff; font-size: 1.6rem; text-align: center; padding: 15px;
-    border-radius: 14px; margin-bottom: 20px; text-transform: uppercase;
-    font-family: monospace; outline: none; box-sizing: border-box;
-}
-#modal-hex-input:focus { border-color: #bf5af2; box-shadow: 0 0 15px rgba(191,90,242,0.4); }
-
-.hex-modal-actions { display: flex; gap: 10px; }
-.hex-btn-cancel, .hex-btn-apply {
-    flex: 1; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 0.8rem; cursor: pointer;
-}
-.hex-btn-cancel { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #aaa; }
-.hex-btn-apply { background: #bf5af2; border: none; color: #fff; box-shadow: 0 4px 15px rgba(191,90,242,0.4); }
-
-/* ========================================== */
-/* === PURE GIF AR BUTTON                  == */
-/* ========================================== */
-.ar-epic-btn {
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-    outline: none;
-    -webkit-tap-highlight-color: transparent; /* Verhindert das graue Flackern beim Tippen auf iOS */
-}
-
-.ar-epic-btn:active {
-    transform: scale(0.9); /* Zuckt kurz zusammen beim Klicken */
-}
-
-.ar-gif-icon {
-    width: 60px;  
-    height: 60px;
-    object-fit: contain;
-    
-    /* Der Magic Trick, um Schwarz unsichtbar zu machen (inkl. Apple-Fix) */
-    mix-blend-mode: screen;
-    -webkit-mix-blend-mode: screen;
-    
-    /* KEINE Filter, keine Schatten, pures GIF */
-}
-
-/* Standard-Button verstecken (BLEIBT) */
-#studio-model-viewer::part(default-ar-button) {
-    display: none !important;
-}
-
-/* ========================================== */
-/* === AUTOMATIC COLOR DETECTION BUTTON    == */
-/* ========================================== */
-.auto-color-btn-container {
-    margin: 25px 0; width: 100%; display: flex; justify-content: center;
-}
-
+/* === AUTO COLOR BUTTON === */
+.auto-color-btn-container { margin: 25px 0; width: 100%; display: flex; justify-content: center; }
 .auto-color-btn {
-    background: rgba(30, 30, 35, 0.5);
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px;
-    padding: 14px 0; width: 100%;
+    background: rgba(30, 30, 35, 0.5); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px; padding: 14px 0; width: 100%;
     color: #fff; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px;
-    cursor: pointer; transition: all 0.3s ease;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
+    cursor: pointer; transition: all 0.3s ease; box-shadow: inset 0 2px 8px rgba(0,0,0,0.6);
     display: flex; align-items: center; justify-content: center; gap: 10px;
 }
-
-.auto-color-btn:active {
-    background: rgba(191, 90, 242, 0.4);
-    border-color: rgba(191, 90, 242, 0.8);
-    transform: scale(0.98);
-    box-shadow: 0 0 25px rgba(191, 90, 242, 0.6);
-}
-
+.auto-color-btn:active { background: rgba(191, 90, 242, 0.4); border-color: rgba(191, 90, 242, 0.8); transform: scale(0.98); box-shadow: 0 0 25px rgba(191, 90, 242, 0.6); }
 .auto-color-btn i { font-size: 1rem; color: rgba(255, 255, 255, 0.8); }
 
-/* ========================================== */
-/* === CAMERA COLOR PICKER OVERLAY         == */
-/* ========================================== */
-#camera-color-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; z-index: 30000;
-    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-}
-#camera-color-overlay.hidden { display: none !important; }
-
-/* NEU: Ein eleganter schwarzer Fade von oben */
-#camera-color-overlay::before {
-    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 25%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
-    z-index: 1; pointer-events: none;
-}
-
-#camera-video-feed {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    object-fit: cover; z-index: 0; /* Hinter den Fade gesetzt */
-}
-
-/* UI Elemente über dem Video */
-.camera-ui-top, .camera-ui-bottom, .camera-crosshair { position: relative; z-index: 2; }
-
-.camera-ui-top {
-    /* FIX: Deutlich tiefer gesetzt (+ 40px) */
-    margin-top: calc(env(safe-area-inset-top, 40px) + 40px);
-    background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    padding: 10px 20px; border-radius: 20px; text-align: center;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-.camera-ui-top h3 { color: #fff; font-size: 0.8rem; margin: 0; letter-spacing: 1px; }
-.camera-ui-top p { color: #aaa; font-size: 0.6rem; margin: 4px 0 0 0; text-transform: uppercase; }
-
-/* Das Fadenkreuz in der exakten Mitte */
-.camera-crosshair {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    display: flex; align-items: center; justify-content: center;
-}
-.crosshair-ring {
-    width: 60px; height: 60px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,0.8);
-    box-shadow: 0 0 10px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.5);
-}
-.crosshair-dot {
-    position: absolute; width: 4px; height: 4px; border-radius: 50%; background: #fff;
-    box-shadow: 0 0 5px rgba(0,0,0,0.8);
-}
-
-.camera-ui-bottom {
-    /* FIX: Deutlich höher gesetzt (+ 50px), damit nichts abschneidet */
-    margin-bottom: calc(env(safe-area-inset-bottom, 30px) + 50px);
-    width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px;
-    padding: 0 20px; box-sizing: border-box;
-}
-
-/* Die Live-Vorschau der erkannten Farbe */
-.scanned-color-preview {
-    width: 60px; height: 60px; border-radius: 50%;
-    border: 3px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
-    background: #ffffff; transition: background-color 0.1s;
-}
+/* === PAINT FINISH SLIDER === */
+.finish-segmented { background: rgba(30, 30, 35, 0.5); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); padding: 5px; display: flex; position: relative; margin-top: 8px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.6); }
+.finish-pill { position: absolute; top: 5px; left: 5px; height: calc(100% - 10px); width: calc(33.33% - 3.33px); background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 12px; z-index: 1; transition: transform 0.3s cubic-bezier(0.2, 1, 0.3, 1); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+.finish-opt { flex: 1; text-align: center; padding: 14px 0; color: #777; font-size: 0.75rem; font-weight: 900; z-index: 2; cursor: pointer; transition: all 0.3s; }
+.finish-opt.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.6); }
