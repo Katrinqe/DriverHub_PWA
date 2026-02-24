@@ -315,19 +315,43 @@ this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
         document.getElementById('studio-model-viewer').src = ''; 
     },
 
-    // Der Magische Tab Switcher (Bewegt die Pille)
-    switchStudioTab: function(tabId, index, btnElement) {
-        // Pille bewegen (Jeder Tab ist 25% breit)
-        const pill = document.getElementById('nav-active-pill');
-        if(pill) pill.style.transform = `translateX(${index * 100}%)`;
+// === NEU: SCROLL NAVIGATION ===
+    scrollToSection: function(sectionId) {
+        const container = document.getElementById('editor-main-scroll');
+        const target = document.getElementById(sectionId);
+        if(container && target) {
+            // Scrollt physikalisch zu dem Bereich
+            container.scrollTo({
+                top: target.offsetTop - container.offsetTop,
+                behavior: 'smooth'
+            });
+        }
+    },
 
-        // Text Farbe
-        document.querySelectorAll('.pro-nav-item').forEach(el => el.classList.remove('active'));
-        if(btnElement) btnElement.classList.add('active');
+    // Wird automatisch beim Wischen getriggert
+    handleEditorScroll: function() {
+        const container = document.getElementById('editor-main-scroll');
+        if(!container) return;
         
-        // Content
-        document.querySelectorAll('.studio-tab-content').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active');
+        // Wir setzen den Messpunkt ins obere Drittel des Bildschirms
+        const scrollPos = container.scrollTop + 100; 
+        const sections = container.querySelectorAll('.editor-section');
+        const navItems = document.querySelectorAll('.side-nav-item');
+        
+        let activeIndex = 0;
+        
+        sections.forEach((sec, index) => {
+            const secTop = sec.offsetTop - container.offsetTop;
+            if(scrollPos >= secTop) {
+                activeIndex = index; // Welcher Abschnitt ist gerade im Sichtfeld?
+            }
+        });
+        
+        // Text links aufleuchten lassen
+        navItems.forEach(nav => nav.classList.remove('active'));
+        if(navItems[activeIndex]) {
+            navItems[activeIndex].classList.add('active');
+        }
     },
 
    // === DIE NEUE PRO FARB LOGIK (COLOR WHEEL) ===
