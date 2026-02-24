@@ -297,13 +297,105 @@ window.GarageLogic = {
         // 1. Showroom Panel anzeigen, Configurator verstecken
         const showroom = document.getElementById('showroom-panel');
         const configPanel = document.getElementById('configurator-panel');
-        if(showroom) showroom.style.display = 'flex';
+       if(showroom) {
+            showroom.style.display = 'flex';
+            setTimeout(() => {
+                this.renderTelemetryCharts();
+            }, 100);
+        }
         if(configPanel) {
             configPanel.style.display = 'none';
             configPanel.classList.remove('slide-up-config'); // Reset Animation
         }
         
         screen.classList.remove('hidden');
+    },
+
+
+    renderTelemetryCharts: function() {
+        Chart.defaults.color = '#666';
+        Chart.defaults.font.family = 'sans-serif';
+
+        // === 1. DYNO CHART (HP vs NM) ===
+        const ctxDyno = document.getElementById('dynoChart');
+        if (!ctxDyno) return;
+        
+        // Zerstöre alte Diagramme, falls wir den Screen neu öffnen
+        if(window.dynoChartInstance) window.dynoChartInstance.destroy();
+
+        // Physik-Daten für D15B7
+        const rpmLabels = [1000, 2000, 3000, 4000, 5000, 5900, 6500];
+        const nmData = [100, 110, 120, 128, 133, 124, 110]; // 133 Nm @ 5000
+        const hpData = [14, 30, 50, 71, 93, 103, 100];      // 103 HP @ 5900
+
+        window.dynoChartInstance = new Chart(ctxDyno, {
+            type: 'line',
+            data: {
+                labels: rpmLabels,
+                datasets: [
+                    {
+                        label: 'HP', data: hpData,
+                        borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 2, tension: 0.4, pointRadius: 0, fill: true
+                    },
+                    {
+                        label: 'NM', data: nmData,
+                        borderColor: '#bf5af2', backgroundColor: 'transparent',
+                        borderWidth: 2, tension: 0.4, pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#bf5af2' }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { maxTicksLimit: 5 } },
+                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 150 }
+                }
+            }
+        });
+
+        // === 2. GEARBOX CHART (S20 Sägezahn) ===
+        const ctxGear = document.getElementById('gearChart');
+        if (!ctxGear) return;
+        
+        if(window.gearChartInstance) window.gearChartInstance.destroy();
+
+        // Berechnete Schaltpunkte (km/h, RPM) basierend auf echten Ratios
+        const gearData = [
+            {x: 0, y: 800}, {x: 49, y: 6500},   // 1st Gear
+            {x: 49, y: 3800}, {x: 84, y: 6500}, // 2nd Gear
+            {x: 84, y: 4276}, {x: 127, y: 6500},// 3rd Gear
+            {x: 127, y: 4726}, {x: 175, y: 6500},// 4th Gear
+            {x: 175, y: 5363}, {x: 190, y: 5825} // 5th Gear (Top Speed)
+        ];
+
+        window.gearChartInstance = new Chart(ctxGear, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'RPM',
+                    data: gearData,
+                    borderColor: '#ffffff', backgroundColor: '#bf5af2',
+                    borderWidth: 2, showLine: true, tension: 0, // 0 = Harte Ecken für Sägezahn
+                    pointRadius: 3, pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: {
+                    callbacks: { label: function(ctx) { return ctx.raw.x + ' km/h @ ' + ctx.raw.y + ' RPM'; } }
+                }},
+                scales: {
+                    x: { type: 'linear', position: 'bottom', title: { display: true, text: 'SPEED (KM/H)', color: '#555', font:{size:10} }, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 200 },
+                    y: { title: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 7000 }
+                }
+            }
+        });
     },
 
     // NEU: Wird durch den "CONFIGURE CAR" Button ausgelöst
