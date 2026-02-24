@@ -1905,27 +1905,58 @@ body.ghost-active #ghost-chat-overlay {
 /* === SHOWROOM TELEMETRY UI               == */
 /* ========================================== */
 
-/* Der Haupt-Container für den Showroom muss jetzt relatic sein für die Sticky-Buttons */
+/* Hauptpanel reparieren (Scroll Fix) */
 #showroom-panel {
+    flex: 1; 
+    display: flex; 
+    flex-direction: column;
+    overflow: hidden; 
+    padding: 0; 
     position: relative;
-    padding: 0; /* Padding entfernen, da Scroll-Bereich das übernimmt */
 }
 
-.showroom-content-scroll { 
-    flex: 1; overflow-y: auto; overflow-x: hidden; 
-    padding: 20px 20px 0 20px; 
-    -ms-overflow-style: none; scrollbar-width: none; 
+/* NEU: Der cleane, schwebende Header */
+.showroom-sticky-header {
+    display: flex; justify-content: center; align-items: center; gap: 12px;
+    padding: 15px 20px; z-index: 20;
+    /* Sanfter Schwarz-Verlauf von oben, damit der Text lesbar bleibt */
+    background: linear-gradient(to bottom, rgba(5,5,5,1) 10%, rgba(5,5,5,0.8) 60%, transparent 100%);
+}
+.qf-text { font-family: monospace; font-size: 0.75rem; color: #fff; font-weight: bold; letter-spacing: 1px; }
+.qf-dot { color: #bf5af2; font-size: 0.8rem; }
+
+/* Scroll Area mit Fade-Effekt oben */
+.showroom-content-scroll {
+    flex: 1; overflow-y: auto; overflow-x: hidden;
+    padding: 0 20px 20px 20px;
+    -ms-overflow-style: none; scrollbar-width: none;
+    /* MAGIC FIX: Lässt die Karten oben weich ausfaden, bevor sie den Text berühren */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 100%);
 }
 .showroom-content-scroll::-webkit-scrollbar { display: none; }
 
-.quick-facts-row { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
-.qf-badge { 
-    background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); 
-    padding: 6px 12px; border-radius: 20px; font-family: monospace; 
-    font-size: 0.7rem; color: #ccc; letter-spacing: 1px; 
-    box-shadow: 0 4px 10px rgba(0,0,0,0.5); backdrop-filter: blur(5px); 
+/* === NEU: Die Glas-Buttons (Nebeneinander) === */
+.showroom-bottom-actions {
+    position: absolute; bottom: 25px; left: 20px; right: 20px;
+    display: flex; flex-direction: row; gap: 15px; z-index: 30;
+}
+.btn-glass-action {
+    flex: 1; padding: 18px 0;
+    background: rgba(30, 30, 35, 0.4);
+    backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
+    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; 
+    color: #fff; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px;
+    display: flex; justify-content: center; align-items: center; gap: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6); cursor: pointer; transition: all 0.2s;
+}
+.btn-glass-action:active { 
+    transform: scale(0.96); 
+    background: rgba(191, 90, 242, 0.3); 
+    border-color: rgba(191, 90, 242, 0.6); 
 }
 
+/* === Karten & Inhalt (Bleibt wie vorher) === */
 .showroom-card { 
     background: rgba(20, 20, 25, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
     border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; 
