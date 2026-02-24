@@ -285,7 +285,7 @@ window.GarageLogic = {
     
   currentStudioSetup: { h: 275, s: 80, v: 90, finish: 'glossy' },
 
-    openStudio: function(brandKey, modelLogo, glbFile) {
+   openStudio: function(brandKey, modelLogo, glbFile) {
         const screen = document.getElementById('studio-screen');
         if(!screen) return;
         
@@ -294,6 +294,31 @@ window.GarageLogic = {
         const viewer = document.getElementById('studio-model-viewer');
         viewer.src = glbFile;
         
+        // 1. Showroom Panel anzeigen, Configurator verstecken
+        const showroom = document.getElementById('showroom-panel');
+        const configPanel = document.getElementById('configurator-panel');
+        if(showroom) showroom.style.display = 'flex';
+        if(configPanel) {
+            configPanel.style.display = 'none';
+            configPanel.classList.remove('slide-up-config'); // Reset Animation
+        }
+        
+        screen.classList.remove('hidden');
+    },
+
+    // NEU: Wird durch den "CONFIGURE CAR" Button ausgelöst
+    startConfigurator: function() {
+        const showroom = document.getElementById('showroom-panel');
+        const configPanel = document.getElementById('configurator-panel');
+        
+        // Showroom weg, Configurator rein mit Slide-Animation
+        if(showroom) showroom.style.display = 'none';
+        if(configPanel) {
+            configPanel.style.display = 'flex';
+            configPanel.classList.add('slide-up-config');
+        }
+
+        // === SCROLL-RESET STATT TAB-RESET ===
         const scrollContainer = document.getElementById('editor-main-scroll');
         if(scrollContainer) scrollContainer.scrollTop = 0;
         
@@ -303,15 +328,12 @@ window.GarageLogic = {
 
         this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
         
-        // Farbe init (NEU: Quadrat & Slider)
+        // Farbe init (kurz warten, bis Animation läuft)
         setTimeout(() => {
             this.initColorSquare(); 
             this.updateHueSlider();
-        }, 300);
-        
-        screen.classList.remove('hidden');
+        }, 100);
     },
-
     closeStudio: function() {
         const screen = document.getElementById('studio-screen');
         if(screen) screen.classList.add('hidden');
