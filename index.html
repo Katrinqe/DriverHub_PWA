@@ -1061,16 +1061,8 @@
             <div class="hero-bottom-fade"></div>
         </div>
 
-     <div id="showroom-panel" class="showroom-panel">
+   <div id="showroom-panel" class="showroom-panel">
             
-            <div class="showroom-sticky-header">
-                <span class="qf-text">MODEL: EJ2</span>
-                <span class="qf-dot">•</span>
-                <span class="qf-text">YEAR: 1994</span>
-                <span class="qf-dot">•</span>
-                <span class="qf-text">WEIGHT: 1040 KG</span>
-            </div>
-
             <div class="showroom-content-scroll" id="showroom-content-scroll">
                 
                 <div class="showroom-card full-width">
@@ -1088,17 +1080,29 @@
                     <div class="showroom-card">
                         <div class="card-header"><i class="fa-solid fa-balance-scale"></i> BALANCE</div>
                         <div class="balance-visual">
-                            <div class="bal-bar-container">
-                                <div class="bal-bar front" style="width: 60%;">60%</div>
-                                <div class="bal-bar rear" style="width: 40%;">40%</div>
+                            <div class="chassis-top-down">
+                                <div class="axle front-axle">
+                                    <div class="wheel"></div>
+                                    <div class="weight-badge front-w">60%</div>
+                                    <div class="wheel"></div>
+                                </div>
+                                <div class="car-body"></div>
+                                <div class="axle rear-axle">
+                                    <div class="wheel"></div>
+                                    <div class="weight-badge rear-w">40%</div>
+                                    <div class="wheel"></div>
+                                </div>
                             </div>
-                            <div class="bal-labels"><span>FRONT</span><span>REAR</span></div>
                         </div>
                     </div>
+                    
                     <div class="showroom-card">
                         <div class="card-header"><i class="fa-solid fa-stopwatch"></i> 0-100 KM/H</div>
                         <div class="gauge-container">
-                            <div class="gauge-arc"></div>
+                            <svg viewBox="0 0 100 50" class="gauge-svg">
+                                <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" stroke-linecap="round"/>
+                                <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#ffd60a" stroke-width="8" stroke-linecap="round" stroke-dasharray="110" stroke-dashoffset="65"/>
+                            </svg>
                             <div class="gauge-value">9.8<small>s</small></div>
                         </div>
                     </div>
@@ -1123,7 +1127,7 @@
                     </div>
                 </div>
                 
-                <div style="height: 120px;"></div>
+                <div style="height: 100px;"></div>
             </div>
 
             <div class="showroom-bottom-actions">
