@@ -1902,68 +1902,130 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================== */
-/* === SHOWROOM TELEMETRY UI               == */
+/* === SHOWROOM TELEMETRY UI (GOD TIER)    == */
 /* ========================================== */
 
-#showroom-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0; position: relative; }
+:root {
+    --glow-color: #bf5af2; /* Das binden wir später an die Lack-Farbe! */
+}
 
-/* FIX: Perfekter Fade-Out. Das Padding von 40px sorgt dafür, dass die erste Karte im Ruhezustand voll sichtbar ist. Erst wenn sie in die oberen 40px hineinscrollt, faded sie weg! */
+#showroom-panel { 
+    flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0; position: relative; 
+    background: transparent;
+}
+
+/* === LAYER 1: THE AMBIENT ORB (Das pulsierende Licht im Hintergrund) === */
+#showroom-panel::before {
+    content: ''; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+    width: 120%; height: 60%;
+    background: radial-gradient(ellipse at center, var(--glow-color) 0%, transparent 60%);
+    opacity: 0.12; filter: blur(80px); z-index: 0; pointer-events: none;
+}
+
+/* === LAYER 2: SCROLL AREA & FADE === */
 .showroom-content-scroll {
     flex: 1; overflow-y: auto; overflow-x: hidden;
-    padding: 40px 20px 20px 20px;
+    padding: 30px 20px 20px 20px; z-index: 10; position: relative;
     -ms-overflow-style: none; scrollbar-width: none;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
 }
 .showroom-content-scroll::-webkit-scrollbar { display: none; }
 
-.showroom-bottom-actions { position: absolute; bottom: 25px; left: 20px; right: 20px; display: flex; flex-direction: row; gap: 15px; z-index: 30; }
-.btn-glass-action {
-    flex: 1; padding: 18px 0; background: rgba(30, 30, 35, 0.4); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-    border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; color: #fff; font-size: 0.8rem; font-weight: 900; letter-spacing: 1px;
-    display: flex; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); cursor: pointer; transition: all 0.2s;
+/* === LAYER 3: FLOATING HEADER === */
+.showroom-sticky-header {
+    display: flex; justify-content: center; align-items: center; gap: 15px;
+    padding: 20px; z-index: 20; position: relative;
+    background: linear-gradient(to bottom, rgba(5,5,5,1) 15%, rgba(5,5,5,0.7) 60%, transparent 100%);
 }
-.btn-glass-action:active { transform: scale(0.96); background: rgba(191, 90, 242, 0.3); border-color: rgba(191, 90, 242, 0.6); }
+.qf-text { font-family: monospace; font-size: 0.7rem; color: rgba(255,255,255,0.9); font-weight: 800; letter-spacing: 2px; }
+.qf-dot { color: var(--glow-color); font-size: 0.8rem; text-shadow: 0 0 10px var(--glow-color); }
 
+/* === LAYER 4: FROST GLASS PANELS (Die perfekten Karten) === */
 .showroom-card { 
-    background: rgba(20, 20, 25, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); 
-    border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 20px; display: flex; flex-direction: column; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5); margin-bottom: 20px; box-sizing: border-box;
+    position: relative; overflow: hidden;
+    background: linear-gradient(145deg, rgba(25, 25, 30, 0.4), rgba(10, 10, 15, 0.6)); 
+    backdrop-filter: blur(40px) saturate(150%); -webkit-backdrop-filter: blur(40px) saturate(150%); 
+    /* Der magische Inset-Border für echtes Glas-Gefühl */
+    border: 1px solid rgba(255,255,255,0.03); 
+    border-top: 1px solid rgba(255,255,255,0.1); 
+    border-radius: 28px; padding: 22px; display: flex; flex-direction: column; 
+    box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 0 20px rgba(255,255,255,0.01); 
+    margin-bottom: 20px; box-sizing: border-box;
 }
 .showroom-card.full-width { width: 100%; }
 .showroom-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
 
-.card-header { font-size: 0.75rem; color: #888; font-weight: 900; letter-spacing: 1.5px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; }
-.card-header i { color: #bf5af2; }
+/* Micro-Typography: Headers */
+.card-header { 
+    font-size: 0.6rem; color: rgba(255,255,255,0.4); font-weight: 900; letter-spacing: 2px; 
+    margin-bottom: 18px; display: flex; align-items: center; gap: 10px; text-transform: uppercase; 
+}
+.card-header i { color: var(--glow-color); font-size: 0.8rem; filter: drop-shadow(0 0 5px var(--glow-color)); }
 
-/* === Dyno Peaks === */
-.dyno-peaks { display: flex; justify-content: space-around; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
-.peak-box { display: flex; flex-direction: column; align-items: center; }
-.peak-box.hp .peak-val { color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.8); }
-.peak-box.nm .peak-val { color: #bf5af2; text-shadow: 0 0 15px rgba(191,90,242,0.8); }
-.peak-val { font-size: 1.2rem; font-weight: 900; font-family: sans-serif; }
-.peak-rpm { font-size: 0.65rem; color: #666; font-family: monospace; margin-top: 3px; }
+/* === MICRO-TYPOGRAPHY: DATA CLUSTERS === */
+.dyno-peaks { display: flex; justify-content: space-around; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); }
+.peak-box { display: flex; flex-direction: column; align-items: center; position: relative; }
+.peak-box.hp .peak-val { color: #fff; text-shadow: 0 2px 10px rgba(255,255,255,0.4); }
+.peak-box.nm .peak-val { color: var(--glow-color); text-shadow: 0 2px 15px var(--glow-color); }
+.peak-val { font-size: 1.5rem; font-weight: 900; font-family: 'Inter', sans-serif; letter-spacing: -0.5px; line-height: 1; }
+.peak-rpm { font-size: 0.6rem; color: rgba(255,255,255,0.3); font-family: monospace; margin-top: 5px; letter-spacing: 1px; }
 
-/* === FIX: Top-Down Chassis Balance === */
-.balance-visual { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 10px 0; }
-.chassis-top-down { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 90px; width: 60px; position: relative; }
-.car-body { position: absolute; top: 10px; bottom: 10px; left: 6px; right: 6px; border: 2px solid rgba(255,255,255,0.1); border-radius: 8px; background: rgba(255,255,255,0.02); z-index: 1; }
+/* === TOP-DOWN CHASSIS (F1 Style) === */
+.balance-visual { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 15px 0 5px 0; }
+.chassis-top-down { display: flex; flex-direction: column; align-items: center; justify-content: space-between; height: 95px; width: 65px; position: relative; }
+.car-body { 
+    position: absolute; top: 12px; bottom: 12px; left: 8px; right: 8px; 
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; 
+    background: linear-gradient(to bottom, rgba(255,255,255,0.05), transparent); z-index: 1; 
+}
 .axle { display: flex; justify-content: space-between; width: 100%; align-items: center; z-index: 2; position: relative; }
-.wheel { width: 6px; height: 18px; background: #444; border-radius: 3px; }
-.weight-badge { font-size: 0.6rem; font-weight: 900; font-family: monospace; padding: 2px 6px; border-radius: 4px; }
-.front-w { background: #fff; color: #000; box-shadow: 0 0 10px rgba(255,255,255,0.4); }
-.rear-w { background: #bf5af2; color: #fff; box-shadow: 0 0 10px rgba(191,90,242,0.4); }
+.wheel { width: 5px; height: 18px; background: rgba(255,255,255,0.2); border-radius: 3px; box-shadow: 0 5px 10px rgba(0,0,0,0.5); }
+.weight-badge { font-size: 0.65rem; font-weight: 900; font-family: monospace; padding: 2px 6px; border-radius: 6px; backdrop-filter: blur(5px); }
+.front-w { background: rgba(255,255,255,0.9); color: #000; box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+.rear-w { background: var(--glow-color); color: #fff; box-shadow: 0 0 15px var(--glow-color); border: 1px solid rgba(255,255,255,0.2); }
 
-/* === FIX: SVG Gauge 0-100 === */
-.gauge-container { position: relative; width: 100%; height: 75px; display: flex; justify-content: center; align-items: flex-end; padding-top: 10px; }
-.gauge-svg { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 110px; height: 55px; }
-.gauge-value { font-size: 1.8rem; font-weight: 900; color: #fff; z-index: 2; text-shadow: 0 4px 10px rgba(0,0,0,0.8); line-height: 1; margin-bottom: 5px; }
-.gauge-value small { font-size: 0.8rem; color: #888; margin-left: 2px; }
+/* === GAUGE (Neon Glow) === */
+.gauge-container { position: relative; width: 100%; height: 80px; display: flex; justify-content: center; align-items: flex-end; padding-top: 15px; }
+.gauge-svg { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 120px; height: 60px; filter: drop-shadow(0 0 8px rgba(255, 214, 10, 0.4)); }
+.gauge-value { font-size: 2rem; font-weight: 900; color: #fff; z-index: 2; text-shadow: 0 4px 15px rgba(0,0,0,0.8); line-height: 0.9; margin-bottom: 2px; letter-spacing: -1px; }
+.gauge-value small { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-left: 2px; font-weight: 700; }
 
-/* === Nerd Specs & Charts === */
-.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-.spec-item { display: flex; flex-direction: column; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.02); }
-.spec-item span { font-size: 0.6rem; color: #666; font-weight: bold; letter-spacing: 1px; margin-bottom: 4px; }
-.spec-item strong { font-size: 0.85rem; color: #ddd; font-family: monospace; }
-.chart-container-dyno { position: relative; height: 180px; width: 100%; }
-.chart-container-gear { position: relative; height: 180px; width: 100%; }
+/* === NERD SPECS GRID === */
+.spec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.spec-item { 
+    display: flex; flex-direction: column; padding: 14px; border-radius: 16px; 
+    background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.02);
+    transition: background 0.2s;
+}
+.spec-item:hover { background: rgba(255,255,255,0.03); }
+.spec-item span { font-size: 0.55rem; color: rgba(255,255,255,0.3); font-weight: 800; letter-spacing: 1.5px; margin-bottom: 6px; text-transform: uppercase; }
+.spec-item strong { font-size: 0.9rem; color: rgba(255,255,255,0.9); font-family: monospace; letter-spacing: 0.5px; }
+
+/* === CHARTS CONTAINER === */
+.chart-container-dyno { position: relative; height: 180px; width: 100%; margin-top: -10px; }
+.chart-container-gear { position: relative; height: 180px; width: 100%; margin-top: -10px; }
+
+/* === GLASS BUTTONS (Nebeneinander) === */
+.showroom-bottom-actions { 
+    position: absolute; bottom: 30px; left: 20px; right: 20px; 
+    display: flex; flex-direction: row; gap: 15px; z-index: 30; 
+}
+.btn-glass-action {
+    flex: 1; padding: 20px 0;
+    background: linear-gradient(145deg, rgba(40, 40, 45, 0.4), rgba(20, 20, 25, 0.6));
+    backdrop-filter: blur(30px) saturate(150%); -webkit-backdrop-filter: blur(30px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08); border-top: 1px solid rgba(255,255,255,0.15); 
+    border-radius: 22px; color: #fff; font-size: 0.75rem; font-weight: 900; letter-spacing: 1.5px;
+    display: flex; justify-content: center; align-items: center; gap: 10px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.8), inset 0 0 15px rgba(255,255,255,0.02); 
+    cursor: pointer; transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+}
+.btn-glass-action i { font-size: 1rem; color: rgba(255,255,255,0.6); transition: color 0.3s; }
+.btn-glass-action:active { 
+    transform: scale(0.95); 
+    background: rgba(191, 90, 242, 0.2); 
+    border-color: rgba(191, 90, 242, 0.5); 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.9), inset 0 0 20px rgba(191, 90, 242, 0.2);
+}
+.btn-glass-action:active i { color: #fff; }
