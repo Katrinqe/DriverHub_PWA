@@ -1080,10 +1080,6 @@
             <div class="studio-editor-layout">
                 
                 <div class="editor-side-nav">
-     <div class="studio-bottom-panel">
-            <div class="studio-editor-layout">
-                
-                <div class="editor-side-nav">
                     <div class="side-nav-item active" onclick="GarageLogic.scrollToSection('section-paint')">PAINT</div>
                     <div class="side-nav-item" onclick="GarageLogic.scrollToSection('section-setup')">SETUP</div>
                     <div class="side-nav-item" onclick="GarageLogic.scrollToSection('section-engine')">ENGINE</div>
@@ -1093,7 +1089,7 @@
                 <div class="editor-scroll-area" id="editor-main-scroll" onscroll="GarageLogic.handleEditorScroll()">
                     
                     <div id="section-paint" class="editor-section">
-                    <div class="paint-pro-area">
+                        <div class="paint-pro-area">
                             <div class="color-square-area" id="sv-square">
                                 <div class="color-square-bg" id="sv-bg"></div>
                                 <div class="color-square-white"></div>
@@ -1111,11 +1107,13 @@
                                 </div>
                             </div>
                         </div>
+                        
                         <div class="auto-color-btn-container">
                             <button class="auto-color-btn" onclick="GarageLogic.startAutoColorDetection()">
                                 <i class="fa-solid fa-camera-retro"></i> AUTOMATIC COLOR DETECTION
                             </button>
                         </div>
+                        
                         <div style="margin-top: 25px;">
                             <label style="font-size: 0.7rem; color: #888; letter-spacing: 1px; font-weight: bold; margin-left: 5px;">PAINT FINISH</label>
                             <div class="finish-segmented">
@@ -1140,7 +1138,8 @@
                     <div id="section-finish" class="editor-section">
                         <label style="font-size: 0.7rem; color: #888; letter-spacing: 1px; font-weight: bold; margin-left: 5px;">SUMMARY</label>
                         <div style="color:#555; text-align:center; padding: 40px 0; border: 1px dashed #333; border-radius: 15px; margin-top: 10px;">Final Save (Coming Soon)</div>
-                        <div style="height: 100px;"></div> </div>
+                        <div style="height: 100px;"></div>
+                    </div>
                     
                 </div>
             </div>
