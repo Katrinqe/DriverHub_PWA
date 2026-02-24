@@ -283,9 +283,9 @@ window.GarageLogic = {
     // === NEW: TUNING STUDIO (AAA EDITOR)    ===
     // ==========================================
     
-    currentStudioSetup: { h: 275, s: 85, l: 50, finish: 'glossy' },
+  currentStudioSetup: { h: 275, s: 80, v: 90, finish: 'glossy' },
 
-openStudio: function(brandKey, modelLogo, glbFile) {
+    openStudio: function(brandKey, modelLogo, glbFile) {
         const screen = document.getElementById('studio-screen');
         if(!screen) return;
         
@@ -294,24 +294,20 @@ openStudio: function(brandKey, modelLogo, glbFile) {
         const viewer = document.getElementById('studio-model-viewer');
         viewer.src = glbFile;
         
-        // === FIX: SCROLL-RESET STATT TAB-RESET ===
-        // Scrollt den Editor beim Öffnen wieder ganz nach oben
         const scrollContainer = document.getElementById('editor-main-scroll');
         if(scrollContainer) scrollContainer.scrollTop = 0;
         
-        // Setzt das linke Menü wieder auf "PAINT" (erstes Element)
         document.querySelectorAll('.side-nav-item').forEach(nav => nav.classList.remove('active'));
         const firstNav = document.querySelector('.side-nav-item');
         if(firstNav) firstNav.classList.add('active');
-        // =========================================
 
         this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
         
-        // Farbe init
+        // Farbe init (NEU: Quadrat & Slider)
         setTimeout(() => {
-            this.initColorWheel(); // Startet die Mathe für den Kreis
-            this.updateProColor();
-        }, 300);// Kurz warten bis Modell da ist
+            this.initColorSquare(); 
+            this.updateHueSlider();
+        }, 300);
         
         screen.classList.remove('hidden');
     },
@@ -322,106 +318,96 @@ openStudio: function(brandKey, modelLogo, glbFile) {
         document.getElementById('studio-model-viewer').src = ''; 
     },
 
-// === NEU: SCROLL NAVIGATION ===
+    // === SCROLL NAVIGATION ===
     scrollToSection: function(sectionId) {
         const container = document.getElementById('editor-main-scroll');
         const target = document.getElementById(sectionId);
         if(container && target) {
-            // Scrollt physikalisch zu dem Bereich
-            container.scrollTo({
-                top: target.offsetTop - container.offsetTop,
-                behavior: 'smooth'
-            });
+            container.scrollTo({ top: target.offsetTop - container.offsetTop, behavior: 'smooth' });
         }
     },
 
-    // Wird automatisch beim Wischen getriggert
     handleEditorScroll: function() {
         const container = document.getElementById('editor-main-scroll');
         if(!container) return;
-        
-        // Wir setzen den Messpunkt ins obere Drittel des Bildschirms
         const scrollPos = container.scrollTop + 100; 
         const sections = container.querySelectorAll('.editor-section');
         const navItems = document.querySelectorAll('.side-nav-item');
         
         let activeIndex = 0;
-        
         sections.forEach((sec, index) => {
             const secTop = sec.offsetTop - container.offsetTop;
-            if(scrollPos >= secTop) {
-                activeIndex = index; // Welcher Abschnitt ist gerade im Sichtfeld?
-            }
+            if(scrollPos >= secTop) { activeIndex = index; }
         });
         
-        // Text links aufleuchten lassen
         navItems.forEach(nav => nav.classList.remove('active'));
-        if(navItems[activeIndex]) {
-            navItems[activeIndex].classList.add('active');
-        }
+        if(navItems[activeIndex]) navItems[activeIndex].classList.add('active');
     },
 
-   // === DIE NEUE PRO FARB LOGIK (COLOR WHEEL) ===
-
-    // Wird einmal aufgerufen, wenn das Studio öffnet
-   // === DIE NEUE PRO FARB LOGIK (COLOR WHEEL) ===
-    initColorWheel: function() {
-        const wrapper = document.getElementById('color-wheel-wrapper');
-        const thumb = document.getElementById('wheel-thumb');
-        if(!wrapper || !thumb) return;
+    // === NEU: PRO FARB LOGIK (QUADRAT & SLIDER) ===
+    initColorSquare: function() {
+        const square = document.getElementById('sv-square');
+        if(!square) return;
 
         let isDragging = false;
-        const ringOffset = 62; 
 
-        // FIX: Den Cursor beim Start sofort sichtbar auf den Kreis legen!
-        let initialAngle = (this.currentStudioSetup.h - 90) * (Math.PI / 180);
-        let initialTx = ringOffset * Math.cos(initialAngle);
-        let initialTy = ringOffset * Math.sin(initialAngle);
-        thumb.style.transform = `translate(calc(-50% + ${initialTx}px), calc(-50% + ${initialTy}px))`;
-
-        const updateWheel = (e) => {
-            const rect = wrapper.getBoundingClientRect();
-            const cx = rect.left + rect.width / 2;
-            const cy = rect.top + rect.height / 2;
-            
+        const updateSquare = (e) => {
+            const rect = square.getBoundingClientRect();
             let clientX = e.touches ? e.touches[0].clientX : e.clientX;
             let clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-            let dx = clientX - cx;
-            let dy = clientY - cy;
-            let angle = Math.atan2(dy, dx);
             
-            let tx = ringOffset * Math.cos(angle);
-            let ty = ringOffset * Math.sin(angle);
-            thumb.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
-
-            let hue = (angle * 180 / Math.PI) + 90; 
-            if (hue < 0) hue += 360;
+            let x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+            let y = Math.max(0, Math.min(clientY - rect.top, rect.height));
             
-            this.currentStudioSetup.h = hue;
-            this.updateProColor();
+            // X-Achse ist Sättigung, Y-Achse ist Helligkeit (invertiert)
+            this.currentStudioSetup.s = (x / rect.width) * 100;
+            this.currentStudioSetup.v = 100 - ((y / rect.height) * 100);
+            
+            this.updateProColorUI();
         };
 
-        wrapper.addEventListener('pointerdown', (e) => { 
-            // FIX: Wenn der Klick auf der Mitte landet, ABRECHEN! Rad darf sich nicht bewegen!
-            if(e.target.closest('#wheel-center-bg')) return; 
-            
-            isDragging = true; updateWheel(e); wrapper.setPointerCapture(e.pointerId); 
-        });
-        wrapper.addEventListener('pointermove', (e) => { if(isDragging) updateWheel(e); });
-        wrapper.addEventListener('pointerup', (e) => { isDragging = false; wrapper.releasePointerCapture(e.pointerId); });
+        square.addEventListener('pointerdown', (e) => { isDragging = true; square.setPointerCapture(e.pointerId); updateSquare(e); });
+        square.addEventListener('pointermove', (e) => { if(isDragging) updateSquare(e); });
+        square.addEventListener('pointerup', (e) => { isDragging = false; square.releasePointerCapture(e.pointerId); });
     },
 
-    hslToRgb: function(h, s, l) {
-        s /= 100; l /= 100;
-        let c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c/2, r = 0, g = 0, b = 0;
-        if (0 <= h && h < 60) { r = c; g = x; b = 0; }
-        else if (60 <= h && h < 120) { r = x; g = c; b = 0; }
-        else if (120 <= h && h < 180) { r = 0; g = c; b = x; }
-        else if (180 <= h && h < 240) { r = 0; g = x; b = c; }
-        else if (240 <= h && h < 300) { r = x; g = 0; b = c; }
-        else if (300 <= h && h < 360) { r = c; g = 0; b = x; }
-        return [r + m, g + m, b + m];
+    updateHueSlider: function() {
+        const hue = document.getElementById('pro-hue').value;
+        this.currentStudioSetup.h = parseFloat(hue);
+        
+        const bg = document.getElementById('sv-bg');
+        if(bg) bg.style.background = `hsl(${hue}, 100%, 50%)`;
+        
+        this.updateProColorUI();
+    },
+
+    updateProColorUI: function() {
+        const h = this.currentStudioSetup.h;
+        const s = this.currentStudioSetup.s;
+        const v = this.currentStudioSetup.v;
+        
+        const thumb = document.getElementById('sv-thumb');
+        if(thumb) {
+            thumb.style.left = s + '%';
+            thumb.style.top = (100 - v) + '%';
+        }
+        
+        // Berechne den echten RGB Wert
+        const rgb = this.hsvToRgb(h, s, v);
+        const hexStr = this.rgbToHex(rgb[0], rgb[1], rgb[2]);
+        
+        const disp = document.getElementById('hue-val-disp');
+        const box = document.getElementById('current-color-preview');
+        if(disp) disp.innerText = hexStr;
+        if(box) box.style.background = hexStr;
+        
+        this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
+    },
+
+    hsvToRgb: function(h, s, v) {
+        s /= 100; v /= 100;
+        let f = (n, k=(n+h/60)%6) => v - v*s*Math.max(Math.min(k, 4-k, 1), 0);
+        return [f(5), f(3), f(1)];
     },
 
     rgbToHex: function(r, g, b) {
@@ -429,24 +415,23 @@ openStudio: function(brandKey, modelLogo, glbFile) {
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
     },
 
-    // Rechnet einen HEX-Code in den Winkel für den Kreis und den Wert für den Slider um
-    hexToHsl: function(hex) {
+    hexToHsv: function(hex) {
         let shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
         hex = hex.replace(shorthandRegex, function(m, r, g, b) { return r + r + g + g + b + b; });
         let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        if (!result) return null; // Abbrechen, wenn es kein echtes Hex ist
+        if (!result) return null;
         
         let r = parseInt(result[1], 16) / 255;
         let g = parseInt(result[2], 16) / 255;
         let b = parseInt(result[3], 16) / 255;
 
         let max = Math.max(r, g, b), min = Math.min(r, g, b);
-        let h, s, l = (max + min) / 2;
+        let h, s, v = max;
+        let d = max - min;
+        s = max === 0 ? 0 : d / max;
 
-        if (max === min) { h = s = 0; } 
+        if (max === min) { h = 0; } 
         else {
-            let d = max - min;
-            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
             switch (max) {
                 case r: h = (g - b) / d + (g < b ? 6 : 0); break;
                 case g: h = (b - r) / d + 2; break;
@@ -454,59 +439,30 @@ openStudio: function(brandKey, modelLogo, glbFile) {
             }
             h /= 6;
         }
-        return [h * 360, s * 100, l * 100];
+        return [h * 360, s * 100, v * 100];
     },
 
-    // Wird aufgerufen, wenn du "Enter/Fertig" auf der Tastatur drückst
     applyManualHex: function(hexValue) {
         let hex = hexValue.trim();
         if (!hex.startsWith('#')) hex = '#' + hex;
         
-        const hsl = this.hexToHsl(hex);
-        if (!hsl) {
-            // Falls der Nutzer Quatsch eingetippt hat, setze es auf die aktuelle Farbe zurück
-            this.updateProColor(); 
+        const hsv = this.hexToHsv(hex);
+        if (!hsv) {
+            this.updateProColorUI(); 
             return;
         }
 
-        let h = hsl[0];
-        let l = hsl[2];
+        this.currentStudioSetup.h = hsv[0];
+        this.currentStudioSetup.s = hsv[1];
+        this.currentStudioSetup.v = hsv[2];
         
-        // 1. Speichere den neuen Winkel
-        this.currentStudioSetup.h = h;
+        const hueSlider = document.getElementById('pro-hue');
+        if(hueSlider) hueSlider.value = hsv[0];
         
-        // 2. Setze den Helligkeits-Slider (limitiert zwischen 15 und 85)
-        let clampedL = Math.max(15, Math.min(85, l));
-        document.getElementById('pro-light').value = clampedL;
+        const bg = document.getElementById('sv-bg');
+        if(bg) bg.style.background = `hsl(${hsv[0]}, 100%, 50%)`;
 
-        // 3. Setze den Ring auf dem Farbrad auf die korrekte Position
-        const thumb = document.getElementById('wheel-thumb');
-        if(thumb) {
-            let angle = (h - 90) * (Math.PI / 180);
-            let tx = 62 * Math.cos(angle);
-            let ty = 62 * Math.sin(angle);
-            thumb.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
-        }
-
-        // 4. Lade die Farbe aufs Auto
-        this.updateProColor();
-    },
-
-updateProColor: function() {
-        const hue = this.currentStudioSetup.h;
-        const light = document.getElementById('pro-light').value;
-        const rgb = this.hslToRgb(hue, 85, light); 
-        const hexStr = this.rgbToHex(rgb[0], rgb[1], rgb[2]);
-        
-       // UI Text & Center updaten (innerText ist wieder korrekt)
-        document.getElementById('hue-val-disp').innerText = hexStr;
-        document.getElementById('wheel-center-bg').style.background = hexStr;
-
-        // FIX: Farbe DIREKT als Background setzen, das kapiert jeder Browser sofort!
-        const slider = document.getElementById('pro-light');
-        slider.style.background = `linear-gradient(to right, hsl(${hue}, 80%, 10%), hsl(${hue}, 85%, 50%), hsl(${hue}, 80%, 90%))`;
-
-        this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
+        this.updateProColorUI();
     },
     applyRgbToCar: function(r, g, b) {
         const viewer = document.getElementById('studio-model-viewer');
