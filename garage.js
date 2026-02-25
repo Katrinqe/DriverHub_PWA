@@ -495,7 +495,7 @@ window.GarageLogic = {
         this.updateProColorUI();
     },
 
-    updateProColorUI: function() {
+   updateProColorUI: function() {
         const h = this.currentStudioSetup.h;
         const s = this.currentStudioSetup.s;
         const v = this.currentStudioSetup.v;
@@ -516,17 +516,10 @@ window.GarageLogic = {
         if(box) box.style.background = hexStr;
         
         this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
-        const disp = document.getElementById('hue-val-disp');
-        const box = document.getElementById('current-color-preview');
-        if(disp) disp.innerText = hexStr;
-        if(box) box.style.background = hexStr;
-        
-        this.applyRgbToCar(rgb[0], rgb[1], rgb[2]);
         
         // NEU: Zünde die UI-Illusion und verbinde Auto mit App
         this.updateGlobalGlow(hexStr, h, s, v);
     },
-
 
     updateGlobalGlow: function(hexStr, h, s, v) {
         // 1. Setze Hauptfarbe für das gesamte UI und das Auto-Licht
