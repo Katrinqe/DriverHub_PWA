@@ -1061,8 +1061,16 @@
             <div class="hero-bottom-fade"></div>
         </div>
 
-   <div id="showroom-panel" class="showroom-panel">
+<div id="showroom-panel" class="showroom-panel">
             
+            <div class="showroom-sticky-header">
+                <span class="qf-text" id="sr-model">MODEL: ---</span>
+                <span class="qf-dot">•</span>
+                <span class="qf-text" id="sr-year">YEAR: ---</span>
+                <span class="qf-dot">•</span>
+                <span class="qf-text" id="sr-weight">WEIGHT: --- KG</span>
+            </div>
+
             <div class="showroom-content-scroll" id="showroom-content-scroll">
                 
                 <div class="showroom-card full-width">
@@ -1071,8 +1079,8 @@
                         <canvas id="dynoChart"></canvas>
                     </div>
                     <div class="dyno-peaks">
-                        <div class="peak-box hp"><span class="peak-val">103 HP</span><span class="peak-rpm">@ 5900 RPM</span></div>
-                        <div class="peak-box nm"><span class="peak-val">133 NM</span><span class="peak-rpm">@ 5000 RPM</span></div>
+                        <div class="peak-box hp"><span class="peak-val" id="sr-peak-hp">--- HP</span><span class="peak-rpm" id="sr-peak-hp-rpm">@ --- RPM</span></div>
+                        <div class="peak-box nm"><span class="peak-val" id="sr-peak-nm">--- NM</span><span class="peak-rpm" id="sr-peak-nm-rpm">@ --- RPM</span></div>
                     </div>
                 </div>
 
@@ -1083,13 +1091,13 @@
                             <div class="chassis-top-down">
                                 <div class="axle front-axle">
                                     <div class="wheel"></div>
-                                    <div class="weight-badge front-w">60%</div>
+                                    <div class="weight-badge front-w" id="sr-bal-front">--%</div>
                                     <div class="wheel"></div>
                                 </div>
                                 <div class="car-body"></div>
                                 <div class="axle rear-axle">
                                     <div class="wheel"></div>
-                                    <div class="weight-badge rear-w">40%</div>
+                                    <div class="weight-badge rear-w" id="sr-bal-rear">--%</div>
                                     <div class="wheel"></div>
                                 </div>
                             </div>
@@ -1101,15 +1109,15 @@
                         <div class="gauge-container">
                             <svg viewBox="0 0 100 50" class="gauge-svg">
                                 <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8" stroke-linecap="round"/>
-                                <path d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#ffd60a" stroke-width="8" stroke-linecap="round" stroke-dasharray="110" stroke-dashoffset="65"/>
+                                <path id="sr-gauge-fill" d="M 10 45 A 35 35 0 0 1 90 45" fill="none" stroke="#ffd60a" stroke-width="8" stroke-linecap="round" stroke-dasharray="110" stroke-dashoffset="110"/>
                             </svg>
-                            <div class="gauge-value">9.8<small>s</small></div>
+                            <div class="gauge-value"><span id="sr-0-100">--.-</span><small>s</small></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="showroom-card full-width">
-                    <div class="card-header"><i class="fa-solid fa-cogs"></i> GEAR RATIOS (S20)</div>
+                    <div class="card-header"><i class="fa-solid fa-cogs"></i> GEAR RATIOS (<span id="sr-gearbox-name">---</span>)</div>
                     <div class="chart-container-gear">
                         <canvas id="gearChart"></canvas>
                     </div>
@@ -1118,12 +1126,12 @@
                 <div class="showroom-card full-width spec-sheet">
                     <div class="card-header"><i class="fa-solid fa-list-check"></i> TECHNICAL BLUEPRINT</div>
                     <div class="spec-grid">
-                        <div class="spec-item"><span>ENGINE CODE</span><strong>D15B7</strong></div>
-                        <div class="spec-item"><span>BORE x STROKE</span><strong>75.0 x 84.5 mm</strong></div>
-                        <div class="spec-item"><span>DRIVETRAIN</span><strong>FWD</strong></div>
-                        <div class="spec-item"><span>AERO (Cd)</span><strong>0.31</strong></div>
-                        <div class="spec-item"><span>FUEL</span><strong>Gasoline (45L)</strong></div>
-                        <div class="spec-item"><span>ENGINE WEIGHT</span><strong>140 KG</strong></div>
+                        <div class="spec-item"><span>ENGINE CODE</span><strong id="sr-spec-engine">---</strong></div>
+                        <div class="spec-item"><span>BORE x STROKE</span><strong id="sr-spec-bore">---</strong></div>
+                        <div class="spec-item"><span>DRIVETRAIN</span><strong id="sr-spec-drive">---</strong></div>
+                        <div class="spec-item"><span>AERO (Cd)</span><strong id="sr-spec-aero">---</strong></div>
+                        <div class="spec-item"><span>FUEL</span><strong id="sr-spec-fuel">---</strong></div>
+                        <div class="spec-item"><span>ENGINE WEIGHT</span><strong id="sr-spec-engweight">---</strong></div>
                     </div>
                 </div>
                 
