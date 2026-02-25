@@ -457,12 +457,26 @@ renderTelemetryCharts: function(carData) {
             this.updateHueSlider();
         }, 100);
     },
-    closeStudio: function() {
-        const screen = document.getElementById('studio-screen');
-        if(screen) screen.classList.add('hidden');
-        document.getElementById('studio-model-viewer').src = ''; 
-    },
+  closeStudio: function() {
+        const showroom = document.getElementById('showroom-panel');
+        const configPanel = document.getElementById('configurator-panel');
+        
+        // CHECK: Sind wir gerade im Konfigurator?
+        if (configPanel && configPanel.style.display === 'flex') {
+            // Nur den Konfigurator schließen und zurück zu den Auto-Infos (Showroom) gehen
+            configPanel.style.display = 'none';
+            configPanel.classList.remove('slide-up-config');
+            if (showroom) showroom.style.display = 'flex';
+            return; // HIER ABBRECHEN, damit nicht das ganze Studio zugeht!
+        }
 
+        // WENN wir schon im Showroom sind -> Das komplette Studio schließen (zurück zur Modellauswahl)
+        const screen = document.getElementById('studio-screen');
+        if (screen) screen.classList.add('hidden');
+        
+        const viewer = document.getElementById('studio-model-viewer');
+        if (viewer) viewer.src = ''; 
+    },
     // === SCROLL NAVIGATION ===
     scrollToSection: function(sectionId) {
         const container = document.getElementById('editor-main-scroll');
