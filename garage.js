@@ -15,6 +15,36 @@ window.GarageLogic = {
         { name: "Honda EG", file: "car3.glb" }
     ],
 
+    // === NEU: DIE MASTER-DATENBANK FÜR TELEMETRIE ===
+    carDatabase: {
+        'ej2': {
+            name: 'EJ2 (1.5 DX)', year: '1994', weight: '1040',
+            engine: 'D15B7', bore: '75.0 x 84.5 mm', drivetrain: 'FWD', aero: '0.31', fuel: 'Gasoline (45L)', engWeight: '140 KG',
+            balance: { front: 60, rear: 40 }, sprint: '9.8',
+            factoryColor: '#1A8C9A', // Das originale Türkis!
+            dyno: {
+                rpm: [1000, 2000, 3000, 4000, 5000, 5900, 6500],
+                hp: [14, 30, 50, 71, 93, 103, 100],
+                nm: [100, 110, 120, 128, 133, 124, 110],
+                peakHp: '103 HP', peakHpRpm: '@ 5900 RPM', peakNm: '133 NM', peakNmRpm: '@ 5000 RPM'
+            },
+            gearbox: { name: 'S20', data: [{x:0, y:800}, {x:49, y:6500}, {x:49, y:3800}, {x:84, y:6500}, {x:84, y:4276}, {x:127, y:6500}, {x:127, y:4726}, {x:175, y:6500}, {x:175, y:5363}, {x:190, y:5825}] }
+        },
+        'ek': {
+            name: 'EK (1.4i)', year: '1999', weight: '1050',
+            engine: 'D14A4', bore: '75.0 x 79.0 mm', drivetrain: 'FWD', aero: '0.32', fuel: 'Gasoline (45L)', engWeight: '135 KG',
+            balance: { front: 62, rear: 38 }, sprint: '10.8',
+            factoryColor: '#FFD700', // Platzhalter: Ein schönes Gelb/Silber für den EK
+            dyno: {
+                rpm: [1000, 2000, 3000, 4000, 5000, 6000, 6500],
+                hp: [12, 25, 42, 60, 78, 90, 85], // Echte 90 PS Kurve
+                nm: [90, 105, 118, 124, 120, 110, 100], // Echte 124 NM Kurve
+                peakHp: '90 HP', peakHpRpm: '@ 6000 RPM', peakNm: '124 NM', peakNmRpm: '@ 4000 RPM'
+            },
+            gearbox: { name: 'S40', data: [{x:0, y:800}, {x:45, y:6500}, {x:45, y:3500}, {x:80, y:6500}, {x:80, y:4000}, {x:120, y:6500}, {x:120, y:4500}, {x:165, y:6500}, {x:165, y:5000}, {x:180, y:5500}] }
+        }
+    },
+
     // === 2. INIT (DER SAFE START) ===
     init: function() {
         console.log("Garage V26 Init - Safety Mode Active");
@@ -260,7 +290,7 @@ window.GarageLogic = {
                     <div class="stat-bar-track"><div class="stat-bar-fill" style="width: ${pwPercent}%; background: linear-gradient(90deg, #0a84ff, #30d158);"></div></div>
                 </div>
                 
-               <button class="btn-choose-model" onclick="GarageLogic.openStudio('${brandKey}', '${mod.logo}', '${mod.file}')">
+               <button class="btn-choose-model" onclick="GarageLogic.openStudio('${idx === 0 ? 'ej2' : 'ek'}', '${mod.logo}', '${mod.file}')">
                     CHOOSE MODEL
                 </button>
             `;
@@ -285,7 +315,7 @@ window.GarageLogic = {
     
   currentStudioSetup: { h: 275, s: 80, v: 90, finish: 'glossy' },
 
-   openStudio: function(brandKey, modelLogo, glbFile) {
+openStudio: function(carId, modelLogo, glbFile) {
         const screen = document.getElementById('studio-screen');
         if(!screen) return;
         
@@ -294,110 +324,113 @@ window.GarageLogic = {
         const viewer = document.getElementById('studio-model-viewer');
         viewer.src = glbFile;
         
-        // 1. Showroom Panel anzeigen, Configurator verstecken
+        // --- DATA INJECTION START ---
+        const carData = this.carDatabase[carId];
+        if(carData) {
+            // Texte befüllen
+            document.getElementById('sr-model').innerText = `MODEL: ${carData.name}`;
+            document.getElementById('sr-year').innerText = `YEAR: ${carData.year}`;
+            document.getElementById('sr-weight').innerText = `WEIGHT: ${carData.weight} KG`;
+            
+            document.getElementById('sr-peak-hp').innerText = carData.dyno.peakHp;
+            document.getElementById('sr-peak-hp-rpm').innerText = carData.dyno.peakHpRpm;
+            document.getElementById('sr-peak-nm').innerText = carData.dyno.peakNm;
+            document.getElementById('sr-peak-nm-rpm').innerText = carData.dyno.peakNmRpm;
+            
+            document.getElementById('sr-bal-front').innerText = `${carData.balance.front}%`;
+            document.getElementById('sr-bal-rear').innerText = `${carData.balance.rear}%`;
+            document.getElementById('sr-0-100').innerText = carData.sprint;
+            
+            document.getElementById('sr-gearbox-name').innerText = carData.gearbox.name;
+            document.getElementById('sr-spec-engine').innerText = carData.engine;
+            document.getElementById('sr-spec-bore').innerText = carData.bore;
+            document.getElementById('sr-spec-drive').innerText = carData.drivetrain;
+            document.getElementById('sr-spec-aero').innerText = carData.aero;
+            document.getElementById('sr-spec-fuel').innerText = carData.fuel;
+            document.getElementById('sr-spec-engweight').innerText = carData.engWeight;
+
+            // Gauge Füllstand anpassen (Sprint)
+            const gaugeFill = document.getElementById('sr-gauge-fill');
+            if(gaugeFill) {
+                // Je weniger Sekunden, desto voller der Tacho. (Max 110, Min 0)
+                let fillVal = Math.max(0, 110 - ((parseFloat(carData.sprint) / 12) * 110));
+                gaugeFill.style.strokeDashoffset = fillVal;
+            }
+
+            // Glow-Reset auf Factory Color des Autos!
+            const hex = carData.factoryColor;
+            const hsv = this.hexToHsv(hex);
+            if(hsv) this.updateGlobalGlow(hex, hsv[0], hsv[1], hsv[2]);
+        }
+        // --- DATA INJECTION END ---
+
         const showroom = document.getElementById('showroom-panel');
         const configPanel = document.getElementById('configurator-panel');
-       if(showroom) {
+        if(showroom) {
             showroom.style.display = 'flex';
             setTimeout(() => {
-                this.renderTelemetryCharts();
+                this.renderTelemetryCharts(carData); // Wir übergeben jetzt die exakten Auto-Daten!
             }, 100);
         }
         if(configPanel) {
             configPanel.style.display = 'none';
-            configPanel.classList.remove('slide-up-config'); // Reset Animation
+            configPanel.classList.remove('slide-up-config'); 
         }
         
         screen.classList.remove('hidden');
     },
 
+renderTelemetryCharts: function(carData) {
+        if(!carData) return;
+        Chart.defaults.color = 'rgba(255,255,255,0.4)';
+        Chart.defaults.font.family = 'monospace';
 
-    renderTelemetryCharts: function() {
-        Chart.defaults.color = '#666';
-        Chart.defaults.font.family = 'sans-serif';
+        const glowCol = getComputedStyle(document.documentElement).getPropertyValue('--glow-color').trim();
 
-        // === 1. DYNO CHART (HP vs NM) ===
+        // === 1. DYNO CHART ===
         const ctxDyno = document.getElementById('dynoChart');
         if (!ctxDyno) return;
-        
-        // Zerstöre alte Diagramme, falls wir den Screen neu öffnen
         if(window.dynoChartInstance) window.dynoChartInstance.destroy();
-
-        // Physik-Daten für D15B7
-        const rpmLabels = [1000, 2000, 3000, 4000, 5000, 5900, 6500];
-        const nmData = [100, 110, 120, 128, 133, 124, 110]; // 133 Nm @ 5000
-        const hpData = [14, 30, 50, 71, 93, 103, 100];      // 103 HP @ 5900
 
         window.dynoChartInstance = new Chart(ctxDyno, {
             type: 'line',
             data: {
-                labels: rpmLabels,
+                labels: carData.dyno.rpm,
                 datasets: [
-                    {
-                        label: 'HP', data: hpData,
-                        borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.1)',
-                        borderWidth: 2, tension: 0.4, pointRadius: 0, fill: true
-                    },
-                    {
-                        label: 'NM', data: nmData,
-                        borderColor: '#bf5af2', backgroundColor: 'transparent',
-                        borderWidth: 2, tension: 0.4, pointRadius: 0
-                    }
+                    { label: 'HP', data: carData.dyno.hp, borderColor: '#ffffff', backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: true },
+                    { label: 'NM', data: carData.dyno.nm, borderColor: glowCol, backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, pointRadius: 0 }
                 ]
             },
             options: {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', titleColor: '#bf5af2' }
-                },
+                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', titleColor: glowCol } },
                 scales: {
-                    x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { maxTicksLimit: 5 } },
-                    y: { grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 150 }
+                    x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { maxTicksLimit: 5 } },
+                    y: { grid: { color: 'rgba(255,255,255,0.02)' }, min: 0, max: 150 }
                 }
             }
         });
 
-        // === 2. GEARBOX CHART (S20 Sägezahn) ===
+        // === 2. GEARBOX CHART ===
         const ctxGear = document.getElementById('gearChart');
         if (!ctxGear) return;
-        
         if(window.gearChartInstance) window.gearChartInstance.destroy();
-
-        // Berechnete Schaltpunkte (km/h, RPM) basierend auf echten Ratios
-        const gearData = [
-            {x: 0, y: 800}, {x: 49, y: 6500},   // 1st Gear
-            {x: 49, y: 3800}, {x: 84, y: 6500}, // 2nd Gear
-            {x: 84, y: 4276}, {x: 127, y: 6500},// 3rd Gear
-            {x: 127, y: 4726}, {x: 175, y: 6500},// 4th Gear
-            {x: 175, y: 5363}, {x: 190, y: 5825} // 5th Gear (Top Speed)
-        ];
 
         window.gearChartInstance = new Chart(ctxGear, {
             type: 'scatter',
             data: {
-                datasets: [{
-                    label: 'RPM',
-                    data: gearData,
-                    borderColor: '#ffffff', backgroundColor: '#bf5af2',
-                    borderWidth: 2, showLine: true, tension: 0, // 0 = Harte Ecken für Sägezahn
-                    pointRadius: 3, pointHoverRadius: 6
-                }]
+                datasets: [{ label: 'RPM', data: carData.gearbox.data, borderColor: '#ffffff', backgroundColor: glowCol, borderWidth: 2, showLine: true, tension: 0, pointRadius: 2 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: {
-                    callbacks: { label: function(ctx) { return ctx.raw.x + ' km/h @ ' + ctx.raw.y + ' RPM'; } }
-                }},
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return ctx.raw.x + ' km/h @ ' + ctx.raw.y + ' RPM'; } } } },
                 scales: {
-                    x: { type: 'linear', position: 'bottom', title: { display: true, text: 'SPEED (KM/H)', color: '#555', font:{size:10} }, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 200 },
-                    y: { title: { display: false }, grid: { color: 'rgba(255,255,255,0.05)' }, min: 0, max: 7000 }
+                    x: { type: 'linear', position: 'bottom', title: { display: true, text: 'SPEED (KM/H)', color: 'rgba(255,255,255,0.3)', font:{size:10} }, grid: { color: 'rgba(255,255,255,0.02)' }, min: 0, max: 200 },
+                    y: { title: { display: false }, grid: { color: 'rgba(255,255,255,0.02)' }, min: 0, max: 7500 }
                 }
             }
         });
     },
-
     // NEU: Wird durch den "CONFIGURE CAR" Button ausgelöst
     startConfigurator: function() {
         const showroom = document.getElementById('showroom-panel');
