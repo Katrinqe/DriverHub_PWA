@@ -1619,23 +1619,32 @@ body.ghost-active #ghost-chat-overlay {
     display: flex; justify-content: center; align-items: center;
 }
 
-/* Das EINE, perfekt verschmolzene Licht */
+/* Das EINE, perfekt verschmolzene Licht - ANGEPASST */
 .hero-ambient-glow::before {
     content: ''; 
     position: absolute; 
-    top: 5%; /* Leicht nach oben versetzt für das Civic-Logo */
-    width: 140%; height: 75%; /* Breit genug, um keine Balken zu bilden */
+    /* Wir starten etwas tiefer, machen es aber viel höher, damit es weit nach unten reicht */
+    top: 10%; 
+    left: -25%; /* Zentriert bei 150% Breite */
+    width: 150%; /* Sehr breit gegen Ränder */
+    height: 140%; /* RIESIG, damit es tief nach unten reicht */
     
-    /* FIX 1: Ein nahtloser, vertikaler Übergang von Weiß zur Wagenfarbe */
-    background: linear-gradient(to bottom, rgba(255,255,255,0.7) 10%, var(--glow-color) 85%);
+    /* FIX 1: Der Farb-Übergang (Der Schlüssel!) */
+    /* Startet Weiß, bleibt bis fast zur Mitte (40%) weißlich, und wird erst ganz unten (100%) zur vollen Farbe */
+    background: linear-gradient(to bottom, 
+        rgba(255,255,255,0.6) 0%, 
+        rgba(255,255,255,0.3) 40%, 
+        var(--glow-color) 100%
+    );
     
-    /* FIX 2: Die Maske macht aus dem eckigen Verlauf eine weiche, runde Wolke */
-    -webkit-mask-image: radial-gradient(ellipse at center, black 10%, transparent 65%);
-    mask-image: radial-gradient(ellipse at center, black 10%, transparent 65%);
+    /* FIX 2: Die Maske formt das Licht */
+    /* Eine riesige Ellipse, deren Zentrum etwas oberhalb der Mitte liegt (40%), damit das Auto im Fokus ist */
+    -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 15%, transparent 75%);
+    mask-image: radial-gradient(ellipse at 50% 40%, black 15%, transparent 75%);
     
-    /* FIX 3: Helligkeit hochgedreht (brightness 1.3) für sattere Farben! */
-    filter: blur(60px) brightness(1.3) saturate(1.2); 
-    opacity: 0.9; 
+    /* FIX 3: Maximaler Blur für weichsten Übergang & Helligkeit */
+    filter: blur(80px) brightness(1.4) saturate(1.1); 
+    opacity: 1.0; 
 }
 
 /* Das alte, zweite Licht wird komplett abgeschaltet! */
