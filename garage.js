@@ -430,16 +430,18 @@ renderTelemetryCharts: function(carData) {
         });
     },
     // NEU: Wird durch den "CONFIGURE CAR" Button ausgelöst
-    startConfigurator: function() {
-        const showroom = document.getElementById('showroom-panel');
+startConfigurator: function() {
+        // FIX: Wir verstecken NICHT das showroom-panel (den Vater), 
+        // sondern nur den showroom-content-scroll (die Karten)!
+        const showroomContent = document.getElementById('showroom-content-scroll');
         const configPanel = document.getElementById('configurator-panel');
         
-        // Showroom weg, Configurator rein mit Slide-Animation
-        if(showroom) showroom.style.display = 'none';
+        if(showroomContent) showroomContent.style.display = 'none';
         if(configPanel) {
             configPanel.style.display = 'flex';
             configPanel.classList.add('slide-up-config');
         }
+        // ... restlicher Code bleibt gleich ...
 
         // === SCROLL-RESET STATT TAB-RESET ===
         const scrollContainer = document.getElementById('editor-main-scroll');
@@ -457,23 +459,21 @@ renderTelemetryCharts: function(carData) {
             this.updateHueSlider();
         }, 100);
     },
-  closeStudio: function() {
-        const showroom = document.getElementById('showroom-panel');
+closeStudio: function() {
+        const showroomContent = document.getElementById('showroom-content-scroll');
         const configPanel = document.getElementById('configurator-panel');
         
-        // CHECK: Sind wir gerade im Konfigurator?
+        // Wenn wir im Editor sind -> Zurück zu den Specs
         if (configPanel && configPanel.style.display === 'flex') {
-            // Nur den Konfigurator schließen und zurück zu den Auto-Infos (Showroom) gehen
             configPanel.style.display = 'none';
             configPanel.classList.remove('slide-up-config');
-            if (showroom) showroom.style.display = 'flex';
-            return; // HIER ABBRECHEN, damit nicht das ganze Studio zugeht!
+            if (showroomContent) showroomContent.style.display = 'block'; // Karten wieder an!
+            return; 
         }
 
-        // WENN wir schon im Showroom sind -> Das komplette Studio schließen (zurück zur Modellauswahl)
+        // Wenn wir in den Specs sind -> Komplett raus zur Auswahl
         const screen = document.getElementById('studio-screen');
         if (screen) screen.classList.add('hidden');
-        
         const viewer = document.getElementById('studio-model-viewer');
         if (viewer) viewer.src = ''; 
     },
