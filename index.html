@@ -1128,7 +1128,14 @@
                         <div class="spec-item"><span>ENGINE WEIGHT</span><strong id="sr-spec-engweight">---</strong></div>
                     </div>
                 </div>
-                
+                        <div class="showroom-bottom-actions">
+                <button class="btn-glass-action" onclick="GarageLogic.startConfigurator()">
+                    <i class="fa-solid fa-wrench"></i> CONFIGURE
+                </button>
+                <button class="btn-glass-action" onclick="alert('Save to Garage coming soon!')">
+                    <i class="fa-solid fa-warehouse"></i> SAVE
+                </button>
+            </div>
                 <div style="height: 100px;"></div>
             </div>
 
@@ -1144,14 +1151,7 @@
                     <div class="side-nav-item" onclick="GarageLogic.scrollToSection('section-finish')">FINISH</div>
                 </div>
 
-                  <div class="showroom-bottom-actions">
-                <button class="btn-glass-action" onclick="GarageLogic.startConfigurator()">
-                    <i class="fa-solid fa-wrench"></i> CONFIGURE
-                </button>
-                <button class="btn-glass-action" onclick="alert('Save to Garage coming soon!')">
-                    <i class="fa-solid fa-warehouse"></i> SAVE
-                </button>
-            </div>
+        
 
                 <div class="editor-scroll-area" id="editor-main-scroll" onscroll="GarageLogic.handleEditorScroll()">
                     
@@ -1233,7 +1233,7 @@
                 <div class="crosshair-ring"></div>
                 <div class="crosshair-dot"></div>
             </div>
-
+   
             <div class="camera-ui-bottom">
                 <div class="scanned-color-preview" id="scanned-color-preview"></div>
                 <div class="hex-modal-actions" style="width: 100%; max-width: 340px;">
