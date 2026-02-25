@@ -1620,31 +1620,34 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* Das EINE, perfekt verschmolzene Licht - ANGEPASST */
+/* Das EINE, perfekt verschmolzene Licht - PRÄZISIONS-UPDATE */
 .hero-ambient-glow::before {
     content: ''; 
     position: absolute; 
-    /* Wir starten etwas tiefer, machen es aber viel höher, damit es weit nach unten reicht */
-    top: 10%; 
-    left: -25%; /* Zentriert bei 150% Breite */
-    width: 150%; /* Sehr breit gegen Ränder */
-    height: 140%; /* RIESIG, damit es tief nach unten reicht */
+    /* Weit nach oben geschoben, damit der Glow über dem Logo butterweich ausläuft */
+    top: -25%; 
+    left: -30%; 
+    width: 160%; 
+    height: 160%; 
     
-    /* FIX 1: Der Farb-Übergang (Der Schlüssel!) */
-    /* Startet Weiß, bleibt bis fast zur Mitte (40%) weißlich, und wird erst ganz unten (100%) zur vollen Farbe */
+    /* DER FARBVERLAUF: */
+    /* 1. Startet bei 0% in Weiß für das Logo. */
+    /* 2. Bleibt bis 35% weißlich/transparent, damit das Auto clean bleibt. */
+    /* 3. Geht ab 70% in die volle, satte Wagenfarbe über. */
     background: linear-gradient(to bottom, 
-        rgba(255,255,255,0.6) 0%, 
-        rgba(255,255,255,0.3) 40%, 
+        rgba(255, 255, 255, 0.7) 0%, 
+        rgba(255, 255, 255, 0.1) 35%, 
+        var(--glow-color) 75%, 
         var(--glow-color) 100%
     );
     
-    /* FIX 2: Die Maske formt das Licht */
-    /* Eine riesige Ellipse, deren Zentrum etwas oberhalb der Mitte liegt (40%), damit das Auto im Fokus ist */
-    -webkit-mask-image: radial-gradient(ellipse at 50% 40%, black 15%, transparent 75%);
-    mask-image: radial-gradient(ellipse at 50% 40%, black 15%, transparent 75%);
+    /* DIE MASKE: Formt den Lichtkegel und verhindert harte Ränder */
+    -webkit-mask-image: radial-gradient(ellipse at 50% 35%, black 10%, transparent 75%);
+    mask-image: radial-gradient(ellipse at 50% 35%, black 10%, transparent 75%);
     
-    /* FIX 3: Maximaler Blur für weichsten Übergang & Helligkeit */
-    filter: blur(80px) brightness(1.4) saturate(1.1); 
-    opacity: 1.0; 
+    /* DIE OPTIK: Hoher Blur gegen Kanten, hohe Sättigung für satte Farben */
+    filter: blur(90px) saturate(1.7) brightness(1.1); 
+    opacity: 0.85; 
 }
 
 /* Das alte, zweite Licht wird komplett abgeschaltet! */
