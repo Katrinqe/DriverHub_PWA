@@ -324,13 +324,10 @@ openStudio: function(carId, modelLogo, glbFile) {
         const viewer = document.getElementById('studio-model-viewer');
         viewer.src = glbFile;
         
-        // --- DATA INJECTION START ---
+     // --- DATA INJECTION START ---
         const carData = this.carDatabase[carId];
         if(carData) {
-            // Texte befüllen
-            document.getElementById('sr-model').innerText = `MODEL: ${carData.name}`;
-            document.getElementById('sr-year').innerText = `YEAR: ${carData.year}`;
-            document.getElementById('sr-weight').innerText = `WEIGHT: ${carData.weight} KG`;
+            // HIER WURDEN DIE 3 CRASH-ZEILEN (model, year, weight) ENTFERNT!
             
             document.getElementById('sr-peak-hp').innerText = carData.dyno.peakHp;
             document.getElementById('sr-peak-hp-rpm').innerText = carData.dyno.peakHpRpm;
@@ -363,6 +360,7 @@ openStudio: function(carId, modelLogo, glbFile) {
             if(hsv) this.updateGlobalGlow(hex, hsv[0], hsv[1], hsv[2]);
         }
         // --- DATA INJECTION END ---
+  
 
         const showroom = document.getElementById('showroom-panel');
         const configPanel = document.getElementById('configurator-panel');
