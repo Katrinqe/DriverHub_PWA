@@ -1132,15 +1132,7 @@
                 <div style="height: 100px;"></div>
             </div>
 
-            <div class="showroom-bottom-actions">
-                <button class="btn-glass-action" onclick="GarageLogic.startConfigurator()">
-                    <i class="fa-solid fa-wrench"></i> CONFIGURE
-                </button>
-                <button class="btn-glass-action" onclick="alert('Save to Garage coming soon!')">
-                    <i class="fa-solid fa-warehouse"></i> SAVE
-                </button>
-            </div>
-        </div>
+   
 
         <div id="configurator-panel" class="studio-bottom-panel" style="display: none;">
             <div class="studio-editor-layout">
@@ -1151,6 +1143,15 @@
                     <div class="side-nav-item" onclick="GarageLogic.scrollToSection('section-engine')">ENGINE</div>
                     <div class="side-nav-item" onclick="GarageLogic.scrollToSection('section-finish')">FINISH</div>
                 </div>
+
+                  <div class="showroom-bottom-actions">
+                <button class="btn-glass-action" onclick="GarageLogic.startConfigurator()">
+                    <i class="fa-solid fa-wrench"></i> CONFIGURE
+                </button>
+                <button class="btn-glass-action" onclick="alert('Save to Garage coming soon!')">
+                    <i class="fa-solid fa-warehouse"></i> SAVE
+                </button>
+            </div>
 
                 <div class="editor-scroll-area" id="editor-main-scroll" onscroll="GarageLogic.handleEditorScroll()">
                     
