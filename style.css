@@ -2095,8 +2095,13 @@ body.ghost-active #ghost-chat-overlay {
 
 /* === GLASS BUTTONS (Nebeneinander) === */
 .showroom-bottom-actions { 
-    position: absolute; bottom: 30px; left: 20px; right: 20px; 
-    display: flex; flex-direction: row; gap: 15px; z-index: 30; 
+    position: relative; /* Nicht mehr absolute! */
+    margin-top: 10px;    /* Abstand zur letzten Karte */
+    display: flex; 
+    flex-direction: row; 
+    gap: 15px; 
+    z-index: 30; 
+    padding-bottom: 20px;
 }
 .btn-glass-action {
     flex: 1; padding: 20px 0;
