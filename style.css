@@ -1609,13 +1609,14 @@ body.ghost-active #ghost-chat-overlay {
     background: linear-gradient(to bottom, #050505 0%, rgba(5,5,5,0.5) 40%, transparent 100%);
     z-index: 20; pointer-events: none;
 }
+/* === LAYER 1: THE AMBIENT ORBS (DYNAMIC) == */
 .hero-ambient-glow {
     position: absolute; 
     bottom: 15%; left: 50%; transform: translateX(-50%);
-    width: 120%; height: 25%; /* Flach wie ein LED-Teppich auf dem Boden */
+    width: 120%; height: 25%; 
     background: radial-gradient(ellipse at center, var(--glow-color) 0%, transparent 70%);
     z-index: 1; pointer-events: none; 
-    filter: blur(40px); opacity: 0.15; /* 15% statt 90% - Reaktor aus! */
+    filter: blur(40px); opacity: 0.45; /* Sichtbar, aber dezent */
 }
 .hero-background-logo { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 350px; height: auto; z-index: 2; opacity: 0.6; pointer-events: none; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.8)); }
 #studio-model-viewer { position: relative; z-index: 5; pointer-events: none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6)); }
@@ -1927,14 +1928,14 @@ body.ghost-active #ghost-chat-overlay {
 
 /* === ANIMATIONEN: Das "Atmen" der Lichter === */
 @keyframes orbDrift1 {
-    0% { transform: translate(0, 0) scale(1); opacity: 0.12; }
-    50% { transform: translate(30px, 40px) scale(1.1); opacity: 0.05; }
-    100% { transform: translate(0, 0) scale(1); opacity: 0.12; }
+    0% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+    50% { transform: translate(30px, 40px) scale(1.1); opacity: 0.2; }
+    100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
 }
 @keyframes orbDrift2 {
-    0% { transform: translate(0, 0) scale(1); opacity: 0.10; }
-    50% { transform: translate(-40px, -20px) scale(1.15); opacity: 0.05; }
-    100% { transform: translate(0, 0) scale(1); opacity: 0.10; }
+    0% { transform: translate(0, 0) scale(1); opacity: 0.35; }
+    50% { transform: translate(-40px, -20px) scale(1.15); opacity: 0.15; }
+    100% { transform: translate(0, 0) scale(1); opacity: 0.35; }
 }
 
 /* ========================================== */
@@ -1948,21 +1949,21 @@ body.ghost-active #ghost-chat-overlay {
     /* overflow: hidden WURDE HIER ENTFERNT */
 }
 
-/* Leuchtkugel 1: Oben Links (Kleiner & dunkler) */
+/* Leuchtkugel 1: Oben Links */
 #showroom-panel::before {
     content: ''; position: absolute; top: -5%; left: -5%;
-    width: 250px; height: 250px; border-radius: 50%;
+    width: 300px; height: 300px; border-radius: 50%;
     background: var(--glow-color); 
-    filter: blur(120px); z-index: 0; pointer-events: none;
+    filter: blur(100px); z-index: 0; pointer-events: none;
     animation: orbDrift1 12s ease-in-out infinite;
 }
 
 /* Leuchtkugel 2: Unten Rechts */
 #showroom-panel::after {
     content: ''; position: absolute; bottom: 5%; right: -10%;
-    width: 280px; height: 280px; border-radius: 50%;
+    width: 320px; height: 320px; border-radius: 50%;
     background: var(--glow-color-alt); 
-    filter: blur(120px); z-index: 0; pointer-events: none;
+    filter: blur(100px); z-index: 0; pointer-events: none;
     animation: orbDrift2 15s ease-in-out infinite;
 }
 
