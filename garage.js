@@ -1188,30 +1188,40 @@ startAutoColorDetection: async function() {
         }
     },
 
-    stopCamera: function() {
+stopCamera: function() {
         const overlay = document.getElementById('camera-color-overlay');
         
-        if (this.cameraStream) {
-            this.cameraStream.getTracks().forEach(track => track.stop());
-            this.cameraStream = null;
-        }
-        
-        if (this.scanInterval) {
-            clearInterval(this.scanInterval);
-            this.scanInterval = null;
+        try {
+            // Kamera Hardware sicher abschalten
+            if (this.cameraStream) {
+                this.cameraStream.getTracks().forEach(track => track.stop());
+                this.cameraStream = null;
+            }
+            if (this.scanInterval) {
+                clearInterval(this.scanInterval);
+                this.scanInterval = null;
+            }
+        } catch(e) {
+            console.error("Kamera Stop Fehler:", e);
         }
         
         if(overlay) overlay.classList.add('hidden');
 
         // =======================================================
-        // FIX: Bühne und Header wieder exakt als Flexbox herstellen
+        // FIX: Den Inline-Style KOMPLETT LÖSCHEN statt ihn zu überschreiben.
+        // So übernimmt sofort wieder deine saubere style.css die Kontrolle!
         // =======================================================
         const heroStage = document.querySelector('.studio-hero-stage');
         const studioHeader = document.querySelector('.studio-header');
-        if(heroStage) heroStage.style.display = 'flex';
-        if(studioHeader) studioHeader.style.display = 'flex';
-    },
+        
+        if(heroStage) heroStage.style.display = ''; 
+        if(studioHeader) studioHeader.style.display = '';
 
+        // FIX 2: Ein unsichtbarer "Ruckler", damit das 3D-Auto aus dem Koma aufwacht
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 50);
+    },
     scanCenterPixel: function() {
         const video = document.getElementById('camera-video-feed');
         const canvas = document.getElementById('camera-canvas');
@@ -1243,29 +1253,7 @@ startAutoColorDetection: async function() {
         if(preview) preview.style.backgroundColor = hex;
     },
 
-stopCamera: function() {
-        const overlay = document.getElementById('camera-color-overlay');
-        
-        // Kamera Hardware abschalten
-        if (this.cameraStream) {
-            this.cameraStream.getTracks().forEach(track => track.stop());
-            this.cameraStream = null;
-        }
-        
-        // Scan-Loop stoppen
-        if (this.scanInterval) {
-            clearInterval(this.scanInterval);
-            this.scanInterval = null;
-        }
-        
-        if(overlay) overlay.classList.add('hidden');
 
-        // FIX: Bühne und Header wieder sichtbar machen!
-        const heroStage = document.querySelector('.studio-hero-stage');
-        const studioHeader = document.querySelector('.studio-header');
-        if(heroStage) heroStage.style.visibility = 'visible';
-        if(studioHeader) studioHeader.style.visibility = 'visible';
-    },
 
     applyCameraColor: function() {
         const hex = this.lastScannedHex;
