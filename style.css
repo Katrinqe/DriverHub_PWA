@@ -1823,9 +1823,10 @@ body.ghost-active #ghost-chat-overlay {
 /* ========================================== */
 /* === CAMERA COLOR PICKER OVERLAY         == */
 /* ========================================== */
+/* === CAMERA COLOR PICKER OVERLAY === */
 #camera-color-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: #000; z-index: 30000;
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: #000; z-index: 99999; /* Absolutes Maximum */
     display: flex; flex-direction: column; align-items: center; justify-content: space-between;
 }
 #camera-color-overlay.hidden { display: none !important; }
