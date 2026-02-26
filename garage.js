@@ -1222,46 +1222,101 @@ stopCamera: function() {
             window.dispatchEvent(new Event('resize'));
         }, 50);
     },
-    scanCenterPixel: function() {
+scanCenterPixel: function() {
         const video = document.getElementById('camera-video-feed');
         const canvas = document.getElementById('camera-canvas');
         const preview = document.getElementById('scanned-color-preview');
+        const surfaceText = document.getElementById('scanned-surface-text');
         
         if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) return;
 
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
-        // Finde die exakte Mitte des Video-Feeds
+        // Wir vergrößern den Scan-Bereich auf 60x60 Pixel (3600 Datenpunkte)
+        const size = 60; 
         const vx = video.videoWidth / 2;
         const vy = video.videoHeight / 2;
         
-        // PRO-TIPP: Wir lesen nicht 1 Pixel aus (zu viel Rauschen), 
-        // sondern zeichnen einen 30x30 Pixel Bereich in unseren 1x1 Canvas. 
-        // Der Browser berechnet dadurch automatisch die perfekte Durchschnittsfarbe!
-        ctx.drawImage(video, vx - 15, vy - 15, 30, 30, 0, 0, 1, 1);
-        
-        const pixelData = ctx.getImageData(0, 0, 1, 1).data;
-        const r = pixelData[0];
-        const g = pixelData[1];
-        const b = pixelData[2];
-        
-        // RGB zu HEX umwandeln
-        const hex = "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
+        // Bildausschnitt auf den Canvas zeichnen
+        ctx.drawImage(video, vx - (size/2), vy - (size/2), size, size, 0, 0, size, size);
+        const imgData = ctx.getImageData(0, 0, size, size).data;
+
+        let rSum = 0, gSum = 0, bSum = 0, validPixels = 0;
+        let luminances = [];
+
+        // Pixel-Analyse (Highlight & Shadow Clipping)
+        for (let i = 0; i < imgData.length; i += 4) {
+            let r = imgData[i], g = imgData[i+1], b = imgData[i+2];
+            // Helligkeit des Pixels berechnen (Luma-Formel)
+            let lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            luminances.push(lum);
+
+            // Ignoriere puren Schatten (< 30) und krasse Sonnenreflexionen (> 220)
+            if (lum > 30 && lum < 220) {
+                rSum += r; gSum += g; bSum += b;
+                validPixels++;
+            }
+        }
+
+        // Fallback, falls wir direkt in die Sonne oder absolute Dunkelheit scannen
+        if (validPixels === 0) {
+            validPixels = 1;
+            rSum = imgData[0]; gSum = imgData[1]; bSum = imgData[2];
+        }
+
+        const avgR = Math.round(rSum / validPixels);
+        const avgG = Math.round(gSum / validPixels);
+        const avgB = Math.round(bSum / validPixels);
+
+        // ===================================================
+        // OBERFLÄCHEN-ERKENNUNG (Varianz / Standardabweichung)
+        // ===================================================
+        let lumMean = luminances.reduce((a, b) => a + b, 0) / luminances.length;
+        let variance = luminances.reduce((a, b) => a + Math.pow(b - lumMean, 2), 0) / luminances.length;
+        let stdDev = Math.sqrt(variance);
+
+        let detectedFinish = 'glossy';
+        if (stdDev < 12) {
+            // Kaum Kontrastunterschiede = Mattes Licht
+            detectedFinish = 'matt';
+        } else if (stdDev >= 12 && stdDev < 30) {
+            // Mittlere Unruhe = Metallic Flakes im Lack
+            detectedFinish = 'metallic';
+        } else {
+            // Harte Hell/Dunkel Kontraste = Spiegelnder Glossy Lack
+            detectedFinish = 'glossy';
+        }
+
+        const hex = "#" + (1 << 24 | avgR << 16 | avgG << 8 | avgB).toString(16).slice(1).toUpperCase();
         this.lastScannedHex = hex;
+        this.lastScannedFinish = detectedFinish; // Material für später speichern
         
-        // UI aktualisieren
+        // UI live updaten
         if(preview) preview.style.backgroundColor = hex;
+        if(surfaceText) surfaceText.innerText = detectedFinish.toUpperCase();
     },
 
 
 
-    applyCameraColor: function() {
+applyCameraColor: function() {
         const hex = this.lastScannedHex;
+        const finish = this.lastScannedFinish || 'glossy'; 
         this.stopCamera();
         
-        // Wir recyceln unsere bombensichere Funktion vom manuellen Hex-Input!
         if(typeof this.applyManualHex === 'function') {
+            // 1. Farbe auf Auto und UI anwenden
             this.applyManualHex(hex);
+            
+            // 2. Das erkannte Material auf das 3D-Modell anwenden UND das UI updaten
+            const map = { 'glossy': 0, 'metallic': 1, 'matt': 2 };
+            const btnIndex = map[finish];
+            const finishBtns = document.querySelectorAll('.finish-opt');
+            
+            if(finishBtns && finishBtns[btnIndex]) {
+                // Simuliert einen Klick auf den richtigen Finish-Button im Konfigurator
+                this.setCarFinish(finish, btnIndex, finishBtns[btnIndex], false);
+            }
+            
         } else {
             console.error("applyManualHex Funktion nicht gefunden!");
         }
