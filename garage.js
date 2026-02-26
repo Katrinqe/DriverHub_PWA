@@ -1217,7 +1217,7 @@ startAutoColorDetection: async function() {
         if(preview) preview.style.backgroundColor = hex;
     },
 
-stopCamera: function(stopCamera: function() {
+stopCamera: function() {
         const overlay = document.getElementById('camera-color-overlay');
         
         // Kamera Hardware abschalten
@@ -1231,6 +1231,15 @@ stopCamera: function(stopCamera: function() {
             clearInterval(this.scanInterval);
             this.scanInterval = null;
         }
+        
+        if(overlay) overlay.classList.add('hidden');
+
+        // FIX: Bühne und Header wieder sichtbar machen!
+        const heroStage = document.querySelector('.studio-hero-stage');
+        const studioHeader = document.querySelector('.studio-header');
+        if(heroStage) heroStage.style.visibility = 'visible';
+        if(studioHeader) studioHeader.style.visibility = 'visible';
+    },
         
         if(overlay) overlay.classList.add('hidden');
 
