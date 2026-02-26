@@ -1198,7 +1198,8 @@ scanCenterPixel: function() {
         const canvas = document.getElementById('camera-canvas');
         const preview = document.getElementById('scanned-color-preview');
         const surfaceText = document.getElementById('scanned-surface-text');
-        const exposureText = document.getElementById('scan-exposure'); // Das neue Radar
+        const exposureText = document.getElementById('scan-exposure'); 
+        const confFill = document.getElementById('scan-conf-fill'); // Die neue Bar
         
         if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) return;
 
@@ -1215,7 +1216,7 @@ scanCenterPixel: function() {
 
         let pixels = [];
         let lumas = [];
-        let totalLuma = 0; // Für die Gesamthelligkeit
+        let totalLuma = 0;
         
         for (let y = 0; y < size; y += 2) {
             for (let x = 0; x < size; x += 2) {
@@ -1232,43 +1233,29 @@ scanCenterPixel: function() {
             }
         }
 
-        // ========================================================
-        // NEU: EXPOSURE BERECHNEN & RADAR FÄRBEN
-        // ========================================================
+        // --- 1. EXPOSURE RADAR ---
         let avgRawLuma = totalLuma / lumas.length;
-        // Helligkeit von 0-255 in 0-100% umwandeln
         let exposurePercent = Math.min(100, Math.max(0, Math.round((avgRawLuma / 255) * 100)));
         
         if(exposureText) {
             exposureText.innerText = `EXP: ${exposurePercent}%`;
-            
-            if (exposurePercent < 25) {
-                // Zu dunkel
-                exposureText.style.color = '#ff3b30'; 
-                exposureText.style.borderColor = '#ff3b30';
-                exposureText.style.boxShadow = '0 0 10px rgba(255, 59, 48, 0.4)';
-            } else if (exposurePercent > 75) {
-                // Zu hell (Glare)
-                exposureText.style.color = '#ff9f0a'; 
-                exposureText.style.borderColor = '#ff9f0a';
-                exposureText.style.boxShadow = '0 0 10px rgba(255, 159, 10, 0.4)';
+            if (exposurePercent < 20) {
+                exposureText.style.color = '#ff3b30'; exposureText.style.borderColor = '#ff3b30';
+            } else if (exposurePercent > 80) {
+                exposureText.style.color = '#ff9f0a'; exposureText.style.borderColor = '#ff9f0a';
             } else {
-                // Perfekter Sweetspot
-                exposureText.style.color = '#30d158'; 
-                exposureText.style.borderColor = '#30d158';
-                exposureText.style.boxShadow = '0 0 10px rgba(48, 209, 88, 0.4)';
+                exposureText.style.color = '#30d158'; exposureText.style.borderColor = '#30d158';
             }
         }
 
-        // ========================================================
-        // FARBE BEREINIGEN (Quantile & Median)
-        // ========================================================
+        // --- 2. FARB-BEREINIGUNG (Quantile & Median) ---
         lumas.sort((a, b) => a - b);
         let q10 = lumas[Math.floor(lumas.length * 0.1)];
         let q90 = lumas[Math.floor(lumas.length * 0.9)];
 
         let validPixels = pixels.filter(p => p.luma > q10 && p.luma < q90);
-        if (validPixels.length === 0) validPixels = pixels; 
+        let pixelQuality = validPixels.length / pixels.length; // Für Confidence
+        if (validPixels.length === 0) { validPixels = pixels; pixelQuality = 0.1; }
 
         validPixels.sort((a,b) => a.r - b.r); let medR = validPixels[Math.floor(validPixels.length/2)].r;
         validPixels.sort((a,b) => a.g - b.g); let medG = validPixels[Math.floor(validPixels.length/2)].g;
@@ -1286,12 +1273,9 @@ scanCenterPixel: function() {
         const outG = Math.round(this.colorSmooth.g);
         const outB = Math.round(this.colorSmooth.b);
 
-        // ========================================================
-        // NEU: TEXTURE INDEX BERECHNEN (Der 0-100 Score)
-        // ========================================================
+        // --- 3. PHYSIK & SCORES (Separation) ---
         let highlightCount = 0;
         let highFreqEnergy = 0;
-        
         for (let i = 1; i < pixels.length; i++) {
             if(pixels[i].luma > 200 && pixels[i].sat < 0.25) highlightCount++;
             highFreqEnergy += Math.abs(pixels[i].luma - pixels[i-1].luma);
@@ -1300,38 +1284,74 @@ scanCenterPixel: function() {
         let highlightRate = highlightCount / pixels.length;
         let avgEdgeEnergy = highFreqEnergy / pixels.length; 
 
-        let detectedFinish = 'glossy'; 
-        let rawIndex = 0; // Der rohe Score-Wert
+        // Normalisieren für fairen Kampf
+        let hRateNorm = Math.min(1, highlightRate * 10);
+        let eEnergyNorm = Math.min(1, avgEdgeEnergy / 20);
+
+        // Das Punkterennen
+        let glossScore = hRateNorm * 1.2 + eEnergyNorm * 0.3;
+        let mattScore = (1 - hRateNorm) * 1.0 + (1 - eEnergyNorm) * 0.8;
+        let metalScore = eEnergyNorm * 1.2 + (1 - hRateNorm) * 0.4;
+
+        let scores = [
+            { id: 'glossy', val: glossScore },
+            { id: 'matt', val: mattScore },
+            { id: 'metallic', val: metalScore }
+        ];
+        scores.sort((a,b) => b.val - a.val);
         
-        if (avgEdgeEnergy < 3.5 && highlightRate < 0.01) {
-            detectedFinish = 'matt';
-            rawIndex = Math.min(30, Math.round(avgEdgeEnergy * 8)); 
-        } else if (avgEdgeEnergy >= 3.5 && avgEdgeEnergy < 15 && highlightRate < 0.06) {
-            detectedFinish = 'metallic';
-            rawIndex = Math.min(70, Math.max(31, Math.round(avgEdgeEnergy * 4 + 20))); 
-        } else {
-            detectedFinish = 'glossy';
-            rawIndex = Math.min(100, Math.max(71, Math.round(avgEdgeEnergy * 2 + highlightRate * 100 + 40))); 
+        let best = scores[0];
+        let second = scores[1];
+        let separation = Math.max(0, best.val - second.val);
+
+        // --- 4. QUALITY FACTOR & CONFIDENCE ---
+        let expQuality = 1.0;
+        if(exposurePercent < 20) expQuality = Math.max(0, exposurePercent / 20);
+        if(exposurePercent > 80) expQuality = Math.max(0, (100 - exposurePercent) / 20);
+
+        let finalQuality = expQuality * pixelQuality;
+        // Confidence berechnen (Separation * Qualität * Multiplikator für Spreizung)
+        let confidence = Math.min(1, Math.max(0, separation * finalQuality * 2.5)); 
+        let confPercent = Math.round(confidence * 100);
+
+        // UI: Balken aktualisieren
+        if(confFill) {
+            confFill.style.height = `${confPercent}%`;
+            if(confPercent > 65) {
+                confFill.style.background = '#30d158'; confFill.style.boxShadow = '0 0 10px rgba(48, 209, 88, 0.8)';
+            } else if(confPercent > 35) {
+                confFill.style.background = '#ffd60a'; confFill.style.boxShadow = '0 0 10px rgba(255, 214, 10, 0.8)';
+            } else {
+                confFill.style.background = '#ff3b30'; confFill.style.boxShadow = '0 0 10px rgba(255, 59, 48, 0.8)';
+            }
         }
 
-        this.finishHistory.push(detectedFinish);
+        // --- 5. FINISH STABILISATOR & SPEICHERN ---
+        this.finishHistory.push(best.id);
         if (this.finishHistory.length > 5) this.finishHistory.shift();
 
         let counts = { 'matt': 0, 'glossy': 0, 'metallic': 0 };
         this.finishHistory.forEach(f => counts[f]++);
         
-        if (counts[detectedFinish] >= 3) {
-            this.lastScannedFinish = detectedFinish;
+        if (counts[best.id] >= 3) {
+            this.lastScannedFinish = best.id;
         }
 
-        const finalFinish = this.lastScannedFinish || detectedFinish;
+        let rawIndex = Math.round(best.val * 50); // Skaliert den Score optisch für das UI
+
         const hex = "#" + (1 << 24 | outR << 16 | outG << 8 | outB).toString(16).slice(1).toUpperCase();
         this.lastScannedHex = hex;
         
-        // UI live updaten (Mit eingebautem Index-Wert!)
+        // UI live updaten
         if(preview) preview.style.backgroundColor = hex;
         if(surfaceText) {
-            surfaceText.innerText = `${finalFinish.toUpperCase()} [ ${rawIndex} IDX ]`;
+            let displayFinish = this.lastScannedFinish || best.id;
+            // Fragezeichen anfügen, wenn Confidence im Keller ist!
+            let confidenceHint = confPercent < 40 ? '?' : '';
+            surfaceText.innerText = `${displayFinish.toUpperCase()}${confidenceHint} [ ${rawIndex} IDX ]`;
+            
+            // Text färben basierend auf Confidence
+            surfaceText.style.color = confPercent > 65 ? '#fff' : (confPercent > 35 ? '#ffd60a' : '#ff3b30');
         }
     },
     stopCamera: function() {
