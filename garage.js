@@ -1240,15 +1240,6 @@ stopCamera: function() {
         if(heroStage) heroStage.style.visibility = 'visible';
         if(studioHeader) studioHeader.style.visibility = 'visible';
     },
-        
-        if(overlay) overlay.classList.add('hidden');
-
-        // FIX: Bühne und Header wieder sichtbar machen!
-        const heroStage = document.querySelector('.studio-hero-stage');
-        const studioHeader = document.querySelector('.studio-header');
-        if(heroStage) heroStage.style.visibility = 'visible';
-        if(studioHeader) studioHeader.style.visibility = 'visible';
-    },
 
     applyCameraColor: function() {
         const hex = this.lastScannedHex;
@@ -1262,8 +1253,6 @@ stopCamera: function() {
         }
     }
 };
-
-
 
 // === WICHTIG: STARTEN AM ENDE ===
 // Hier wird die Logik erst ausgeführt, wenn alles geladen ist.
