@@ -1610,41 +1610,34 @@ body.ghost-active #ghost-chat-overlay {
     background: linear-gradient(to bottom, #050505 0%, rgba(5,5,5,0.5) 40%, transparent 100%);
     z-index: 20; pointer-events: none;
 }
-/* === HERO AMBIENT GLOW (Balken-Fix & Farbverlauf) === */
-/* === HERO AMBIENT GLOW (Ein nahtloses Licht: Weiß zu Farbe) === */
-/* === HERO AMBIENT GLOW (DIE FINALE, SAUBERE TRENNUNG) === */
+/* === HERO AMBIENT GLOW (DIE PERFEKTE VERSCHMELZUNG OHNE KANTEN) === */
 .hero-ambient-glow {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     z-index: 0; pointer-events: none;
-    overflow: hidden; /* Zwingend nötig gegen harte Balken an den Rändern */
+    overflow: hidden; 
 }
 
 /* Ebene 1: DAS REINE WEISS (Fest oben beim Logo) */
-/* Diese Ebene bleibt IMMER weiß und ändert sich nie. */
 .hero-ambient-glow::before {
-    content: ''; 
-    position: absolute; 
-    top: 0; left: 50%; transform: translateX(-50%);
-    width: 100%; height: 55%; /* Nimmt nur die obere Hälfte ein */
-    /* Ein sauberer, weißer Kreis, der das Logo anstrahlt und nach unten weich ausläuft */
-    background: radial-gradient(ellipse at 50% 15%, rgba(255,255,255,0.4) 0%, transparent 70%);
+    content: ''; position: absolute; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%; /* FIX: Volle Höhe! Nichts wird mehr hart abgeschnitten. */
+    /* Der Kern sitzt bei 15% (oben) und fadet weich bis 55% aus */
+    background: radial-gradient(circle at 50% 15%, rgba(255,255,255,0.4) 0%, transparent 55%);
     filter: blur(40px);
     z-index: 1;
 }
 
 /* Ebene 2: DIE WAGENFARBE (Weich unten am Auto) */
-/* Diese Ebene füllt den Raum unter dem Auto und färbt sich dynamisch. */
 .hero-ambient-glow::after {
-    content: ''; 
-    position: absolute; 
-    bottom: -10%; left: 50%; transform: translateX(-50%);
-    width: 150%; height: 65%; /* Sehr breit, damit keine Seitenkanten entstehen */
-    /* Die reine Wagenfarbe, läuft nach oben hin weich in die Transparenz über */
-    background: radial-gradient(ellipse at 50% 70%, var(--glow-color) 0%, transparent 65%);
-    filter: blur(55px);
-    opacity: 0.55; /* Deutlich gediegener! Zerstört den Kontrast des Autos nicht mehr */
+    content: ''; position: absolute; 
+    top: 0; left: -20%; 
+    width: 140%; height: 100%; /* FIX: Volle Höhe! Keine horizontalen Trennlinien mehr. */
+    /* Der Kern sitzt bei 85% (unten) und fadet weich nach oben aus */
+    background: radial-gradient(ellipse at 50% 85%, var(--glow-color) 0%, transparent 65%);
+    filter: blur(60px);
+    opacity: 0.55; 
     z-index: 2;
-    display: block; /* Schaltet das Licht wieder ein! */
 }
 .hero-background-logo { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 350px; height: auto; z-index: 2; opacity: 0.6; pointer-events: none; filter: drop-shadow(0 4px 15px rgba(0,0,0,0.8)); }
 #studio-model-viewer { position: relative; z-index: 5; pointer-events: none; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6)); }
