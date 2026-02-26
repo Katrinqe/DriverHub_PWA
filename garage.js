@@ -1164,7 +1164,6 @@ startAutoColorDetection: async function() {
         const overlay = document.getElementById('camera-color-overlay');
         const video = document.getElementById('camera-video-feed');
 
-        // Fordert Zugriff auf die RÜCKKAMERA an
         try {
             this.cameraStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: "environment" } 
@@ -1172,18 +1171,45 @@ startAutoColorDetection: async function() {
             video.srcObject = this.cameraStream;
             overlay.classList.remove('hidden');
 
-            // FIX: Komplette Bühne (Auto, Glow, Civic-Logo) & Header unsichtbar machen!
+            // =======================================================
+            // FIX: DIE BRECHSTANGE GEGEN DEN SCHWARZEN WEBGL-BLOCK
+            // 'visibility: hidden' reicht bei Apple nicht. Wir setzen 
+            // 'display: none', um das 3D-Modell komplett zu killen!
+            // =======================================================
             const heroStage = document.querySelector('.studio-hero-stage');
             const studioHeader = document.querySelector('.studio-header');
-            if(heroStage) heroStage.style.visibility = 'hidden';
-            if(studioHeader) studioHeader.style.visibility = 'hidden';
+            if(heroStage) heroStage.style.display = 'none';
+            if(studioHeader) studioHeader.style.display = 'none';
 
-            // Startet den Loop: Alle 100ms die Farbe auslesen
             this.scanInterval = setInterval(() => this.scanCenterPixel(), 100);
         } catch (err) {
             alert("Kamera-Zugriff verweigert oder auf diesem Gerät nicht verfügbar.");
             console.error(err);
         }
+    },
+
+    stopCamera: function() {
+        const overlay = document.getElementById('camera-color-overlay');
+        
+        if (this.cameraStream) {
+            this.cameraStream.getTracks().forEach(track => track.stop());
+            this.cameraStream = null;
+        }
+        
+        if (this.scanInterval) {
+            clearInterval(this.scanInterval);
+            this.scanInterval = null;
+        }
+        
+        if(overlay) overlay.classList.add('hidden');
+
+        // =======================================================
+        // FIX: Bühne und Header wieder exakt als Flexbox herstellen
+        // =======================================================
+        const heroStage = document.querySelector('.studio-hero-stage');
+        const studioHeader = document.querySelector('.studio-header');
+        if(heroStage) heroStage.style.display = 'flex';
+        if(studioHeader) studioHeader.style.display = 'flex';
     },
 
     scanCenterPixel: function() {
