@@ -324,40 +324,84 @@ openStudio: function(carId, modelLogo, glbFile) {
         const viewer = document.getElementById('studio-model-viewer');
         viewer.src = glbFile;
         
-     // --- DATA INJECTION START ---
+   // --- DATA INJECTION START ---
         const carData = this.carDatabase[carId];
         if(carData) {
-            // HIER WURDEN DIE 3 CRASH-ZEILEN (model, year, weight) ENTFERNT!
             
-            document.getElementById('sr-peak-hp').innerText = carData.dyno.peakHp;
-            document.getElementById('sr-peak-hp-rpm').innerText = carData.dyno.peakHpRpm;
-            document.getElementById('sr-peak-nm').innerText = carData.dyno.peakNm;
-            document.getElementById('sr-peak-nm-rpm').innerText = carData.dyno.peakNmRpm;
+            const elPeakHp = document.getElementById('sr-peak-hp');
+            if(elPeakHp) elPeakHp.innerText = carData.dyno.peakHp;
             
-            document.getElementById('sr-bal-front').innerText = `${carData.balance.front}%`;
-            document.getElementById('sr-bal-rear').innerText = `${carData.balance.rear}%`;
-            document.getElementById('sr-0-100').innerText = carData.sprint;
+            const elPeakHpRpm = document.getElementById('sr-peak-hp-rpm');
+            if(elPeakHpRpm) elPeakHpRpm.innerText = carData.dyno.peakHpRpm;
             
-            document.getElementById('sr-gearbox-name').innerText = carData.gearbox.name;
-            document.getElementById('sr-spec-engine').innerText = carData.engine;
-            document.getElementById('sr-spec-bore').innerText = carData.bore;
-            document.getElementById('sr-spec-drive').innerText = carData.drivetrain;
-            document.getElementById('sr-spec-aero').innerText = carData.aero;
-            document.getElementById('sr-spec-fuel').innerText = carData.fuel;
-            document.getElementById('sr-spec-engweight').innerText = carData.engWeight;
+            const elPeakNm = document.getElementById('sr-peak-nm');
+            if(elPeakNm) elPeakNm.innerText = carData.dyno.peakNm;
+            
+            const elPeakNmRpm = document.getElementById('sr-peak-nm-rpm');
+            if(elPeakNmRpm) elPeakNmRpm.innerText = carData.dyno.peakNmRpm;
+            
+            const elBalFront = document.getElementById('sr-bal-front');
+            if(elBalFront) elBalFront.innerText = `${carData.balance.front}%`;
+            
+            const elBalRear = document.getElementById('sr-bal-rear');
+            if(elBalRear) elBalRear.innerText = `${carData.balance.rear}%`;
+            
+            const el0100 = document.getElementById('sr-0-100');
+            if(el0100) el0100.innerText = carData.sprint;
+            
+            const elGearbox = document.getElementById('sr-gearbox-name');
+            if(elGearbox) elGearbox.innerText = carData.gearbox.name;
+            
+            const elSpecEngine = document.getElementById('sr-spec-engine');
+            if(elSpecEngine) elSpecEngine.innerText = carData.engine;
+            
+            const elSpecBore = document.getElementById('sr-spec-bore');
+            if(elSpecBore) elSpecBore.innerText = carData.bore;
+            
+            const elSpecDrive = document.getElementById('sr-spec-drive');
+            if(elSpecDrive) elSpecDrive.innerText = carData.drivetrain;
+            
+            const elSpecAero = document.getElementById('sr-spec-aero');
+            if(elSpecAero) elSpecAero.innerText = carData.aero;
+            
+            const elSpecFuel = document.getElementById('sr-spec-fuel');
+            if(elSpecFuel) elSpecFuel.innerText = carData.fuel;
+            
+            const elSpecEngWeight = document.getElementById('sr-spec-engweight');
+            if(elSpecEngWeight) elSpecEngWeight.innerText = carData.engWeight;
 
-            // Gauge Füllstand anpassen (Sprint)
+            // Gauge Füllstand anpassen
             const gaugeFill = document.getElementById('sr-gauge-fill');
             if(gaugeFill) {
-                // Je weniger Sekunden, desto voller der Tacho. (Max 110, Min 0)
                 let fillVal = Math.max(0, 110 - ((parseFloat(carData.sprint) / 12) * 110));
                 gaugeFill.style.strokeDashoffset = fillVal;
             }
 
-            // Glow-Reset auf Factory Color des Autos!
+            // ========================================================
+            // === FIX: TOTAL-RESET FÜR FARBE (Sync für Auto, UI & Slider)
+            // ========================================================
             const hex = carData.factoryColor;
             const hsv = this.hexToHsv(hex);
-            if(hsv) this.updateGlobalGlow(hex, hsv[0], hsv[1], hsv[2]);
+            
+            if(hsv) {
+                // 1. Internen Speicher gnadenlos auf Werksfarbe setzen
+                this.currentStudioSetup.h = hsv[0];
+                this.currentStudioSetup.s = hsv[1];
+                this.currentStudioSetup.v = hsv[2];
+
+                // 2. Den Slider im Konfigurator updaten, damit er nicht bei der alten Farbe hängen bleibt
+                const hueSlider = document.getElementById('pro-hue');
+                if(hueSlider) hueSlider.value = hsv[0];
+
+                // 3. UI, Glow und Graphen sofort updaten
+                this.updateProColorUI();
+
+                // 4. WICHTIG: Wir warten auf das 'load'-Event des 3D-Modells. 
+                // Sobald das Auto zu 100% geladen ist, feuern wir die Farbe auf den Lack!
+                viewer.addEventListener('load', () => {
+                    this.updateProColorUI();
+                }, { once: true });
+            }
         }
         // --- DATA INJECTION END ---
   
@@ -474,8 +518,9 @@ closeStudio: function() {
         // Wenn wir in den Specs sind -> Komplett raus zur Auswahl
         const screen = document.getElementById('studio-screen');
         if (screen) screen.classList.add('hidden');
-        const viewer = document.getElementById('studio-model-viewer');
-        if (viewer) viewer.src = ''; 
+        
+        // FIX: HIER WURDE DER "viewer.src = ''" BEFEHL ENTFERNT!
+        // Das 3D-Modell bleibt im Hintergrund im Cache, wodurch das Färben beim zweiten Mal nicht mehr kaputtgeht.
     },
     // === SCROLL NAVIGATION ===
     scrollToSection: function(sectionId) {
