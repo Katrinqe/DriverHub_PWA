@@ -1193,17 +1193,17 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         }
     },
 
-    scanCenterPixel: function() {
+scanCenterPixel: function() {
         const video = document.getElementById('camera-video-feed');
         const canvas = document.getElementById('camera-canvas');
         const preview = document.getElementById('scanned-color-preview');
-        const surfaceText = document.getElementById('scanned-surface-text'); // Das neue UI-Element
+        const surfaceText = document.getElementById('scanned-surface-text');
+        const exposureText = document.getElementById('scan-exposure'); // Das neue Radar
         
         if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) return;
 
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
-        // 1. Größerer Scanbereich (120x120), aber wir überspringen Pixel (Step 2) für Performance
         const size = 120; 
         const vx = video.videoWidth / 2;
         const vy = video.videoHeight / 2;
@@ -1215,40 +1215,65 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
 
         let pixels = [];
         let lumas = [];
+        let totalLuma = 0; // Für die Gesamthelligkeit
         
-        // Pixel auslesen & Luma (Helligkeit) / Saturation berechnen
         for (let y = 0; y < size; y += 2) {
             for (let x = 0; x < size; x += 2) {
                 let idx = (y * size + x) * 4;
                 let r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2];
                 let luma = 0.299 * r + 0.587 * g + 0.114 * b;
                 
-                // Saturation Proxy (Max minus Min)
                 let maxC = Math.max(r,g,b), minC = Math.min(r,g,b);
                 let sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
 
                 pixels.push({ r, g, b, luma, sat });
                 lumas.push(luma);
+                totalLuma += luma;
             }
         }
 
         // ========================================================
-        // SCHRITT 1: KUGELSICHERE FARBE (Quantile & Median)
+        // NEU: EXPOSURE BERECHNEN & RADAR FÄRBEN
         // ========================================================
-        // Wir sortieren Helligkeiten und schneiden dunkelste 10% und hellste 10% radikal ab!
+        let avgRawLuma = totalLuma / lumas.length;
+        // Helligkeit von 0-255 in 0-100% umwandeln
+        let exposurePercent = Math.min(100, Math.max(0, Math.round((avgRawLuma / 255) * 100)));
+        
+        if(exposureText) {
+            exposureText.innerText = `EXP: ${exposurePercent}%`;
+            
+            if (exposurePercent < 25) {
+                // Zu dunkel
+                exposureText.style.color = '#ff3b30'; 
+                exposureText.style.borderColor = '#ff3b30';
+                exposureText.style.boxShadow = '0 0 10px rgba(255, 59, 48, 0.4)';
+            } else if (exposurePercent > 75) {
+                // Zu hell (Glare)
+                exposureText.style.color = '#ff9f0a'; 
+                exposureText.style.borderColor = '#ff9f0a';
+                exposureText.style.boxShadow = '0 0 10px rgba(255, 159, 10, 0.4)';
+            } else {
+                // Perfekter Sweetspot
+                exposureText.style.color = '#30d158'; 
+                exposureText.style.borderColor = '#30d158';
+                exposureText.style.boxShadow = '0 0 10px rgba(48, 209, 88, 0.4)';
+            }
+        }
+
+        // ========================================================
+        // FARBE BEREINIGEN (Quantile & Median)
+        // ========================================================
         lumas.sort((a, b) => a - b);
         let q10 = lumas[Math.floor(lumas.length * 0.1)];
         let q90 = lumas[Math.floor(lumas.length * 0.9)];
 
         let validPixels = pixels.filter(p => p.luma > q10 && p.luma < q90);
-        if (validPixels.length === 0) validPixels = pixels; // Fallback
+        if (validPixels.length === 0) validPixels = pixels; 
 
-        // Median anstatt Durchschnitt = Ignoriert fiese Ausreißer
         validPixels.sort((a,b) => a.r - b.r); let medR = validPixels[Math.floor(validPixels.length/2)].r;
         validPixels.sort((a,b) => a.g - b.g); let medG = validPixels[Math.floor(validPixels.length/2)].g;
         validPixels.sort((a,b) => a.b - b.b); let medB = validPixels[Math.floor(validPixels.length/2)].b;
 
-        // Temporal Smoothing: Farbe nicht springen lassen, sondern mit 20% pro Frame sanft überblenden
         if (!this.colorSmooth.init) {
             this.colorSmooth = { r: medR, g: medG, b: medB, init: true };
         } else {
@@ -1262,33 +1287,33 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         const outB = Math.round(this.colorSmooth.b);
 
         // ========================================================
-        // SCHRITT 2: PHYSIK-GEHIRN (Finish Erkennung)
+        // NEU: TEXTURE INDEX BERECHNEN (Der 0-100 Score)
         // ========================================================
         let highlightCount = 0;
         let highFreqEnergy = 0;
         
         for (let i = 1; i < pixels.length; i++) {
-            // Highlight: Ist es extrem hell UND farblos (weißer Glanz)?
             if(pixels[i].luma > 200 && pixels[i].sat < 0.25) highlightCount++;
-            
-            // Edge Energy: Differenz zum Nachbar-Pixel (Erkennt "Grieseln" von Metallic oder harte Spiegelkanten)
             highFreqEnergy += Math.abs(pixels[i].luma - pixels[i-1].luma);
         }
 
         let highlightRate = highlightCount / pixels.length;
         let avgEdgeEnergy = highFreqEnergy / pixels.length; 
 
-        // Die Heuristik
         let detectedFinish = 'glossy'; 
+        let rawIndex = 0; // Der rohe Score-Wert
+        
         if (avgEdgeEnergy < 3.5 && highlightRate < 0.01) {
-            detectedFinish = 'matt'; // Butterweich, keine Highlights
+            detectedFinish = 'matt';
+            rawIndex = Math.min(30, Math.round(avgEdgeEnergy * 8)); 
         } else if (avgEdgeEnergy >= 3.5 && avgEdgeEnergy < 15 && highlightRate < 0.06) {
-            detectedFinish = 'metallic'; // Mikro-Rauschen durch Flakes, wenig pure weiße Reflexion
+            detectedFinish = 'metallic';
+            rawIndex = Math.min(70, Math.max(31, Math.round(avgEdgeEnergy * 4 + 20))); 
         } else {
-            detectedFinish = 'glossy'; // Harte Kanten und helle Spiegelungen
+            detectedFinish = 'glossy';
+            rawIndex = Math.min(100, Math.max(71, Math.round(avgEdgeEnergy * 2 + highlightRate * 100 + 40))); 
         }
 
-        // Finish-Stabilisator (3 Frames hintereinander gleich = Übernehmen)
         this.finishHistory.push(detectedFinish);
         if (this.finishHistory.length > 5) this.finishHistory.shift();
 
@@ -1299,14 +1324,16 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
             this.lastScannedFinish = detectedFinish;
         }
 
+        const finalFinish = this.lastScannedFinish || detectedFinish;
         const hex = "#" + (1 << 24 | outR << 16 | outG << 8 | outB).toString(16).slice(1).toUpperCase();
         this.lastScannedHex = hex;
         
-        // UI live updaten
+        // UI live updaten (Mit eingebautem Index-Wert!)
         if(preview) preview.style.backgroundColor = hex;
-        if(surfaceText) surfaceText.innerText = (this.lastScannedFinish || detectedFinish).toUpperCase();
+        if(surfaceText) {
+            surfaceText.innerText = `${finalFinish.toUpperCase()} [ ${rawIndex} IDX ]`;
+        }
     },
-
     stopCamera: function() {
         const overlay = document.getElementById('camera-color-overlay');
         
