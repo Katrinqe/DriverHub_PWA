@@ -1886,6 +1886,25 @@ body.ghost-active #ghost-chat-overlay {
     border: 3px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
     background: #ffffff; transition: background-color 0.1s;
 }
+
+/* === EXPOSURE READOUT (LIVE RADAR) === */
+.exposure-readout {
+    position: absolute;
+    top: 45px; /* Sitzt exakt unter dem äußeren Fadenkreuz-Ring */
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: 0.65rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: #fff;
+    white-space: nowrap;
+    /* Weiche Übergänge, wenn sich die Helligkeits-Farbe ändert */
+    transition: color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
 /* ========================================== */
 /* === SHOWROOM PANEL (PRE-CONFIG)         == */
 /* ========================================== */
