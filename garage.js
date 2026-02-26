@@ -1172,9 +1172,11 @@ startAutoColorDetection: async function() {
             video.srcObject = this.cameraStream;
             overlay.classList.remove('hidden');
 
-            // FIX: 3D-Modell verstecken, damit es nicht durch das Bild buggt!
-            const viewer = document.getElementById('studio-model-viewer');
-            if(viewer) viewer.style.visibility = 'hidden';
+            // FIX: Komplette Bühne (Auto, Glow, Civic-Logo) & Header unsichtbar machen!
+            const heroStage = document.querySelector('.studio-hero-stage');
+            const studioHeader = document.querySelector('.studio-header');
+            if(heroStage) heroStage.style.visibility = 'hidden';
+            if(studioHeader) studioHeader.style.visibility = 'hidden';
 
             // Startet den Loop: Alle 100ms die Farbe auslesen
             this.scanInterval = setInterval(() => this.scanCenterPixel(), 100);
@@ -1215,7 +1217,7 @@ startAutoColorDetection: async function() {
         if(preview) preview.style.backgroundColor = hex;
     },
 
-stopCamera: function() {
+stopCamera: function(stopCamera: function() {
         const overlay = document.getElementById('camera-color-overlay');
         
         // Kamera Hardware abschalten
@@ -1232,9 +1234,11 @@ stopCamera: function() {
         
         if(overlay) overlay.classList.add('hidden');
 
-        // FIX: 3D-Modell wieder sichtbar machen, sobald die Kamera zu ist!
-        const viewer = document.getElementById('studio-model-viewer');
-        if(viewer) viewer.style.visibility = 'visible';
+        // FIX: Bühne und Header wieder sichtbar machen!
+        const heroStage = document.querySelector('.studio-hero-stage');
+        const studioHeader = document.querySelector('.studio-header');
+        if(heroStage) heroStage.style.visibility = 'visible';
+        if(studioHeader) studioHeader.style.visibility = 'visible';
     },
 
     applyCameraColor: function() {
