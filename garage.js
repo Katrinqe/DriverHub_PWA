@@ -1160,7 +1160,7 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
     scanInterval: null,
     lastScannedHex: '#FFFFFF',
 
-    startAutoColorDetection: async function() {
+startAutoColorDetection: async function() {
         const overlay = document.getElementById('camera-color-overlay');
         const video = document.getElementById('camera-video-feed');
 
@@ -1171,6 +1171,10 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
             });
             video.srcObject = this.cameraStream;
             overlay.classList.remove('hidden');
+
+            // FIX: 3D-Modell verstecken, damit es nicht durch das Bild buggt!
+            const viewer = document.getElementById('studio-model-viewer');
+            if(viewer) viewer.style.visibility = 'hidden';
 
             // Startet den Loop: Alle 100ms die Farbe auslesen
             this.scanInterval = setInterval(() => this.scanCenterPixel(), 100);
@@ -1211,7 +1215,7 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         if(preview) preview.style.backgroundColor = hex;
     },
 
-    stopCamera: function() {
+stopCamera: function() {
         const overlay = document.getElementById('camera-color-overlay');
         
         // Kamera Hardware abschalten
@@ -1227,6 +1231,10 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         }
         
         if(overlay) overlay.classList.add('hidden');
+
+        // FIX: 3D-Modell wieder sichtbar machen, sobald die Kamera zu ist!
+        const viewer = document.getElementById('studio-model-viewer');
+        if(viewer) viewer.style.visibility = 'visible';
     },
 
     applyCameraColor: function() {
