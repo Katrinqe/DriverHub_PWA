@@ -1155,12 +1155,17 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
 
 
 
-// === CAMERA COLOR DETECTION LOGIK ===
+
+
+// === CAMERA COLOR DETECTION LOGIK (V8 BITURBO EDITION) ===
     cameraStream: null,
     scanInterval: null,
     lastScannedHex: '#FFFFFF',
+    lastScannedFinish: 'glossy',
+    colorSmooth: { r: 0, g: 0, b: 0, init: false }, // Für weiche Farbübergänge
+    finishHistory: [], // Stabilisator für die Material-Erkennung
 
-startAutoColorDetection: async function() {
+    startAutoColorDetection: async function() {
         const overlay = document.getElementById('camera-color-overlay');
         const video = document.getElementById('camera-video-feed');
 
@@ -1171,15 +1176,15 @@ startAutoColorDetection: async function() {
             video.srcObject = this.cameraStream;
             overlay.classList.remove('hidden');
 
-            // =======================================================
-            // FIX: DIE BRECHSTANGE GEGEN DEN SCHWARZEN WEBGL-BLOCK
-            // 'visibility: hidden' reicht bei Apple nicht. Wir setzen 
-            // 'display: none', um das 3D-Modell komplett zu killen!
-            // =======================================================
+            // 3D-Bühne physisch entfernen (Fix für schwarzen Ziegelstein)
             const heroStage = document.querySelector('.studio-hero-stage');
             const studioHeader = document.querySelector('.studio-header');
             if(heroStage) heroStage.style.display = 'none';
             if(studioHeader) studioHeader.style.display = 'none';
+
+            // Stabilisatoren zurücksetzen
+            this.colorSmooth = { r: 0, g: 0, b: 0, init: false };
+            this.finishHistory = [];
 
             this.scanInterval = setInterval(() => this.scanCenterPixel(), 100);
         } catch (err) {
@@ -1188,11 +1193,124 @@ startAutoColorDetection: async function() {
         }
     },
 
-stopCamera: function() {
+    scanCenterPixel: function() {
+        const video = document.getElementById('camera-video-feed');
+        const canvas = document.getElementById('camera-canvas');
+        const preview = document.getElementById('scanned-color-preview');
+        const surfaceText = document.getElementById('scanned-surface-text'); // Das neue UI-Element
+        
+        if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // 1. Größerer Scanbereich (120x120), aber wir überspringen Pixel (Step 2) für Performance
+        const size = 120; 
+        const vx = video.videoWidth / 2;
+        const vy = video.videoHeight / 2;
+        
+        canvas.width = size;
+        canvas.height = size;
+        ctx.drawImage(video, vx - (size/2), vy - (size/2), size, size, 0, 0, size, size);
+        const imgData = ctx.getImageData(0, 0, size, size).data;
+
+        let pixels = [];
+        let lumas = [];
+        
+        // Pixel auslesen & Luma (Helligkeit) / Saturation berechnen
+        for (let y = 0; y < size; y += 2) {
+            for (let x = 0; x < size; x += 2) {
+                let idx = (y * size + x) * 4;
+                let r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2];
+                let luma = 0.299 * r + 0.587 * g + 0.114 * b;
+                
+                // Saturation Proxy (Max minus Min)
+                let maxC = Math.max(r,g,b), minC = Math.min(r,g,b);
+                let sat = maxC === 0 ? 0 : (maxC - minC) / maxC;
+
+                pixels.push({ r, g, b, luma, sat });
+                lumas.push(luma);
+            }
+        }
+
+        // ========================================================
+        // SCHRITT 1: KUGELSICHERE FARBE (Quantile & Median)
+        // ========================================================
+        // Wir sortieren Helligkeiten und schneiden dunkelste 10% und hellste 10% radikal ab!
+        lumas.sort((a, b) => a - b);
+        let q10 = lumas[Math.floor(lumas.length * 0.1)];
+        let q90 = lumas[Math.floor(lumas.length * 0.9)];
+
+        let validPixels = pixels.filter(p => p.luma > q10 && p.luma < q90);
+        if (validPixels.length === 0) validPixels = pixels; // Fallback
+
+        // Median anstatt Durchschnitt = Ignoriert fiese Ausreißer
+        validPixels.sort((a,b) => a.r - b.r); let medR = validPixels[Math.floor(validPixels.length/2)].r;
+        validPixels.sort((a,b) => a.g - b.g); let medG = validPixels[Math.floor(validPixels.length/2)].g;
+        validPixels.sort((a,b) => a.b - b.b); let medB = validPixels[Math.floor(validPixels.length/2)].b;
+
+        // Temporal Smoothing: Farbe nicht springen lassen, sondern mit 20% pro Frame sanft überblenden
+        if (!this.colorSmooth.init) {
+            this.colorSmooth = { r: medR, g: medG, b: medB, init: true };
+        } else {
+            this.colorSmooth.r = this.colorSmooth.r * 0.8 + medR * 0.2;
+            this.colorSmooth.g = this.colorSmooth.g * 0.8 + medG * 0.2;
+            this.colorSmooth.b = this.colorSmooth.b * 0.8 + medB * 0.2;
+        }
+
+        const outR = Math.round(this.colorSmooth.r);
+        const outG = Math.round(this.colorSmooth.g);
+        const outB = Math.round(this.colorSmooth.b);
+
+        // ========================================================
+        // SCHRITT 2: PHYSIK-GEHIRN (Finish Erkennung)
+        // ========================================================
+        let highlightCount = 0;
+        let highFreqEnergy = 0;
+        
+        for (let i = 1; i < pixels.length; i++) {
+            // Highlight: Ist es extrem hell UND farblos (weißer Glanz)?
+            if(pixels[i].luma > 200 && pixels[i].sat < 0.25) highlightCount++;
+            
+            // Edge Energy: Differenz zum Nachbar-Pixel (Erkennt "Grieseln" von Metallic oder harte Spiegelkanten)
+            highFreqEnergy += Math.abs(pixels[i].luma - pixels[i-1].luma);
+        }
+
+        let highlightRate = highlightCount / pixels.length;
+        let avgEdgeEnergy = highFreqEnergy / pixels.length; 
+
+        // Die Heuristik
+        let detectedFinish = 'glossy'; 
+        if (avgEdgeEnergy < 3.5 && highlightRate < 0.01) {
+            detectedFinish = 'matt'; // Butterweich, keine Highlights
+        } else if (avgEdgeEnergy >= 3.5 && avgEdgeEnergy < 15 && highlightRate < 0.06) {
+            detectedFinish = 'metallic'; // Mikro-Rauschen durch Flakes, wenig pure weiße Reflexion
+        } else {
+            detectedFinish = 'glossy'; // Harte Kanten und helle Spiegelungen
+        }
+
+        // Finish-Stabilisator (3 Frames hintereinander gleich = Übernehmen)
+        this.finishHistory.push(detectedFinish);
+        if (this.finishHistory.length > 5) this.finishHistory.shift();
+
+        let counts = { 'matt': 0, 'glossy': 0, 'metallic': 0 };
+        this.finishHistory.forEach(f => counts[f]++);
+        
+        if (counts[detectedFinish] >= 3) {
+            this.lastScannedFinish = detectedFinish;
+        }
+
+        const hex = "#" + (1 << 24 | outR << 16 | outG << 8 | outB).toString(16).slice(1).toUpperCase();
+        this.lastScannedHex = hex;
+        
+        // UI live updaten
+        if(preview) preview.style.backgroundColor = hex;
+        if(surfaceText) surfaceText.innerText = (this.lastScannedFinish || detectedFinish).toUpperCase();
+    },
+
+    stopCamera: function() {
         const overlay = document.getElementById('camera-color-overlay');
         
         try {
-            // Kamera Hardware sicher abschalten
             if (this.cameraStream) {
                 this.cameraStream.getTracks().forEach(track => track.stop());
                 this.cameraStream = null;
@@ -1207,116 +1325,34 @@ stopCamera: function() {
         
         if(overlay) overlay.classList.add('hidden');
 
-        // =======================================================
-        // FIX: Den Inline-Style KOMPLETT LÖSCHEN statt ihn zu überschreiben.
-        // So übernimmt sofort wieder deine saubere style.css die Kontrolle!
-        // =======================================================
+        // Bühne wieder herstellen
         const heroStage = document.querySelector('.studio-hero-stage');
         const studioHeader = document.querySelector('.studio-header');
-        
         if(heroStage) heroStage.style.display = ''; 
         if(studioHeader) studioHeader.style.display = '';
 
-        // FIX 2: Ein unsichtbarer "Ruckler", damit das 3D-Auto aus dem Koma aufwacht
         setTimeout(() => {
             window.dispatchEvent(new Event('resize'));
         }, 50);
     },
-scanCenterPixel: function() {
-        const video = document.getElementById('camera-video-feed');
-        const canvas = document.getElementById('camera-canvas');
-        const preview = document.getElementById('scanned-color-preview');
-        const surfaceText = document.getElementById('scanned-surface-text');
-        
-        if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) return;
 
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        
-        // Wir vergrößern den Scan-Bereich auf 60x60 Pixel (3600 Datenpunkte)
-        const size = 60; 
-        const vx = video.videoWidth / 2;
-        const vy = video.videoHeight / 2;
-        
-        // Bildausschnitt auf den Canvas zeichnen
-        ctx.drawImage(video, vx - (size/2), vy - (size/2), size, size, 0, 0, size, size);
-        const imgData = ctx.getImageData(0, 0, size, size).data;
-
-        let rSum = 0, gSum = 0, bSum = 0, validPixels = 0;
-        let luminances = [];
-
-        // Pixel-Analyse (Highlight & Shadow Clipping)
-        for (let i = 0; i < imgData.length; i += 4) {
-            let r = imgData[i], g = imgData[i+1], b = imgData[i+2];
-            // Helligkeit des Pixels berechnen (Luma-Formel)
-            let lum = 0.299 * r + 0.587 * g + 0.114 * b;
-            luminances.push(lum);
-
-            // Ignoriere puren Schatten (< 30) und krasse Sonnenreflexionen (> 220)
-            if (lum > 30 && lum < 220) {
-                rSum += r; gSum += g; bSum += b;
-                validPixels++;
-            }
-        }
-
-        // Fallback, falls wir direkt in die Sonne oder absolute Dunkelheit scannen
-        if (validPixels === 0) {
-            validPixels = 1;
-            rSum = imgData[0]; gSum = imgData[1]; bSum = imgData[2];
-        }
-
-        const avgR = Math.round(rSum / validPixels);
-        const avgG = Math.round(gSum / validPixels);
-        const avgB = Math.round(bSum / validPixels);
-
-        // ===================================================
-        // OBERFLÄCHEN-ERKENNUNG (Varianz / Standardabweichung)
-        // ===================================================
-        let lumMean = luminances.reduce((a, b) => a + b, 0) / luminances.length;
-        let variance = luminances.reduce((a, b) => a + Math.pow(b - lumMean, 2), 0) / luminances.length;
-        let stdDev = Math.sqrt(variance);
-
-        let detectedFinish = 'glossy';
-        if (stdDev < 12) {
-            // Kaum Kontrastunterschiede = Mattes Licht
-            detectedFinish = 'matt';
-        } else if (stdDev >= 12 && stdDev < 30) {
-            // Mittlere Unruhe = Metallic Flakes im Lack
-            detectedFinish = 'metallic';
-        } else {
-            // Harte Hell/Dunkel Kontraste = Spiegelnder Glossy Lack
-            detectedFinish = 'glossy';
-        }
-
-        const hex = "#" + (1 << 24 | avgR << 16 | avgG << 8 | avgB).toString(16).slice(1).toUpperCase();
-        this.lastScannedHex = hex;
-        this.lastScannedFinish = detectedFinish; // Material für später speichern
-        
-        // UI live updaten
-        if(preview) preview.style.backgroundColor = hex;
-        if(surfaceText) surfaceText.innerText = detectedFinish.toUpperCase();
-    },
-
-
-
-applyCameraColor: function() {
+    applyCameraColor: function() {
         const hex = this.lastScannedHex;
         const finish = this.lastScannedFinish || 'glossy'; 
         this.stopCamera();
         
         if(typeof this.applyManualHex === 'function') {
-            // 1. Farbe auf Auto und UI anwenden
+            // 1. Farbe sauber setzen
             this.applyManualHex(hex);
             
-            // 2. Das erkannte Material auf das 3D-Modell anwenden UND das UI updaten
+            // 2. Das erkannte Material (Finish) direkt ans UI und Auto übergeben!
             const map = { 'glossy': 0, 'metallic': 1, 'matt': 2 };
             const btnIndex = map[finish];
             const finishBtns = document.querySelectorAll('.finish-opt');
             
             if(finishBtns && finishBtns[btnIndex]) {
-                // Simuliert einen Klick auf den richtigen Finish-Button im Konfigurator
                 this.setCarFinish(finish, btnIndex, finishBtns[btnIndex], false);
             }
-            
         } else {
             console.error("applyManualHex Funktion nicht gefunden!");
         }
