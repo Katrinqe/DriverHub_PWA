@@ -1823,31 +1823,34 @@ body.ghost-active #ghost-chat-overlay {
 /* ========================================== */
 /* === CAMERA COLOR PICKER OVERLAY         == */
 /* ========================================== */
-/* === CAMERA COLOR PICKER OVERLAY === */
+
+/* FIX 1: Wir killen den kaputten Fade, der den schwarzen Balken verursacht hat! */
+#camera-color-overlay::before {
+    display: none !important;
+}
+
 #camera-color-overlay {
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: #000; z-index: 99999; /* Absolutes Maximum */
+    background: #000; 
+    /* FIX 2: Der maximal mögliche Wert für z-index. Zwingt die Kamera über JEDES andere Element im HTML. */
+    z-index: 2147483647; 
     display: flex; flex-direction: column; align-items: center; justify-content: space-between;
 }
 #camera-color-overlay.hidden { display: none !important; }
 
-/* Ein eleganter schwarzer Fade von oben */
-#camera-color-overlay::before {
-    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 25%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, transparent 100%);
-    z-index: 1; pointer-events: none;
-}
-
 #camera-video-feed {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    object-fit: cover; z-index: 0; /* Hinter den Fade gesetzt */
+    object-fit: cover; 
+    z-index: 1; /* Video liegt ganz unten im Overlay */
 }
 
 /* UI Elemente über dem Video */
-.camera-ui-top, .camera-ui-bottom, .camera-crosshair { position: relative; z-index: 2; }
+.camera-ui-top, .camera-ui-bottom, .camera-crosshair { 
+    position: relative; 
+    z-index: 10; /* FIX 3: Zwingt den Text und die Buttons SICHER über das Video */
+}
 
 .camera-ui-top {
-    /* Deutlich tiefer gesetzt (+ 40px) */
     margin-top: calc(env(safe-area-inset-top, 40px) + 40px);
     background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     padding: 10px 20px; border-radius: 20px; text-align: center;
@@ -1872,7 +1875,6 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 .camera-ui-bottom {
-    /* Deutlich höher gesetzt (+ 50px), damit nichts abschneidet */
     margin-bottom: calc(env(safe-area-inset-bottom, 30px) + 50px);
     width: 100%; display: flex; flex-direction: column; align-items: center; gap: 20px;
     padding: 0 20px; box-sizing: border-box;
@@ -1884,7 +1886,6 @@ body.ghost-active #ghost-chat-overlay {
     border: 3px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.8);
     background: #ffffff; transition: background-color 0.1s;
 }
-
 /* ========================================== */
 /* === SHOWROOM PANEL (PRE-CONFIG)         == */
 /* ========================================== */
