@@ -1433,18 +1433,17 @@ body.ghost-active #ghost-chat-overlay {
 
 /* 1 Spalte, volle Breite! */
 .model-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 30px; 
-    /* FIX: Oben 40px Padding für mehr Abstand zum Header */
-    padding: 40px 20px 40px 20px;
-    position: relative;
-    z-index: 10;
-    overflow-y: auto; 
-    
-    /* FIX: Der magische Scroll-Fade! Die oberen 50px des scrollbaren Bereichs verblassen sanft */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 30px; 
+    /* FIX: Halbiert den unnötigen Platz über der ersten Karte */
+    padding: 20px 20px 40px 20px;
+    position: relative;
+    z-index: 10;
+    overflow-y: auto; 
+    
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
 }
 
 /* ========================================== */
@@ -1478,6 +1477,21 @@ body.ghost-active #ghost-chat-overlay {
     box-shadow: inset 0 0 40px rgba(255,255,255,0.02);
 }
 
+.hero-ambient-glow::after {
+    content: ''; position: absolute; 
+    /* FIX: WIRD MASSIV KOMPAKTER (NUR 60% DER HÖHE) UNTER DEM AUTO GEBÜNDELT */
+    top: 25%; left: -20%; 
+    width: 140%; height: 60%;
+    
+    /* FIX: KERN SITZT JETZT HOCH (65% STATT 85%) DIREKT UNTER DEM AUTO.
+       UND DER KERN WIRD SANFTER ( TRANSPARENT 80% STATT 65%) */
+    background: radial-gradient(ellipse at 50% 65%, var(--glow-color) 0%, transparent 80%);
+    
+    filter: blur(60px);
+    opacity: 0.65; /* Etwas präsenter gemacht, damit der Kern wirkt */
+    z-index: 2;
+}
+
 /* Die Bühne für das Civic Logo (Absolut im Hintergrund wie im Editor!) */
 .model-logo-stage {
     position: absolute; /* Löst das Logo vom Auto */
@@ -1501,12 +1515,18 @@ body.ghost-active #ghost-chat-overlay {
 
 /* Die 3D-Bühne */
 .model-3d-box {
-    width: 100%;
-    height: 240px; /* Etwas mehr Höhe, damit das größere Auto Platz hat */
-    position: relative;
-    z-index: 5; /* Über dem Logo */
-    margin-top: 20px; /* Kein negativer Wert mehr nötig, da Logo absolut ist */
-    margin-bottom: 10px;
+    width: 100%;
+    height: 240px; 
+    position: relative;
+    z-index: 5;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    
+    /* FIX: DAS AUTO MINIMAL NACH RECHTS VERSCHIEBEN (10px) */
+    transform: translateX(10px);
+    
+    /* Optischer Schärfe-Trick: F1 top-down Chassis Style (Kanten-Kontrast) */
+    filter: drop-shadow(0 0 20px var(--glow-color-alt));
 }
 
 
