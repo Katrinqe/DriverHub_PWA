@@ -1433,21 +1433,21 @@ body.ghost-active #ghost-chat-overlay {
 
 /* 1 Spalte, volle Breite! */
 .model-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 30px; 
-    /* FIX: Halbiert den unnötigen Platz über der ersten Karte */
-    padding: 20px 20px 40px 20px;
-    position: relative;
-    z-index: 10;
-    overflow-y: auto; 
-    
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 30px; 
+    /* FIX: Halbiert den unnötigen Platz über der ersten Karte */
+    padding: 20px 20px 40px 20px;
+    position: relative;
+    z-index: 10;
+    overflow-y: auto; 
+    
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 50px, black 100%);
 }
 
 /* ========================================== */
-/* === MODEL SELECTOR (PREMIUM BUGFIX)     == */
+/* === MODEL SELECTOR (PREMIUM CARD)       == */
 /* ========================================== */
 
 .model-card {
@@ -1460,18 +1460,16 @@ body.ghost-active #ghost-chat-overlay {
     padding: 10px 20px 20px 20px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.8);
     position: relative;
-    /* FIX: overflow: hidden IST WEG! Das war der Auslöser für den Cut-Off! */
     opacity: 0;
     transform: translateY(40px);
     animation: slideInBrand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ========================================== */
-/* HIER WAR DER FEHLER: DER BLOCK WAR LEER!   */
-/* ========================================== */
+/* Das perfekte Licht, eingebaut OHNE overflow-Probleme */
 .model-card::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     border-radius: 24px; pointer-events: none; z-index: 0;
+    /* Das doppelte Premium-Licht: Weiß oben, Farbe unten (perfekt in der Karte gefangen) */
     background: 
         radial-gradient(circle at 50% 0%, rgba(255,255,255,0.15) 0%, transparent 40%),
         radial-gradient(ellipse 140% 60% at 50% 45%, rgba(26, 140, 154, 0.45) 0%, transparent 70%);
@@ -1490,6 +1488,7 @@ body.ghost-active #ghost-chat-overlay {
     z-index: 1; /* Strikt im Hintergrund */
     pointer-events: none; /* Klicks gehen durchs Logo durch */
 }
+
 .model-logo-stage img {
     width: 80%; /* Macht das Logo schön breit */
     max-width: 280px;
@@ -1500,21 +1499,19 @@ body.ghost-active #ghost-chat-overlay {
 
 /* Die 3D-Bühne */
 .model-3d-box {
-    width: 100%;
-    height: 240px; 
-    position: relative;
-    z-index: 5;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    
-    /* FIX: DAS AUTO MINIMAL NACH RECHTS VERSCHIEBEN (10px) */
-    transform: translateX(10px);
-    
-    /* Optischer Schärfe-Trick: F1 top-down Chassis Style (Kanten-Kontrast) */
-    filter: drop-shadow(0 0 20px var(--glow-color-alt));
+    width: 100%;
+    height: 240px; 
+    position: relative;
+    z-index: 5;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    
+    /* FIX: DAS AUTO MINIMAL NACH RECHTS VERSCHIEBEN (10px) */
+    transform: translateX(10px);
+    
+    /* Optischer Schärfe-Trick: F1 top-down Chassis Style (Kanten-Kontrast) */
+    filter: drop-shadow(0 0 20px var(--glow-color-alt));
 }
-
-
 
 /* FIX: Zwingt den gesamten Inhalt (Specs, Bars, Button) SICHER über das Licht */
 .model-specs-row, 
@@ -1523,6 +1520,7 @@ body.ghost-active #ghost-chat-overlay {
     position: relative;
     z-index: 15; 
 }
+
 /* Steckbrief / Specs */
 .model-specs-row {
     display: flex;
@@ -1597,7 +1595,6 @@ body.ghost-active #ghost-chat-overlay {
     border-color: rgba(0, 229, 255, 0.5); /* Neon Cyan Akzent beim Klicken */
     box-shadow: 0 0 20px rgba(0, 229, 255, 0.2), inset 0 0 10px rgba(255,255,255,0.1);
 }
-
 /* ========================================== */
 /* === TUNING STUDIO (ULTIMATE PRO VIBE)   == */
 /* ========================================== */
