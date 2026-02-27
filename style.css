@@ -1521,7 +1521,7 @@ body.ghost-active #ghost-chat-overlay {
     width: 100%;
     height: 100%;
     /* NEU: scale(...) macht es größer, translateY(...) schiebt es nach unten */
-    transform: scale(1.25) translateY(10px); 
+    transform: scale(1.25) translateY(12px); 
     transform-origin: center 65%; 
 }
 /* Sicherheits-Fix: Tötet jegliches horizontales Scrollen ab */
