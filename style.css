@@ -1506,17 +1506,7 @@ body.ghost-active #ghost-chat-overlay {
     filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
 }
 
-/* Die 3D-Bühne */
-.model-3d-box {
-    width: 100%;
-    height: 220px; /* Kompakter, da es nicht mehr drehbar ist */
-    position: relative;
-    z-index: 5; /* Über dem Logo und dem Licht */
-    /* Zieht das Auto massiv nach oben ins Logo rein */
-    margin-top: -60px;
-    margin-bottom: 5px;
-    filter: drop-shadow(0 15px 20px rgba(0,0,0,0.7)); /* Harter Schatten unters Auto */
-}
+
 /* ========================================== */
 /* FIX: ELEMENTE ÜBER DAS LICHT ZWINGEN */
 /* ========================================== */
