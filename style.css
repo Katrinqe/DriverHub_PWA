@@ -1500,31 +1500,27 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* Die 3D-Bühne (Kompakter & Sauber) */
+/* Die 3D-Bühne (Exakt wie die studio-hero-stage aufgebaut) */
 .model-3d-box {
     width: 100%;
-    /* FIX 2: Höhe gekappt (von 240px auf 200px) -> Karte wird kompakter! */
-    height: 200px; 
+    /* Wir geben dem Auto den gleichen physischen Raum wie im Studio */
+    height: 250px; 
     position: relative;
     z-index: 5;
-    margin-top: 15px;
-    margin-bottom: 5px;
+    /* Wir ziehen das Auto wie im Studio tief in das Logo nach oben */
+    margin-top: -30px; 
+    margin-bottom: 0px;
     transform: translateX(10px);
     
-    /* FIX 3: Radioaktiver Glow restlos entfernt! Nur ein echter, tiefer Schatten unters Blech. */
-    filter: drop-shadow(0 15px 20px rgba(0,0,0,0.7)); 
+    /* Der exakte Schatten aus dem #studio-model-viewer */
+    filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6)); 
 }
-/* ========================================== */
-/* FIX: DIE CSS BRECHSTANGE FÜR DEN AUTO-ZOOM */
-/* ========================================== */
-.model-3d-box model-viewer {
-    width: 100%;
-    height: 100%;
-    /* 1. Macht das Auto brutal 35% größer! (Wert kannst du anpassen: 1.2, 1.4...) */
-    transform: scale(1.35); 
-    /* 2. Zwingt das Auto, aus der Mitte heraus zu wachsen, 
-       damit die Räder schön unten im Licht bleiben und es nicht nach unten rausfällt */
-    transform-origin: center 70%; 
+
+/* Sicherheits-Fix: Tötet jegliches horizontales Scrollen ab */
+.model-grid {
+    overflow-x: hidden;
 }
+
 /* FIX: Zwingt den gesamten Inhalt (Specs, Bars, Button) SICHER über das Licht */
 .model-specs-row, 
 .stat-bar-wrap, 
