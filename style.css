@@ -1466,31 +1466,7 @@ body.ghost-active #ghost-chat-overlay {
     animation: slideInBrand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Das perfekte Licht, eingebaut OHNE overflow-Probleme */
-.model-card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-    border-radius: 24px; pointer-events: none; z-index: 0;
-    /* Das doppelte Premium-Licht: Weiß oben, Farbe unten (perfekt in der Karte gefangen) */
-    background: 
-        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.15) 0%, transparent 40%),
-        radial-gradient(ellipse at 50% 65%, rgba(26, 140, 154, 0.35) 0%, transparent 70%);
-    box-shadow: inset 0 0 40px rgba(255,255,255,0.02);
-}
-
-.hero-ambient-glow::after {
-    content: ''; position: absolute; 
-    /* FIX: WIRD MASSIV KOMPAKTER (NUR 60% DER HÖHE) UNTER DEM AUTO GEBÜNDELT */
-    top: 25%; left: -20%; 
-    width: 140%; height: 60%;
-    
-    /* FIX: KERN SITZT JETZT HOCH (65% STATT 85%) DIREKT UNTER DEM AUTO.
-       UND DER KERN WIRD SANFTER ( TRANSPARENT 80% STATT 65%) */
-    background: radial-gradient(ellipse at 50% 65%, var(--glow-color) 0%, transparent 80%);
-    
-    filter: blur(60px);
-    opacity: 0.65; /* Etwas präsenter gemacht, damit der Kern wirkt */
-    z-index: 2;
-}
+.model-card::before
 
 /* Die Bühne für das Civic Logo (Absolut im Hintergrund wie im Editor!) */
 .model-logo-stage {
