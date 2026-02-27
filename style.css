@@ -1479,15 +1479,16 @@ body.ghost-active #ghost-chat-overlay {
 
 /* Die Bühne für das Civic Logo (Absolut im Hintergrund wie im Editor!) */
 .model-logo-stage {
-    position: absolute; /* Löst das Logo vom Auto */
-    top: 30px; /* Schiebt es ein Stück nach unten */
+    position: absolute; 
+    /* FIX 1: Von 30px auf 15px verringert -> wandert minimal nach oben */
+    top: 15px; 
     left: 0;
     width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1; /* Strikt im Hintergrund */
-    pointer-events: none; /* Klicks gehen durchs Logo durch */
+    z-index: 1; 
+    pointer-events: none; 
 }
 
 .model-logo-stage img {
