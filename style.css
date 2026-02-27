@@ -1465,14 +1465,15 @@ body.ghost-active #ghost-chat-overlay {
     animation: slideInBrand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Das perfekte Licht, eingebaut OHNE overflow-Probleme */
+/* Das perfekte, von der App entkoppelte Licht */
 .model-card::before {
     content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     border-radius: 24px; pointer-events: none; z-index: 0;
-    /* Das doppelte Premium-Licht: Weiß oben, Farbe unten (perfekt in der Karte gefangen) */
     background: 
-        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.15) 0%, transparent 40%),
-        radial-gradient(ellipse 140% 60% at 50% 45%, rgba(26, 140, 154, 0.45) 0%, transparent 70%);
+        /* Weißer Spot oben bleibt dezent */
+        radial-gradient(circle at 50% 0%, rgba(255,255,255,0.12) 0%, transparent 40%),
+        /* FIX 1: Feste Farbe (kein var mehr!), deutlich weicher (0.2) und tiefer platziert (55%) */
+        radial-gradient(ellipse 140% 60% at 50% 55%, rgba(26, 140, 154, 0.2) 0%, transparent 65%);
     box-shadow: inset 0 0 40px rgba(255,255,255,0.02);
 }
 
@@ -1497,20 +1498,19 @@ body.ghost-active #ghost-chat-overlay {
     filter: drop-shadow(0 4px 15px rgba(0,0,0,0.9));
 }
 
-/* Die 3D-Bühne */
+/* Die 3D-Bühne (Kompakter & Sauber) */
 .model-3d-box {
     width: 100%;
-    height: 240px; 
+    /* FIX 2: Höhe gekappt (von 240px auf 200px) -> Karte wird kompakter! */
+    height: 200px; 
     position: relative;
     z-index: 5;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    
-    /* FIX: DAS AUTO MINIMAL NACH RECHTS VERSCHIEBEN (10px) */
+    margin-top: 15px;
+    margin-bottom: 5px;
     transform: translateX(10px);
     
-    /* Optischer Schärfe-Trick: F1 top-down Chassis Style (Kanten-Kontrast) */
-    filter: drop-shadow(0 0 20px var(--glow-color-alt));
+    /* FIX 3: Radioaktiver Glow restlos entfernt! Nur ein echter, tiefer Schatten unters Blech. */
+    filter: drop-shadow(0 15px 20px rgba(0,0,0,0.7)); 
 }
 
 /* FIX: Zwingt den gesamten Inhalt (Specs, Bars, Button) SICHER über das Licht */
