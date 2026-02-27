@@ -1513,7 +1513,18 @@ body.ghost-active #ghost-chat-overlay {
     /* FIX 3: Radioaktiver Glow restlos entfernt! Nur ein echter, tiefer Schatten unters Blech. */
     filter: drop-shadow(0 15px 20px rgba(0,0,0,0.7)); 
 }
-
+/* ========================================== */
+/* FIX: DIE CSS BRECHSTANGE FÜR DEN AUTO-ZOOM */
+/* ========================================== */
+.model-3d-box model-viewer {
+    width: 100%;
+    height: 100%;
+    /* 1. Macht das Auto brutal 35% größer! (Wert kannst du anpassen: 1.2, 1.4...) */
+    transform: scale(1.35); 
+    /* 2. Zwingt das Auto, aus der Mitte heraus zu wachsen, 
+       damit die Räder schön unten im Licht bleiben und es nicht nach unten rausfällt */
+    transform-origin: center 70%; 
+}
 /* FIX: Zwingt den gesamten Inhalt (Specs, Bars, Button) SICHER über das Licht */
 .model-specs-row, 
 .stat-bar-wrap, 
