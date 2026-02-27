@@ -1199,7 +1199,7 @@ scanCenterPixel: function() {
         const preview = document.getElementById('scanned-color-preview');
         const surfaceText = document.getElementById('scanned-surface-text');
         const exposureText = document.getElementById('scan-exposure'); 
-        const confFill = document.getElementById('scan-conf-fill'); // Die neue Bar
+        const confFill = document.getElementById('scan-conf-fill'); 
         
         if (!video || !canvas || video.readyState !== video.HAVE_ENOUGH_DATA) return;
 
@@ -1216,11 +1216,21 @@ scanCenterPixel: function() {
 
         let pixels = [];
         let lumas = [];
-        let totalLuma = 0;
         
-        for (let y = 0; y < size; y += 2) {
-            for (let x = 0; x < size; x += 2) {
+        let clipLow = 0;
+        let clipHigh = 0;
+        let highlightCount = 0;
+        let totalEdgeEnergy = 0;
+        let validEdgeCalculations = 0;
+        
+        // ========================================================
+        // 1. DER EINE LOOP (2D Kanten & Clipping Rate in Rekordzeit)
+        // ========================================================
+        const step = 2; // Wir überspringen jeden zweiten Pixel für doppelte Performance
+        for (let y = 0; y < size - step; y += step) {
+            for (let x = 0; x < size - step; x += step) {
                 let idx = (y * size + x) * 4;
+                
                 let r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2];
                 let luma = 0.299 * r + 0.587 * g + 0.114 * b;
                 
@@ -1229,38 +1239,49 @@ scanCenterPixel: function() {
 
                 pixels.push({ r, g, b, luma, sat });
                 lumas.push(luma);
-                totalLuma += luma;
+
+                // Ehrlichkeits-Check: Ist der Pixel purer Schatten oder grelle Sonne?
+                if (luma < 15) clipLow++;
+                if (luma > 240) clipHigh++;
+
+                // Highlight-Check für Glossy
+                if (luma > 200 && sat < 0.25) highlightCount++;
+
+                // 2D KANTEN-ENERGIE: Vergleiche mit Pixel Rechts und Unten
+                let idxRight = (y * size + (x + step)) * 4;
+                let idxDown = ((y + step) * size + x) * 4;
+                
+                let rR = imgData[idxRight], gR = imgData[idxRight+1], bR = imgData[idxRight+2];
+                let lumaRight = 0.299 * rR + 0.587 * gR + 0.114 * bR;
+                
+                let rD = imgData[idxDown], gD = imgData[idxDown+1], bD = imgData[idxDown+2];
+                let lumaDown = 0.299 * rD + 0.587 * gD + 0.114 * bD;
+
+                totalEdgeEnergy += (Math.abs(luma - lumaRight) + Math.abs(luma - lumaDown));
+                validEdgeCalculations++;
             }
         }
 
-        // --- 1. EXPOSURE RADAR ---
-        let avgRawLuma = totalLuma / lumas.length;
-        let exposurePercent = Math.min(100, Math.max(0, Math.round((avgRawLuma / 255) * 100)));
-        
-        if(exposureText) {
-            exposureText.innerText = `EXP: ${exposurePercent}%`;
-            if (exposurePercent < 20) {
-                exposureText.style.color = '#ff3b30'; exposureText.style.borderColor = '#ff3b30';
-            } else if (exposurePercent > 80) {
-                exposureText.style.color = '#ff9f0a'; exposureText.style.borderColor = '#ff9f0a';
-            } else {
-                exposureText.style.color = '#30d158'; exposureText.style.borderColor = '#30d158';
-            }
-        }
+        let totalPixels = pixels.length;
+        let clipLowRate = clipLow / totalPixels;
+        let clipHighRate = clipHigh / totalPixels;
 
-        // --- 2. FARB-BEREINIGUNG (Quantile & Median) ---
+        // ========================================================
+        // 2. PERFEKTE FARBE (Quantile & Median + Smoothing)
+        // ========================================================
         lumas.sort((a, b) => a - b);
-        let q10 = lumas[Math.floor(lumas.length * 0.1)];
-        let q90 = lumas[Math.floor(lumas.length * 0.9)];
+        let q10 = lumas[Math.floor(lumas.length * 0.10)];
+        let q90 = lumas[Math.floor(lumas.length * 0.90)];
 
-        let validPixels = pixels.filter(p => p.luma > q10 && p.luma < q90);
-        let pixelQuality = validPixels.length / pixels.length; // Für Confidence
-        if (validPixels.length === 0) { validPixels = pixels; pixelQuality = 0.1; }
+        let validPixelsObj = pixels.filter(p => p.luma > q10 && p.luma < q90);
+        let pixelQuality = validPixelsObj.length / totalPixels; // Fließt in Confidence ein
+        if (validPixelsObj.length === 0) { validPixelsObj = pixels; pixelQuality = 0.1; }
 
-        validPixels.sort((a,b) => a.r - b.r); let medR = validPixels[Math.floor(validPixels.length/2)].r;
-        validPixels.sort((a,b) => a.g - b.g); let medG = validPixels[Math.floor(validPixels.length/2)].g;
-        validPixels.sort((a,b) => a.b - b.b); let medB = validPixels[Math.floor(validPixels.length/2)].b;
+        validPixelsObj.sort((a,b) => a.r - b.r); let medR = validPixelsObj[Math.floor(validPixelsObj.length/2)].r;
+        validPixelsObj.sort((a,b) => a.g - b.g); let medG = validPixelsObj[Math.floor(validPixelsObj.length/2)].g;
+        validPixelsObj.sort((a,b) => a.b - b.b); let medB = validPixelsObj[Math.floor(validPixelsObj.length/2)].b;
 
+        // Butterweiches Faden statt stottern
         if (!this.colorSmooth.init) {
             this.colorSmooth = { r: medR, g: medG, b: medB, init: true };
         } else {
@@ -1273,25 +1294,21 @@ scanCenterPixel: function() {
         const outG = Math.round(this.colorSmooth.g);
         const outB = Math.round(this.colorSmooth.b);
 
-        // --- 3. PHYSIK & SCORES (Separation) ---
-        let highlightCount = 0;
-        let highFreqEnergy = 0;
-        for (let i = 1; i < pixels.length; i++) {
-            if(pixels[i].luma > 200 && pixels[i].sat < 0.25) highlightCount++;
-            highFreqEnergy += Math.abs(pixels[i].luma - pixels[i-1].luma);
-        }
+        // ========================================================
+        // 3. PHYSIK & SCORES (Die Metallic Glockenkurve)
+        // ========================================================
+        let highlightRate = highlightCount / totalPixels;
+        let avgEdgeEnergy = totalEdgeEnergy / validEdgeCalculations; 
 
-        let highlightRate = highlightCount / pixels.length;
-        let avgEdgeEnergy = highFreqEnergy / pixels.length; 
-
-        // Normalisieren für fairen Kampf
         let hRateNorm = Math.min(1, highlightRate * 10);
         let eEnergyNorm = Math.min(1, avgEdgeEnergy / 20);
 
-        // Das Punkterennen
+        // Der Sweetspot: Metallic ist nur in der MITTE hoch, nicht bei extremen Spiegelungen
+        let metalPeak = Math.max(0, 1 - Math.abs(eEnergyNorm - 0.5) * 2);
+
         let glossScore = hRateNorm * 1.2 + eEnergyNorm * 0.3;
         let mattScore = (1 - hRateNorm) * 1.0 + (1 - eEnergyNorm) * 0.8;
-        let metalScore = eEnergyNorm * 1.2 + (1 - hRateNorm) * 0.4;
+        let metalScore = metalPeak * 1.2 + (1 - hRateNorm) * 0.3;
 
         let scores = [
             { id: 'glossy', val: glossScore },
@@ -1304,17 +1321,38 @@ scanCenterPixel: function() {
         let second = scores[1];
         let separation = Math.max(0, best.val - second.val);
 
-        // --- 4. QUALITY FACTOR & CONFIDENCE ---
+        // ========================================================
+        // 4. QUALITY FACTOR & UX WARNINGS (Radar & Bar)
+        // ========================================================
         let expQuality = 1.0;
-        if(exposurePercent < 20) expQuality = Math.max(0, exposurePercent / 20);
-        if(exposurePercent > 80) expQuality = Math.max(0, (100 - exposurePercent) / 20);
+        let warningText = null;
+        let warningColor = null;
+
+        let medianLuma = lumas[Math.floor(lumas.length/2)];
+        let visualExp = Math.round((medianLuma / 255) * 100); // Fadenkreuz Anzeige
+
+        // Der Reality-Check: Schneiden wir zu viel weg?
+        if (clipLowRate > 0.35) {
+            expQuality = Math.max(0, 1 - (clipLowRate * 2));
+            warningText = "LOW LIGHT [ HOLD STILL ]";
+            warningColor = "#ff3b30";
+        } else if (clipHighRate > 0.35) {
+            expQuality = Math.max(0, 1 - (clipHighRate * 2));
+            warningText = "TOO BRIGHT [ GLARE ]";
+            warningColor = "#ff9f0a";
+        }
+
+        if(exposureText) {
+            exposureText.innerText = `EXP: ${visualExp}%`;
+            exposureText.style.color = warningColor || '#30d158'; 
+            exposureText.style.borderColor = warningColor || '#30d158';
+        }
 
         let finalQuality = expQuality * pixelQuality;
-        // Confidence berechnen (Separation * Qualität * Multiplikator für Spreizung)
         let confidence = Math.min(1, Math.max(0, separation * finalQuality * 2.5)); 
         let confPercent = Math.round(confidence * 100);
 
-        // UI: Balken aktualisieren
+        // Sidebar animieren
         if(confFill) {
             confFill.style.height = `${confPercent}%`;
             if(confPercent > 65) {
@@ -1326,7 +1364,9 @@ scanCenterPixel: function() {
             }
         }
 
-        // --- 5. FINISH STABILISATOR & SPEICHERN ---
+        // ========================================================
+        // 5. STABILISATOR & TEXT UPDATE
+        // ========================================================
         this.finishHistory.push(best.id);
         if (this.finishHistory.length > 5) this.finishHistory.shift();
 
@@ -1337,21 +1377,23 @@ scanCenterPixel: function() {
             this.lastScannedFinish = best.id;
         }
 
-        let rawIndex = Math.round(best.val * 50); // Skaliert den Score optisch für das UI
-
+        let rawIndex = Math.round(best.val * 50); 
         const hex = "#" + (1 << 24 | outR << 16 | outG << 8 | outB).toString(16).slice(1).toUpperCase();
         this.lastScannedHex = hex;
         
-        // UI live updaten
         if(preview) preview.style.backgroundColor = hex;
+        
+        // Der Psychologie-Hack: Bei schlechtem Licht warnen wir!
         if(surfaceText) {
-            let displayFinish = this.lastScannedFinish || best.id;
-            // Fragezeichen anfügen, wenn Confidence im Keller ist!
-            let confidenceHint = confPercent < 40 ? '?' : '';
-            surfaceText.innerText = `${displayFinish.toUpperCase()}${confidenceHint} [ ${rawIndex} IDX ]`;
-            
-            // Text färben basierend auf Confidence
-            surfaceText.style.color = confPercent > 65 ? '#fff' : (confPercent > 35 ? '#ffd60a' : '#ff3b30');
+            if (warningText && confPercent < 40) {
+                surfaceText.innerText = warningText;
+                surfaceText.style.color = warningColor;
+            } else {
+                let displayFinish = this.lastScannedFinish || best.id;
+                let confidenceHint = confPercent < 45 ? '?' : '';
+                surfaceText.innerText = `${displayFinish.toUpperCase()}${confidenceHint} [ ${rawIndex} IDX ]`;
+                surfaceText.style.color = confPercent > 65 ? '#fff' : (confPercent > 35 ? '#ffd60a' : '#ff3b30');
+            }
         }
     },
     stopCamera: function() {
