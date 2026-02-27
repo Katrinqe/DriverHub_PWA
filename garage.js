@@ -265,8 +265,8 @@ window.GarageLogic = {
                     <img src="${mod.logo}" alt="${mod.name}">
                 </div>
                 
-              <div class="model-3d-box">
-                    <model-viewer src="${mod.file}" camera-orbit="40deg 85deg auto" field-of-view="12deg" disable-zoom disable-pan shadow-intensity="1.5" exposure="1" interaction-prompt="none" style="width:100%; height:100%;"></model-viewer>
+         <div class="model-3d-box">
+                    <model-viewer src="${mod.file}" camera-orbit="40deg 85deg auto" disable-zoom disable-pan shadow-intensity="1" exposure="1" interaction-prompt="none" style="width:100%; height:100%;"></model-viewer>
                 </div>
                 
                 <div class="model-specs-row">
