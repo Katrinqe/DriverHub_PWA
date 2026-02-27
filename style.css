@@ -1516,11 +1516,13 @@ body.ghost-active #ghost-chat-overlay {
     filter: drop-shadow(0 15px 25px rgba(0,0,0,0.6)); 
 }
 /* FIX: Das Auto moderat vergrößern */
+/* In der style.css: */
 .model-3d-box model-viewer {
     width: 100%;
     height: 100%;
-    transform: scale(1.15); /* 15 % größer als Standard */
-    transform-origin: center 65%; /* Wächst sauber aus der Mitte heraus */
+    /* NEU: scale(...) macht es größer, translateY(...) schiebt es nach unten */
+    transform: scale(1.25) translateY(10px); 
+    transform-origin: center 65%; 
 }
 /* Sicherheits-Fix: Tötet jegliches horizontales Scrollen ab */
 .model-grid {
