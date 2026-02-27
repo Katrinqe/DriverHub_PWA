@@ -30,18 +30,30 @@ window.GarageLogic = {
             },
             gearbox: { name: 'S20', data: [{x:0, y:800}, {x:49, y:6500}, {x:49, y:3800}, {x:84, y:6500}, {x:84, y:4276}, {x:127, y:6500}, {x:127, y:4726}, {x:175, y:6500}, {x:175, y:5363}, {x:190, y:5825}] }
         },
-        'ek': {
-            name: 'EK (1.4i)', year: '1999', weight: '1050',
-            engine: 'D14A4', bore: '75.0 x 79.0 mm', drivetrain: 'FWD', aero: '0.32', fuel: 'Gasoline (45L)', engWeight: '135 KG',
-            balance: { front: 62, rear: 38 }, sprint: '10.8',
-            factoryColor: '#FFD700', // Platzhalter: Ein schönes Gelb/Silber für den EK
+        'em1': {
+            name: 'Civic Si (EM1)', year: '1999', weight: '1185',
+            engine: 'B16A2 VTEC', bore: '81.0 x 77.4 mm', drivetrain: 'FWD', aero: '0.32', fuel: 'Gasoline (45L)', engWeight: '155 KG',
+            balance: { front: 61, rear: 39 }, sprint: '7.2',
+            factoryColor: '#003399', // Electron Blue Pearl (Der Klassiker für den Si)
             dyno: {
-                rpm: [1000, 2000, 3000, 4000, 5000, 6000, 6500],
-                hp: [12, 25, 42, 60, 78, 90, 85], // Echte 90 PS Kurve
-                nm: [90, 105, 118, 124, 120, 110, 100], // Echte 124 NM Kurve
-                peakHp: '90 HP', peakHpRpm: '@ 6000 RPM', peakNm: '124 NM', peakNmRpm: '@ 4000 RPM'
+                // Die Kurve zeigt den VTEC-Umschaltpunkt bei ca. 5600 RPM
+                rpm: [1000, 2500, 4000, 5500, 6000, 7000, 8000, 8500],
+                hp: [18, 45, 78, 110, 135, 150, 160, 155], 
+                nm: [105, 125, 140, 142, 148, 150, 142, 130], 
+                peakHp: '160 HP', peakHpRpm: '@ 8000 RPM', peakNm: '150 NM', peakNmRpm: '@ 7000 RPM'
             },
-            gearbox: { name: 'S40', data: [{x:0, y:800}, {x:45, y:6500}, {x:45, y:3500}, {x:80, y:6500}, {x:80, y:4000}, {x:120, y:6500}, {x:120, y:4500}, {x:165, y:6500}, {x:165, y:5000}, {x:180, y:5500}] }
+            // Das S4C Getriebe (Kurz übersetzt für VTEC-Engagement)
+            gearbox: { 
+                name: 'S4C', 
+                data: [
+                    {x:0, y:800}, 
+                    {x:55, y:8000}, {x:55, y:5200},   // 1. zu 2. Gang
+                    {x:85, y:8000}, {x:85, y:5500},   // 2. zu 3. Gang
+                    {x:122, y:8000}, {x:122, y:6000}, // 3. zu 4. Gang
+                    {x:161, y:8000}, {x:161, y:6100}, // 4. zu 5. Gang
+                    {x:210, y:8000}                   // Top Speed
+                ] 
+            }
         }
     },
 
@@ -239,9 +251,9 @@ window.GarageLogic = {
                     ps: 101, nm: 133, pw: 10.1
                 },
                 { 
-                    name: "Civic EK", file: "car3.glb", logo: "civic.png",
-                    year: "1999", weight: 1040, engine: "1.4L D14A4",
-                    ps: 90, nm: 124, pw: 11.5
+                    name: "Civic Si", file: "1999_honda_civic_si.glb", logo: "civic.png",
+                    year: "1999", weight: 1185, engine: "1.6L B16A2",
+                    ps: 160, nm: 150, pw: 7.4
                 }
             ];
         }
@@ -291,9 +303,9 @@ window.GarageLogic = {
                     <div class="stat-bar-track"><div class="stat-bar-fill" style="width: ${pwPercent}%; background: linear-gradient(90deg, #0a84ff, #30d158);"></div></div>
                 </div>
                 
-               <button class="btn-choose-model" onclick="GarageLogic.openStudio('${idx === 0 ? 'ej2' : 'ek'}', '${mod.logo}', '${mod.file}')">
-                    CHOOSE MODEL
-                </button>
+            <button class="btn-choose-model" onclick="GarageLogic.openStudio('${idx === 0 ? 'ej2' : 'em1'}', '${mod.logo}', '${mod.file}')">
+                CHOOSE MODEL
+            </button>
             `;
             grid.appendChild(card);
         });
