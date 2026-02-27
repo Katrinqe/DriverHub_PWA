@@ -1449,50 +1449,73 @@ body.ghost-active #ghost-chat-overlay {
 
 /* Die neue Premium-Card mit weichem Ambiente */
 .model-card {
-    /* FIX: Ein weicher, edler Lichtkegel strahlt jetzt von der Oberkante der Karte herab */
-    background: radial-gradient(ellipse at top center, rgba(255,255,255,0.07) 0%, rgba(30,30,32,0.8) 40%, rgba(10,10,12,0.9) 100%);
+    /* Ein sehr dunkler Frost-Glass Hintergrund, damit das Licht wirken kann */
+    background: rgba(15, 15, 18, 0.4);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
     border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 20px;
-    /* FIX: Oben weniger Padding (10px statt 20px), damit alles höher rutscht */
+    border-top: 1px solid rgba(255,255,255,0.15); /* Lichtkante von oben */
+    border-radius: 24px;
     padding: 10px 20px 20px 20px;
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.8), inset 0 0 40px rgba(255,255,255,0.02);
+    
+    position: relative;
+    overflow: hidden; /* Wichtig, damit das Licht nicht aus der Karte bricht */
     
     opacity: 0;
     transform: translateY(40px);
     animation: slideInBrand 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Die Bühne für das Civic Logo */
+/* === NEU: DAS KARTEN-LICHT (Hero Ambient Glow für die Karte) === */
+/* Ebene 1: Das weiße Licht oben für das Logo */
+.model-card::before {
+    content: ''; position: absolute; 
+    top: -10%; left: 0; 
+    width: 100%; height: 50%; 
+    background: radial-gradient(ellipse at 50% 10%, rgba(255,255,255,0.15) 0%, transparent 70%);
+    filter: blur(30px);
+    z-index: 0; pointer-events: none;
+}
+
+/* Ebene 2: Der farbige Teppich unten für das Auto */
+.model-card::after {
+    content: ''; position: absolute; 
+    top: 10%; left: -20%; 
+    width: 140%; height: 60%; 
+    /* Standardmäßig ein sattes Blau/Lila, kann man per JS dynamisch machen */
+    background: radial-gradient(ellipse at 50% 60%, rgba(26, 140, 154, 0.4) 0%, transparent 65%);
+    filter: blur(40px);
+    z-index: 0; pointer-events: none;
+}
+
+/* Die Bühne für das Civic Logo (wie im Showroom) */
 .model-logo-stage {
     display: flex;
     justify-content: center;
     align-items: center;
-    /* FIX: Höher gemacht (von 45px auf 60px), damit das Logo größer werden kann */
-    height: 60px;
-    /* FIX: Kein Margin nach unten mehr! */
-    margin-bottom: 0px;
-    background: transparent; 
-    /* Wichtig, damit das Auto sich "darunter" schieben kann */
+    height: 80px; /* Noch etwas höher für mehr Drama */
     position: relative;
-    z-index: 2; 
+    z-index: 1; /* Über dem Licht, unter dem Auto */
 }
 
 .model-logo-stage img {
-    height: 100%;
+    height: 120%; /* Überlappt leicht die Stage */
     object-fit: contain;
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.15));
+    opacity: 0.6; /* Dezent im Hintergrund */
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,0.8));
 }
 
 /* Die 3D-Bühne */
 .model-3d-box {
     width: 100%;
-    /* FIX: Höhe leicht reduziert, damit es kompakt bleibt */
-    height: 240px; 
+    height: 220px; /* Kompakter, da es nicht mehr drehbar ist */
     position: relative;
-    z-index: 1;
-    /* FIX: DER MAGNET-TRICK! Zieht das Auto 30px nach oben ins Logo rein */
-    margin-top: -30px;
+    z-index: 5; /* Über dem Logo und dem Licht */
+    /* Zieht das Auto massiv nach oben ins Logo rein */
+    margin-top: -60px;
     margin-bottom: 5px;
+    filter: drop-shadow(0 15px 20px rgba(0,0,0,0.7)); /* Harter Schatten unters Auto */
 }
 
 /* Steckbrief / Specs */
