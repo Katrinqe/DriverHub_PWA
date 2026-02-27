@@ -1517,7 +1517,26 @@ body.ghost-active #ghost-chat-overlay {
     margin-bottom: 5px;
     filter: drop-shadow(0 15px 20px rgba(0,0,0,0.7)); /* Harter Schatten unters Auto */
 }
+/* ========================================== */
+/* FIX: ELEMENTE ÜBER DAS LICHT ZWINGEN */
+/* ========================================== */
+.model-specs-row, 
+.stat-bar-wrap, 
+.btn-choose-model {
+    position: relative;
+    z-index: 15; /* Zwingt sie gnadenlos über den Glow-Teppich */
+}
 
+/* Die 3D-Bühne (Minimalen Puffer nach unten, damit nichts überlappt) */
+.model-3d-box {
+    width: 100%;
+    height: 220px; 
+    position: relative;
+    z-index: 5; 
+    margin-top: -50px; 
+    margin-bottom: 15px; /* Etwas mehr Luft zu den Specs */
+    filter: drop-shadow(0 15px 20px rgba(0,0,0,0.7)); 
+}
 /* Steckbrief / Specs */
 .model-specs-row {
     display: flex;
