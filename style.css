@@ -2026,11 +2026,11 @@ body.ghost-active #ghost-chat-overlay {
 
 /* Hauptpanel: Weiche Maske gegen harte Kanten */
 #showroom-panel { 
-    flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0; position: relative; 
+    flex: 1; display: flex; flex-direction: column; padding: 0; position: relative; 
     background: transparent;
-    /* FIX: Die Maske lässt das Licht oben sanft zum Auto hin ausfaden. Keine Kante mehr! */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+    /* FIX: Fade ist jetzt extrem kurz (nur 5% statt 15%). Berührt die Karte im Ruhezustand nicht mehr! */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 100%);
 }
 
 /* === ANIMATIONEN: Das "Atmen" der Lichter === */
@@ -2079,10 +2079,9 @@ body.ghost-active #ghost-chat-overlay {
     flex: 1; overflow-y: auto; overflow-x: hidden;
     padding: 40px 20px 140px 20px; z-index: 10; position: relative;
     -ms-overflow-style: none; scrollbar-width: none;
-    /* FIX: Die Maske ist jetzt HIER. Da das Padding 40px ist und das Schwarz bei 40px anfängt,
-       ist die Dyno-Karte im Ruhezustand zu 100% sichtbar und fadet ERST, wenn du sie hochschiebst! */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 40px, black 100%);
+    /* FIX: Fade endet schon bei 15px. Danach kommen 25px Puffer, dann erst die Karte. Absolut clean. */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15px, black 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15px, black 100%);
 }
 .showroom-content-scroll::-webkit-scrollbar { display: none; }
 
