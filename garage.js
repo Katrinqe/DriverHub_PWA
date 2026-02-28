@@ -487,12 +487,21 @@ renderTelemetryCharts: function(carData) {
             }
         });
     },
-// === NEU: ZENTRALE TAB-STEUERUNG IM STUDIO ===
+// === ZENTRALE TAB-STEUERUNG IM STUDIO ===
     switchStudioTab: function(tabId) {
-        // 1. UI Buttons aktualisieren
-        document.querySelectorAll('.studio-tab-btn').forEach(btn => {
+        const pill = document.getElementById('tab-active-pill');
+
+        // 1. UI Buttons aktualisieren & Pille verschieben
+        document.querySelectorAll('.studio-tab-btn').forEach((btn, index) => {
             btn.classList.remove('active');
-            if(btn.getAttribute('data-tab') === tabId) btn.classList.add('active');
+            if(btn.getAttribute('data-tab') === tabId) {
+                btn.classList.add('active');
+                
+                // Hier ist die Magie: Bewegt die Pille um X mal ihre eigene Breite nach rechts
+                if(pill) {
+                    pill.style.transform = `translateX(${index * 100}%)`;
+                }
+            }
         });
 
         // 2. Alle Panels verstecken & Animations-Klasse resetten
@@ -511,16 +520,15 @@ renderTelemetryCharts: function(carData) {
         // 3. Gewähltes Panel anzeigen und animieren
         if(tabId === 'info' && infoPanel) {
             infoPanel.style.display = 'block'; 
-            void infoPanel.offsetWidth; // Trigger Reflow für saubere Animation
+            void infoPanel.offsetWidth; 
             infoPanel.classList.add('tab-panel-anim');
         } 
         else if(tabId === 'configure' && configPanel) {
             configPanel.style.display = 'flex';
-            configPanel.classList.remove('slide-up-config'); // Alte Animation töten
+            configPanel.classList.remove('slide-up-config'); 
             void configPanel.offsetWidth;
             configPanel.classList.add('tab-panel-anim');
             
-            // Editor Init Logik (Übernommen aus dem alten Code)
             const scrollContainer = document.getElementById('editor-main-scroll');
             if(scrollContainer) scrollContainer.scrollTop = 0;
             
