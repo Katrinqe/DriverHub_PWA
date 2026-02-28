@@ -1063,7 +1063,12 @@
 
 <div id="showroom-panel" class="showroom-panel">
             
-          
+          <div class="studio-tab-nav">
+    <button class="studio-tab-btn active" data-tab="info" onclick="GarageLogic.switchStudioTab('info')">INFO</button>
+    <button class="studio-tab-btn" data-tab="configure" onclick="GarageLogic.switchStudioTab('configure')">CONFIGURE</button>
+    <button class="studio-tab-btn" data-tab="prm" onclick="GarageLogic.switchStudioTab('prm')">PRM</button>
+    <button class="studio-tab-btn" data-tab="save" onclick="GarageLogic.switchStudioTab('save')">SAVE</button>
+</div>
 
             <div class="showroom-content-scroll" id="showroom-content-scroll">
                 
@@ -1139,7 +1144,17 @@
                 <div style="height: 100px;"></div>
             </div>
 
-   
+   <div id="prm-panel" class="coming-soon-panel">
+    <i class="fa-solid fa-engine"></i>
+    <span>PRM ENGINE BUILDER</span>
+    <small>IN DEVELOPMENT</small>
+</div>
+
+<div id="save-panel" class="coming-soon-panel">
+    <i class="fa-solid fa-floppy-disk"></i>
+    <span>GARAGE SUMMARY</span>
+    <small>COMING SOON</small>
+</div>
 
         <div id="configurator-panel" class="studio-bottom-panel" style="display: none;">
             <div class="studio-editor-layout">
