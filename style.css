@@ -2217,57 +2217,74 @@ body.ghost-active #ghost-chat-overlay {
 .btn-glass-action:active i { color: #fff; }
 
 /* ========================================== */
-/* === STUDIO TAB NAVIGATION              === */
+/* === STUDIO TAB NAVIGATION (GLASS)      === */
 /* ========================================== */
-.studio-tab-nav {
+.studio-tab-nav-wrapper {
+    width: 100%;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 25px;
-    margin-top: 15px; /* Perfekter Abstand zum 3D Auto */
-    margin-bottom: 5px;
+    justify-content: center;
+    margin-top: 15px; /* Abstand zum Auto */
+    margin-bottom: 20px;
     position: relative;
     z-index: 50;
 }
 
+/* Die Frost-Glas Kapsel */
+.studio-tab-nav-glass {
+    position: relative;
+    display: flex;
+    width: 90%; 
+    max-width: 450px;
+    background: rgba(15, 15, 18, 0.4);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px; /* Schön abgerundet */
+    padding: 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.02);
+}
+
+/* Die Buttons (Texte) */
 .studio-tab-btn {
+    flex: 1;
     background: transparent;
     border: none;
-    color: #555;
-    font-size: 0.75rem;
+    color: #888; /* Inaktives Grau */
+    font-size: 0.7rem;
     font-weight: 900;
-    letter-spacing: 1.5px;
-    padding: 8px 0;
+    letter-spacing: 1px;
+    padding: 12px 0;
     cursor: pointer;
     position: relative;
+    z-index: 2; /* WICHTIG: Text muss über der leuchtenden Pille liegen! */
     transition: color 0.3s ease;
+    text-align: center;
 }
 
+/* Aktiver Text wird weiß */
 .studio-tab-btn.active {
     color: #fff;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5); /* Kleine Kontrast-Sicherung */
 }
 
-/* Der leuchtende Indikator unter dem aktiven Tab */
-.studio-tab-btn.active::after {
-    content: '';
+/* === DIE RUTSCHENDE PILLE === */
+.tab-active-pill {
     position: absolute;
-    bottom: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 18px;
-    height: 3px;
-    background: var(--glow-color, #fff); /* Zieht sich live die Wagenfarbe! */
-    border-radius: 3px;
-    box-shadow: 0 0 10px var(--glow-color, rgba(255,255,255,0.5));
-    animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    top: 5px;
+    left: 5px;
+    height: calc(100% - 10px);
+    /* 4 Tabs = 1/4 der Breite */
+    width: calc((100% - 10px) / 4);
+    /* Zieht sich live die Wagenfarbe, gemixt mit etwas Transparenz */
+    background: color-mix(in srgb, var(--glow-color) 80%, transparent);
+    border-radius: 25px;
+    z-index: 1; /* Strikt unter dem Text */
+    /* Die Snappy-Animation beim Wechseln */
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--glow-color) 40%, transparent);
 }
 
-@keyframes popIn {
-    0% { width: 0; opacity: 0; }
-    100% { width: 18px; opacity: 1; }
-}
-
-/* Animation für weiche Panel-Wechsel */
+/* Animation für weiche Panel-Wechsel (bleibt gleich) */
 .tab-panel-anim {
     animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -2275,33 +2292,4 @@ body.ghost-active #ghost-chat-overlay {
 @keyframes fadeSlideUp {
     0% { opacity: 0; transform: translateY(20px); }
     100% { opacity: 1; transform: translateY(0); }
-}
-
-/* Coming Soon Panels */
-.coming-soon-panel {
-    flex: 1;
-    display: none; 
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 40vh;
-    color: #666;
-    text-align: center;
-    z-index: 10;
-    position: relative;
-}
-
-.coming-soon-panel i {
-    font-size: 2.5rem;
-    margin-bottom: 15px;
-    opacity: 0.5;
-    color: var(--glow-color, #666);
-    filter: drop-shadow(0 0 15px var(--glow-color));
-}
-
-.coming-soon-panel span {
-    font-weight: 800;
-    letter-spacing: 2px;
-    color: #fff;
-    margin-bottom: 5px;
 }
