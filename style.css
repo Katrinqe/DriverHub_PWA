@@ -2026,11 +2026,18 @@ body.ghost-active #ghost-chat-overlay {
 
 /* Hauptpanel: Weiche Maske gegen harte Kanten */
 #showroom-panel { 
-    flex: 1; display: flex; flex-direction: column; padding: 0; position: relative; 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    padding: 0; 
+    position: relative; 
     background: transparent;
-    /* FIX: Fade ist jetzt extrem kurz (nur 5% statt 15%). Berührt die Karte im Ruhezustand nicht mehr! */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 5%, black 100%);
+    
+    /* FIX: Die Silberkugel! Zwingt den Scroll-Container in die Schranken, ohne das Licht abzuschneiden */
+    min-height: 0; 
+    
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 5%, rgba(0,0,0,1) 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 5%, rgba(0,0,0,1) 100%);
 }
 
 /* === ANIMATIONEN: Das "Atmen" der Lichter === */
@@ -2076,12 +2083,18 @@ body.ghost-active #ghost-chat-overlay {
 
 /* === LAYER 2: SCROLL AREA & FADE === */
 .showroom-content-scroll {
-    flex: 1; overflow-y: auto; overflow-x: hidden;
-    padding: 40px 20px 140px 20px; z-index: 10; position: relative;
-    -ms-overflow-style: none; scrollbar-width: none;
-    /* FIX: Fade endet schon bei 15px. Danach kommen 25px Puffer, dann erst die Karte. Absolut clean. */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15px, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 15px, black 100%);
+    flex: 1; 
+    overflow-y: auto; 
+    overflow-x: hidden;
+    padding: 40px 20px 140px 20px; 
+    z-index: 10; 
+    position: relative;
+    -ms-overflow-style: none; 
+    scrollbar-width: none;
+    
+    /* FIX: Der 15px harte Puffer für die Dyno-Karte (Apple-sicher mit rgba geschrieben) */
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 15px, rgba(0,0,0,1) 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,1) 15px, rgba(0,0,0,1) 100%);
 }
 .showroom-content-scroll::-webkit-scrollbar { display: none; }
 
