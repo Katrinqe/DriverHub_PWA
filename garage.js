@@ -461,7 +461,7 @@ renderTelemetryCharts: function(carData) {
                 plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', titleColor: glowCol } },
                 scales: {
                     x: { grid: { color: 'rgba(255,255,255,0.02)' }, ticks: { maxTicksLimit: 5 } },
-                    y: { grid: { color: 'rgba(255,255,255,0.02)' }, min: 0, max: 150 }
+                    y: { grid: { color: 'rgba(255,255,255,0.02)' }, min: 0, max: 180 }
                 }
             }
         });
@@ -481,7 +481,7 @@ renderTelemetryCharts: function(carData) {
                 plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return ctx.raw.x + ' km/h @ ' + ctx.raw.y + ' RPM'; } } } },
                 scales: {
                     x: { type: 'linear', position: 'bottom', title: { display: true, text: 'SPEED (KM/H)', color: 'rgba(255,255,255,0.3)', font:{size:10} }, grid: { color: 'rgba(255,255,255,0.02)' }, min: 0, max: 200 },
-                    y: { title: { display: false }, grid: { color: 'rgba(255,255,255,0.02)' }, min: 0, max: 7500 }
+                    y: { title: { display: false }, grid: { color: 'rgba(255,255,255,0.02)' }, min: 0, max: 9000 }
                 }
             }
         });
