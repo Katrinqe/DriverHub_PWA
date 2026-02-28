@@ -433,6 +433,7 @@ openStudio: function(carId, modelLogo, glbFile) {
         }
         
         screen.classList.remove('hidden');
+    this.switchStudioTab('info');
     },
 
 renderTelemetryCharts: function(carData) {
@@ -486,35 +487,63 @@ renderTelemetryCharts: function(carData) {
             }
         });
     },
-    // NEU: Wird durch den "CONFIGURE CAR" Button ausgelöst
-startConfigurator: function() {
-        // FIX: Wir verstecken NICHT das showroom-panel (den Vater), 
-        // sondern nur den showroom-content-scroll (die Karten)!
-        const showroomContent = document.getElementById('showroom-content-scroll');
+// === NEU: ZENTRALE TAB-STEUERUNG IM STUDIO ===
+    switchStudioTab: function(tabId) {
+        // 1. UI Buttons aktualisieren
+        document.querySelectorAll('.studio-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.getAttribute('data-tab') === tabId) btn.classList.add('active');
+        });
+
+        // 2. Alle Panels verstecken & Animations-Klasse resetten
+        const infoPanel = document.getElementById('showroom-content-scroll');
         const configPanel = document.getElementById('configurator-panel');
-        
-        if(showroomContent) showroomContent.style.display = 'none';
-        if(configPanel) {
+        const prmPanel = document.getElementById('prm-panel');
+        const savePanel = document.getElementById('save-panel');
+
+        [infoPanel, configPanel, prmPanel, savePanel].forEach(panel => {
+            if(panel) {
+                panel.style.display = 'none';
+                panel.classList.remove('tab-panel-anim');
+            }
+        });
+
+        // 3. Gewähltes Panel anzeigen und animieren
+        if(tabId === 'info' && infoPanel) {
+            infoPanel.style.display = 'block'; 
+            void infoPanel.offsetWidth; // Trigger Reflow für saubere Animation
+            infoPanel.classList.add('tab-panel-anim');
+        } 
+        else if(tabId === 'configure' && configPanel) {
             configPanel.style.display = 'flex';
-            configPanel.classList.add('slide-up-config');
+            configPanel.classList.remove('slide-up-config'); // Alte Animation töten
+            void configPanel.offsetWidth;
+            configPanel.classList.add('tab-panel-anim');
+            
+            // Editor Init Logik (Übernommen aus dem alten Code)
+            const scrollContainer = document.getElementById('editor-main-scroll');
+            if(scrollContainer) scrollContainer.scrollTop = 0;
+            
+            document.querySelectorAll('.side-nav-item').forEach(nav => nav.classList.remove('active'));
+            const firstNav = document.querySelector('.side-nav-item');
+            if(firstNav) firstNav.classList.add('active');
+
+            this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
+            setTimeout(() => {
+                this.initColorSquare(); 
+                this.updateHueSlider();
+            }, 100);
         }
-        // ... restlicher Code bleibt gleich ...
-
-        // === SCROLL-RESET STATT TAB-RESET ===
-        const scrollContainer = document.getElementById('editor-main-scroll');
-        if(scrollContainer) scrollContainer.scrollTop = 0;
-        
-        document.querySelectorAll('.side-nav-item').forEach(nav => nav.classList.remove('active'));
-        const firstNav = document.querySelector('.side-nav-item');
-        if(firstNav) firstNav.classList.add('active');
-
-        this.setCarFinish('glossy', 0, document.querySelector('.finish-opt'), true);
-        
-        // Farbe init (kurz warten, bis Animation läuft)
-        setTimeout(() => {
-            this.initColorSquare(); 
-            this.updateHueSlider();
-        }, 100);
+        else if(tabId === 'prm' && prmPanel) {
+            prmPanel.style.display = 'flex';
+            void prmPanel.offsetWidth;
+            prmPanel.classList.add('tab-panel-anim');
+        }
+        else if(tabId === 'save' && savePanel) {
+            savePanel.style.display = 'flex';
+            void savePanel.offsetWidth;
+            savePanel.classList.add('tab-panel-anim');
+        }
     },
 closeStudio: function() {
         const showroomContent = document.getElementById('showroom-content-scroll');
