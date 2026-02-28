@@ -2125,7 +2125,7 @@ body.ghost-active #ghost-chat-overlay {
     /* Der reine Farbwert ohne Rand-Spill */
     background: radial-gradient(ellipse at 50% 30%, var(--glow-color) 0%, transparent 60%);
     /* Hauchzart abgedimmt, damit der Glas-Effekt voll zur Geltung kommt */
-    opacity: 0.12; 
+    opacity: 0.25; 
     pointer-events: none; z-index: 0;
 }
 
