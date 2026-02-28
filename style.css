@@ -2217,7 +2217,7 @@ body.ghost-active #ghost-chat-overlay {
 .btn-glass-action:active i { color: #fff; }
 
 /* ========================================== */
-/* === STUDIO TAB NAVIGATION (PURE GLASS) === */
+/* === STUDIO TAB NAVIGATION (APPLE GLASS) == */
 /* ========================================== */
 .studio-tab-nav-wrapper {
     width: 100%;
@@ -2229,19 +2229,31 @@ body.ghost-active #ghost-chat-overlay {
     z-index: 50;
 }
 
-/* Der dunkle Milchglas-Hintergrund (Die Schiene) */
+/* LAYER 1-3 + NOISE EXTRA: Das echte 4-Ebenen-Glas */
 .studio-tab-nav-glass {
     position: relative;
     display: flex;
     width: 90%; 
     max-width: 450px;
-    background: rgba(15, 15, 18, 0.4);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    
+    /* Layer 2 + Noise: Inner Light kombiniert mit 4% Noise-Texture */
+    background: 
+        url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noiseFilter"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)" opacity="0.04"/%3E%3C/svg%3E'),
+        linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+    
+    /* Layer 1: Massiver Blur + iOS Saturate */
+    backdrop-filter: blur(35px) saturate(180%);
+    -webkit-backdrop-filter: blur(35px) saturate(180%);
+    
+    /* Layer 3: Edge Highlight & Deep Shadow */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 30px; 
     padding: 5px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.02);
+    box-shadow: 
+        inset 0 1px 1px rgba(255,255,255,0.3),
+        inset 0 -1px 2px rgba(0,0,0,0.4),
+        0 10px 30px rgba(0,0,0,0.6);
 }
 
 /* Die Buttons (Texte) */
@@ -2249,7 +2261,7 @@ body.ghost-active #ghost-chat-overlay {
     flex: 1;
     background: transparent;
     border: none;
-    color: #888; 
+    color: rgba(255, 255, 255, 0.4); 
     font-size: 0.7rem;
     font-weight: 900;
     letter-spacing: 1px;
@@ -2257,38 +2269,60 @@ body.ghost-active #ghost-chat-overlay {
     cursor: pointer;
     position: relative;
     z-index: 5; /* WICHTIG: Text muss über der Lupe liegen! */
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     text-align: center;
+    /* Performance-Optimierung für saubere Übergänge */
+    transition: color 250ms ease, transform 250ms ease, text-shadow 250ms ease;
 }
 
-/* DER LUPEN-EFFEKT: Aktiver Text wird groß und nimmt die Wagenfarbe an */
+/* Aktiver Text: Der doppelte Apple-Bloom */
 .studio-tab-btn.active {
-    color: var(--glow-color, #fff);
-    transform: scale(1.15); /* Vergrößert den Text minimal */
-    text-shadow: 0 0 15px color-mix(in srgb, var(--glow-color) 50%, transparent);
+    color: #fff;
+    transform: scale(1.1); 
+    /* Weicherer, gestreuter Glow durch zwei Layer */
+    text-shadow: 
+        0 0 10px color-mix(in srgb, var(--glow-color) 55%, white),
+        0 0 24px color-mix(in srgb, var(--glow-color) 25%, transparent);
 }
 
-/* === DIE REINE GLAS-PILLE (LUPE) === */
+/* === DIE GLAS-PILLE (MIT SPRING PHYSICS & LICHTBRECHUNG) === */
 .tab-active-pill {
     position: absolute;
     top: 5px;
     left: 5px;
     height: calc(100% - 10px);
-    width: calc((100% - 10px) / 4); /* 4 Tabs */
+    width: calc((100% - 10px) / 4); 
     
-    /* Der glasklare Effekt */
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
-    border: 1px solid rgba(255,255,255,0.25);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 0 10px rgba(255,255,255,0.1);
+    /* Reines, klares Frost-Glas */
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.0) 100%);
+    border: 1px solid rgba(255,255,255,0.18);
     border-radius: 25px;
-    z-index: 1; /* Strikt unter dem Text */
+    z-index: 1; 
     
-    /* Die Snappy-Animation beim Wechseln */
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    /* Die Glow-Reflexion: Bricht das Licht der Wagenfarbe durch das Glas */
+    box-shadow: 
+        0 4px 15px rgba(0,0,0,0.2), 
+        inset 0 0 12px rgba(255,255,255,0.1);
+        
+    /* Weniger Neon, mehr Eleganz (22%) */
+    filter: drop-shadow(0 0 14px color-mix(in srgb, var(--glow-color) 22%, transparent));
+    
+    /* Der sanfte iOS Snap ohne harten Bounce */
+    transition: transform 420ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+/* Das Top-Highlight für den echten Glas-Look */
+.tab-active-pill::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.25), rgba(255,255,255,0));
+    opacity: 0.35;
+    pointer-events: none;
 }
 
 /* ========================================== */
-/* === DIE VERGESSENEN COMING SOON PANELS === */
+/* === DIE COMING SOON PANELS & ANIMATION === */
 /* ========================================== */
 .tab-panel-anim {
     animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -2326,4 +2360,10 @@ body.ghost-active #ghost-chat-overlay {
     letter-spacing: 2px;
     color: #fff;
     margin-bottom: 5px;
+}
+
+.coming-soon-panel small {
+    font-size: 0.7rem;
+    color: #888;
+    letter-spacing: 1px;
 }
