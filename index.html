@@ -1063,11 +1063,15 @@
 
 <div id="showroom-panel" class="showroom-panel">
             
-          <div class="studio-tab-nav">
-    <button class="studio-tab-btn active" data-tab="info" onclick="GarageLogic.switchStudioTab('info')">INFO</button>
-    <button class="studio-tab-btn" data-tab="configure" onclick="GarageLogic.switchStudioTab('configure')">CONFIGURE</button>
-    <button class="studio-tab-btn" data-tab="prm" onclick="GarageLogic.switchStudioTab('prm')">PRM</button>
-    <button class="studio-tab-btn" data-tab="save" onclick="GarageLogic.switchStudioTab('save')">SAVE</button>
+    <div class="studio-tab-nav-wrapper">
+    <div class="studio-tab-nav-glass">
+        <div id="tab-active-pill" class="tab-active-pill"></div>
+        
+        <button class="studio-tab-btn active" data-tab="info" onclick="GarageLogic.switchStudioTab('info')">INFO</button>
+        <button class="studio-tab-btn" data-tab="configure" onclick="GarageLogic.switchStudioTab('configure')">CONFIGURE</button>
+        <button class="studio-tab-btn" data-tab="prm" onclick="GarageLogic.switchStudioTab('prm')">PRM</button>
+        <button class="studio-tab-btn" data-tab="save" onclick="GarageLogic.switchStudioTab('save')">SAVE</button>
+    </div>
 </div>
 
             <div class="showroom-content-scroll" id="showroom-content-scroll">
