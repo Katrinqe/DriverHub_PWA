@@ -1158,6 +1158,8 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
             }
         }, 300);
         this.drawSpeedGraph(d.path);
+        // === NEU: GHOST AI DEBRIEFING ===
+        this.generateGhostSummary(d);
     },
 
 closeDriveDetail: function() {
@@ -1178,7 +1180,74 @@ closeDriveDetail: function() {
             this.renderDriveCard();
         }
     },
+generateGhostSummary: async function(driveData) {
+        const textBox = document.getElementById('ghost-history-text');
+        if(!textBox) return;
 
+        // Lade-Animation setzen
+        textBox.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analyzing telemetry data...';
+
+        // 1. Daten für Ghost zusammenfassen
+        const dist = driveData.dist ? driveData.dist.toFixed(2) : "0.00";
+        const mv = Math.round(driveData.max !== undefined ? driveData.max : (driveData.maxSpeed || 0));
+        const av = Math.round(driveData.avg !== undefined ? driveData.avg : (driveData.avgSpeed || 0));
+        
+        let ts = driveData.time || "Unbekannt";
+        if(!driveData.time && driveData.duration) { 
+            const sec = Math.round(driveData.duration/1000); 
+            ts = `${Math.floor(sec/60)}m ${sec%60}s`; 
+        }
+
+       const context = `
+            CONTEXT DATA (LETZTE FAHRT):
+            - Distanz: ${dist} km
+            - Dauer: ${ts}
+            - Durchschnittsgeschwindigkeit: ${av} km/h
+            - Höchstgeschwindigkeit: ${mv} km/h
+            
+            ROLEPLAY INSTRUCTIONS:
+            Du bist "Ghost", mein persönlicher Race-Engineer und Telemetrie-Experte.
+            Gib mir ein extrem kurzes Debriefing zu genau dieser einen Fahrt.
+            Dein Stil: Entspannt, messerscharf und auf Augenhöhe. Kein billiger Slang (kein "Digga", "Bro" etc.), aber direkt und analytisch, wie beim Check der Daten in der Boxengasse. Du darfst mich "Boss" oder "Nikita" nennen.
+            Bewerte die harten Fakten: Respektiere hohe Top-Speeds. Bei einer Durchschnittsgeschwindigkeit unter 40 km/h frag sarkastisch, ob wir im Stau standen oder nur Brötchen holen waren.
+            Maximal 3 bis 4 Sätze. Keine Formatierungen (keine Sterne). Kein "Hallo" oder ähnliche Begrüßungen am Anfang. Sei einfach entspannt und leite mit einem satz in die analyse ein. 
+        `;
+
+        try {
+            // 2. Key aus Firestore holen (Genau wie in der perf.js)
+            const doc = await window.db.collection('secrets').doc('gemini').get();
+            if (!doc.exists) throw new Error("API Key nicht gefunden!");
+            
+            const secureKey = doc.data().apiKey;
+            if (!secureKey) throw new Error("API Key leer!");
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${secureKey}`;
+
+            // 3. API Call
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: context }] }]
+                })
+            });
+
+            const resultData = await response.json();
+
+            // 4. Text ausgeben
+            if (resultData.candidates && resultData.candidates[0]) {
+                const aiText = resultData.candidates[0].content.parts[0].text;
+                // Entfernt mögliche Markdown-Sterne
+                textBox.innerText = aiText.replace(/\*/g, "").trim(); 
+            } else {
+                throw new Error("Keine Antwort von Ghost.");
+            }
+
+        } catch (error) {
+            console.error("Ghost Summary Error:", error);
+            textBox.innerHTML = `<span style="color:#ff3b30;">Signal lost. Konnte Telemetrie nicht auswerten.</span>`;
+        }
+    },
 
        drawSpeedGraph: function(pathData) {
         const ctx = document.getElementById('speedChartHistory');
