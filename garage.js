@@ -1057,14 +1057,63 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         document.getElementById('dd-max').innerText = mv + " km/h";
         document.getElementById('dd-date').innerText = new Date(d.date).toLocaleString();
 
-        setTimeout(() => {
+  setTimeout(() => {
             if(this.detailMap) { this.detailMap.remove(); this.detailMap = null; }
             if(d.path && d.path.length > 0) {
                  this.detailMap = L.map('detail-map-canvas', { zoomControl:false, attributionControl:false });
                  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.detailMap);
-                 const line = L.polyline(d.path.map(p => [p.lat, p.lng]), {color:'#bf5af2', weight:4}).addTo(this.detailMap);
+                 
+                 // 1. Max Speed ermitteln für die Berechnung
+                 const maxSpeed = Math.max(...d.path.map(p => p.speed || 0), 10);
+                 const bounds = L.latLngBounds();
+
+                 // Hilfsfunktion: Berechnet Farbe (Grün -> Gelb -> Rot) passend zum Graph
+                 const getSpeedColor = (speed) => {
+                     let ratio = Math.min(1, Math.max(0, speed / maxSpeed));
+                     let r, g, b;
+                     if (ratio < 0.5) {
+                         let pct = ratio * 2; // 0 bis 1
+                         r = Math.round(48 + pct * (255 - 48));
+                         g = Math.round(209 + pct * (214 - 209));
+                         b = Math.round(88 + pct * (10 - 88));
+                     } else {
+                         let pct = (ratio - 0.5) * 2; // 0 bis 1
+                         r = 255;
+                         g = Math.round(214 + pct * (59 - 214));
+                         b = Math.round(10 + pct * (48 - 10));
+                     }
+                     return `rgb(${r},${g},${b})`;
+                 };
+
+                 // 2. Die Strecke als farbige Micro-Segmente zeichnen
+                 for (let i = 0; i < d.path.length - 1; i++) {
+                     const p1 = d.path[i];
+                     const p2 = d.path[i+1];
+                     const color = getSpeedColor(p1.speed || 0);
+                     
+                     L.polyline([[p1.lat, p1.lng], [p2.lat, p2.lng]], {
+                         color: color, weight: 4, lineCap: 'round'
+                     }).addTo(this.detailMap);
+                     
+                     bounds.extend([p1.lat, p1.lng]);
+                 }
+                 bounds.extend([d.path[d.path.length - 1].lat, d.path[d.path.length - 1].lng]);
+
+                 // 3. Start & Finish Marker platzieren (Nutzt deine eigenen CSS Klassen!)
+                 const startP = d.path[0];
+                 const endP = d.path[d.path.length - 1];
+
+                 // iconAnchor: [7,7] zentriert den 14x14px Punkt exakt auf die GPS-Koordinate
+                 L.marker([startP.lat, startP.lng], {
+                     icon: L.divIcon({ className: 'sec-marker-start', iconSize: [14, 14], iconAnchor: [7, 7] })
+                 }).addTo(this.detailMap);
+
+                 L.marker([endP.lat, endP.lng], {
+                     icon: L.divIcon({ className: 'sec-marker-finish', iconSize: [14, 14], iconAnchor: [7, 7] })
+                 }).addTo(this.detailMap);
+
                  this.detailMap.invalidateSize(); 
-                 this.detailMap.fitBounds(line.getBounds(), {padding:[20,20]});
+                 this.detailMap.fitBounds(bounds, {padding:[20,20]});
             }
         }, 300);
         this.drawSpeedGraph(d.path);
