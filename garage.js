@@ -1174,25 +1174,82 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         }
     },
 
-    drawSpeedGraph: function(pathData) {
-        const cvs = document.getElementById('speed-graph-canvas');
-        if(!cvs || !pathData || pathData.length < 2) return;
-        const r = cvs.parentElement.getBoundingClientRect();
-        cvs.width = r.width * 2; cvs.height = r.height * 2;
-        const ctx = cvs.getContext('2d'); ctx.scale(2, 2);
-        const pts = pathData.map(p => p.speed || 0);
-        const max = Math.max(...pts, 10);
-        const w = r.width; const h = r.height; const sx = w / (pts.length - 1);
-        ctx.clearRect(0, 0, w, h); ctx.lineWidth = 2; ctx.lineJoin = 'round';
-        const g = ctx.createLinearGradient(0, h, 0, 0);
-        g.addColorStop(0, '#30d158'); g.addColorStop(0.5, '#ffd60a'); g.addColorStop(1, '#ff3b30');
-        ctx.strokeStyle = g; ctx.beginPath();
-        pts.forEach((v, i) => {
-            const x = i * sx;
-            const y = h - ((v / max) * (h * 0.8));
-            if(i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+drawSpeedGraph: function(pathData) {
+        const ctx = document.getElementById('speedChartHistory');
+        if(!ctx || !pathData || pathData.length < 2) return;
+
+        // Alten Graphen zerstören, wenn man eine neue Fahrt öffnet
+        if(window.historySpeedChart) window.historySpeedChart.destroy();
+
+        // Daten extrahieren
+        const speeds = pathData.map(p => Math.round(p.speed || 0));
+        // X-Achse: Fortschritt in % von 0 bis 100
+        const labels = pathData.map((_, i) => Math.round((i / (pathData.length - 1)) * 100));
+        const maxSpeed = Math.max(...speeds, 10);
+
+        // Einen Canvas-Context für die Farbverläufe holen
+        const canvasCtx = ctx.getContext('2d');
+        
+        // Der Linien-Verlauf (Grün unten, Gelb Mitte, Rot oben)
+        const lineGradient = canvasCtx.createLinearGradient(0, 180, 0, 0);
+        lineGradient.addColorStop(0, '#30d158'); // Grün bei 0 km/h
+        lineGradient.addColorStop(0.5, '#ffd60a'); // Gelb
+        lineGradient.addColorStop(1, '#ff3b30'); // Rot bei Max Speed
+
+        // Ein sehr sanfter Fade unter der Linie
+        const fillGradient = canvasCtx.createLinearGradient(0, 0, 0, 180);
+        fillGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+        fillGradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+
+        // Chart.js Einstellungen im globalen Style der App
+        Chart.defaults.color = 'rgba(255,255,255,0.4)';
+        Chart.defaults.font.family = 'monospace';
+
+        window.historySpeedChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Speed (km/h)',
+                    data: speeds,
+                    borderColor: lineGradient,
+                    backgroundColor: fillGradient,
+                    borderWidth: 2,
+                    tension: 0.3, // Macht die Linie butterweich gebogen
+                    pointRadius: 0, // Keine störenden Punkte auf der Linie
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: { 
+                        backgroundColor: 'rgba(0,0,0,0.8)', 
+                        titleColor: '#fff',
+                        callbacks: {
+                            title: (ctx) => `Progress: ${ctx[0].label}%`,
+                            label: (ctx) => `Speed: ${ctx.raw} km/h`
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        title: { display: true, text: 'TRACK PROGRESS (%)', color: 'rgba(255,255,255,0.3)', font: { size: 9, weight: 'bold' } },
+                        grid: { color: 'rgba(255,255,255,0.02)' },
+                        ticks: { maxTicksLimit: 6 }
+                    },
+                    y: { 
+                        title: { display: true, text: 'SPEED (KM/H)', color: 'rgba(255,255,255,0.3)', font: { size: 9, weight: 'bold' } },
+                        grid: { color: 'rgba(255,255,255,0.02)' },
+                        beginAtZero: true,
+                        suggestedMax: maxSpeed * 1.1 // Etwas Luft nach oben
+                    }
+                }
+            }
         });
-        ctx.stroke(); ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.fillStyle = "rgba(255, 255, 255, 0.05)"; ctx.fill();
     },
 
     // ==========================================
