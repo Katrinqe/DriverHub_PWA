@@ -1184,10 +1184,9 @@ generateGhostSummary: async function(driveData) {
         const textBox = document.getElementById('ghost-history-text');
         if(!textBox) return;
 
-        // Lade-Animation setzen
-        textBox.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analyzing telemetry data...';
+        textBox.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analyzing telemetry logs...';
 
-        // 1. Daten für Ghost zusammenfassen
+        // 1. Basis-Daten
         const dist = driveData.dist ? driveData.dist.toFixed(2) : "0.00";
         const mv = Math.round(driveData.max !== undefined ? driveData.max : (driveData.maxSpeed || 0));
         const av = Math.round(driveData.avg !== undefined ? driveData.avg : (driveData.avgSpeed || 0));
@@ -1198,23 +1197,49 @@ generateGhostSummary: async function(driveData) {
             ts = `${Math.floor(sec/60)}m ${sec%60}s`; 
         }
 
-       const context = `
-            CONTEXT DATA (LETZTE FAHRT):
+        // 2. MATHEMATISCHE TELEMETRIE-ANALYSE (Das Gehirn)
+        let stopCount = 0;
+        let highSpeedCount = 0;
+        let totalPoints = driveData.path ? driveData.path.length : 0;
+        let profile = "Ausgeglichen";
+
+        if (totalPoints > 0) {
+            driveData.path.forEach(p => {
+                const s = p.speed || 0;
+                if (s < 10) stopCount++;
+                if (s > 100) highSpeedCount++;
+            });
+
+            const stopPercent = (stopCount / totalPoints) * 100;
+            const highPercent = (highSpeedCount / totalPoints) * 100;
+
+            if (stopPercent > 30) profile = "Stop & Go / Stadtverkehr";
+            else if (highPercent > 40) profile = "Aggressiv / Autobahn-fokussiert";
+            else if (stopPercent < 10 && highPercent < 10) profile = "Fließend / Überlandfahrt";
+        }
+
+        const context = `
+            TELEMETRY LOGS (LETZTE FAHRT):
             - Distanz: ${dist} km
             - Dauer: ${ts}
-            - Durchschnittsgeschwindigkeit: ${av} km/h
-            - Höchstgeschwindigkeit: ${mv} km/h
+            - Avg Speed: ${av} km/h | Max Speed: ${mv} km/h
+            - Fahrprofil-Analyse: ${profile}
             
             ROLEPLAY INSTRUCTIONS:
-            Du bist "Ghost", mein persönlicher Race-Engineer und Telemetrie-Experte.
-            Gib mir ein extrem kurzes Debriefing zu genau dieser einen Fahrt.
-            Dein Stil: Entspannt, messerscharf und auf Augenhöhe. Kein billiger Slang (kein "Digga", "Bro" etc.), aber direkt und analytisch, wie beim Check der Daten in der Boxengasse. Du darfst mich "Boss" oder "Nikita" nennen.
-            Bewerte die harten Fakten: Respektiere hohe Top-Speeds. Bei einer Durchschnittsgeschwindigkeit unter 40 km/h frag sarkastisch, ob wir im Stau standen oder nur Brötchen holen waren.
-            Maximal 3 bis 4 Sätze. Keine Formatierungen (keine Sterne). Kein "Hallo" oder ähnliche Begrüßungen am Anfang. Sei einfach entspannt und leite mit einem satz in die analyse ein. 
+            Du bist "Ghost", mein persönlicher Telemetrie-Experte und Race-Engineer.
+            Schreibe ein präzises, professionelles Debriefing (2-3 Sätze) basierend auf den LOGS.
+            Dein Stil: Analytisch, respektvoll, auf Augenhöhe. Kein kindischer Slang, keine abwertenden Witze.
+            
+            Regeln für die Analyse:
+            1. Beziehe dich auf das "Fahrprofil" (Stop & Go, Überland, Autobahn). 
+            2. Wenn "Stop & Go" hoch ist, erkenne professionell an, dass der Verkehr zäh war. 
+            3. Wenn das Profil "Fließend" ist, lobe den konstanten Rhythmus.
+            4. Bei Max Speed über 130 km/h: Erwähne, dass das Auto Auslauf bekommen hat.
+            
+            Nenne mich Nikita. Sei einfach entspannt leite mit nem lockeren aber passenden satz ein.  Keine Formatierungen wie Sterne. Starte direkt mit dem Feedback.
         `;
 
         try {
-            // 2. Key aus Firestore holen (Genau wie in der perf.js)
             const doc = await window.db.collection('secrets').doc('gemini').get();
             if (!doc.exists) throw new Error("API Key nicht gefunden!");
             
@@ -1223,7 +1248,6 @@ generateGhostSummary: async function(driveData) {
 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${secureKey}`;
 
-            // 3. API Call
             const response = await fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -1234,10 +1258,8 @@ generateGhostSummary: async function(driveData) {
 
             const resultData = await response.json();
 
-            // 4. Text ausgeben
             if (resultData.candidates && resultData.candidates[0]) {
                 const aiText = resultData.candidates[0].content.parts[0].text;
-                // Entfernt mögliche Markdown-Sterne
                 textBox.innerText = aiText.replace(/\*/g, "").trim(); 
             } else {
                 throw new Error("Keine Antwort von Ghost.");
