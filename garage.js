@@ -1210,6 +1210,36 @@ drawSpeedGraph: function(pathData) {
         Chart.defaults.color = 'rgba(255,255,255,0.4)';
         Chart.defaults.font.family = 'monospace';
 
+       drawSpeedGraph: function(pathData) {
+        const ctx = document.getElementById('speedChartHistory');
+        if(!ctx || !pathData || pathData.length < 2) return;
+
+        // Alten Graphen zerstören
+        if(window.historySpeedChart) window.historySpeedChart.destroy();
+
+        // Daten extrahieren
+        const speeds = pathData.map(p => Math.round(p.speed || 0));
+        // X-Achse: Fortschritt in % von 0 bis 100
+        const labels = pathData.map((_, i) => Math.round((i / (pathData.length - 1)) * 100));
+        const maxSpeed = Math.max(...speeds, 10);
+
+        // Canvas Context
+        const canvasCtx = ctx.getContext('2d');
+        
+        // Gradienten
+        const lineGradient = canvasCtx.createLinearGradient(0, 180, 0, 0);
+        lineGradient.addColorStop(0, '#30d158'); 
+        lineGradient.addColorStop(0.5, '#ffd60a'); 
+        lineGradient.addColorStop(1, '#ff3b30'); 
+
+        const fillGradient = canvasCtx.createLinearGradient(0, 0, 0, 180);
+        fillGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
+        fillGradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+
+        Chart.defaults.color = 'rgba(255,255,255,0.4)';
+        Chart.defaults.font.family = 'monospace';
+
+        // HIER STARTET DIE CHART ERSTELLUNG
         window.historySpeedChart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -1220,39 +1250,40 @@ drawSpeedGraph: function(pathData) {
                     borderColor: lineGradient,
                     backgroundColor: fillGradient,
                     borderWidth: 2,
-                    tension: 0.3, // Macht die Linie butterweich gebogen
-                    pointRadius: 0, // Keine störenden Punkte auf der Linie
+                    tension: 0.3,
+                    pointRadius: 0,
                     fill: true
                 }]
             },
-       options: {
+            options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
                 
-                // === NEU: DIE TELEMETRIE-SYNC LOGIK ===
+                // === DIE TELEMETRIE-SYNC LOGIK ===
                 onHover: (event, elements) => {
                     if (elements && elements.length > 0) {
-                        // 1. Hole den Index des aktuellen Punkts im Graphen
                         const index = elements[0].index;
                         const pt = pathData[index];
                         
-                        // 2. Verschiebe oder erstelle den Marker auf der Leaflet Karte
                         if (this.detailMap && pt) {
                             if (!this.telemetryMarker) {
-                                // Wenn der Punkt noch nicht da ist, erschaffe ihn
                                 this.telemetryMarker = L.marker([pt.lat, pt.lng], {
                                     icon: L.divIcon({ className: 'telemetry-scrubber', iconSize: [16, 16], iconAnchor: [8, 8] }),
                                     zIndexOffset: 1000
                                 }).addTo(this.detailMap);
                             } else {
-                                // Wenn er da ist, lass ihn latenzfrei mit dem Finger mitwandern
                                 this.telemetryMarker.setLatLng([pt.lat, pt.lng]);
                             }
                         }
+                    } else {
+                        // Wenn der Finger ins Leere rutscht -> Marker löschen
+                        if (this.telemetryMarker) {
+                            this.telemetryMarker.remove();
+                            this.telemetryMarker = null;
+                        }
                     }
                 },
-                // =======================================
 
                 plugins: { 
                     legend: { display: false },
@@ -1279,7 +1310,19 @@ drawSpeedGraph: function(pathData) {
                     }
                 }
             }
-        });
+        }); // <--- HIER MUSS DER GRAPH GESCHLOSSEN WERDEN!
+
+        // === HARTER KILLSWITCH FÜR HANDYS (NACH DEM GRAPHEN!) ===
+        const killScrubber = () => {
+            if (this.telemetryMarker) { this.telemetryMarker.remove(); this.telemetryMarker = null; }
+            if (window.historySpeedChart) {
+                window.historySpeedChart.tooltip.setActiveElements([], {x: 0, y: 0});
+                window.historySpeedChart.update();
+            }
+        };
+        
+        ctx.addEventListener('mouseleave', killScrubber);
+        ctx.addEventListener('touchend', () => setTimeout(killScrubber, 50));
     },
 
     // ==========================================
