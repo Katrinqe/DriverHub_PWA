@@ -1179,36 +1179,6 @@ closeDriveDetail: function() {
         }
     },
 
-drawSpeedGraph: function(pathData) {
-        const ctx = document.getElementById('speedChartHistory');
-        if(!ctx || !pathData || pathData.length < 2) return;
-
-        // Alten Graphen zerstören, wenn man eine neue Fahrt öffnet
-        if(window.historySpeedChart) window.historySpeedChart.destroy();
-
-        // Daten extrahieren
-        const speeds = pathData.map(p => Math.round(p.speed || 0));
-        // X-Achse: Fortschritt in % von 0 bis 100
-        const labels = pathData.map((_, i) => Math.round((i / (pathData.length - 1)) * 100));
-        const maxSpeed = Math.max(...speeds, 10);
-
-        // Einen Canvas-Context für die Farbverläufe holen
-        const canvasCtx = ctx.getContext('2d');
-        
-        // Der Linien-Verlauf (Grün unten, Gelb Mitte, Rot oben)
-        const lineGradient = canvasCtx.createLinearGradient(0, 180, 0, 0);
-        lineGradient.addColorStop(0, '#30d158'); // Grün bei 0 km/h
-        lineGradient.addColorStop(0.5, '#ffd60a'); // Gelb
-        lineGradient.addColorStop(1, '#ff3b30'); // Rot bei Max Speed
-
-        // Ein sehr sanfter Fade unter der Linie
-        const fillGradient = canvasCtx.createLinearGradient(0, 0, 0, 180);
-        fillGradient.addColorStop(0, 'rgba(255, 255, 255, 0.1)');
-        fillGradient.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
-
-        // Chart.js Einstellungen im globalen Style der App
-        Chart.defaults.color = 'rgba(255,255,255,0.4)';
-        Chart.defaults.font.family = 'monospace';
 
        drawSpeedGraph: function(pathData) {
         const ctx = document.getElementById('speedChartHistory');
