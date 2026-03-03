@@ -557,17 +557,16 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     display: flex; align-items: center; gap: 5px;
 }
 
-/* Scroll Area */
 .details-scroll-area {
     flex: 1;
+    min-height: 0; /* FIX: Zwingt den Flex-Container, bei Überlauf zu scrollen */
     overflow-y: auto;
     padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 30px; /* Abstand zwischen den Autos */
+    gap: 30px; 
     padding-bottom: 50px;
 }
-
 /* === DETAIL CARD STYLE === */
 .detail-card {
     background: rgba(255,255,255,0.04);
