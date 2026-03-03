@@ -1160,8 +1160,13 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
         this.drawSpeedGraph(d.path);
     },
 
-    closeDriveDetail: function() {
+closeDriveDetail: function() {
         document.getElementById('drive-detail-view').classList.add('hidden');
+        // NEU: Den Telemetrie-Punkt löschen, wenn man rausgeht
+        if (this.telemetryMarker) { 
+            this.telemetryMarker.remove(); 
+            this.telemetryMarker = null; 
+        }
     },
 
     deleteDrive: function() {
@@ -1220,10 +1225,35 @@ drawSpeedGraph: function(pathData) {
                     fill: true
                 }]
             },
-            options: {
+       options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 interaction: { mode: 'index', intersect: false },
+                
+                // === NEU: DIE TELEMETRIE-SYNC LOGIK ===
+                onHover: (event, elements) => {
+                    if (elements && elements.length > 0) {
+                        // 1. Hole den Index des aktuellen Punkts im Graphen
+                        const index = elements[0].index;
+                        const pt = pathData[index];
+                        
+                        // 2. Verschiebe oder erstelle den Marker auf der Leaflet Karte
+                        if (this.detailMap && pt) {
+                            if (!this.telemetryMarker) {
+                                // Wenn der Punkt noch nicht da ist, erschaffe ihn
+                                this.telemetryMarker = L.marker([pt.lat, pt.lng], {
+                                    icon: L.divIcon({ className: 'telemetry-scrubber', iconSize: [16, 16], iconAnchor: [8, 8] }),
+                                    zIndexOffset: 1000
+                                }).addTo(this.detailMap);
+                            } else {
+                                // Wenn er da ist, lass ihn latenzfrei mit dem Finger mitwandern
+                                this.telemetryMarker.setLatLng([pt.lat, pt.lng]);
+                            }
+                        }
+                    }
+                },
+                // =======================================
+
                 plugins: { 
                     legend: { display: false },
                     tooltip: { 
@@ -1245,7 +1275,7 @@ drawSpeedGraph: function(pathData) {
                         title: { display: true, text: 'SPEED (KM/H)', color: 'rgba(255,255,255,0.3)', font: { size: 9, weight: 'bold' } },
                         grid: { color: 'rgba(255,255,255,0.02)' },
                         beginAtZero: true,
-                        suggestedMax: maxSpeed * 1.1 // Etwas Luft nach oben
+                        suggestedMax: maxSpeed * 1.1 
                     }
                 }
             }
