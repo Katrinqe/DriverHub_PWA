@@ -1061,7 +1061,7 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
             if(this.detailMap) { this.detailMap.remove(); this.detailMap = null; }
             if(d.path && d.path.length > 0) {
                  
-                 // FIX 1: Map nativ auf Canvas-Rendering zwingen (Tötet SVG-Lags)
+                 // Map nativ auf Canvas-Rendering zwingen
                  this.detailMap = L.map('detail-map-canvas', { 
                      zoomControl: false, 
                      attributionControl: false,
@@ -1069,24 +1069,24 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
                  });
                  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.detailMap);
                  
-                 // FIX 2: Den Renderer mit Padding definieren (Verhindert Kanten-Abschneiden am Rand)
                  const canvasRenderer = L.canvas({ padding: 0.5 });
-
-                 // 1. Max Speed ermitteln für die Berechnung
-                 const maxSpeed = Math.max(...d.path.map(p => p.speed || 0), 10);
                  const bounds = L.latLngBounds();
+                 const maxSpeed = Math.max(...d.path.map(p => p.speed || 0), 10);
 
-                 // Hilfsfunktion: Berechnet Farbe (Grün -> Gelb -> Rot) passend zum Graph
+                 // Hilfsfunktion: Quantisierte Farbe (Clustering in 5%-Schritten)
                  const getSpeedColor = (speed) => {
-                     let ratio = Math.min(1, Math.max(0, speed / maxSpeed));
+                     let rawRatio = Math.min(1, Math.max(0, speed / maxSpeed));
+                     // Quantisieren auf 0.05 Schritte (20 Zonen). Verhindert Micro-Segmente.
+                     let ratio = Math.round(rawRatio * 20) / 20; 
+
                      let r, g, b;
                      if (ratio < 0.5) {
-                         let pct = ratio * 2; // 0 bis 1
+                         let pct = ratio * 2; 
                          r = Math.round(48 + pct * (255 - 48));
                          g = Math.round(209 + pct * (214 - 209));
                          b = Math.round(88 + pct * (10 - 88));
                      } else {
-                         let pct = (ratio - 0.5) * 2; // 0 bis 1
+                         let pct = (ratio - 0.5) * 2; 
                          r = 255;
                          g = Math.round(214 + pct * (59 - 214));
                          b = Math.round(10 + pct * (48 - 10));
@@ -1094,29 +1094,57 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
                      return `rgb(${r},${g},${b})`;
                  };
 
-                 // 2. Die Strecke als farbige Micro-Segmente zeichnen
-                 for (let i = 0; i < d.path.length - 1; i++) {
-                     const p1 = d.path[i];
-                     const p2 = d.path[i+1];
-                     const color = getSpeedColor(p1.speed || 0);
+                 // === ENGINE-LEVEL RENDERING: Das Clustering ===
+                 let currentSegment = [];
+                 let currentColor = null;
+
+                 for (let i = 0; i < d.path.length; i++) {
+                     const p = d.path[i];
+                     bounds.extend([p.lat, p.lng]);
+                     const color = getSpeedColor(p.speed || 0);
+
+                     // Initiale Farbe beim ersten Punkt setzen
+                     if (currentColor === null) {
+                         currentColor = color;
+                     }
+
+                     // Wenn sich die Farb-Zone ändert: Bisheriges Cluster zeichnen!
+                     if (color !== currentColor && currentSegment.length > 0) {
+                         if (currentSegment.length > 1) {
+                             L.polyline(currentSegment, {
+                                 color: currentColor, 
+                                 weight: 6, // Etwas dicker für den App-Store-Look
+                                 opacity: 0.95, // Leicht transparent für perfekten Blend
+                                 lineCap: 'round',
+                                 lineJoin: 'round', // Wichtig: Saubere Ecken INNERHALB des Clusters
+                                 renderer: canvasRenderer
+                             }).addTo(this.detailMap);
+                         }
+                         // WICHTIG: Neues Segment startet exakt auf dem Endpunkt des alten!
+                         const lastPoint = currentSegment[currentSegment.length - 1];
+                         currentSegment = [lastPoint]; 
+                         currentColor = color;
+                     }
                      
-                     // FIX 3 & 4: Canvas Renderer zuweisen und Weight auf 5 für massivere, cleanere Optik
-                     L.polyline([[p1.lat, p1.lng], [p2.lat, p2.lng]], {
-                         color: color, 
-                         weight: 5, 
+                     currentSegment.push([p.lat, p.lng]);
+                 }
+
+                 // Den letzten Rest (Tail) zeichnen
+                 if (currentSegment.length > 1) {
+                     L.polyline(currentSegment, {
+                         color: currentColor, 
+                         weight: 6, 
+                         opacity: 0.95, 
                          lineCap: 'round',
+                         lineJoin: 'round',
                          renderer: canvasRenderer
                      }).addTo(this.detailMap);
-                     
-                     bounds.extend([p1.lat, p1.lng]);
                  }
-                 bounds.extend([d.path[d.path.length - 1].lat, d.path[d.path.length - 1].lng]);
 
-                 // 3. Start & Finish Marker platzieren (Nutzt deine eigenen CSS Klassen!)
+                 // Start & Finish Marker
                  const startP = d.path[0];
                  const endP = d.path[d.path.length - 1];
 
-                 // iconAnchor: [7,7] zentriert den 14x14px Punkt exakt auf die GPS-Koordinate
                  L.marker([startP.lat, startP.lng], {
                      icon: L.divIcon({ className: 'sec-marker-start', iconSize: [14, 14], iconAnchor: [7, 7] })
                  }).addTo(this.detailMap);
