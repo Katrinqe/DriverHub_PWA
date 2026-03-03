@@ -648,6 +648,20 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px;
     position: relative;
     z-index: 5;
 }
+
+/* === TELEMETRY SCRUBBER MARKER === */
+.telemetry-scrubber {
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 15px #00e5ff, 0 0 30px #00e5ff;
+    border: 3px solid #000;
+    transition: margin 0.1s; /* Nur optische Transition, Position springt in Echtzeit */
+    pointer-events: none;
+    z-index: 1000;
+}
+
 .detail-label { font-size: 0.7rem; color: #888; font-weight: 800; margin-bottom: 10px; display: block; }
 .detail-graph-placeholder {
     width: 100%;
