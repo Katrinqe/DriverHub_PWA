@@ -1060,9 +1060,18 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
   setTimeout(() => {
             if(this.detailMap) { this.detailMap.remove(); this.detailMap = null; }
             if(d.path && d.path.length > 0) {
-                 this.detailMap = L.map('detail-map-canvas', { zoomControl:false, attributionControl:false });
+                 
+                 // FIX 1: Map nativ auf Canvas-Rendering zwingen (Tötet SVG-Lags)
+                 this.detailMap = L.map('detail-map-canvas', { 
+                     zoomControl: false, 
+                     attributionControl: false,
+                     preferCanvas: true 
+                 });
                  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(this.detailMap);
                  
+                 // FIX 2: Den Renderer mit Padding definieren (Verhindert Kanten-Abschneiden am Rand)
+                 const canvasRenderer = L.canvas({ padding: 0.5 });
+
                  // 1. Max Speed ermitteln für die Berechnung
                  const maxSpeed = Math.max(...d.path.map(p => p.speed || 0), 10);
                  const bounds = L.latLngBounds();
@@ -1091,8 +1100,12 @@ setCarFinish: function(type, index, btnElement, skipUIUpdate) {
                      const p2 = d.path[i+1];
                      const color = getSpeedColor(p1.speed || 0);
                      
+                     // FIX 3 & 4: Canvas Renderer zuweisen und Weight auf 5 für massivere, cleanere Optik
                      L.polyline([[p1.lat, p1.lng], [p2.lat, p2.lng]], {
-                         color: color, weight: 4, lineCap: 'round'
+                         color: color, 
+                         weight: 5, 
+                         lineCap: 'round',
+                         renderer: canvasRenderer
                      }).addTo(this.detailMap);
                      
                      bounds.extend([p1.lat, p1.lng]);
