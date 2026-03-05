@@ -170,7 +170,7 @@ renderTrackList: function() {
                     <button onclick="PerfLogic.closeGhostChat()" style="background:none; border:none; color:white; font-size:1.5rem; padding: 10px;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
                 <div class="ghost-messages" id="ghost-msg-container">
-                    <div class="msg ghost">Yo Boss! Alles im grünen Bereich? Die Strecke sieht heute schnell aus. Was liegt an?</div>
+                    <div class="msg ghost">Hey, lass uns die aktuellen Daten zusammen anschauen.</div>
                 </div>
                 <div class="ghost-input-area">
                     <input type="text" class="ghost-input" placeholder="Frag Ghost..." id="ghost-user-input">
