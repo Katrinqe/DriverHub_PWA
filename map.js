@@ -167,8 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-       // ==========================================
-        // === MAP SHRINK LOGIC (THE "PINNED ANCHOR" V6) ===
+  // ==========================================
+        // === MAP SHRINK LOGIC (THE "PINNED ANCHOR" V6 - FIXED) ===
         // ==========================================
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
@@ -183,18 +183,17 @@ document.addEventListener('DOMContentLoaded', () => {
             libreMap.touchZoomRotate.disable();
             libreMap.doubleClickZoom.disable();
 
-            // 1. Padding SOFORT wieder auf die Card-Werte setzen
-            libreMap.setPadding({ right: 150, bottom: 20 });
-
-            // 2. SOFORT auf den Standort snappen. KEINE KAMERAFAHRT!
-            // Da wir resize() im Loop feuern, hält MapLibre den blauen Punkt jetzt 
-            // wie festgenagelt an dieser Stelle, während das CSS den Rahmen drumherum verkleinert.
+            // 1. & 2. KOMBINIERT: Padding und Zentrierung in EINER weichen Bewegung!
+            // (Ersetzt dein vorheriges, hartes setPadding und jumpTo)
             if (currentCoords) {
-                libreMap.jumpTo({
+                libreMap.easeTo({
                     center: currentCoords,
                     zoom: 14,
                     bearing: 0,
-                    pitch: 0
+                    pitch: 0,
+                    padding: { right: 150, bottom: 20 }, // Das Padding wandert MIT der Animation
+                    duration: 400,
+                    easing: (t) => t * (2 - t)
                 });
             }
 
