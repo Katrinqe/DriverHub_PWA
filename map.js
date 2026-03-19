@@ -216,7 +216,7 @@ shrinkBtn.addEventListener('click', (e) => {
                 });
             }
 
-            // ========================================================
+  // ========================================================
             // 5. DAS SAUBERE ENDE
             // ========================================================
             // Exakt nach 400ms (wenn das CSS fertig ist), setzen wir das Padding
@@ -225,9 +225,14 @@ shrinkBtn.addEventListener('click', (e) => {
                 if (libreMap) {
                     libreMap.setPadding({ right: 150, bottom: 20 });
                     libreMap.resize();
+                    
+                    // NEU: Nach Resize und Padding den Mittelpunkt mit den neuen 
+                    // Container-Dimensionen zwingend wieder exakt auf den Standort setzen.
+                    if (currentCoords) {
+                        libreMap.jumpTo({ center: currentCoords, zoom: 14 });
+                    }
                 }
             }, 400);
-        });
     }
 // ==========================================
     // === TOMTOM SEARCH & ROUTING LOGIC ===
