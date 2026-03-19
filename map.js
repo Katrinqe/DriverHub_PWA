@@ -106,50 +106,18 @@ function loadMap(coords, hasLocation) {
         libreMap.dragPitch.disable();
         libreMap.touchPitch.disable();
 
-        // --- 3D GEBÄUDE (Mit Sicherheitsschalter) ---
-        try {
-            const layers = libreMap.getStyle().layers;
-            let labelLayerId;
-            for (let i = 0; i < layers.length; i++) {
-                if (layers[i].type === 'symbol') {
-                    labelLayerId = layers[i].id;
-                    break;
-                }
-            }
-
-            libreMap.addLayer({
-                'id': '3d-buildings',
-                'source': 'carto', 
-                'source-layer': 'building',
-                'type': 'fill-extrusion',
-                'minzoom': 13,
-                'paint': {
-                    'fill-extrusion-color': '#1f1f24',
-                    'fill-extrusion-height': ['get', 'render_height'],
-                    'fill-extrusion-base': ['get', 'render_min_height'],
-                    'fill-extrusion-opacity': 0 
-                }
-            }, labelLayerId);
-
-            libreMap.on('pitch', () => {
-                if (libreMap.getLayer('3d-buildings')) {
-                    const pitch = libreMap.getPitch();
-                    const opacity = pitch > 10 ? Math.min((pitch - 10) / 35, 0.8) : 0;
-                    libreMap.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', opacity);
-                }
-            });
-        } catch(e) { console.warn("3D Gebäude konnten nicht geladen werden", e); }
-
-        // --- BLAUER PUNKT (Wird IMMER gezeichnet, mit neuen isolierten Klassen) ---
-        const customMarkerElement = document.createElement('div');
-        customMarkerElement.className = 'explore-marker-wrap';
-        customMarkerElement.innerHTML = `
-            <div class="explore-user-pulse"></div>
-            <div class="explore-user-dot"></div>
-        `;
-        new maplibregl.Marker({ element: customMarkerElement })
-            .setLngLat(coords)
-            .addTo(libreMap);
+        // --- BLAUER PUNKT ---
+        if (hasLocation) {
+            const customMarkerElement = document.createElement('div');
+            customMarkerElement.className = 'explore-marker-wrap';
+            customMarkerElement.innerHTML = `
+                <div class="explore-user-pulse"></div>
+                <div class="explore-user-dot"></div>
+            `;
+            new maplibregl.Marker({ element: customMarkerElement })
+                .setLngLat(coords)
+                .addTo(libreMap);
+        }
     });
 
     setTimeout(() => { if (libreMap) libreMap.resize(); }, 300);
@@ -220,31 +188,23 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.dragPitch.disable();
             libreMap.touchPitch.disable();
 
-            // FIX: Hart zurückspringen, während die CSS Card schrumpft.
-            // Das sorgt für eine ununterbrechbare, perfekte Zentrierung!
+            // FIX: Wir nutzen wieder easeTo für den weichen Flug zurück!
             if (currentCoords) {
-                libreMap.jumpTo({
+                libreMap.easeTo({
                     center: currentCoords,
                     zoom: 14,
                     bearing: 0,
                     pitch: 0,
-                    padding: { right: 150, bottom: 20 }
+                    padding: { right: 150, bottom: 20 },
+                    duration: 400,
+                    easing: (t) => t * (2 - t)
                 });
             }
 
-            // Hardware-Loop, um die Karte beim CSS-Schrumpfen flüssig anzupassen
-            let startTime = null;
-            function animateResize(timestamp) {
-                if (!startTime) startTime = timestamp;
-                let elapsed = timestamp - startTime;
-                
-                if (libreMap) libreMap.resize(); 
-                
-                if (elapsed < 400) { 
-                    window.requestAnimationFrame(animateResize);
-                }
-            }
-            window.requestAnimationFrame(animateResize); 
+            // FIX: Resize erst NACHDEM der Flug beendet ist (450ms)
+            setTimeout(() => {
+                if (libreMap) libreMap.resize();
+            }, 450);
         });
     }
 // ==========================================
