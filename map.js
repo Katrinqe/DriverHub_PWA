@@ -172,20 +172,23 @@ function loadMap(coords, hasLocation) {
 
 shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
-
-            // 1. CSS Animation starten
+            
+            // 1. CSS-Animation für das Schrumpfen starten
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
 
-            // 2. UI zurücksetzen
+            // 2. UI-Elemente zurücksetzen
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) bottomNav.style.display = 'flex';
 
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.classList.remove('expanded');
 
-            if (!libreMap) return;
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) searchInput.blur();
 
+            if (!libreMap) return;
+            
             // 3. Gesten sofort sperren
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
@@ -195,37 +198,36 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.dragPitch.disable();
             libreMap.touchPitch.disable();
 
-            // 4. DEIN ORIGINALER EASE-TO FLUG
-            if (currentCoords) {
-                libreMap.easeTo({
-                    center: currentCoords,
-                    zoom: 14,
-                    bearing: 0,
-                    pitch: 0,
-                    padding: { right: 150, bottom: 20 }, 
-                    duration: 400,
-                    easing: (t) => t * (2 - t)
-                });
-            }
-
-            // 5. DEIN ORIGINALER HARDWARE-LOOP FÜR DAS FLÜSSIGE SCHRUMPFEN
+            // ========================================================
+            // 4. PETERS MASTER-FIX: ERST RESIZE-LOOP, DANN KAMERAFAHRT
+            // ========================================================
             let startTime = null;
             function animateResize(timestamp) {
                 if (!startTime) startTime = timestamp;
                 let elapsed = timestamp - startTime;
 
-                // Dieses ständige Resize hält die Map synchron zum CSS-Schrumpfen
+                // Halte MapLibre synchron zur CSS-Verkleinerung (verhindert Quetschen)
                 libreMap.resize(); 
 
                 if (elapsed < 400) { 
                     window.requestAnimationFrame(animateResize);
+                } else {
+                    // EXAKT JETZT (wenn die CSS-Card fertig geschrumpft ist) 
+                    // hat die Engine Ruhe und darf die Kamera fliegen!
+                    if (currentCoords) {
+                        libreMap.easeTo({
+                            center: currentCoords,
+                            zoom: 14,
+                            bearing: 0,
+                            pitch: 0,
+                            padding: { right: 150, bottom: 20 },
+                            duration: 500,
+                            easing: (t) => t * (2 - t)
+                        });
+                    }
                 }
             }
             window.requestAnimationFrame(animateResize); 
-            
-            // Tastatur einklappen, falls offen
-            const searchInput = document.getElementById('tomtom-search-input');
-            if (searchInput) searchInput.blur();
         });
     }
 // ==========================================
