@@ -2480,3 +2480,62 @@ body.ghost-active #ghost-chat-overlay {
     color: #888;
     letter-spacing: 1px;
 }
+
+
+
+
+
+
+
+
+
+
+
+/* Weicher Blur-Verlauf in der unteren rechten Ecke */
+.map-blur-corner {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle at 100% 100%, rgba(10,10,12,0.7) 0%, transparent 70%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    /* Lässt den Blur weich in die Karte auslaufen, keine harte Kante! */
+    -webkit-mask-image: radial-gradient(circle at 100% 100%, black 20%, transparent 70%);
+    mask-image: radial-gradient(circle at 100% 100%, black 20%, transparent 70%);
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* Container für die runden Buttons */
+.map-controls-stack {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10;
+}
+
+/* Die runden Glass-Buttons */
+.map-round-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: rgba(25, 25, 30, 0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.2, 1, 0.3, 1);
+    pointer-events: auto;
+}
+
+.map-round-btn:active {
+    transform: scale(0.85);
+    background: rgba(48, 209, 88, 0.2); /* Dezent grüner Map-Glow beim Klicken */
+    border-color: #30d158;
+    color: #30d158;
+}
