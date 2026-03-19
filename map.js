@@ -170,21 +170,24 @@ function loadMap(coords, hasLocation) {
 
 
 
-  shrinkBtn.addEventListener('click', (e) => {
-
+ shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
-
             
-
             mapCard.classList.remove('map-expanded');
-
             expandTrigger.style.display = 'block';
 
+            // --- HIER EINFÜGEN: UI-Elemente & Nav-Bar zurücksetzen ---
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) bottomNav.style.display = 'flex';
 
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.classList.remove('expanded');
+
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) searchInput.blur();
+            // ---------------------------------------------------------
 
             if (!libreMap) return;
-
-
 
             libreMap.dragPan.disable();
 
