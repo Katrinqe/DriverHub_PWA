@@ -2616,6 +2616,7 @@ body.ghost-active #ghost-chat-overlay {
 /* ==========================================
    BOTTOM SHEET (APPLE MAPS STYLE)
    ========================================== */
+/* Zustand 1: Collapsed (Unten). Schaut nur 100px raus! */
 .map-bottom-sheet {
     position: absolute;
     bottom: 0; left: 0; width: 100%;
@@ -2632,18 +2633,20 @@ body.ghost-active #ghost-chat-overlay {
     display: flex;
     flex-direction: column;
     
-    /* Zustand 1: Collapsed (Unten). Schaut nur 100px raus! */
     transform: translateY(calc(100% - 100px)); 
-    transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease;
     
     opacity: 0;
     pointer-events: none;
+    visibility: hidden; /* FIX: Macht das unsichtbare Sheet komplett immun gegen Klicks! */
+    transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0.4s;
 }
 
 /* Wird sichtbar, sobald Map Fullscreen ist */
 .map-snippet-card.map-expanded .map-bottom-sheet {
     opacity: 1;
     pointer-events: auto;
+    visibility: visible; /* FIX: Erst jetzt darf das Handy Klicks registrieren */
+    transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0s;
 }
 
 /* Zustand 2: Expanded (3/4 hochgefahren) */
