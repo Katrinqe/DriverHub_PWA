@@ -172,24 +172,20 @@ function loadMap(coords, hasLocation) {
 
 shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
-            
-            // 1. CSS-Animation für das Schrumpfen starten
+
+            // 1. CSS Animation starten
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
 
-            // 2. UI-Elemente zurücksetzen
+            // 2. UI zurücksetzen
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) bottomNav.style.display = 'flex';
 
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.classList.remove('expanded');
 
-            // Das hier hat bisher deinen Flug getötet, weil es ein Window-Resize erzwingt!
-            const searchInput = document.getElementById('tomtom-search-input');
-            if (searchInput) searchInput.blur(); 
+            if (!libreMap) return;
 
-            if (!libreMap || !currentCoords) return;
-            
             // 3. Gesten sofort sperren
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
@@ -199,43 +195,37 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.dragPitch.disable();
             libreMap.touchPitch.disable();
 
-            // ========================================================
-            // 4. DER UNZERSTÖRBARE HARDWARE-LOCK
-            // ========================================================
-            // Wir verlassen uns nicht mehr auf easeTo. Wir zwingen die Karte 
-            // Frame für Frame in die korrekte Position, während das CSS schrumpft.
+            // 4. DEIN ORIGINALER EASE-TO FLUG
+            if (currentCoords) {
+                libreMap.easeTo({
+                    center: currentCoords,
+                    zoom: 14,
+                    bearing: 0,
+                    pitch: 0,
+                    padding: { right: 150, bottom: 20 }, 
+                    duration: 400,
+                    easing: (t) => t * (2 - t)
+                });
+            }
+
+            // 5. DEIN ORIGINALER HARDWARE-LOOP FÜR DAS FLÜSSIGE SCHRUMPFEN
             let startTime = null;
-            function animateShrink(timestamp) {
+            function animateResize(timestamp) {
                 if (!startTime) startTime = timestamp;
                 let elapsed = timestamp - startTime;
-                
-                if (libreMap) {
-                    // Verhindert das Quetschen der Map beim Verkleinern
-                    libreMap.resize(); 
-                    
-                    // Zwingt die Kamera knallhart auf den blauen Punkt
-                    libreMap.jumpTo({
-                        center: currentCoords,
-                        zoom: 14,
-                        pitch: 0,
-                        bearing: 0,
-                        padding: { right: 150, bottom: 20 }
-                    });
-                }
-                
-                // 450ms lang (etwas länger als die CSS Animation) laufen lassen
-                if (elapsed < 450) { 
-                    window.requestAnimationFrame(animateShrink);
-                } else {
-                    // Finaler Sicherheits-Snap am Ende
-                    if (libreMap) {
-                        libreMap.setPadding({ right: 150, bottom: 20 });
-                        libreMap.resize();
-                    }
+
+                // Dieses ständige Resize hält die Map synchron zum CSS-Schrumpfen
+                libreMap.resize(); 
+
+                if (elapsed < 400) { 
+                    window.requestAnimationFrame(animateResize);
                 }
             }
-            // Startet den Loop
-            window.requestAnimationFrame(animateShrink); 
+            window.requestAnimationFrame(animateResize); 
+            
+            // Tastatur einklappen, falls offen
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) searchInput.blur();
         });
     }
 // ==========================================
