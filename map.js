@@ -84,10 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 function loadMap(coords, hasLocation) {
-    // 1. Standort global speichern (WICHTIG für den Rückflug!)
     currentCoords = coords; 
 
-    // 2. Map initialisieren
     libreMap = new maplibregl.Map({
         container: mapContainerId,
         style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -97,12 +95,9 @@ function loadMap(coords, hasLocation) {
         attributionControl: false 
     });
 
-    // WICHTIG: Alles, was auf die Karte kommt, MUSS hier rein
     libreMap.on('load', () => {
-        // Erst wenn geladen, Padding setzen
         libreMap.setPadding({ right: 150, bottom: 20 });
 
-        // Gesten für Card-Modus sofort sperren
         libreMap.dragPan.disable();
         libreMap.scrollZoom.disable();
         libreMap.touchZoomRotate.disable();
@@ -111,52 +106,50 @@ function loadMap(coords, hasLocation) {
         libreMap.dragPitch.disable();
         libreMap.touchPitch.disable();
 
-        // --- 3D GEBÄUDE ---
-        const layers = libreMap.getStyle().layers;
-        let labelLayerId;
-        for (let i = 0; i < layers.length; i++) {
-            if (layers[i].type === 'symbol') {
-                labelLayerId = layers[i].id;
-                break;
+        // --- 3D GEBÄUDE (Mit Sicherheitsschalter) ---
+        try {
+            const layers = libreMap.getStyle().layers;
+            let labelLayerId;
+            for (let i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol') {
+                    labelLayerId = layers[i].id;
+                    break;
+                }
             }
-        }
 
-        // Gebäude Layer (Quelle 'carto' ist bei diesem Style Standard)
-        libreMap.addLayer({
-            'id': '3d-buildings',
-            'source': 'carto', 
-            'source-layer': 'building',
-            'type': 'fill-extrusion',
-            'minzoom': 13,
-            'paint': {
-                'fill-extrusion-color': '#1f1f24',
-                'fill-extrusion-height': ['get', 'render_height'],
-                'fill-extrusion-base': ['get', 'render_min_height'],
-                'fill-extrusion-opacity': 0 
-            }
-        }, labelLayerId);
+            libreMap.addLayer({
+                'id': '3d-buildings',
+                'source': 'carto', 
+                'source-layer': 'building',
+                'type': 'fill-extrusion',
+                'minzoom': 13,
+                'paint': {
+                    'fill-extrusion-color': '#1f1f24',
+                    'fill-extrusion-height': ['get', 'render_height'],
+                    'fill-extrusion-base': ['get', 'render_min_height'],
+                    'fill-extrusion-opacity': 0 
+                }
+            }, labelLayerId);
 
-        // Der Pitch-Sensor für den 3D-Fade
-        libreMap.on('pitch', () => {
-            if (libreMap.getLayer('3d-buildings')) {
-                const pitch = libreMap.getPitch();
-                const opacity = pitch > 10 ? Math.min((pitch - 10) / 35, 0.8) : 0;
-                libreMap.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', opacity);
-            }
-        });
+            libreMap.on('pitch', () => {
+                if (libreMap.getLayer('3d-buildings')) {
+                    const pitch = libreMap.getPitch();
+                    const opacity = pitch > 10 ? Math.min((pitch - 10) / 35, 0.8) : 0;
+                    libreMap.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', opacity);
+                }
+            });
+        } catch(e) { console.warn("3D Gebäude konnten nicht geladen werden", e); }
 
-        // --- BLAUER PUNKT ---
-        if (hasLocation) {
-            const customMarkerElement = document.createElement('div');
-            customMarkerElement.className = 'user-marker-wrap';
-            customMarkerElement.innerHTML = `
-                <div class="user-pulse"></div>
-                <div class="user-dot"></div>
-            `;
-            new maplibregl.Marker({ element: customMarkerElement })
-                .setLngLat(coords)
-                .addTo(libreMap);
-        }
+        // --- BLAUER PUNKT (Wird IMMER gezeichnet, mit neuen isolierten Klassen) ---
+        const customMarkerElement = document.createElement('div');
+        customMarkerElement.className = 'explore-marker-wrap';
+        customMarkerElement.innerHTML = `
+            <div class="explore-user-pulse"></div>
+            <div class="explore-user-dot"></div>
+        `;
+        new maplibregl.Marker({ element: customMarkerElement })
+            .setLngLat(coords)
+            .addTo(libreMap);
     });
 
     setTimeout(() => { if (libreMap) libreMap.resize(); }, 300);
@@ -202,49 +195,57 @@ function loadMap(coords, hasLocation) {
 
 
 shrinkBtn.addEventListener('click', (e) => {
-    e.stopPropagation(); 
-    
-    mapCard.classList.remove('map-expanded');
-    expandTrigger.style.display = 'block';
+            e.stopPropagation(); 
+            
+            mapCard.classList.remove('map-expanded');
+            expandTrigger.style.display = 'block';
 
-    const bottomNav = document.querySelector('.bottom-nav');
-    if (bottomNav) bottomNav.style.display = 'flex';
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) bottomNav.style.display = 'flex';
 
-    const bottomSheet = document.getElementById('map-bottom-sheet');
-    if (bottomSheet) bottomSheet.classList.remove('expanded');
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.classList.remove('expanded');
 
-    const searchInput = document.getElementById('tomtom-search-input');
-    if (searchInput) searchInput.blur();
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) searchInput.blur();
 
-    if (!libreMap) return;
-    
-    // Gesten sofort wieder sperren
-    libreMap.dragPan.disable();
-    libreMap.scrollZoom.disable();
-    libreMap.touchZoomRotate.disable();
-    libreMap.doubleClickZoom.disable();
-    libreMap.dragRotate.disable();
-    libreMap.dragPitch.disable();
-    libreMap.touchPitch.disable();
+            if (!libreMap) return;
+            
+            // Gesten sperren
+            libreMap.dragPan.disable();
+            libreMap.scrollZoom.disable();
+            libreMap.touchZoomRotate.disable();
+            libreMap.doubleClickZoom.disable();
+            libreMap.dragRotate.disable();
+            libreMap.dragPitch.disable();
+            libreMap.touchPitch.disable();
 
-    // RÜCKFLUG: Wir geben dem Flug 500ms Zeit
-    if (currentCoords) {
-        libreMap.easeTo({
-            center: currentCoords,
-            zoom: 14,
-            bearing: 0,
-            pitch: 0,
-            padding: { right: 150, bottom: 20 },
-            duration: 500, // Etwas langsamer für mehr Stabilität
-            easing: (t) => t * (2 - t)
+            // FIX: Hart zurückspringen, während die CSS Card schrumpft.
+            // Das sorgt für eine ununterbrechbare, perfekte Zentrierung!
+            if (currentCoords) {
+                libreMap.jumpTo({
+                    center: currentCoords,
+                    zoom: 14,
+                    bearing: 0,
+                    pitch: 0,
+                    padding: { right: 150, bottom: 20 }
+                });
+            }
+
+            // Hardware-Loop, um die Karte beim CSS-Schrumpfen flüssig anzupassen
+            let startTime = null;
+            function animateResize(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let elapsed = timestamp - startTime;
+                
+                if (libreMap) libreMap.resize(); 
+                
+                if (elapsed < 400) { 
+                    window.requestAnimationFrame(animateResize);
+                }
+            }
+            window.requestAnimationFrame(animateResize); 
         });
-    }
-
-    // WICHTIG: Resize erst nach 550ms, damit easeTo nicht unterbrochen wird!
-    setTimeout(() => {
-        if (libreMap) libreMap.resize();
-    }, 550);
-});
     }
 // ==========================================
     // === TOMTOM SEARCH & ROUTING LOGIC ===
