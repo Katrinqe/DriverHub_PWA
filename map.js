@@ -212,4 +212,132 @@ document.addEventListener('DOMContentLoaded', () => {
             window.requestAnimationFrame(animateResize); 
         });
     }
+
+    // ==========================================
+    // === TOMTOM SEARCH & ROUTING LOGIC ===
+    // ==========================================
+    const TOMTOM_API_KEY = 'DEIN_TOMTOM_API_KEY_HIER_EINTRAGEN'; 
+    
+    const searchInput = document.getElementById('tomtom-search-input');
+    const suggestionsBox = document.getElementById('tomtom-suggestions');
+
+    if (searchInput && suggestionsBox) {
+        
+        // 1. Autocomplete: Wenn du tippst, holen wir Vorschläge von TomTom
+        searchInput.addEventListener('input', async (e) => {
+            const query = e.target.value.trim();
+            
+            if (query.length < 3) {
+                suggestionsBox.classList.add('hidden');
+                suggestionsBox.innerHTML = '';
+                return;
+            }
+
+            try {
+                // TomTom Search API aufrufen
+                const response = await fetch(`https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&language=de-DE&limit=5`);
+                const data = await response.json();
+
+                suggestionsBox.innerHTML = '';
+                
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(result => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        // Zeigt z.B. "München, Bayern, Deutschland" an
+                        div.textContent = result.address.freeformAddress || result.address.municipality; 
+                        
+                        // 2. Klick auf einen Vorschlag: Route berechnen
+                        div.addEventListener('click', () => {
+                            searchInput.value = div.textContent;
+                            suggestionsBox.classList.add('hidden');
+                            drawTomTomRoute(result.position.lat, result.position.lon);
+                        });
+
+                        suggestionsBox.appendChild(div);
+                    });
+                    suggestionsBox.classList.remove('hidden');
+                } else {
+                    suggestionsBox.classList.add('hidden');
+                }
+            } catch (err) {
+                console.error("TomTom Search Fehler:", err);
+            }
+        });
+
+        // Dropdown schließen, wenn man ins Leere klickt
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                suggestionsBox.classList.add('hidden');
+            }
+        });
+    }
+
+    // 3. Die Route holen und auf die Karte zeichnen
+    async function drawTomTomRoute(destLat, destLng) {
+        if (!currentCoords || !libreMap) return;
+
+        const startLng = currentCoords[0];
+        const startLat = currentCoords[1];
+
+        try {
+            // TomTom Routing API: Startpunkt zu Zielpunkt
+            const response = await fetch(`https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM}`);
+            const data = await response.json();
+
+            if (data.routes && data.routes.length > 0) {
+                // TomTom gibt uns ein Array aus {latitude, longitude}. MapLibre braucht [lng, lat].
+                const routePoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
+
+                // GeoJSON Objekt für MapLibre bauen
+                const geojson = {
+                    type: 'Feature',
+                    properties: {},
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: routePoints
+                    }
+                };
+
+                // Wenn die Route schon existiert, nur Daten updaten. Sonst neue Layer anlegen.
+                if (libreMap.getSource('tomtom-route')) {
+                    libreMap.getSource('tomtom-route').setData(geojson);
+                } else {
+                    libreMap.addSource('tomtom-route', {
+                        type: 'geojson',
+                        data: geojson
+                    });
+
+                    libreMap.addLayer({
+                        id: 'tomtom-route-line',
+                        type: 'line',
+                        source: 'tomtom-route',
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': '#007aff', // DriverHub Blau
+                            'line-width': 6,         // Satte Dicke
+                            'line-opacity': 0.8      // Leicht transparent für den Premium-Look
+                        }
+                    });
+                }
+
+                // Kamera elegant so verschieben, dass die ganze Route sichtbar wird
+                // Berechne die Bounding Box der Route
+                const bounds = routePoints.reduce((bounds, coord) => {
+                    return bounds.extend(coord);
+                }, new maplibregl.LngLatBounds(routePoints[0], routePoints[0]));
+
+                libreMap.fitBounds(bounds, {
+                    padding: { top: 150, bottom: 100, left: 50, right: 50 },
+                    duration: 1000 // Smoothe Fahrt zur Routen-Übersicht
+                });
+            }
+        } catch (error) {
+            console.error("TomTom Routing Fehler:", error);
+        }
+    }
 });
+
