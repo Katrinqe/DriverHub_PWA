@@ -173,7 +173,7 @@ function loadMap(coords, hasLocation) {
 shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
-            // 1. CSS-Animation für die Karte starten
+            // 1. CSS-Animation für das Schrumpfen starten
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
 
@@ -199,36 +199,34 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.touchPitch.disable();
 
             // ========================================================
-            // 4. DEIN ORIGINALER, FUNKTIONIERENDER RÜCKFLUG!
+            // 4. DER PADDING-CRASH FIX
             // ========================================================
             if (currentCoords) {
+                // Wir fliegen ohne das rechte Padding zurück. 
+                // Das schützt die WebGL-Engine vor einem mathematischen Absturz
+                // während der Container durch das CSS kleiner wird.
                 libreMap.easeTo({
                     center: currentCoords,
                     zoom: 14,
                     bearing: 0,
                     pitch: 0,
-                    padding: { right: 150, bottom: 20 },
                     duration: 400,
-                    essential: true, // Zwingt die Engine, diese Kamerafahrt durchzuziehen!
+                    essential: true, // Zwingt die Engine, den Flug durchzuziehen
                     easing: (t) => t * (2 - t)
                 });
             }
 
             // ========================================================
-            // 5. DEIN ORIGINALER HARDWARE-LOOP FÜR DAS FLÜSSIGE SCHRUMPFEN
+            // 5. DAS SAUBERE ENDE
             // ========================================================
-            let startTime = null;
-            function animateResize(timestamp) {
-                if (!startTime) startTime = timestamp;
-                let elapsed = timestamp - startTime;
-                
-                if (libreMap) libreMap.resize(); 
-                
-                if (elapsed < 400) { 
-                    window.requestAnimationFrame(animateResize);
+            // Exakt nach 400ms (wenn das CSS fertig ist), setzen wir das Padding
+            // für die visuelle Balance wieder ein und berechnen die Karte neu.
+            setTimeout(() => {
+                if (libreMap) {
+                    libreMap.setPadding({ right: 150, bottom: 20 });
+                    libreMap.resize();
                 }
-            }
-            window.requestAnimationFrame(animateResize); 
+            }, 400);
         });
     }
 // ==========================================
