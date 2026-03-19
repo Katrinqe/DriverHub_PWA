@@ -167,15 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-// ==========================================
-        // === MAP SHRINK LOGIC (THE 60 FPS FIX) ===
-        // ==========================================
-       // ==========================================
-        // === MAP SHRINK LOGIC (THE 60 FPS FIX + NORTH RESET) ===
-        // ==========================================
-       // ==========================================
-        // === MAP SHRINK LOGIC (ULTRA SMOOTH V4) ===
-        // ==========================================
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
@@ -191,38 +182,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
             libreMap.setPadding({ right: 150, bottom: 10 });
 
-            // 3. Kamerafahrt (Exakt an CSS gekoppelt)
+            // 3. DER FIX: easeTo statt flyTo! 
+            // Kein Rauszoomen = Keine neuen Kacheln laden = Kein Ladescreen.
             if (currentCoords) {
-                libreMap.flyTo({
+                libreMap.easeTo({
                     center: currentCoords,
                     zoom: 14,
                     bearing: 0,
                     pitch: 0,
-                    duration: 400, // FIX: Dauert jetzt exakt so lange wie die CSS-Card-Animation!
-                    essential: true
+                    duration: 400, // Exakt die 400ms vom CSS
+                    easing: (t) => t * (2 - t) // Apple-like ease-out Kurve
                 });
             }
 
-            // 4. THE APPLE-WAY: Grafikkarte synchronisieren
+            // 4. Der Hardware-Loop (Ohne den Ruckler am Ende)
             let startTime = null;
             function animateResize(timestamp) {
                 if (!startTime) startTime = timestamp;
                 let elapsed = timestamp - startTime;
                 
-                // WebGL exakt im Takt des Handy-Displays neu zeichnen
                 libreMap.resize(); 
                 
-                // Wir feuern das 450ms lang (400ms Animation + 50ms Puffer)
-                if (elapsed < 450) { 
+                if (elapsed < 420) { 
                     window.requestAnimationFrame(animateResize);
-                } else {
-                    // Finaler Sicherheits-Snap
-                    if (currentCoords) {
-                        libreMap.jumpTo({ center: currentCoords, zoom: 14, bearing: 0, pitch: 0 });
-                    }
                 }
             }
-            // Startet den butterweichen Hardware-Loop
             window.requestAnimationFrame(animateResize); 
         });
     }
