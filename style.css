@@ -2491,34 +2491,33 @@ body.ghost-active #ghost-chat-overlay {
 
 
 
-/* Weicher Blur-Verlauf in der unteren rechten Ecke */
+/* Weicher Blur-Verlauf unten rechts (breiter für liegende Buttons) */
 .map-blur-corner {
     position: absolute;
     bottom: 0; right: 0;
-    width: 160px; height: 160px;
-    background: radial-gradient(circle at 100% 100%, rgba(10,10,12,0.7) 0%, transparent 70%);
+    width: 220px; height: 100px; /* Breiter und flacher */
+    background: radial-gradient(ellipse at 100% 100%, rgba(10,10,12,0.7) 0%, transparent 70%);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    /* Lässt den Blur weich in die Karte auslaufen, keine harte Kante! */
-    -webkit-mask-image: radial-gradient(circle at 100% 100%, black 20%, transparent 70%);
-    mask-image: radial-gradient(circle at 100% 100%, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at 100% 100%, black 20%, transparent 70%);
+    mask-image: radial-gradient(ellipse at 100% 100%, black 20%, transparent 70%);
     z-index: 5;
     pointer-events: none;
 }
 
-/* Container für die runden Buttons */
+/* Container für die runden Buttons (jetzt liegend) */
 .map-controls-stack {
     position: absolute;
-    bottom: 10px; right: 10px;
+    bottom: 12px; right: 12px;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
+    flex-direction: row; /* FIX: Legt die Buttons nebeneinander */
+    gap: 12px; /* Sauberer Abstand für dicke Finger */
     z-index: 10;
 }
 
-/* Die runden Glass-Buttons */
+/* Die runden Glass-Buttons (jetzt 44px für perfekte Touch-Targets) */
 .map-round-btn {
-    width: 36px; height: 36px;
+    width: 44px; height: 44px; /* Größer und sicherer zu tippen */
     border-radius: 50%;
     background: rgba(25, 25, 30, 0.65);
     backdrop-filter: blur(10px);
@@ -2526,7 +2525,7 @@ body.ghost-active #ghost-chat-overlay {
     border: 1px solid rgba(255,255,255,0.15);
     color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 0.85rem;
+    font-size: 1.1rem; /* Icons entsprechend etwas vergrößert */
     box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.2, 1, 0.3, 1);
@@ -2535,7 +2534,8 @@ body.ghost-active #ghost-chat-overlay {
 
 .map-round-btn:active {
     transform: scale(0.85);
-    background: rgba(48, 209, 88, 0.2); /* Dezent grüner Map-Glow beim Klicken */
+    background: rgba(48, 209, 88, 0.2);
     border-color: #30d158;
     color: #30d158;
 }
+
