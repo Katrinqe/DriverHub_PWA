@@ -757,11 +757,20 @@
         
 <div class="explore-card map-snippet-card" style="position: relative; overflow: hidden; height: 180px; border-radius: 28px; background: rgba(15, 15, 18, 0.5); backdrop-filter: blur(30px) saturate(150%); -webkit-backdrop-filter: blur(30px) saturate(150%); border: 1px solid rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.15); box-shadow: 0 15px 35px rgba(0,0,0,0.8); flex-shrink: 0;">
             
-            <div id="maplibre-snippet" style="width: 100%; height: 100%; position: relative; z-index: 1;">
+            <div id="maplibre-snippet" style="width: 100%; height: 100%; position: absolute; top:0; left:0; z-index: 1;">
                 <div class="loading-background" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); z-index: 0;">
                     <i class="fa-solid fa-spinner fa-spin" style="color: #444; font-size: 2rem;"></i>
                 </div>
             </div>
+
+            <div class="map-blur-corner"></div>
+
+            <div class="map-controls-stack">
+                <button class="map-round-btn" id="btn-explore-search"><i class="fa-solid fa-magnifying-glass"></i></button>
+                <button class="map-round-btn" id="btn-explore-navi"><i class="fa-solid fa-location-arrow"></i></button>
+                <button class="map-round-btn" id="btn-explore-gas"><i class="fa-solid fa-gas-pump"></i></button>
+            </div>
+            
         </div>
 
         <div style="height: 100px;"></div>
