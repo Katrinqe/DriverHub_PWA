@@ -97,7 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
             interactive: false, // User kann nicht scrollen/zoomen/drehen
             attributionControl: false // Die Map-Zuweisung unten rechts ausblenden
         });
-
+// Optischen Mittelpunkt verschieben (für die Buttons rechts)
+        // Wir täuschen vor, dass die Karte rechts ein unsichtbares Menü von 100px hat.
+        // Dadurch schiebt MapLibre den eigenen Mittelpunkt automatisch 50px nach links.
+        libreMap.on('load', () => {
+            libreMap.jumpTo({
+                padding: { right: 100, bottom: 20 }
+            });
+        });
         // 3. Einen Marker für den Standort hinzufügen (wenn wir einen haben)
   // 3. Einen Marker für den Standort hinzufügen (wenn wir einen haben)
         if (hasLocation) {
