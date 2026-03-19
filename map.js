@@ -170,13 +170,14 @@ function loadMap(coords, hasLocation) {
 
 
 
-// Karte verkleinern (Der Master-Fix für den Flug)
-        shrinkBtn.addEventListener('click', (e) => {
+shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
+            // 1. CSS-Animation für die Karte starten
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
 
+            // 2. UI-Elemente zurücksetzen
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) bottomNav.style.display = 'flex';
 
@@ -188,7 +189,7 @@ function loadMap(coords, hasLocation) {
 
             if (!libreMap) return;
             
-            // Gesten sofort wieder sperren
+            // 3. Gesten sofort sperren
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
@@ -197,12 +198,9 @@ function loadMap(coords, hasLocation) {
             libreMap.dragPitch.disable();
             libreMap.touchPitch.disable();
 
-            // FIX: Wir warten auf das offizielle Ende der Kamerafahrt, bevor wir resizen (Peters Fix)
-            libreMap.once('moveend', () => {
-                libreMap.resize();
-            });
-
-            // FIX: Deine alte, weiche Kamerafahrt
+            // ========================================================
+            // 4. DEIN ORIGINALER, FUNKTIONIERENDER RÜCKFLUG!
+            // ========================================================
             if (currentCoords) {
                 libreMap.easeTo({
                     center: currentCoords,
@@ -211,12 +209,26 @@ function loadMap(coords, hasLocation) {
                     pitch: 0,
                     padding: { right: 150, bottom: 20 },
                     duration: 400,
+                    essential: true, // Zwingt die Engine, diese Kamerafahrt durchzuziehen!
                     easing: (t) => t * (2 - t)
                 });
-            } else {
-                // Fallback, falls currentCoords aus irgendeinem Grund leer ist
-                libreMap.resize();
             }
+
+            // ========================================================
+            // 5. DEIN ORIGINALER HARDWARE-LOOP FÜR DAS FLÜSSIGE SCHRUMPFEN
+            // ========================================================
+            let startTime = null;
+            function animateResize(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let elapsed = timestamp - startTime;
+                
+                if (libreMap) libreMap.resize(); 
+                
+                if (elapsed < 400) { 
+                    window.requestAnimationFrame(animateResize);
+                }
+            }
+            window.requestAnimationFrame(animateResize); 
         });
     }
 // ==========================================
