@@ -233,10 +233,10 @@ shrinkBtn.addEventListener('click', (e) => {
                     }
                 }
             }, 400);
+        }); 
     }
 // ==========================================
     // === TOMTOM SEARCH & ROUTING LOGIC ===
-    // ==========================================
     const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM'; // <-- HIER DEINEN ECHTEN KEY REIN
     
     const searchInput = document.getElementById('tomtom-search-input');
