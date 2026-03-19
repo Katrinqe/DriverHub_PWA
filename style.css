@@ -2611,3 +2611,82 @@ body.ghost-active #ghost-chat-overlay {
 .map-snippet-card.map-expanded .map-expanded-fade-top {
     opacity: 1;
 }
+
+/* ==========================================
+   TOMTOM SEARCH BAR & SUGGESTIONS
+   ========================================== */
+.map-search-container {
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 40px) + 60px); /* Exakt unter dem Zurück-Pfeil */
+    left: 20px;
+    right: 20px;
+    z-index: 120;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease 0.2s; /* Verzögert einblenden */
+}
+
+/* Nur im Fullscreen sichtbar und klickbar */
+.map-snippet-card.map-expanded .map-search-container {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.map-search-input {
+    width: 100%;
+    padding: 16px 20px;
+    border-radius: 20px;
+    background: rgba(20, 20, 24, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 1rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    outline: none;
+    box-sizing: border-box;
+}
+
+.map-search-input::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+
+.map-search-input:focus {
+    border-color: #30d158;
+}
+
+/* Die Vorschlags-Liste */
+.suggestions-box {
+    position: absolute;
+    top: 65px;
+    left: 0; right: 0;
+    background: rgba(25, 25, 30, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.suggestions-box.hidden {
+    display: none;
+}
+
+.suggestion-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:active {
+    background: rgba(48, 209, 88, 0.2);
+}
