@@ -2612,26 +2612,26 @@ body.ghost-active #ghost-chat-overlay {
     opacity: 1;
 }
 
-/* ==========================================
-   TOMTOM SEARCH BAR & SUGGESTIONS
-   ========================================== */
+
 .map-search-container {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 40px) + 60px); /* Exakt unter dem Zurück-Pfeil */
-    left: 20px;
+    /* FIX 1: Exakt auf die Höhe des Zurück-Pfeils geschoben */
+    top: calc(env(safe-area-inset-top, 40px) + 5px); 
+    left: 60px; /* FIX 2: Platz gelassen für den Pfeil auf der linken Seite */
     right: 20px;
     z-index: 120;
     opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.4s ease 0.2s; /* Verzögert einblenden */
+    /* FIX 3: Verhindert, dass das unsichtbare Feld die Klicks klaut! */
+    visibility: hidden; 
+    transition: opacity 0.4s ease 0.2s, visibility 0s linear 0.6s;
 }
 
 /* Nur im Fullscreen sichtbar und klickbar */
 .map-snippet-card.map-expanded .map-search-container {
     opacity: 1;
-    pointer-events: auto;
+    visibility: visible;
+    transition: opacity 0.4s ease 0.2s, visibility 0s linear 0s;
 }
-
 .map-search-input {
     width: 100%;
     padding: 16px 20px;
