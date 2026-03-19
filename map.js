@@ -84,8 +84,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 function loadMap(coords, hasLocation) {
+    // 1. Standort sichern
     currentCoords = coords; 
 
+    // 2. Map initialisieren
     libreMap = new maplibregl.Map({
         container: mapContainerId,
         style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -95,6 +97,18 @@ function loadMap(coords, hasLocation) {
         attributionControl: false 
     });
 
+    // 3. FIX: MARKER SOFORT REINZWINGEN (Nicht auf Map-Load warten!)
+    const customMarkerElement = document.createElement('div');
+    customMarkerElement.className = 'explore-marker-wrap';
+    customMarkerElement.innerHTML = `
+        <div class="explore-user-pulse"></div>
+        <div class="explore-user-dot"></div>
+    `;
+    new maplibregl.Marker({ element: customMarkerElement })
+        .setLngLat(coords)
+        .addTo(libreMap);
+
+    // 4. Restliche Einstellungen laden
     libreMap.on('load', () => {
         libreMap.setPadding({ right: 150, bottom: 20 });
 
@@ -105,18 +119,6 @@ function loadMap(coords, hasLocation) {
         libreMap.dragRotate.disable();
         libreMap.dragPitch.disable();
         libreMap.touchPitch.disable();
-
-        // --- BLAUER PUNKT (FIX: WIRD JETZT IMMER GEZEICHNET!) ---
-        // Egal ob echtes GPS oder Default-Standort, du siehst jetzt immer den Punkt.
-        const customMarkerElement = document.createElement('div');
-        customMarkerElement.className = 'explore-marker-wrap';
-        customMarkerElement.innerHTML = `
-            <div class="explore-user-pulse"></div>
-            <div class="explore-user-dot"></div>
-        `;
-        new maplibregl.Marker({ element: customMarkerElement })
-            .setLngLat(coords)
-            .addTo(libreMap);
     });
 
     setTimeout(() => { if (libreMap) libreMap.resize(); }, 300);
@@ -176,9 +178,8 @@ shrinkBtn.addEventListener('click', (e) => {
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) searchInput.blur();
 
-            if (!libreMap) return;
+            if (!libreMap || !currentCoords) return;
             
-            // Gesten sofort wieder sperren
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
@@ -187,32 +188,24 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.dragPitch.disable();
             libreMap.touchPitch.disable();
 
-            // FIX: Deine alte, funktionierende Kamerafahrt ist ZURÜCK!
-            if (currentCoords) {
+            // FIX: Wir warten einen Wimpernschlag (50ms), damit das CSS-Shrinking 
+            // die Kamerafahrt nicht mehr brutal abwürgen kann.
+            setTimeout(() => {
                 libreMap.easeTo({
                     center: currentCoords,
                     zoom: 14,
                     bearing: 0,
                     pitch: 0,
                     padding: { right: 150, bottom: 20 },
-                    duration: 400,
+                    duration: 500, // Eine saubere, halbe Sekunde Flugzeit
                     easing: (t) => t * (2 - t)
                 });
-            }
+            }, 50);
 
-            // FIX: Dein alter Hardware-Loop, der das Schrumpfen flüssig macht!
-            let startTime = null;
-            function animateResize(timestamp) {
-                if (!startTime) startTime = timestamp;
-                let elapsed = timestamp - startTime;
-                
-                if (libreMap) libreMap.resize(); 
-                
-                if (elapsed < 400) { 
-                    window.requestAnimationFrame(animateResize);
-                }
-            }
-            window.requestAnimationFrame(animateResize); 
+            // FIX: Map-Resize erst am absoluten Ende, wenn der Flug vorüber ist.
+            setTimeout(() => {
+                if (libreMap) libreMap.resize();
+            }, 600);
         });
     }
 // ==========================================
