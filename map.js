@@ -371,9 +371,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (bottomSheet && tomtomInput) {
         
-        // 1. Wenn du in die Searchbar klickst -> Sheet sofort ausfahren
+        // 1. Wenn du in die Searchbar klickst -> Sheet sofort ausfahren UND Browser-Scroll killen
         tomtomInput.addEventListener('focus', () => {
             bottomSheet.classList.add('expanded');
+
+            // FIX: Safari/Chrome daran hindern, den ganzen Screen nach oben zu schieben!
+            // Wir ziehen den Bildschirm in den ersten Millisekunden gnadenlos auf 0 zurück.
+            const preventScroll = () => {
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                document.body.scrollTop = 0;
+            };
+
+            // Mehrere Timeouts, weil die Tastatur-Animation auf verschiedenen Handys unterschiedlich lange dauert
+            setTimeout(preventScroll, 10);
+            setTimeout(preventScroll, 150);
+            setTimeout(preventScroll, 300);
         });
 
         // 2. Wisch-Logik (Swipe Up / Swipe Down)
