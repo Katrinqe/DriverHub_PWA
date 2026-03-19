@@ -184,10 +184,11 @@ shrinkBtn.addEventListener('click', (e) => {
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.classList.remove('expanded');
 
+            // Das hier hat bisher deinen Flug getötet, weil es ein Window-Resize erzwingt!
             const searchInput = document.getElementById('tomtom-search-input');
-            if (searchInput) searchInput.blur();
+            if (searchInput) searchInput.blur(); 
 
-            if (!libreMap) return;
+            if (!libreMap || !currentCoords) return;
             
             // 3. Gesten sofort sperren
             libreMap.dragPan.disable();
@@ -199,41 +200,43 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.touchPitch.disable();
 
             // ========================================================
-            // 4. DER PADDING-CRASH FIX
+            // 4. DER UNZERSTÖRBARE HARDWARE-LOCK
             // ========================================================
-            if (currentCoords) {
-                // Wir fliegen ohne das rechte Padding zurück. 
-                // Das schützt die WebGL-Engine vor einem mathematischen Absturz
-                // während der Container durch das CSS kleiner wird.
-                libreMap.easeTo({
-                    center: currentCoords,
-                    zoom: 14,
-                    bearing: 0,
-                    pitch: 0,
-                    duration: 400,
-                    essential: true, // Zwingt die Engine, den Flug durchzuziehen
-                    easing: (t) => t * (2 - t)
-                });
-            }
-
-  // ========================================================
-            // 5. DAS SAUBERE ENDE
-            // ========================================================
-            // Exakt nach 400ms (wenn das CSS fertig ist), setzen wir das Padding
-            // für die visuelle Balance wieder ein und berechnen die Karte neu.
-            setTimeout(() => {
+            // Wir verlassen uns nicht mehr auf easeTo. Wir zwingen die Karte 
+            // Frame für Frame in die korrekte Position, während das CSS schrumpft.
+            let startTime = null;
+            function animateShrink(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let elapsed = timestamp - startTime;
+                
                 if (libreMap) {
-                    libreMap.setPadding({ right: 150, bottom: 20 });
-                    libreMap.resize();
+                    // Verhindert das Quetschen der Map beim Verkleinern
+                    libreMap.resize(); 
                     
-                    // NEU: Nach Resize und Padding den Mittelpunkt mit den neuen 
-                    // Container-Dimensionen zwingend wieder exakt auf den Standort setzen.
-                    if (currentCoords) {
-                        libreMap.jumpTo({ center: currentCoords, zoom: 14 });
+                    // Zwingt die Kamera knallhart auf den blauen Punkt
+                    libreMap.jumpTo({
+                        center: currentCoords,
+                        zoom: 14,
+                        pitch: 0,
+                        bearing: 0,
+                        padding: { right: 150, bottom: 20 }
+                    });
+                }
+                
+                // 450ms lang (etwas länger als die CSS Animation) laufen lassen
+                if (elapsed < 450) { 
+                    window.requestAnimationFrame(animateShrink);
+                } else {
+                    // Finaler Sicherheits-Snap am Ende
+                    if (libreMap) {
+                        libreMap.setPadding({ right: 150, bottom: 20 });
+                        libreMap.resize();
                     }
                 }
-            }, 400);
-        }); 
+            }
+            // Startet den Loop
+            window.requestAnimationFrame(animateShrink); 
+        });
     }
 // ==========================================
     // === TOMTOM SEARCH & ROUTING LOGIC ===
