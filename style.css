@@ -113,10 +113,31 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .blur-zone-bottom { width: 100%; padding-bottom: 120px; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); display: flex; justify-content: center; pointer-events: none; }
 .weather-pill { background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); padding: 8px 18px; border-radius: 30px; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; font-weight: 600; margin-bottom: 20px; pointer-events: auto; min-width: 150px; justify-content: center; }
 .dh-logo { width: 120px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
-.bottom-nav { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 300px; height: 65px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; display: flex; justify-content: space-around; align-items: center; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.6); pointer-events: auto; touch-action: none; user-select: none; }
-.nav-item { color: #666; width: 33%; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: 0.2s; cursor: pointer; height: 100%; }
-.nav-item i { font-size: 1.2rem; margin-bottom: 3px; flex: 1;}
-.nav-item span { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.bottom-nav { 
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); 
+    width: 92%; max-width: 380px; /* Dynamisch anpassen, max-width verhindert Überbreite */
+    height: 65px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(25px); 
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; 
+    display: flex; justify-content: space-evenly; align-items: center; 
+    padding: 0 5px; /* Verhindert, dass die äußeren Icons am Rand kleben */
+    z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+    pointer-events: auto; touch-action: none; user-select: none; 
+}
+
+.nav-item { 
+    color: #666; flex: 1; /* Teilt den Platz exakt durch 5 */
+    display: flex; flex-direction: column; align-items: center; justify-content: center; 
+    transition: 0.2s; cursor: pointer; height: 100%; gap: 3px; /* Sauberer Abstand zwischen Icon und Text */
+}
+
+.nav-item i { 
+    font-size: 1.15rem; /* Minimal angepasst für 5 Icons */
+    transition: transform 0.2s; 
+}
+
+.nav-item span { 
+    font-size: 0.55rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; 
+}
 .nav-item.active-home { color: var(--primary); text-shadow: 0 0 15px rgba(0, 122, 255, 0.6); }
 .nav-item.active-garage { color: var(--garage-icon-color); text-shadow: 0 0 15px rgba(191, 90, 242, 0.6); }
 .nav-item.active-map { color: var(--map-icon-color); text-shadow: 0 0 15px rgba(48, 209, 88, 0.6); }
