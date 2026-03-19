@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mapCard.classList.add('map-expanded');
             expandTrigger.style.display = 'none'; // Klickscheibe wegnehmen
 
-            // NEU: Nav-Bar ausblenden (mit Sicherheitsabfrage)
+            // Nav-Bar ausblenden (mit Sicherheitsabfrage)
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) bottomNav.style.display = 'none';
 
@@ -204,7 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 libreMap.touchZoomRotate.enable();
                 libreMap.doubleClickZoom.enable();
                 
-                // NEU: Kippen (3D) erlauben!
+                // FIX: dragRotate MUSS aktiv sein, damit Pitch funktioniert!
+                libreMap.dragRotate.enable(); 
                 libreMap.dragPitch.enable();  // Für Rechtsklick auf dem Desktop
                 libreMap.touchPitch.enable(); // Für Zwei-Finger-Wisch auf dem Handy
 
@@ -218,7 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-     shrinkBtn.addEventListener('click', (e) => {
+// Karte verkleinern (Der Master-Fix für den Standort)
+        shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
             // 1. MapCard verkleinern und Trigger wieder aktivieren
@@ -235,18 +237,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) searchInput.blur();
 
-        // 3. MapLibre Interaktionen sperren
+            // 3. MapLibre Interaktionen komplett sperren
             if (!libreMap) return;
+            
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
             libreMap.doubleClickZoom.disable();
-            
-            // NEU: Kippen wieder sperren!
-            libreMap.dragPitch.disable();
+            libreMap.dragRotate.disable(); // FIX: Rotation wieder sperren
+            libreMap.dragPitch.disable();  // FIX: Pitch wieder sperren
             libreMap.touchPitch.disable();
-         
-            // 4. Seidenweicher Slide zurück (Kamera + Padding)
+            
+            // 4. Seidenweicher Slide zurück (Kamera + Padding + Standort!)
             if (currentCoords) {
                 libreMap.easeTo({
                     center: currentCoords,
