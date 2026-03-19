@@ -173,6 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
        // ==========================================
         // === MAP SHRINK LOGIC (THE 60 FPS FIX + NORTH RESET) ===
         // ==========================================
+       // ==========================================
+        // === MAP SHRINK LOGIC (ULTRA SMOOTH V4) ===
+        // ==========================================
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
@@ -188,36 +191,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
             libreMap.setPadding({ right: 150, bottom: 10 });
 
-            // 3. Kamerafahrt nach Hause starten (INKLUSIVE NORDEN & FLACH)
+            // 3. Kamerafahrt (Exakt an CSS gekoppelt)
             if (currentCoords) {
                 libreMap.flyTo({
                     center: currentCoords,
                     zoom: 14,
-                    bearing: 0,  // FIX: Rotiert die Karte sauber nach Norden zurück
-                    pitch: 0,    // FIX: Nimmt die 3D-Neigung raus (wieder flach von oben)
-                    speed: 1.5,
+                    bearing: 0,
+                    pitch: 0,
+                    duration: 400, // FIX: Dauert jetzt exakt so lange wie die CSS-Card-Animation!
                     essential: true
                 });
             }
 
-            // 4. Der 60-FPS-Trick für den sauberen Resize während der CSS-Animation
-            let start = Date.now();
-            let resizeInterval = setInterval(() => {
-                libreMap.resize();
+            // 4. THE APPLE-WAY: Grafikkarte synchronisieren
+            let startTime = null;
+            function animateResize(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let elapsed = timestamp - startTime;
                 
-                if (Date.now() - start > 450) {
-                    clearInterval(resizeInterval);
-                    // Sicherstellen, dass die Karte im finalen Zustand 100% perfekt sitzt
+                // WebGL exakt im Takt des Handy-Displays neu zeichnen
+                libreMap.resize(); 
+                
+                // Wir feuern das 450ms lang (400ms Animation + 50ms Puffer)
+                if (elapsed < 450) { 
+                    window.requestAnimationFrame(animateResize);
+                } else {
+                    // Finaler Sicherheits-Snap
                     if (currentCoords) {
-                        libreMap.jumpTo({ 
-                            center: currentCoords, 
-                            zoom: 14, 
-                            bearing: 0, // Hier ebenfalls absichern!
-                            pitch: 0 
-                        });
+                        libreMap.jumpTo({ center: currentCoords, zoom: 14, bearing: 0, pitch: 0 });
                     }
                 }
-            }, 16); 
+            }
+            // Startet den butterweichen Hardware-Loop
+            window.requestAnimationFrame(animateResize); 
         });
     }
 });
