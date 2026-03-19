@@ -167,34 +167,51 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Karte wieder klein machen
+    // ==========================================
+        // === MAP SHRINK LOGIC (V3: RE-SEQUENCING FIX) ===
+        // ==========================================
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // Verhindert Fehler
+            
+            // 1. ZUERST: Die CSS-Klasse entfernen, damit die Card physisch klein wird
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block'; // Klickscheibe wieder drüberlegen
 
-            if (libreMap) {
-                // Interaktion wieder sperren
-                libreMap.dragPan.disable();
-                libreMap.scrollZoom.disable();
-                libreMap.touchZoomRotate.disable();
-                libreMap.doubleClickZoom.disable();
+            // Wenn keine Instanz da ist, brechen wir ab
+            if (!libreMap) return;
 
-                // Padding für den Links-Offset wieder herstellen
-                libreMap.setPadding({ right: 150, bottom: 30 });
+            // 2. Interaktion wieder sperren
+            libreMap.dragPan.disable();
+            libreMap.scrollZoom.disable();
+            libreMap.touchZoomRotate.disable();
+            libreMap.doubleClickZoom.disable();
 
-                // NEU: Kamera butterweich zurück zum Standort fliegen lassen
-                if (currentCoords) {
+            // 3. WICHTIG: Map zwingen, sich SOFORT an die winzige Größe der Card anzupassen.
+            // resize() ist der Schlüssel! Ohne resize() fliegt die Map im Hintergrund
+            // auf Basis der Fullscreen-Größe, was den Offset-Fehler verursacht.
+            libreMap.resize();
+
+            // 4. Optisches Padding für den Links-Offset WIEDER HERSTELLEN.
+            // Wir erhöhen bottom leicht auf 70, damit der Punkt noch sauberer
+            // über den Buttons schwebt, ohne visuell abzustürzen.
+            libreMap.setPadding({
+                right: 150, // Links-Verschiebung
+                bottom: 70  /* NEU: Etwas höher (von 30), damit er über den Buttons sitzt */
+            });
+
+            // 5. UND JETZT (nach resize() und setPadding()): Kamera butterweich zurückfliegen.
+            // Die Engine fliegt nun exakt auf Basis der Card-Größe und des PADDINGS zurück.
+            if (currentCoords) {
+                // Wir fliegen erst nach einer winzigen Verzögerung (100ms),
+                // damit resize() und die CSS-Kante Zeit hatten, sich zu setzen.
+                setTimeout(() => {
                     libreMap.flyTo({
                         center: currentCoords,
                         zoom: 14,        // Der Standard-Zoom der Card
-                        speed: 1.5,      // Etwas schnellerer Rückflug
+                        speed: 1.8,      // Ein schnellerer, energetischer Rückflug
                         curve: 1         // Smoother Bogenflug
                     });
-                }
-
-                // Map zwingen, sich an die kleine Karte anzupassen
-                setTimeout(() => libreMap.resize(), 400);
+                }, 100);
             }
         });
     }
