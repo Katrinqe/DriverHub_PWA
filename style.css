@@ -2593,15 +2593,19 @@ body.ghost-active #ghost-chat-overlay {
     pointer-events: auto;
 }
 
-/* NEU: Top Fade (Versteckt in der Card, sichtbar im Fullscreen) */
+/* Der neue, härtere Fade für oben */
 .map-expanded-fade-top {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 140px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, transparent 100%);
-    z-index: 105; /* Unter dem Pfeil, über der Karte */
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.4s ease;
+    /* ... restliche Eigenschaften bleiben gleich ... */
+    
+    /* FIX: Startet jetzt bei VOLL-Schwarz (1) und bleibt länger dunkel (0.7 bis 50%) */
+    background: linear-gradient(to bottom, 
+        rgba(0,0,0,1) 0%,     /* Komplett Schwarz oben */
+        rgba(0,0,0,1) 20%,    /* Bleibt solid Schwarz für 20% (ca 28px) */
+        rgba(0,0,0,0.7) 50%,  /* Immer noch sehr dunkel in der Mitte */
+        transparent 100%      /* Fadet weich aus */
+    );
+    
+    /* ... restliche Eigenschaften bleiben gleich ... */
 }
 
 /* Fade einblenden im Fullscreen */
