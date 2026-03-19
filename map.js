@@ -103,14 +103,55 @@ document.addEventListener('DOMContentLoaded', () => {
             attributionControl: false // Die Map-Zuweisung unten rechts ausblenden
         });
 
- // Optischen Mittelpunkt verschieben (für visuelles Balancing)
+// Optischen Mittelpunkt verschieben & Phantom 3D-Gebäude laden
         libreMap.on('load', () => {
-            // setPadding verschiebt das mathematische Zentrum der Karte.
-            // right: 150 bedeutet: "Tu so, als wäre rechts eine 150px breite Wand."
-            // Dadurch weicht die Karte (und dein Marker) automatisch nach LINKS aus.
             libreMap.setPadding({
                 right: 150,
                 bottom: 20
+            });
+
+            // ==========================================
+            // === NEU: 3D GEBÄUDE (PHANTOM FADE) ===
+            // ==========================================
+            
+            // Wir suchen die Text-Ebene, damit die 3D-Gebäude UNTER den Straßennamen bleiben
+            // und die weiße Schrift nicht verschluckt wird.
+            const layers = libreMap.getStyle().layers;
+            let labelLayerId;
+            for (let i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol') {
+                    labelLayerId = layers[i].id;
+                    break;
+                }
+            }
+
+            // Die 3D-Daten aus dem bestehenden Carto-Datensatz abgreifen
+            libreMap.addLayer({
+                'id': '3d-buildings',
+                'source': 'carto', // Die Vektordaten von Carto Dark Matter
+                'source-layer': 'building',
+                'type': 'fill-extrusion',
+                'minzoom': 14,
+                'paint': {
+                    'fill-extrusion-color': '#1f1f24', // Ein ultra-edles, mattes Dark-Mode Grau
+                    'fill-extrusion-height': ['get', 'render_height'],
+                    'fill-extrusion-base': ['get', 'render_min_height'],
+                    'fill-extrusion-opacity': 0 // WICHTIG: Startet komplett unsichtbar bei 0 Grad!
+                }
+            }, labelLayerId);
+
+            // Der Echtzeit-Sensor: Fadet die Häuser abhängig vom Neigungswinkel ein
+            libreMap.on('pitch', () => {
+                const pitch = libreMap.getPitch();
+                let opacity = 0;
+                
+                // Wenn die Kamera steiler als 10 Grad kippt, wachsen die Häuser aus dem Boden
+                if (pitch > 10) {
+                    // Rechnet den Winkel butterweich in eine Deckkraft um (Maximal 0.8)
+                    opacity = Math.min((pitch - 10) / 35, 1) * 0.8;
+                }
+                
+                libreMap.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', opacity);
             });
         });
         // 3. Einen Marker für den Standort hinzufügen (wenn wir einen haben)
@@ -169,6 +210,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Map zwingen, sich an den neuen Fullscreen anzupassen
                 setTimeout(() => libreMap.resize(), 400); // 400ms entspricht der CSS Animation
             }
+            if (libreMap) {
+                // Interaktion freischalten
+                libreMap.dragPan.enable();
+                libreMap.scrollZoom.enable();
+                libreMap.touchZoomRotate.enable();
+                libreMap.doubleClickZoom.enable();
+                
+                // NEU: Kippen (3D) erlauben!
+                libreMap.dragPitch.enable();  // Für Rechtsklick auf dem Desktop
+                libreMap.touchPitch.enable(); // Für Zwei-Finger-Wisch auf dem Handy
+
+                // Optischen Mittelpunkt zentrieren (Padding entfernen)
+                libreMap.setPadding({ right: 0, bottom: 0 });
         });
 
 
@@ -190,13 +244,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) searchInput.blur();
 
-            // 3. MapLibre Interaktionen sperren
+        // 3. MapLibre Interaktionen sperren
             if (!libreMap) return;
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
             libreMap.doubleClickZoom.disable();
-
+            
+            // NEU: Kippen wieder sperren!
+            libreMap.dragPitch.disable();
+            libreMap.touchPitch.disable();
+         
             // 4. Seidenweicher Slide zurück (Kamera + Padding)
             if (currentCoords) {
                 libreMap.easeTo({
