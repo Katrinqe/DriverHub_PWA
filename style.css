@@ -2599,14 +2599,16 @@ body.ghost-active #ghost-chat-overlay {
     top: 0; 
     left: 0; 
     width: 100%; 
-    height: 80px; /* Etwas höher gezogen für den harten Verlauf */
-   background: linear-gradient(
+    height: 80px; 
+    /* FIX: Die schließende Klammer und das Semikolon wurden hinzugefügt */
+    background: linear-gradient(
         to bottom, 
-        rgba(0,0,0,0.9) 0%,   /* Oben fast komplett schwarz */
-        rgba(0,0,0,0.5) 40%,  /* Nach 40% der Strecke schon deutlich durchsichtiger */
-        rgba(0,0,0,0.1) 80%,  /* Nach 80% fast weg */
-        transparent 100%      /* Am Ende komplett unsichtbar */
-    z-index: 105; /* Unter dem Pfeil, über der Karte */
+        rgba(0,0,0,0.9) 0%,   
+        rgba(0,0,0,0.5) 40%,  
+        rgba(0,0,0,0.1) 80%,  
+        transparent 100%      
+    );
+    z-index: 105; 
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.4s ease;
