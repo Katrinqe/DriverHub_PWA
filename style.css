@@ -115,11 +115,11 @@ body { margin: 0; padding: 0; font-family: 'Inter', sans-serif; background-color
 .dh-logo { width: 120px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
 .bottom-nav { 
     position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); 
-    width: 92%; max-width: 380px; /* Dynamisch anpassen, max-width verhindert Überbreite */
+    width: 92%; max-width: 350px; /* Dynamisch anpassen, max-width verhindert Überbreite */
     height: 65px; background: rgba(20, 20, 20, 0.85); backdrop-filter: blur(25px); 
     border: 1px solid rgba(255,255,255,0.1); border-radius: 40px; 
     display: flex; justify-content: space-evenly; align-items: center; 
-    padding: 0 5px; /* Verhindert, dass die äußeren Icons am Rand kleben */
+    padding: 0 10px; /* Verhindert, dass die äußeren Icons am Rand kleben */
     z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
     pointer-events: auto; touch-action: none; user-select: none; 
 }
