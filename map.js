@@ -173,48 +173,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-        shrinkBtn.addEventListener('click', (e) => {
+     shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
+            // 1. MapCard verkleinern und Trigger wieder aktivieren
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
 
-            // NEU: Nav-Bar wieder einblenden
+            // 2. UI-Elemente zurücksetzen (Nav rein, Sheet einklappen, Tastatur weg)
             const bottomNav = document.querySelector('.bottom-nav');
-            if (bottomNav) bottomNav.style.display = 'flex'; // 'flex' stellt dein normales CSS wieder her
+            if (bottomNav) bottomNav.style.display = 'flex';
 
-            // NEU: Bottom-Sheet einklappen, falls es noch offen ist
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.classList.remove('expanded');
 
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) searchInput.blur();
+
+            // 3. MapLibre Interaktionen sperren
             if (!libreMap) return;
-
-            libreMap.dragPan.disable();
-            libreMap.scrollZoom.disable();
-            // ... (Hier geht dein restlicher Code mit touchZoomRotate, easeTo und animateResize weiter)
-
-            if (!libreMap) return;
-
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
             libreMap.doubleClickZoom.disable();
 
-            // 1. & 2. KOMBINIERT: Padding und Zentrierung in EINER weichen Bewegung!
-            // (Ersetzt dein vorheriges, hartes setPadding und jumpTo)
+            // 4. Seidenweicher Slide zurück (Kamera + Padding)
             if (currentCoords) {
                 libreMap.easeTo({
                     center: currentCoords,
                     zoom: 14,
                     bearing: 0,
                     pitch: 0,
-                    padding: { right: 150, bottom: 20 }, // Das Padding wandert MIT der Animation
+                    padding: { right: 150, bottom: 20 },
                     duration: 400,
                     easing: (t) => t * (2 - t)
                 });
             }
 
-            // 3. Hardware-Loop: Schneidet die Ränder während des CSS-Shrinks in Echtzeit ab
+            // 5. Hardware-Loop für flüssiges CSS-Shrinking
             let startTime = null;
             function animateResize(timestamp) {
                 if (!startTime) startTime = timestamp;
@@ -227,17 +223,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             window.requestAnimationFrame(animateResize); 
-            // NEU: Nav-Bar wieder einblenden
-            const bottomNav = document.querySelector('.bottom-nav');
-            if (bottomNav) bottomNav.style.display = 'flex';
-
-            // NEU: Bottom-Sheet einklappen, falls es noch offen ist
-            const bottomSheet = document.getElementById('map-bottom-sheet');
-            if (bottomSheet) bottomSheet.classList.remove('expanded');
-
-            // FIX: Tastatur zwingend einklappen, falls sie noch offen ist!
-            const searchInput = document.getElementById('tomtom-search-input');
-            if (searchInput) searchInput.blur();
         });
     }
 // ==========================================
