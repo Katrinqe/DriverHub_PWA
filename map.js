@@ -104,12 +104,12 @@ function loadMap(coords, hasLocation) {
         attributionControl: false 
     });
 
-    // 3. FIX: MARKER SOFORT REINZWINGEN (Nicht auf Map-Load warten!)
+   // --- BLAUER PUNKT (Zwingend zeichnen, Original-Klassen nutzen!) ---
     const customMarkerElement = document.createElement('div');
-    customMarkerElement.className = 'explore-marker-wrap';
+    customMarkerElement.className = 'user-marker-wrap';
     customMarkerElement.innerHTML = `
-        <div class="explore-user-pulse"></div>
-        <div class="explore-user-dot"></div>
+        <div class="user-pulse"></div>
+        <div class="user-dot"></div>
     `;
     new maplibregl.Marker({ element: customMarkerElement })
         .setLngLat(coords)
@@ -199,41 +199,36 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.touchPitch.disable();
 
             // ========================================================
-            // 4. PETERS PROFI-LOGIK: TRANSITIONEND + RESIZE LOOP
+            // 4. DEIN ORIGINALER EASE-TO FLUG
             // ========================================================
-            let animating = true;
-
-            function animateResize() {
-                if (!animating) return; // Stoppt den Loop sauber
-                libreMap.resize();
-                window.requestAnimationFrame(animateResize);
+            if (currentCoords) {
+                libreMap.easeTo({
+                    center: currentCoords,
+                    zoom: 14,
+                    bearing: 0,
+                    pitch: 0,
+                    padding: { right: 150, bottom: 20 },
+                    duration: 400,
+                    essential: true, // Zwingt MapLibre, den Flug unter keinen Umständen abzubrechen
+                    easing: (t) => t * (2 - t)
+                });
             }
 
-            // Loop starten, um das CSS beim Schrumpfen zu begleiten
-            window.requestAnimationFrame(animateResize); 
+            // ========================================================
+            // 5. DEIN ORIGINALER HARDWARE-LOOP
+            // ========================================================
+            let startTime = null;
+            function animateResize(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let elapsed = timestamp - startTime;
 
-            // Warten, bis der Browser meldet: "CSS Animation ist WIRKLICH fertig!"
-            mapCard.addEventListener('transitionend', () => {
-                animating = false; // Loop beenden
-                
-                // Ein finales, sauberes Resize vor dem Kameraflug
-                libreMap.resize(); 
+                if (libreMap) libreMap.resize(); 
 
-                if (currentCoords) {
-                    libreMap.easeTo({
-                        center: currentCoords,
-                        zoom: 14,
-                        bearing: 0,
-                        pitch: 0,
-                        // FIX: Padding auf 0 setzen! In der kleinen Card ist kein Platz 
-                        // für 150px Padding. Das hat die Engine vorher getötet.
-                        padding: { right: 0, bottom: 0 }, 
-                        duration: 500,
-                        essential: true, // Zwingt die Kamerafahrt
-                        easing: (t) => t * (2 - t)
-                    });
+                if (elapsed < 400) { 
+                    window.requestAnimationFrame(animateResize);
                 }
-            }, { once: true }); // { once: true } verhindert, dass das Event mehrfach feuert
+            }
+            window.requestAnimationFrame(animateResize); 
         });
     }
 // ==========================================
