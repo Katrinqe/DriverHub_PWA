@@ -227,6 +227,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             window.requestAnimationFrame(animateResize); 
+            // NEU: Nav-Bar wieder einblenden
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) bottomNav.style.display = 'flex';
+
+            // NEU: Bottom-Sheet einklappen, falls es noch offen ist
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.classList.remove('expanded');
+
+            // FIX: Tastatur zwingend einklappen, falls sie noch offen ist!
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) searchInput.blur();
         });
     }
 // ==========================================
