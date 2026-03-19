@@ -106,18 +106,17 @@ function loadMap(coords, hasLocation) {
         libreMap.dragPitch.disable();
         libreMap.touchPitch.disable();
 
-        // --- BLAUER PUNKT ---
-        if (hasLocation) {
-            const customMarkerElement = document.createElement('div');
-            customMarkerElement.className = 'explore-marker-wrap';
-            customMarkerElement.innerHTML = `
-                <div class="explore-user-pulse"></div>
-                <div class="explore-user-dot"></div>
-            `;
-            new maplibregl.Marker({ element: customMarkerElement })
-                .setLngLat(coords)
-                .addTo(libreMap);
-        }
+        // --- BLAUER PUNKT (FIX: WIRD JETZT IMMER GEZEICHNET!) ---
+        // Egal ob echtes GPS oder Default-Standort, du siehst jetzt immer den Punkt.
+        const customMarkerElement = document.createElement('div');
+        customMarkerElement.className = 'explore-marker-wrap';
+        customMarkerElement.innerHTML = `
+            <div class="explore-user-pulse"></div>
+            <div class="explore-user-dot"></div>
+        `;
+        new maplibregl.Marker({ element: customMarkerElement })
+            .setLngLat(coords)
+            .addTo(libreMap);
     });
 
     setTimeout(() => { if (libreMap) libreMap.resize(); }, 300);
@@ -179,7 +178,7 @@ shrinkBtn.addEventListener('click', (e) => {
 
             if (!libreMap) return;
             
-            // Gesten sperren
+            // Gesten sofort wieder sperren
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
@@ -188,7 +187,7 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.dragPitch.disable();
             libreMap.touchPitch.disable();
 
-            // FIX: Wir nutzen wieder easeTo für den weichen Flug zurück!
+            // FIX: Deine alte, funktionierende Kamerafahrt ist ZURÜCK!
             if (currentCoords) {
                 libreMap.easeTo({
                     center: currentCoords,
@@ -201,10 +200,19 @@ shrinkBtn.addEventListener('click', (e) => {
                 });
             }
 
-            // FIX: Resize erst NACHDEM der Flug beendet ist (450ms)
-            setTimeout(() => {
-                if (libreMap) libreMap.resize();
-            }, 450);
+            // FIX: Dein alter Hardware-Loop, der das Schrumpfen flüssig macht!
+            let startTime = null;
+            function animateResize(timestamp) {
+                if (!startTime) startTime = timestamp;
+                let elapsed = timestamp - startTime;
+                
+                if (libreMap) libreMap.resize(); 
+                
+                if (elapsed < 400) { 
+                    window.requestAnimationFrame(animateResize);
+                }
+            }
+            window.requestAnimationFrame(animateResize); 
         });
     }
 // ==========================================
