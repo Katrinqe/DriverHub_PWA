@@ -199,32 +199,34 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.touchPitch.disable();
 
             // ========================================================
-            // 4. DEIN TAB-SWITCH HACK (Die Brechstange!)
+            // 4. DIE ULTIMATIVE BRECHSTANGE (TELEPORT + DELAY)
             // ========================================================
+            
+            // Wir begleiten den CSS-Shrink nur mit Resize, damit es nicht gequetscht aussieht
             let startTime = null;
             function animateResize(timestamp) {
                 if (!startTime) startTime = timestamp;
                 let elapsed = timestamp - startTime;
 
-                // Halte MapLibre synchron zur CSS-Verkleinerung (verhindert Quetschen)
                 if (libreMap) libreMap.resize(); 
 
                 if (elapsed < 400) { 
                     window.requestAnimationFrame(animateResize);
                 } else {
-                    // EXAKT DEINE BEOBACHTUNG: Wenn das CSS fertig ist (nach 400ms),
-                    // simulieren wir den Klick auf den Explore-Button!
+                    // === CSS IST FERTIG. JETZT WIRD TELEPORTIERT! ===
                     if (currentCoords && libreMap) {
-                        // Harter Teleport auf den Punkt (kein fehleranfälliges easeTo mehr!)
+                        // 1. Setze das Padding zurück auf die Card-Ansicht
+                        libreMap.setPadding({ right: 150, bottom: 20 });
+                        
+                        // 2. Teleportiere knallhart auf den Punkt (wie beim Tab-Switch)
                         libreMap.jumpTo({
                             center: currentCoords,
                             zoom: 14,
                             bearing: 0,
-                            pitch: 0,
-                            padding: { right: 150, bottom: 20 }
+                            pitch: 0
                         });
                         
-                        // Das finale Resize (genau wie im Tab-Switch)
+                        // 3. Zwinge die Engine, das neue Bild zu rendern
                         setTimeout(() => {
                             if (libreMap) libreMap.resize();
                         }, 50);
