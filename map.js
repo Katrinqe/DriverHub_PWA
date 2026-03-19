@@ -4,9 +4,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const allNavItems = document.querySelectorAll('.nav-item');
     const mapContainerId = 'maplibre-snippet';
     
-    // Globale MapLibre Instanz
-    let libreMap = null;
 
+// Globale MapLibre Instanz
+    let libreMap = null;
+    let currentCoords = null; // NEU: Merkt sich deinen Standort
     if (btnNewExplore && newExploreScreen) {
         
         // FIX: Globaler Listener für die Nav-Bar (Farben weg)
@@ -82,9 +83,13 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    function loadMap(coords, hasLocation) {
+  function loadMap(coords, hasLocation) {
+        // NEU: Standort global für den Zurück-Button merken
+        currentCoords = coords; 
+
         // Sicherstellen, dass der Container leer ist (für Hot-Reloads)
         const mapContainer = document.getElementById(mapContainerId);
+
         
         // 2. MapLibre Karte initialisieren
         libreMap = new maplibregl.Map({
@@ -177,6 +182,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Padding für den Links-Offset wieder herstellen
                 libreMap.setPadding({ right: 150, bottom: 30 });
+
+                // NEU: Kamera butterweich zurück zum Standort fliegen lassen
+                if (currentCoords) {
+                    libreMap.flyTo({
+                        center: currentCoords,
+                        zoom: 14,        // Der Standard-Zoom der Card
+                        speed: 1.5,      // Etwas schnellerer Rückflug
+                        curve: 1         // Smoother Bogenflug
+                    });
+                }
 
                 // Map zwingen, sich an die kleine Karte anzupassen
                 setTimeout(() => libreMap.resize(), 400);
