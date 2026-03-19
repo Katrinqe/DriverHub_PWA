@@ -83,29 +83,23 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-  function loadMap(coords, hasLocation) {
-        // NEU: Standort global für den Zurück-Button merken
-        currentCoords = coords; 
+function loadMap(coords, hasLocation) {
+    // 1. Standort global speichern (WICHTIG für den Rückflug!)
+    currentCoords = coords; 
 
-        // Sicherstellen, dass der Container leer ist (für Hot-Reloads)
-        const mapContainer = document.getElementById(mapContainerId);
+    // 2. Map initialisieren
+    libreMap = new maplibregl.Map({
+        container: mapContainerId,
+        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        center: coords,
+        zoom: 14,
+        interactive: true, 
+        attributionControl: false 
+    });
 
-        
- // 2. MapLibre Karte initialisieren
-        libreMap = new maplibregl.Map({
-            container: mapContainerId,
-            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-            center: coords,
-            zoom: 14,
-            
-            // FIX: Wir müssen interactive auf true setzen, damit MapLibre das 
-            // Anti-Scroll-CSS (touch-action: none) auf dem Handy anwendet!
-            interactive: true, 
-            attributionControl: false 
-        });
-
-        // FIX: Da sie jetzt interaktiv ist, sperren wir im nächsten Atemzug 
-        // sofort alle Gesten hart per Hand, damit sie in der Card starr bleibt.
+    // WICHTIG: Alles was auf die Karte kommt, muss in diesen Block:
+    libreMap.on('load', () => {
+        // Interaktionen sofort sperren (für den Card-Look)
         libreMap.dragPan.disable();
         libreMap.scrollZoom.disable();
         libreMap.touchZoomRotate.disable();
@@ -114,82 +108,59 @@ document.addEventListener('DOMContentLoaded', () => {
         libreMap.dragPitch.disable();
         libreMap.touchPitch.disable();
 
-// Optischen Mittelpunkt verschieben & Phantom 3D-Gebäude laden
-        libreMap.on('load', () => {
-            libreMap.setPadding({
-                right: 150,
-                bottom: 20
-            });
+        // Padding setzen
+        libreMap.setPadding({ right: 150, bottom: 20 });
 
-            // ==========================================
-            // === NEU: 3D GEBÄUDE (PHANTOM FADE) ===
-            // ==========================================
-            
-            // Wir suchen die Text-Ebene, damit die 3D-Gebäude UNTER den Straßennamen bleiben
-            // und die weiße Schrift nicht verschluckt wird.
-            const layers = libreMap.getStyle().layers;
-            let labelLayerId;
-            for (let i = 0; i < layers.length; i++) {
-                if (layers[i].type === 'symbol') {
-                    labelLayerId = layers[i].id;
-                    break;
-                }
+        // --- 3D GEBÄUDE ---
+        const layers = libreMap.getStyle().layers;
+        let labelLayerId;
+        for (let i = 0; i < layers.length; i++) {
+            if (layers[i].type === 'symbol') {
+                labelLayerId = layers[i].id;
+                break;
             }
+        }
 
-            // Die 3D-Daten aus dem bestehenden Carto-Datensatz abgreifen
-            libreMap.addLayer({
-                'id': '3d-buildings',
-                'source': 'carto', // Die Vektordaten von Carto Dark Matter
-                'source-layer': 'building',
-                'type': 'fill-extrusion',
-                'minzoom': 14,
-                'paint': {
-                    'fill-extrusion-color': '#1f1f24', // Ein ultra-edles, mattes Dark-Mode Grau
-                    'fill-extrusion-height': ['get', 'render_height'],
-                    'fill-extrusion-base': ['get', 'render_min_height'],
-                    'fill-extrusion-opacity': 0 // WICHTIG: Startet komplett unsichtbar bei 0 Grad!
-                }
-            }, labelLayerId);
+        // FIX: 'openmaptiles' ist der Standard-Name für Carto-Vektordaten
+        libreMap.addLayer({
+            'id': '3d-buildings',
+            'source': 'openmaptiles', 
+            'source-layer': 'building',
+            'type': 'fill-extrusion',
+            'minzoom': 13,
+            'paint': {
+                'fill-extrusion-color': '#1f1f24',
+                'fill-extrusion-height': ['get', 'render_height'],
+                'fill-extrusion-base': ['get', 'render_min_height'],
+                'fill-extrusion-opacity': 0 
+            }
+        }, labelLayerId);
 
-            // Der Echtzeit-Sensor: Fadet die Häuser abhängig vom Neigungswinkel ein
-            libreMap.on('pitch', () => {
-                const pitch = libreMap.getPitch();
-                let opacity = 0;
-                
-                // Wenn die Kamera steiler als 10 Grad kippt, wachsen die Häuser aus dem Boden
-                if (pitch > 10) {
-                    // Rechnet den Winkel butterweich in eine Deckkraft um (Maximal 0.8)
-                    opacity = Math.min((pitch - 10) / 35, 1) * 0.8;
-                }
-                
+        // Der Neigungs-Sensor
+        libreMap.on('pitch', () => {
+            const pitch = libreMap.getPitch();
+            const opacity = pitch > 10 ? Math.min((pitch - 10) / 35, 0.8) : 0;
+            if (libreMap.getLayer('3d-buildings')) {
                 libreMap.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', opacity);
-            });
+            }
         });
-        // 3. Einen Marker für den Standort hinzufügen (wenn wir einen haben)
-  // 3. Einen Marker für den Standort hinzufügen (wenn wir einen haben)
+
+        // --- BLAUER PUNKT (Jetzt sicher im load-event) ---
         if (hasLocation) {
-            // Eigenes HTML-Element für den DriverHub-Marker erstellen
             const customMarkerElement = document.createElement('div');
             customMarkerElement.className = 'user-marker-wrap';
             customMarkerElement.innerHTML = `
                 <div class="user-pulse"></div>
                 <div class="user-dot"></div>
             `;
-
-            // Den Custom-Marker zur Karte hinzufügen
-            new maplibregl.Marker({
-                element: customMarkerElement
-            })
-            .setLngLat(coords)
-            .addTo(libreMap);
+            new maplibregl.Marker({ element: customMarkerElement })
+                .setLngLat(coords)
+                .addTo(libreMap);
         }
+    });
 
-        // 4. Ein Resize-Handling nach kurzer Zeit
-        // Manchmal braucht WebGL einen Moment, um die Container-Größe richtig zu berechnen
-        setTimeout(() => {
-            if (libreMap) libreMap.resize();
-        }, 100);
-    }
+    setTimeout(() => { if (libreMap) libreMap.resize(); }, 100);
+}
     // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
     // ==========================================
@@ -230,56 +201,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// Karte verkleinern (Der Master-Fix für Standort & Animation)
-        shrinkBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); 
-            
-            // 1. MapCard verkleinern und Trigger wieder aktivieren
-            mapCard.classList.remove('map-expanded');
-            expandTrigger.style.display = 'block';
+shrinkBtn.addEventListener('click', (e) => {
+    e.stopPropagation(); 
+    
+    mapCard.classList.remove('map-expanded');
+    expandTrigger.style.display = 'block';
 
-            // 2. UI-Elemente zurücksetzen (Nav rein, Sheet einklappen, Tastatur weg)
-            const bottomNav = document.querySelector('.bottom-nav');
-            if (bottomNav) bottomNav.style.display = 'flex';
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) bottomNav.style.display = 'flex';
 
-            const bottomSheet = document.getElementById('map-bottom-sheet');
-            if (bottomSheet) bottomSheet.classList.remove('expanded');
+    const bottomSheet = document.getElementById('map-bottom-sheet');
+    if (bottomSheet) bottomSheet.classList.remove('expanded');
 
-            const searchInput = document.getElementById('tomtom-search-input');
-            if (searchInput) searchInput.blur();
+    if (!libreMap) return;
+    
+    // Interaktionen sofort sperren
+    libreMap.dragPan.disable();
+    libreMap.scrollZoom.disable();
+    libreMap.touchZoomRotate.disable();
+    libreMap.dragRotate.disable();
+    libreMap.dragPitch.disable();
+    libreMap.touchPitch.disable();
 
-            if (!libreMap) return;
-            
-            // 3. MapLibre Interaktionen komplett sperren
-            libreMap.dragPan.disable();
-            libreMap.scrollZoom.disable();
-            libreMap.touchZoomRotate.disable();
-            libreMap.doubleClickZoom.disable();
-            libreMap.dragRotate.disable(); 
-            libreMap.dragPitch.disable();  
-            libreMap.touchPitch.disable();
-            
-            // 4. FIX: Seidenweicher Slide zurück.
-            // Ohne den Dauerfeuer-Loop wird easeTo() jetzt nicht mehr abgebrochen 
-            // und fliegt makellos zum Standort zurück!
-            if (currentCoords) {
-                libreMap.easeTo({
-                    center: currentCoords,
-                    zoom: 14,
-                    bearing: 0,
-                    pitch: 0,
-                    padding: { right: 150, bottom: 20 },
-                    duration: 400,
-                    easing: (t) => t * (2 - t)
-                });
-            }
-
-            // 5. FIX: Wir resizen die Karte genau einmal sauber am ENDE der 
-            // CSS-Animation (nach 400ms), anstatt die Kamerafahrt zu stören.
-            setTimeout(() => {
-                if (libreMap) libreMap.resize();
-            }, 400);
+    // RÜCKFLUG STARTEN
+    if (currentCoords) {
+        libreMap.easeTo({
+            center: currentCoords,
+            zoom: 14,
+            bearing: 0,
+            pitch: 0,
+            padding: { right: 150, bottom: 20 },
+            duration: 400,
+            easing: (t) => t * (2 - t)
         });
+    }
+
+    // Einmaliges Resize nach der Animation
+    setTimeout(() => { if (libreMap) libreMap.resize(); }, 450);
+});
     }
 // ==========================================
     // === TOMTOM SEARCH & ROUTING LOGIC ===
