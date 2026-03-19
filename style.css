@@ -2564,29 +2564,47 @@ body.ghost-active #ghost-chat-overlay {
     pointer-events: none;
 }
 
-/* Der neue "Zurück"-Button (Nur sichtbar, wenn Map groß ist) */
+/* Der neue "Zurück"-Button (Ganz clean, ohne Kreis) */
 .map-shrink-btn-new {
     position: absolute;
-    top: env(safe-area-inset-top, 40px); /* Respektiert die iPhone Notch */
+    top: calc(env(safe-area-inset-top, 40px) + 10px);
     left: 20px;
-    width: 44px; height: 44px;
-    border-radius: 50%;
-    background: rgba(20,20,20,0.8);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+    border: none;
     color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1.6rem;
+    padding: 10px 20px 10px 0; /* Große Touch-Area, aber linksbündig */
     z-index: 110;
     opacity: 0;
     pointer-events: none;
     cursor: pointer;
-    backdrop-filter: blur(10px);
-    transition: opacity 0.3s ease 0.2s; /* Verzögert einblenden */
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    transition: opacity 0.3s ease 0.2s, transform 0.2s;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8)); /* Macht den Pfeil auf hellen Straßen lesbar */
 }
 
-/* Button aktivieren */
+/* Cleaner Slide-Effekt beim Tippen */
+.map-shrink-btn-new:active {
+    transform: translateX(-6px);
+}
+
+/* Button aktivieren im Fullscreen */
 .map-snippet-card.map-expanded .map-shrink-btn-new {
     opacity: 1;
     pointer-events: auto;
+}
+
+/* NEU: Top Fade (Versteckt in der Card, sichtbar im Fullscreen) */
+.map-expanded-fade-top {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 140px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, transparent 100%);
+    z-index: 105; /* Unter dem Pfeil, über der Karte */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+/* Fade einblenden im Fullscreen */
+.map-snippet-card.map-expanded .map-expanded-fade-top {
+    opacity: 1;
 }
