@@ -199,33 +199,36 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.touchPitch.disable();
 
             // ========================================================
-            // 4. DEIN ORIGINALER EASE-TO FLUG
-            // ========================================================
-            if (currentCoords) {
-                libreMap.easeTo({
-                    center: currentCoords,
-                    zoom: 14,
-                    bearing: 0,
-                    pitch: 0,
-                    padding: { right: 150, bottom: 20 },
-                    duration: 400,
-                    essential: true, // Zwingt MapLibre, den Flug unter keinen Umständen abzubrechen
-                    easing: (t) => t * (2 - t)
-                });
-            }
-
-            // ========================================================
-            // 5. DEIN ORIGINALER HARDWARE-LOOP
+            // 4. DEIN TAB-SWITCH HACK (Die Brechstange!)
             // ========================================================
             let startTime = null;
             function animateResize(timestamp) {
                 if (!startTime) startTime = timestamp;
                 let elapsed = timestamp - startTime;
 
+                // Halte MapLibre synchron zur CSS-Verkleinerung (verhindert Quetschen)
                 if (libreMap) libreMap.resize(); 
 
                 if (elapsed < 400) { 
                     window.requestAnimationFrame(animateResize);
+                } else {
+                    // EXAKT DEINE BEOBACHTUNG: Wenn das CSS fertig ist (nach 400ms),
+                    // simulieren wir den Klick auf den Explore-Button!
+                    if (currentCoords && libreMap) {
+                        // Harter Teleport auf den Punkt (kein fehleranfälliges easeTo mehr!)
+                        libreMap.jumpTo({
+                            center: currentCoords,
+                            zoom: 14,
+                            bearing: 0,
+                            pitch: 0,
+                            padding: { right: 150, bottom: 20 }
+                        });
+                        
+                        // Das finale Resize (genau wie im Tab-Switch)
+                        setTimeout(() => {
+                            if (libreMap) libreMap.resize();
+                        }, 50);
+                    }
                 }
             }
             window.requestAnimationFrame(animateResize); 
