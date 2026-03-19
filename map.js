@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // === MAPLIBRE SNIPPET LOGIC (CORE V1) ===
     // ==========================================
 
-    function initMapLibreSnippet() {
+   function initMapLibreSnippet() {
         // Sicherstellen, dass MapLibre geladen ist
         if (typeof maplibregl === 'undefined') {
             console.error("MapLibre GL JS ist nicht geladen!");
@@ -58,10 +58,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapContainer = document.getElementById(mapContainerId);
         if (!mapContainer) return;
 
-        // Falls die Karte schon existiert, springen wir nur kurz hin
+        // Falls die Karte schon existiert, zentrieren wir sie neu! (Peters Fix)
         if (libreMap) {
-            libreMap.resize(); // WICHTIG: MapLibre neu berechnen, wenn Screen wechselt
-            // Für diesen Task (nur anzeigen) machen wir hier nichts weiter
+            if (currentCoords) {
+                // Wir springen sofort (ohne Animation) auf den Standort zurück, 
+                // da die Karte im Hintergrund war.
+                libreMap.jumpTo({
+                    center: currentCoords,
+                    zoom: 14,
+                    padding: { right: 150, bottom: 20 }
+                });
+            }
+            setTimeout(() => libreMap.resize(), 50); 
             return;
         }
 
@@ -82,7 +90,6 @@ document.addEventListener('DOMContentLoaded', () => {
             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Hohe Präzision anfordern
         );
     }
-
 function loadMap(coords, hasLocation) {
     // 1. Standort sichern
     currentCoords = coords; 
@@ -163,7 +170,8 @@ function loadMap(coords, hasLocation) {
 
 
 
-shrinkBtn.addEventListener('click', (e) => {
+// Karte verkleinern (Der Master-Fix für den Flug)
+        shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
             mapCard.classList.remove('map-expanded');
@@ -178,8 +186,9 @@ shrinkBtn.addEventListener('click', (e) => {
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) searchInput.blur();
 
-            if (!libreMap || !currentCoords) return;
+            if (!libreMap) return;
             
+            // Gesten sofort wieder sperren
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
@@ -188,24 +197,26 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.dragPitch.disable();
             libreMap.touchPitch.disable();
 
-            // FIX: Wir warten einen Wimpernschlag (50ms), damit das CSS-Shrinking 
-            // die Kamerafahrt nicht mehr brutal abwürgen kann.
-            setTimeout(() => {
+            // FIX: Wir warten auf das offizielle Ende der Kamerafahrt, bevor wir resizen (Peters Fix)
+            libreMap.once('moveend', () => {
+                libreMap.resize();
+            });
+
+            // FIX: Deine alte, weiche Kamerafahrt
+            if (currentCoords) {
                 libreMap.easeTo({
                     center: currentCoords,
                     zoom: 14,
                     bearing: 0,
                     pitch: 0,
                     padding: { right: 150, bottom: 20 },
-                    duration: 500, // Eine saubere, halbe Sekunde Flugzeit
+                    duration: 400,
                     easing: (t) => t * (2 - t)
                 });
-            }, 50);
-
-            // FIX: Map-Resize erst am absoluten Ende, wenn der Flug vorüber ist.
-            setTimeout(() => {
-                if (libreMap) libreMap.resize();
-            }, 600);
+            } else {
+                // Fallback, falls currentCoords aus irgendeinem Grund leer ist
+                libreMap.resize();
+            }
         });
     }
 // ==========================================
