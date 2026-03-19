@@ -147,10 +147,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (expandTrigger && shrinkBtn && mapCard) {
         
-        // Karte groß machen
+// Karte groß machen
         expandTrigger.addEventListener('click', () => {
             mapCard.classList.add('map-expanded');
             expandTrigger.style.display = 'none'; // Klickscheibe wegnehmen
+
+            // NEU: Nav-Bar ausblenden (mit Sicherheitsabfrage)
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) bottomNav.style.display = 'none';
 
             if (libreMap) {
                 // Interaktion freischalten
@@ -167,14 +171,27 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-  // ==========================================
-        // === MAP SHRINK LOGIC (THE "PINNED ANCHOR" V6 - FIXED) ===
-        // ==========================================
+
+
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
+
+            // NEU: Nav-Bar wieder einblenden
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) bottomNav.style.display = 'flex'; // 'flex' stellt dein normales CSS wieder her
+
+            // NEU: Bottom-Sheet einklappen, falls es noch offen ist
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.classList.remove('expanded');
+
+            if (!libreMap) return;
+
+            libreMap.dragPan.disable();
+            libreMap.scrollZoom.disable();
+            // ... (Hier geht dein restlicher Code mit touchZoomRotate, easeTo und animateResize weiter)
 
             if (!libreMap) return;
 
@@ -349,6 +366,41 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("TomTom Routing Fehler:", error);
         }
+    }
+    // ==========================================
+    // === BOTTOM SHEET TOUCH & FOCUS LOGIC ===
+    // ==========================================
+    const bottomSheet = document.getElementById('map-bottom-sheet');
+    const tomtomInput = document.getElementById('tomtom-search-input');
+
+    if (bottomSheet && tomtomInput) {
+        
+        // 1. Wenn du in die Searchbar klickst -> Sheet sofort ausfahren
+        tomtomInput.addEventListener('focus', () => {
+            bottomSheet.classList.add('expanded');
+        });
+
+        // 2. Wisch-Logik (Swipe Up / Swipe Down)
+        let startY = 0;
+
+        bottomSheet.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        bottomSheet.addEventListener('touchend', (e) => {
+            let endY = e.changedTouches[0].clientY;
+            let diff = startY - endY;
+
+            // Wisch nach oben (mehr als 30px) -> Ausfahren
+            if (diff > 30) {
+                bottomSheet.classList.add('expanded');
+            } 
+            // Wisch nach unten (mehr als 30px) -> Einklappen
+            else if (diff < -30) {
+                bottomSheet.classList.remove('expanded');
+                tomtomInput.blur(); // Tastatur einklappen, wenn offen!
+            }
+        });
     }
 });
 
