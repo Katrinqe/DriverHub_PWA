@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Dadurch weicht die Karte (und dein Marker) automatisch nach LINKS aus.
             libreMap.setPadding({
                 right: 150,
-                bottom: 30
+                bottom: 20
             });
         });
         // 3. Einen Marker für den Standort hinzufügen (wenn wir einen haben)
@@ -167,6 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+       // ==========================================
+        // === MAP SHRINK LOGIC (THE "PINNED ANCHOR" V6) ===
+        // ==========================================
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
@@ -180,22 +183,22 @@ document.addEventListener('DOMContentLoaded', () => {
             libreMap.touchZoomRotate.disable();
             libreMap.doubleClickZoom.disable();
 
-            libreMap.setPadding({ right: 150, bottom: 10 });
+            // 1. Padding SOFORT wieder auf die Card-Werte setzen
+            libreMap.setPadding({ right: 150, bottom: 20 });
 
-            // 3. DER FIX: easeTo statt flyTo! 
-            // Kein Rauszoomen = Keine neuen Kacheln laden = Kein Ladescreen.
+            // 2. SOFORT auf den Standort snappen. KEINE KAMERAFAHRT!
+            // Da wir resize() im Loop feuern, hält MapLibre den blauen Punkt jetzt 
+            // wie festgenagelt an dieser Stelle, während das CSS den Rahmen drumherum verkleinert.
             if (currentCoords) {
-                libreMap.easeTo({
+                libreMap.jumpTo({
                     center: currentCoords,
                     zoom: 14,
                     bearing: 0,
-                    pitch: 0,
-                    duration: 400, // Exakt die 400ms vom CSS
-                    easing: (t) => t * (2 - t) // Apple-like ease-out Kurve
+                    pitch: 0
                 });
             }
 
-            // 4. Der Hardware-Loop (Ohne den Ruckler am Ende)
+            // 3. Hardware-Loop: Schneidet die Ränder während des CSS-Shrinks in Echtzeit ab
             let startTime = null;
             function animateResize(timestamp) {
                 if (!startTime) startTime = timestamp;
@@ -203,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 libreMap.resize(); 
                 
-                if (elapsed < 420) { 
+                if (elapsed < 400) { 
                     window.requestAnimationFrame(animateResize);
                 }
             }
