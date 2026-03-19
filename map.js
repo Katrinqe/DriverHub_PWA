@@ -98,11 +98,14 @@ document.addEventListener('DOMContentLoaded', () => {
             attributionControl: false // Die Map-Zuweisung unten rechts ausblenden
         });
 
-        // Da die Buttons jetzt unten liegen, geben wir der Karte ein virtuelles
-        // Padding von unten, damit der User-Dot ein Stück nach oben wandert.
+ // Optischen Mittelpunkt verschieben (für visuelles Balancing)
         libreMap.on('load', () => {
-            libreMap.jumpTo({
-                padding: { bottom: 50 } 
+            // setPadding verschiebt das mathematische Zentrum der Karte.
+            // right: 150 bedeutet: "Tu so, als wäre rechts eine 150px breite Wand."
+            // Dadurch weicht die Karte (und dein Marker) automatisch nach LINKS aus.
+            libreMap.setPadding({
+                right: 150,
+                bottom: 30
             });
         });
         // 3. Einen Marker für den Standort hinzufügen (wenn wir einen haben)
