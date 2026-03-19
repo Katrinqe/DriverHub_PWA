@@ -763,10 +763,7 @@
 
     <div class="map-expanded-fade-top"></div>
 
-            <div class="map-search-container">
-                <input type="text" id="tomtom-search-input" class="map-search-input" placeholder="Ziel suchen..." autocomplete="off">
-                <div id="tomtom-suggestions" class="suggestions-box hidden"></div>
-            </div>
+         
 
       <div id="map-expand-trigger" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 8; cursor: pointer;"></div>
 
@@ -785,7 +782,15 @@
                 <button class="map-round-btn" id="btn-explore-navi"><i class="fa-solid fa-location-arrow"></i></button>
                 <button class="map-round-btn" id="btn-explore-gas"><i class="fa-solid fa-gas-pump"></i></button>
             </div>
-            
+            <div id="map-bottom-sheet" class="map-bottom-sheet">
+                <div class="sheet-drag-handle"></div>
+                
+                <div class="sheet-search-wrapper">
+                    <input type="text" id="tomtom-search-input" class="map-search-input" placeholder="Ziel suchen..." autocomplete="off">
+                </div>
+                
+                <div id="tomtom-suggestions" class="sheet-suggestions-box hidden"></div>
+            </div>
         </div>
 
         <div style="height: 100px;"></div>
