@@ -133,4 +133,54 @@ document.addEventListener('DOMContentLoaded', () => {
             if (libreMap) libreMap.resize();
         }, 100);
     }
+    // ==========================================
+    // === MAP EXPAND / SHRINK LOGIC ===
+    // ==========================================
+    const expandTrigger = document.getElementById('map-expand-trigger');
+    const shrinkBtn = document.getElementById('btn-shrink-map');
+    const mapCard = document.querySelector('.map-snippet-card');
+
+    if (expandTrigger && shrinkBtn && mapCard) {
+        
+        // Karte groß machen
+        expandTrigger.addEventListener('click', () => {
+            mapCard.classList.add('map-expanded');
+            expandTrigger.style.display = 'none'; // Klickscheibe wegnehmen
+
+            if (libreMap) {
+                // Interaktion freischalten
+                libreMap.dragPan.enable();
+                libreMap.scrollZoom.enable();
+                libreMap.touchZoomRotate.enable();
+                libreMap.doubleClickZoom.enable();
+
+                // Optischen Mittelpunkt zentrieren (Padding entfernen)
+                libreMap.setPadding({ right: 0, bottom: 0 });
+
+                // Map zwingen, sich an den neuen Fullscreen anzupassen
+                setTimeout(() => libreMap.resize(), 400); // 400ms entspricht der CSS Animation
+            }
+        });
+
+        // Karte wieder klein machen
+        shrinkBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Verhindert Fehler
+            mapCard.classList.remove('map-expanded');
+            expandTrigger.style.display = 'block'; // Klickscheibe wieder drüberlegen
+
+            if (libreMap) {
+                // Interaktion wieder sperren
+                libreMap.dragPan.disable();
+                libreMap.scrollZoom.disable();
+                libreMap.touchZoomRotate.disable();
+                libreMap.doubleClickZoom.disable();
+
+                // Padding für den Links-Offset wieder herstellen
+                libreMap.setPadding({ right: 150, bottom: 30 });
+
+                // Map zwingen, sich an die kleine Karte anzupassen
+                setTimeout(() => libreMap.resize(), 400);
+            }
+        });
+    }
 });
