@@ -199,35 +199,41 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.touchPitch.disable();
 
             // ========================================================
-            // 4. PETERS MASTER-FIX: ERST RESIZE-LOOP, DANN KAMERAFAHRT
+            // 4. PETERS PROFI-LOGIK: TRANSITIONEND + RESIZE LOOP
             // ========================================================
-            let startTime = null;
-            function animateResize(timestamp) {
-                if (!startTime) startTime = timestamp;
-                let elapsed = timestamp - startTime;
+            let animating = true;
 
-                // Halte MapLibre synchron zur CSS-Verkleinerung (verhindert Quetschen)
+            function animateResize() {
+                if (!animating) return; // Stoppt den Loop sauber
+                libreMap.resize();
+                window.requestAnimationFrame(animateResize);
+            }
+
+            // Loop starten, um das CSS beim Schrumpfen zu begleiten
+            window.requestAnimationFrame(animateResize); 
+
+            // Warten, bis der Browser meldet: "CSS Animation ist WIRKLICH fertig!"
+            mapCard.addEventListener('transitionend', () => {
+                animating = false; // Loop beenden
+                
+                // Ein finales, sauberes Resize vor dem Kameraflug
                 libreMap.resize(); 
 
-                if (elapsed < 400) { 
-                    window.requestAnimationFrame(animateResize);
-                } else {
-                    // EXAKT JETZT (wenn die CSS-Card fertig geschrumpft ist) 
-                    // hat die Engine Ruhe und darf die Kamera fliegen!
-                    if (currentCoords) {
-                        libreMap.easeTo({
-                            center: currentCoords,
-                            zoom: 14,
-                            bearing: 0,
-                            pitch: 0,
-                            padding: { right: 150, bottom: 20 },
-                            duration: 500,
-                            easing: (t) => t * (2 - t)
-                        });
-                    }
+                if (currentCoords) {
+                    libreMap.easeTo({
+                        center: currentCoords,
+                        zoom: 14,
+                        bearing: 0,
+                        pitch: 0,
+                        // FIX: Padding auf 0 setzen! In der kleinen Card ist kein Platz 
+                        // für 150px Padding. Das hat die Engine vorher getötet.
+                        padding: { right: 0, bottom: 0 }, 
+                        duration: 500,
+                        essential: true, // Zwingt die Kamerafahrt
+                        easing: (t) => t * (2 - t)
+                    });
                 }
-            }
-            window.requestAnimationFrame(animateResize); 
+            }, { once: true }); // { once: true } verhindert, dass das Event mehrfach feuert
         });
     }
 // ==========================================
