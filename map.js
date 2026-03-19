@@ -170,71 +170,96 @@ function loadMap(coords, hasLocation) {
 
 
 
-shrinkBtn.addEventListener('click', (e) => {
+  shrinkBtn.addEventListener('click', (e) => {
+
             e.stopPropagation(); 
+
             
-            // 1. CSS-Animation für das Schrumpfen starten
+
             mapCard.classList.remove('map-expanded');
+
             expandTrigger.style.display = 'block';
 
-            // 2. UI-Elemente zurücksetzen (Wichtig für das Menü!)
-            const bottomNav = document.querySelector('.bottom-nav');
-            if (bottomNav) bottomNav.style.display = 'flex';
 
-            const bottomSheet = document.getElementById('map-bottom-sheet');
-            if (bottomSheet) bottomSheet.classList.remove('expanded');
-
-            const searchInput = document.getElementById('tomtom-search-input');
-            if (searchInput) searchInput.blur();
 
             if (!libreMap) return;
 
-            // 3. Gesten sofort sperren
+
+
             libreMap.dragPan.disable();
+
             libreMap.scrollZoom.disable();
+
             libreMap.touchZoomRotate.disable();
+
             libreMap.doubleClickZoom.disable();
-            libreMap.dragRotate.disable();
-            libreMap.dragPitch.disable();
-            libreMap.touchPitch.disable();
 
-            // 4. Das Padding SOFORT setzen, damit der Flug-Vektor stimmt
-            libreMap.setPadding({ right: 150, bottom: 20 });
 
-            // ========================================================
-            // 5. DEIN ORIGINALER FLYTO (Robuster als easeTo!)
-            // ========================================================
+
+            libreMap.setPadding({ right: 150, bottom: 10 });
+
+
+
+            // 3. Kamerafahrt nach Hause starten (INKLUSIVE NORDEN & FLACH)
+
             if (currentCoords) {
+
                 libreMap.flyTo({
+
                     center: currentCoords,
+
                     zoom: 14,
-                    bearing: 0,  // Rotiert die Karte sauber nach Norden zurück
-                    pitch: 0,    // Nimmt die 3D-Neigung raus
+
+                    bearing: 0,  // FIX: Rotiert die Karte sauber nach Norden zurück
+
+                    pitch: 0,    // FIX: Nimmt die 3D-Neigung raus (wieder flach von oben)
+
                     speed: 1.5,
+
                     essential: true
+
                 });
+
             }
 
-            // ========================================================
-            // 6. DEIN 60-FPS-TRICK MIT SETINTERVAL
-            // ========================================================
+
+
+            // 4. Der 60-FPS-Trick für den sauberen Resize während der CSS-Animation
+
             let start = Date.now();
+
             let resizeInterval = setInterval(() => {
+
                 libreMap.resize();
+
                 
+
                 if (Date.now() - start > 450) {
+
                     clearInterval(resizeInterval);
+
                     // Sicherstellen, dass die Karte im finalen Zustand 100% perfekt sitzt
+
                     if (currentCoords) {
+
                         libreMap.jumpTo({ 
+
                             center: currentCoords, 
+
                             zoom: 14, 
-                            bearing: 0, 
+
+                            bearing: 0, // Hier ebenfalls absichern!
+
                             pitch: 0 
+
                         });
+
                     }
+
                 }
+
             }, 16); 
+
         });
     }
 // ==========================================
