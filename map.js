@@ -91,17 +91,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const mapContainer = document.getElementById(mapContainerId);
 
         
-        // 2. MapLibre Karte initialisieren
+ // 2. MapLibre Karte initialisieren
         libreMap = new maplibregl.Map({
             container: mapContainerId,
-            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', // Ein kostenloser, sehr geiler Dark Style
+            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
             center: coords,
-            zoom: 14, // Ein schöner Zoom für einen Ausschnitt
+            zoom: 14,
             
-            // FÜR DIESEN TASK: KEINE INTERAKTIONER ERLAUBEN
-            interactive: false, // User kann nicht scrollen/zoomen/drehen
-            attributionControl: false // Die Map-Zuweisung unten rechts ausblenden
+            // FIX: Wir müssen interactive auf true setzen, damit MapLibre das 
+            // Anti-Scroll-CSS (touch-action: none) auf dem Handy anwendet!
+            interactive: true, 
+            attributionControl: false 
         });
+
+        // FIX: Da sie jetzt interaktiv ist, sperren wir im nächsten Atemzug 
+        // sofort alle Gesten hart per Hand, damit sie in der Card starr bleibt.
+        libreMap.dragPan.disable();
+        libreMap.scrollZoom.disable();
+        libreMap.touchZoomRotate.disable();
+        libreMap.doubleClickZoom.disable();
+        libreMap.dragRotate.disable();
+        libreMap.dragPitch.disable();
+        libreMap.touchPitch.disable();
 
 // Optischen Mittelpunkt verschieben & Phantom 3D-Gebäude laden
         libreMap.on('load', () => {
@@ -219,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
-// Karte verkleinern (Der Master-Fix für den Standort)
+// Karte verkleinern (Der Master-Fix für Standort & Animation)
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
@@ -237,18 +248,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) searchInput.blur();
 
-            // 3. MapLibre Interaktionen komplett sperren
             if (!libreMap) return;
             
+            // 3. MapLibre Interaktionen komplett sperren
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
             libreMap.doubleClickZoom.disable();
-            libreMap.dragRotate.disable(); // FIX: Rotation wieder sperren
-            libreMap.dragPitch.disable();  // FIX: Pitch wieder sperren
+            libreMap.dragRotate.disable(); 
+            libreMap.dragPitch.disable();  
             libreMap.touchPitch.disable();
             
-            // 4. Seidenweicher Slide zurück (Kamera + Padding + Standort!)
+            // 4. FIX: Seidenweicher Slide zurück.
+            // Ohne den Dauerfeuer-Loop wird easeTo() jetzt nicht mehr abgebrochen 
+            // und fliegt makellos zum Standort zurück!
             if (currentCoords) {
                 libreMap.easeTo({
                     center: currentCoords,
@@ -261,19 +274,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
 
-            // 5. Hardware-Loop für flüssiges CSS-Shrinking
-            let startTime = null;
-            function animateResize(timestamp) {
-                if (!startTime) startTime = timestamp;
-                let elapsed = timestamp - startTime;
-                
-                libreMap.resize(); 
-                
-                if (elapsed < 400) { 
-                    window.requestAnimationFrame(animateResize);
-                }
-            }
-            window.requestAnimationFrame(animateResize); 
+            // 5. FIX: Wir resizen die Karte genau einmal sauber am ENDE der 
+            // CSS-Animation (nach 400ms), anstatt die Kamerafahrt zu stören.
+            setTimeout(() => {
+                if (libreMap) libreMap.resize();
+            }, 400);
         });
     }
 // ==========================================
