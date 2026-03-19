@@ -170,45 +170,51 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==========================================
         // === MAP SHRINK LOGIC (THE 60 FPS FIX) ===
         // ==========================================
+       // ==========================================
+        // === MAP SHRINK LOGIC (THE 60 FPS FIX + NORTH RESET) ===
+        // ==========================================
         shrinkBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Verhindert Fehler
+            e.stopPropagation(); 
             
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
 
             if (!libreMap) return;
 
-            // 1. Interaktion sofort sperren
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
             libreMap.doubleClickZoom.disable();
 
-            // 2. Padding sofort wiederherstellen (bottom reduziert, damit du zentriert bleibst!)
             libreMap.setPadding({ right: 150, bottom: 10 });
 
-            // 3. Kamerafahrt nach Hause starten
+            // 3. Kamerafahrt nach Hause starten (INKLUSIVE NORDEN & FLACH)
             if (currentCoords) {
                 libreMap.flyTo({
                     center: currentCoords,
                     zoom: 14,
+                    bearing: 0,  // FIX: Rotiert die Karte sauber nach Norden zurück
+                    pitch: 0,    // FIX: Nimmt die 3D-Neigung raus (wieder flach von oben)
                     speed: 1.5,
                     essential: true
                 });
             }
 
-            // 4. DER 60-FPS-TRICK: Wir zwingen die Engine, während der 400ms CSS-Animation
-            // alle 16 Millisekunden ihre Größe neu zu berechnen.
+            // 4. Der 60-FPS-Trick für den sauberen Resize während der CSS-Animation
             let start = Date.now();
             let resizeInterval = setInterval(() => {
                 libreMap.resize();
                 
-                // Nach 450ms (wenn die CSS-Animation sicher fertig ist), beenden wir das Dauerfeuer
                 if (Date.now() - start > 450) {
                     clearInterval(resizeInterval);
-                    // Sicherstellen, dass die Karte im finalen Zustand zu 100% perfekt sitzt
+                    // Sicherstellen, dass die Karte im finalen Zustand 100% perfekt sitzt
                     if (currentCoords) {
-                        libreMap.jumpTo({ center: currentCoords, zoom: 14 });
+                        libreMap.jumpTo({ 
+                            center: currentCoords, 
+                            zoom: 14, 
+                            bearing: 0, // Hier ebenfalls absichern!
+                            pitch: 0 
+                        });
                     }
                 }
             }, 16); 
