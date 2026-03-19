@@ -97,9 +97,12 @@ function loadMap(coords, hasLocation) {
         attributionControl: false 
     });
 
-    // WICHTIG: Alles was auf die Karte kommt, muss in diesen Block:
+    // WICHTIG: Alles, was auf die Karte kommt, MUSS hier rein
     libreMap.on('load', () => {
-        // Interaktionen sofort sperren (für den Card-Look)
+        // Erst wenn geladen, Padding setzen
+        libreMap.setPadding({ right: 150, bottom: 20 });
+
+        // Gesten für Card-Modus sofort sperren
         libreMap.dragPan.disable();
         libreMap.scrollZoom.disable();
         libreMap.touchZoomRotate.disable();
@@ -107,9 +110,6 @@ function loadMap(coords, hasLocation) {
         libreMap.dragRotate.disable();
         libreMap.dragPitch.disable();
         libreMap.touchPitch.disable();
-
-        // Padding setzen
-        libreMap.setPadding({ right: 150, bottom: 20 });
 
         // --- 3D GEBÄUDE ---
         const layers = libreMap.getStyle().layers;
@@ -121,10 +121,10 @@ function loadMap(coords, hasLocation) {
             }
         }
 
-        // FIX: 'openmaptiles' ist der Standard-Name für Carto-Vektordaten
+        // Gebäude Layer (Quelle 'carto' ist bei diesem Style Standard)
         libreMap.addLayer({
             'id': '3d-buildings',
-            'source': 'openmaptiles', 
+            'source': 'carto', 
             'source-layer': 'building',
             'type': 'fill-extrusion',
             'minzoom': 13,
@@ -136,16 +136,16 @@ function loadMap(coords, hasLocation) {
             }
         }, labelLayerId);
 
-        // Der Neigungs-Sensor
+        // Der Pitch-Sensor für den 3D-Fade
         libreMap.on('pitch', () => {
-            const pitch = libreMap.getPitch();
-            const opacity = pitch > 10 ? Math.min((pitch - 10) / 35, 0.8) : 0;
             if (libreMap.getLayer('3d-buildings')) {
+                const pitch = libreMap.getPitch();
+                const opacity = pitch > 10 ? Math.min((pitch - 10) / 35, 0.8) : 0;
                 libreMap.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', opacity);
             }
         });
 
-        // --- BLAUER PUNKT (Jetzt sicher im load-event) ---
+        // --- BLAUER PUNKT ---
         if (hasLocation) {
             const customMarkerElement = document.createElement('div');
             customMarkerElement.className = 'user-marker-wrap';
@@ -159,7 +159,7 @@ function loadMap(coords, hasLocation) {
         }
     });
 
-    setTimeout(() => { if (libreMap) libreMap.resize(); }, 100);
+    setTimeout(() => { if (libreMap) libreMap.resize(); }, 300);
 }
     // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
@@ -213,17 +213,21 @@ shrinkBtn.addEventListener('click', (e) => {
     const bottomSheet = document.getElementById('map-bottom-sheet');
     if (bottomSheet) bottomSheet.classList.remove('expanded');
 
+    const searchInput = document.getElementById('tomtom-search-input');
+    if (searchInput) searchInput.blur();
+
     if (!libreMap) return;
     
-    // Interaktionen sofort sperren
+    // Gesten sofort wieder sperren
     libreMap.dragPan.disable();
     libreMap.scrollZoom.disable();
     libreMap.touchZoomRotate.disable();
+    libreMap.doubleClickZoom.disable();
     libreMap.dragRotate.disable();
     libreMap.dragPitch.disable();
     libreMap.touchPitch.disable();
 
-    // RÜCKFLUG STARTEN
+    // RÜCKFLUG: Wir geben dem Flug 500ms Zeit
     if (currentCoords) {
         libreMap.easeTo({
             center: currentCoords,
@@ -231,13 +235,15 @@ shrinkBtn.addEventListener('click', (e) => {
             bearing: 0,
             pitch: 0,
             padding: { right: 150, bottom: 20 },
-            duration: 400,
+            duration: 500, // Etwas langsamer für mehr Stabilität
             easing: (t) => t * (2 - t)
         });
     }
 
-    // Einmaliges Resize nach der Animation
-    setTimeout(() => { if (libreMap) libreMap.resize(); }, 450);
+    // WICHTIG: Resize erst nach 550ms, damit easeTo nicht unterbrochen wird!
+    setTimeout(() => {
+        if (libreMap) libreMap.resize();
+    }, 550);
 });
     }
 // ==========================================
