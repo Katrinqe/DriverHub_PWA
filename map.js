@@ -187,7 +187,7 @@ shrinkBtn.addEventListener('click', (e) => {
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) searchInput.blur();
 
-            if (!libreMap) return;
+            if (!libreMap || !currentCoords) return;
             
             // 3. Gesten sofort sperren
             libreMap.dragPan.disable();
@@ -198,42 +198,20 @@ shrinkBtn.addEventListener('click', (e) => {
             libreMap.dragPitch.disable();
             libreMap.touchPitch.disable();
 
-            // ========================================================
-            // 4. DIE ULTIMATIVE BRECHSTANGE (TELEPORT + DELAY)
-            // ========================================================
-            
-            // Wir begleiten den CSS-Shrink nur mit Resize, damit es nicht gequetscht aussieht
-            let startTime = null;
-            function animateResize(timestamp) {
-                if (!startTime) startTime = timestamp;
-                let elapsed = timestamp - startTime;
+            // 4. SOFORTIGER TELEPORT (Exakt wie beim Tab-Switch!)
+            // Keine Animation, kein Warten auf CSS. Die Karte knallt sofort auf
+            // den blauen Punkt, während das CSS-Fenster um sie herum schrumpft.
+            libreMap.jumpTo({
+                center: currentCoords,
+                zoom: 14,
+                bearing: 0,
+                pitch: 0,
+                padding: { right: 150, bottom: 20 }
+            });
 
-                if (libreMap) libreMap.resize(); 
-
-                if (elapsed < 400) { 
-                    window.requestAnimationFrame(animateResize);
-                } else {
-                    // === CSS IST FERTIG. JETZT WIRD TELEPORTIERT! ===
-                    if (currentCoords && libreMap) {
-                        // 1. Setze das Padding zurück auf die Card-Ansicht
-                        libreMap.setPadding({ right: 150, bottom: 20 });
-                        
-                        // 2. Teleportiere knallhart auf den Punkt (wie beim Tab-Switch)
-                        libreMap.jumpTo({
-                            center: currentCoords,
-                            zoom: 14,
-                            bearing: 0,
-                            pitch: 0
-                        });
-                        
-                        // 3. Zwinge die Engine, das neue Bild zu rendern
-                        setTimeout(() => {
-                            if (libreMap) libreMap.resize();
-                        }, 50);
-                    }
-                }
-            }
-            window.requestAnimationFrame(animateResize); 
+            // 5. Zwei harte Resizes (10ms und 450ms), um Grafik-Bugs beim Schrumpfen zu killen
+            setTimeout(() => { if (libreMap) libreMap.resize(); }, 10);
+            setTimeout(() => { if (libreMap) libreMap.resize(); }, 450);
         });
     }
 // ==========================================
