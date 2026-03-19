@@ -99,10 +99,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 3. Einen Marker für den Standort hinzufügen (wenn wir einen haben)
+  // 3. Einen Marker für den Standort hinzufügen (wenn wir einen haben)
         if (hasLocation) {
+            // Eigenes HTML-Element für den DriverHub-Marker erstellen
+            const customMarkerElement = document.createElement('div');
+            customMarkerElement.className = 'user-marker-wrap';
+            customMarkerElement.innerHTML = `
+                <div class="user-pulse"></div>
+                <div class="user-dot"></div>
+            `;
+
+            // Den Custom-Marker zur Karte hinzufügen
             new maplibregl.Marker({
-                color: '#007aff', // DriverHub Blau
-                scale: 0.8
+                element: customMarkerElement
             })
             .setLngLat(coords)
             .addTo(libreMap);
