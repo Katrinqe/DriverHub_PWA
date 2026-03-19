@@ -203,19 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 libreMap.scrollZoom.enable();
                 libreMap.touchZoomRotate.enable();
                 libreMap.doubleClickZoom.enable();
-
-                // Optischen Mittelpunkt zentrieren (Padding entfernen)
-                libreMap.setPadding({ right: 0, bottom: 0 });
-
-                // Map zwingen, sich an den neuen Fullscreen anzupassen
-                setTimeout(() => libreMap.resize(), 400); // 400ms entspricht der CSS Animation
-            }
-            if (libreMap) {
-                // Interaktion freischalten
-                libreMap.dragPan.enable();
-                libreMap.scrollZoom.enable();
-                libreMap.touchZoomRotate.enable();
-                libreMap.doubleClickZoom.enable();
                 
                 // NEU: Kippen (3D) erlauben!
                 libreMap.dragPitch.enable();  // Für Rechtsklick auf dem Desktop
@@ -223,6 +210,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Optischen Mittelpunkt zentrieren (Padding entfernen)
                 libreMap.setPadding({ right: 0, bottom: 0 });
+
+                // Map zwingen, sich an den neuen Fullscreen anzupassen
+                setTimeout(() => libreMap.resize(), 400); // 400ms entspricht der CSS Animation
+            }
         });
 
 
