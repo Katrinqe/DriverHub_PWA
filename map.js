@@ -382,7 +382,7 @@ libreMap.addLayer({
     let currentRouteIds = []; // Merkt sich die IDs der gerenderten Layer
     let currentRouteGeoJSONs = {}; // FIX: Sicherer Tresor für die GeoJSON-Daten
 
-    async function drawTomTomRoute(destLat, destLng) {
+async function drawTomTomRoute(destLat, destLng) {
         if (!currentCoords || !libreMap) return;
 
         const startLng = currentCoords[0];
@@ -421,7 +421,6 @@ libreMap.addLayer({
             libreMap.dragPitch.enable();
             libreMap.touchPitch.enable();
             
-            // DER LEBENSRETTENDE FIX: Das alte Padding löschen, sonst crasht die Map!
             libreMap.setPadding({ right: 0, bottom: 0 });
         }
 
@@ -441,17 +440,24 @@ libreMap.addLayer({
                 renderRouteCards(data.routes); 
                 drawAllRoutesOnMap(data.routes); 
                 
-                const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
-                const bounds = allPoints.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
+                // FIX 1: Bulletproof Methode um die Bounding-Box aufzubauen
+                const bounds = new maplibregl.LngLatBounds();
+                data.routes[0].legs[0].points.forEach(p => bounds.extend([p.longitude, p.latitude]));
                 
                 // 5. Wir warten EXAKT bis die 400ms CSS Animation der Karte fertig ist
                 setTimeout(() => {
                     clearInterval(resizeInterval); // Resize-Loop stoppen
                     
-                    if (libreMap) {
+                    if (libreMap && !bounds.isEmpty()) {
                         libreMap.resize(); // Ein letztes Sicherheits-Update
+                        
+                        // FIX 2: Dynamisches Padding berechnen
+                        const mapHeight = libreMap.getContainer().clientHeight || window.innerHeight;
+                        const safeBottom = Math.min(300, mapHeight * 0.4); // Maximal 40% der Höhe
+                        const safeTop = Math.min(120, mapHeight * 0.15); // Maximal 15% der Höhe
+
                         libreMap.fitBounds(bounds, {
-                            padding: { top: 120, bottom: 300, left: 50, right: 50 }, 
+                            padding: { top: safeTop, bottom: safeBottom, left: 40, right: 40 }, 
                             duration: 1000,
                             pitch: 0 
                         });
