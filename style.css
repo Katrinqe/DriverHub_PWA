@@ -2837,7 +2837,10 @@ body.ghost-active #ghost-chat-overlay {
     left: 0 !important;
     width: 100% !important;
     height: auto !important; 
-    display: flex !important;
+    
+    /* FIX: Hier darf KEIN !important stehen, sonst funktioniert .hidden nicht mehr! */
+    display: flex; 
+    
     justify-content: center !important;
     align-items: flex-end !important;
     z-index: 150 !important;
