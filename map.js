@@ -551,31 +551,37 @@ libreMap.addLayer({
     const btnRecenter = document.getElementById('btn-recenter-map');
     const btnNorth = document.getElementById('btn-align-north');
 
-    if (btnRecenter && btnNorth) {
+  if (btnRecenter && btnNorth) {
         
         // 1. Klick auf Standort-Button (Zentrieren)
         btnRecenter.addEventListener('click', (e) => {
             e.stopPropagation();
-        // --- SIMPLE ROUTE CANCEL INTERCEPT ---
+            
+            // Falls gerade eine Route aktiv ist -> Route abbrechen (wie beim X-Button)
             if (libreMap && libreMap.getLayer('simple-route-layer')) {
-                // Route löschen
-                libreMap.removeLayer('simple-route-layer');
-                libreMap.removeSource('simple-route-source');
+                clearRoutes();
+                const routeUI = document.getElementById('route-overview-ui');
+                if (routeUI) routeUI.classList.add('hidden');
                 
-                // UI zurücksetzen
                 const bottomSheet = document.getElementById('map-bottom-sheet');
                 if (bottomSheet) bottomSheet.style.display = 'flex';
                 
-                const pillV = document.querySelector('.map-controls-pill-v');
-                if (pillV) pillV.style.display = 'flex';
-                
-                // Zum Standort zurückfliegen
-                if (currentCoords) {
-                    libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
-                }
-                return; // WICHTIG: Hier abbrechen! Die Karte schrumpft dadurch nicht.
+                const searchInput = document.getElementById('tomtom-search-input');
+                if (searchInput) searchInput.value = '';
             }
-            // -----------------------------------------
+
+            // Zurück zum Standort (ABSOLUT MITTIG)
+            if (currentCoords && libreMap) {
+                libreMap.flyTo({ 
+                    center: currentCoords, 
+                    zoom: 14, 
+                    pitch: 0, 
+                    bearing: 0, 
+                    padding: { top: 0, bottom: 0, left: 0, right: 0 }, // FIX: Zentriert es exakt mittig im Viewport
+                    speed: 1.5, 
+                    essential: true 
+                });
+            }
         });
 
         // 2. Klick auf Nord-Button (Norden ausrichten & flach legen)
