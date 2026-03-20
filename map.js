@@ -382,7 +382,7 @@ libreMap.addLayer({
     let currentRouteIds = []; // Merkt sich die IDs der gerenderten Layer
     let currentRouteGeoJSONs = {}; // FIX: Sicherer Tresor für die GeoJSON-Daten
 
-    async function drawTomTomRoute(destLat, destLng) {
+ async function drawTomTomRoute(destLat, destLng) {
         if (!currentCoords || !libreMap) return;
 
         const startLng = currentCoords[0];
@@ -395,10 +395,12 @@ libreMap.addLayer({
         const pillV = document.querySelector('.map-controls-pill-v');
         const mapCard = document.querySelector('.map-snippet-card');
         const expandTrigger = document.getElementById('map-expand-trigger');
+        const bottomNav = document.querySelector('.bottom-nav'); // NEU: Nav-Bar greifen
         
         // 1. Karte zwingend auf Fullscreen setzen
         if (mapCard) mapCard.classList.add('map-expanded');
         if (expandTrigger) expandTrigger.style.display = 'none';
+        if (bottomNav) bottomNav.style.display = 'none'; // NEU: Nav-Bar ausblenden!
 
         // 2. UI Elemente umschalten
         if (bottomSheet) {
@@ -409,7 +411,7 @@ libreMap.addLayer({
         if (routeOverviewUI) routeOverviewUI.classList.remove('hidden');
         if (pillV) pillV.style.display = 'none';
 
-        // 3. ZWINGEND: Map-Interaktionen freischalten
+        // 3. ZWINGEND: Map-Interaktionen freischalten & PADDING LÖSCHEN
         if (libreMap) {
             libreMap.dragPan.enable();
             libreMap.scrollZoom.enable();
@@ -418,7 +420,14 @@ libreMap.addLayer({
             libreMap.dragRotate.enable();
             libreMap.dragPitch.enable();
             libreMap.touchPitch.enable();
+            
+            // DER FIX: Das alte Padding MUSS auf 0, sonst crasht die Map-Kamera!
+            libreMap.setPadding({ right: 0, bottom: 0 }); 
         }
+
+        // 4. Smooth Resize 60-FPS-Trick während der API-Call lädt
+        let resizeInterval = setInterval(() => { if (libreMap) libreMap.resize(); }, 16);
+        setTimeout(() => clearInterval(resizeInterval), 500);
 
         try {
             // API-Call mit maxAlternatives=2 (ergibt max 3 Routen) + Traffic-Daten
@@ -435,24 +444,20 @@ libreMap.addLayer({
                 const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
                 const bounds = allPoints.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
                 
-                // FIX: Wir warten 450ms, bis die Karte WIRKLICH den ganzen Bildschirm ausfüllt!
+                // Wir garantieren, dass das Resize fertig ist, bevor die Kamera fliegt
                 setTimeout(() => {
-                    if (libreMap) libreMap.resize(); // Engine updaten
                     libreMap.fitBounds(bounds, {
                         padding: { top: 120, bottom: 300, left: 50, right: 50 },
                         duration: 1000,
                         pitch: 0 
                     });
-                    
-                    // Und erst wenn die Map bereit ist, schalten wir die Stau-Farben scharf
                     highlightRoute(0);
-                }, 450);
+                }, 50); // Nur noch 50ms warten, weil der 60-FPS Interval schon die Arbeit gemacht hat
             }
         } catch (error) {
             console.error("TomTom Routing Fehler:", error);
         }
     }
-
     // --- RENDER LOGIK FÜR DIE MAP ---
     function drawAllRoutesOnMap(routes) {
         for (let i = routes.length - 1; i >= 0; i--) {
