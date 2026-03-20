@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Globale MapLibre Instanz
     let libreMap = null;
     let destMarker = null; // Nur einmal definieren!
+    let constructionMarkers = []; // Liste für alle Baustellen-Icons
     let currentCoords = null; 
     
     if (btnNewExplore && newExploreScreen) {
@@ -417,7 +418,7 @@ async function drawTomTomRoute(destLat, destLng) {
 
     try {
         // 3. API URL mit Traffic & Sections
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
+       const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&sectionType=incident`;
         const response = await fetch(url);
         const data = await response.json();
 
@@ -437,23 +438,47 @@ async function drawTomTomRoute(destLat, destLng) {
             });
         }
 
-        // SCHRITT B: Traffic-Sektionen als Overlays drüberlegen
-        sections.forEach(section => {
+    sections.forEach(section => {
             const start = section.startPointIndex;
             const end = section.endPointIndex;
-
             if (typeof start !== 'number' || typeof end !== 'number') return;
 
             const segmentCoords = allPoints.slice(start, end + 1);
             if (segmentCoords.length < 2) return;
 
+            // --- BESTEHENDE FARB-LOGIK ---
             let color = null; 
             if (section.sectionType === 'TRAFFIC') {
-                if (section.simpleCategory === 'JAM') color = '#ff3b30'; // Rot
-                else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; // Gelb
+                if (section.simpleCategory === 'JAM') color = '#ff3b30';
+                else if (section.simpleCategory === 'SLOW') color = '#ffcc00';
             }
 
-            // Nur hinzufügen, wenn es eine Traffic-Farbe ist (Blau haben wir ja schon als Basis)
+            // --- NEU: BAUSTELLEN-ICONS ---
+            // TomTom nutzt oft Category 6 für Baustellen (Roadworks)
+            if (section.sectionType === 'INCIDENT' && (section.incidentCategory === '6' || section.simpleCategory === 'SLOW')) {
+                const midIndex = Math.floor(segmentCoords.length / 2);
+                const iconPos = segmentCoords[midIndex]; // Wir setzen das Icon in die Mitte des Segments
+
+                const el = document.createElement('div');
+                el.className = 'incident-icon';
+                el.style.width = '24px';
+                el.style.height = '24px';
+                el.style.background = '#ffcc00'; // Apple-Gelb
+                el.style.borderRadius = '50%';
+                el.style.display = 'flex';
+                el.style.alignItems = 'center';
+                el.style.justifyContent = 'center';
+                el.style.border = '2px solid white';
+                el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.5)';
+                el.innerHTML = '<i class="fa-solid fa-person-digging" style="font-size: 12px; color: black;"></i>';
+
+                const marker = new maplibregl.Marker({ element: el })
+                    .setLngLat(iconPos)
+                    .addTo(libreMap);
+                
+                constructionMarkers.push(marker); // Im Array speichern für späteres Löschen
+            }
+
             if (color) {
                 routeFeatures.push({
                     type: 'Feature',
@@ -531,16 +556,24 @@ async function drawTomTomRoute(destLat, destLng) {
 
 
 function clearRoutes() {
-        if (libreMap && libreMap.getLayer('simple-route-layer')) {
-            libreMap.removeLayer('simple-route-layer');
-            libreMap.removeSource('simple-route-source');
-        }
-        // Ziel-Punkt entfernen
-        if (destMarker) {
-            destMarker.remove();
-            destMarker = null;
-        }
+    // 1. Linie entfernen
+    if (libreMap && libreMap.getLayer('simple-route-layer')) {
+        libreMap.removeLayer('simple-route-layer');
+        libreMap.removeSource('simple-route-source');
     }
+
+    // 2. Grünen Ziel-Marker entfernen
+    if (destMarker) {
+        destMarker.remove();
+        destMarker = null;
+    }
+
+    // 3. NEU: Alle Baustellen-Icons entfernen
+    if (constructionMarkers && constructionMarkers.length > 0) {
+        constructionMarkers.forEach(m => m.remove());
+        constructionMarkers = []; // Array leeren
+    }
+}
 
 
 // --- NEU: X-BUTTON LOGIK (ROUTE ABBRECHEN) ---
