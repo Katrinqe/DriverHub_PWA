@@ -467,28 +467,34 @@ libreMap.addLayer({
                     });
                 }
 
-                // 6. Kamera mit sicherem 50px Padding anpassen
+      // 6. Kamera dynamisch an das UI anpassen (Bottom-Card aussparen)
                 const bounds = new maplibregl.LngLatBounds();
                 routePoints.forEach(coord => bounds.extend(coord));
                 
                 setTimeout(() => {
                     if (libreMap) {
                         libreMap.resize();
-                        libreMap.fitBounds(bounds, { padding: 50, duration: 1000, pitch: 0 });
+                        // Asymmetrisches Padding: Oben Platz für X-Button, unten Platz für Info-Card
+                        libreMap.fitBounds(bounds, { 
+                            padding: { top: 120, bottom: 320, left: 60, right: 60 }, 
+                            duration: 1000, 
+                            pitch: 0 
+                        });
+                        
                         // --- NEU: Routen-Daten auslesen und ins UI pushen ---
-                    const summary = data.routes[0].summary;
-                    const durationMin = Math.round(summary.travelTimeInSeconds / 60);
-                    const distanceKm = (summary.lengthInMeters / 1000).toFixed(1);
-                    
-                    const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
-                    const arrivalStr = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                        const summary = data.routes[0].summary;
+                        const durationMin = Math.round(summary.travelTimeInSeconds / 60);
+                        const distanceKm = (summary.lengthInMeters / 1000).toFixed(1);
+                        
+                        const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
+                        const arrivalStr = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
-                    document.getElementById('route-info-time').textContent = `${durationMin} Min`;
-                    document.getElementById('route-info-dist').textContent = `${distanceKm} km`;
-                    document.getElementById('route-info-arrival').textContent = arrivalStr;
+                        document.getElementById('route-info-time').textContent = `${durationMin} Min`;
+                        document.getElementById('route-info-dist').textContent = `${distanceKm} km`;
+                        document.getElementById('route-info-arrival').textContent = arrivalStr;
 
-                    const routeUI = document.getElementById('route-overview-ui');
-                    if (routeUI) routeUI.classList.remove('hidden');
+                        const routeUI = document.getElementById('route-overview-ui');
+                        if (routeUI) routeUI.classList.remove('hidden');
                     }
                 }, 400); // 400ms warten, bis die Karte groß ist
             } // <-- FIX: Diese Klammer hat gefehlt!
