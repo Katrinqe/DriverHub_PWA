@@ -162,7 +162,7 @@ libreMap.addLayer({
         libreMap.touchZoomRotate.disable();
         libreMap.doubleClickZoom.disable();
         libreMap.dragRotate.disable();
-        libreMap.dragPitch.disable();
+
         libreMap.touchPitch.disable();
     });
 
@@ -195,7 +195,7 @@ libreMap.addLayer({
                 
                 // FIX: dragRotate MUSS aktiv sein, damit Pitch funktioniert!
                 libreMap.dragRotate.enable(); 
-                libreMap.dragPitch.enable();  // Für Rechtsklick auf dem Desktop
+               
                 libreMap.touchPitch.enable(); // Für Zwei-Finger-Wisch auf dem Handy
 
                 // Optischen Mittelpunkt zentrieren (Padding entfernen)
@@ -428,7 +428,7 @@ libreMap.addLayer({
             libreMap.touchZoomRotate.enable();
             libreMap.doubleClickZoom.enable();
             libreMap.dragRotate.enable();
-            libreMap.dragPitch.enable();
+           
             libreMap.touchPitch.enable();
             libreMap.setPadding({ right: 0, bottom: 0 });
         }
