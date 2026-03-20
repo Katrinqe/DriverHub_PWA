@@ -2640,20 +2640,17 @@ body.ghost-active #ghost-chat-overlay {
    ========================================== */
 .map-bottom-sheet {
     position: absolute;
-    /* FIX: 20px Abstand von unten (Der sichtbare Schlitz!) und von den Seiten */
     bottom: 20px; 
     left: 20px; 
     width: calc(100% - 40px);
     
-    /* FIX: Höhe dynamisch. max-height begrenzt es im eingeklappten Zustand exakt auf die Pille */
-    height: auto; 
-    max-height: 88px; 
+    /* FIX 1: Feste Start-Höhe statt 'auto' oder 'max-height'. Das ist die Pille! */
+    height: 88px; 
     
-    background: rgba(25, 25, 30, 0.85); /* Minimal dunkler für echten Card-Look */
+    background: rgba(25, 25, 30, 0.85);
     backdrop-filter: blur(25px) saturate(150%);
     -webkit-backdrop-filter: blur(25px) saturate(150%);
     
-    /* FIX: Alle Ecken komplett rund, keine harten Kanten unten mehr */
     border-radius: 32px; 
     border: 1px solid rgba(255,255,255,0.15);
     box-shadow: 0 15px 40px rgba(0,0,0,0.7);
@@ -2661,17 +2658,15 @@ body.ghost-active #ghost-chat-overlay {
     
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Wichtig: Schneidet die Vorschläge ab, solange die Pille klein ist */
-    
-    /* FIX: Transform (translateY) gelöscht. Die Box sitzt jetzt fest verankert über dem Schlitz. */
+    overflow: hidden; 
     transform: none !important; 
     
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
     
-    /* Wir animieren jetzt nur noch weich die max-height! */
-    transition: max-height 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0.4s;
+    /* FIX 2: Wir animieren jetzt knallhart die 'height' */
+    transition: height 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0.4s;
 }
 
 /* Wird sichtbar im Fullscreen */
@@ -2679,14 +2674,14 @@ body.ghost-active #ghost-chat-overlay {
     opacity: 1;
     pointer-events: auto;
     visibility: visible;
-    transition: max-height 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0s;
+    transition: height 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0s;
 }
 
-/* Zustand 2: Expanded (Wird lang nach oben) */
+/* Zustand 2: Expanded (Wächst flüssig nach oben) */
 .map-bottom-sheet.expanded {
-    max-height: 65dvh; /* Wächst flüssig nach oben, der Spalt unten bleibt dauerhaft erhalten! */
+    /* FIX 3: Zwingt die Pille beim Reinklicken / Wischen auf 65% Höhe, auch wenn sie leer ist! */
+    height: 65dvh; 
 }
-
 /* Der kleine graue Griff oben */
 .sheet-drag-handle {
     width: 40px; height: 5px;
