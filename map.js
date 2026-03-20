@@ -376,26 +376,37 @@ libreMap.addLayer({
         });
     }
 
- // ==========================================
-    // === MULTI-ROUTING & TRAFFIC LOGIC ===
-    // ==========================================
-    let currentRouteIds = []; // Merkt sich die IDs der gerenderten Layer
-
-    async function drawTomTomRoute(destLat, destLng) {
-        if (!currentCoords || !libreMap) return;
-
-        const startLng = currentCoords[0];
-        const startLat = currentCoords[1];
-
-        // UI-Wechsel: Normales Sheet weg, Route-Overview an
+// UI-Wechsel: Normales Sheet weg, Route-Overview an
         const bottomSheet = document.getElementById('map-bottom-sheet');
         const searchInput = document.getElementById('tomtom-search-input');
         const routeOverviewUI = document.getElementById('route-overview-ui');
+        const pillV = document.querySelector('.map-controls-pill-v'); // Pille greifen
+        const mapCard = document.querySelector('.map-snippet-card'); // Map greifen
+        const expandTrigger = document.getElementById('map-expand-trigger'); // Klickscheibe
         
-        if (bottomSheet) bottomSheet.classList.remove('expanded');
-        if (bottomSheet) bottomSheet.style.display = 'none';
+        // 1. Karte zwingend auf Fullscreen setzen (falls aus kleinem Zustand gesucht wurde)
+        if (mapCard) mapCard.classList.add('map-expanded');
+        if (expandTrigger) expandTrigger.style.display = 'none';
+
+        // 2. UI Elemente umschalten
+        if (bottomSheet) {
+            bottomSheet.classList.remove('expanded');
+            bottomSheet.style.display = 'none';
+        }
         if (searchInput) searchInput.blur();
         if (routeOverviewUI) routeOverviewUI.classList.remove('hidden');
+        if (pillV) pillV.style.display = 'none'; // Pille unsichtbar machen
+
+        // 3. ZWINGEND: Map-Interaktionen freischalten, sonst ist sie statisch!
+        if (libreMap) {
+            libreMap.dragPan.enable();
+            libreMap.scrollZoom.enable();
+            libreMap.touchZoomRotate.enable();
+            libreMap.doubleClickZoom.enable();
+            libreMap.dragRotate.enable();
+            libreMap.dragPitch.enable();
+            libreMap.touchPitch.enable();
+        }
 
         try {
             // API-Call mit maxAlternatives=2 (ergibt max 3 Routen) + Traffic-Daten
@@ -583,32 +594,7 @@ libreMap.addLayer({
         currentRouteIds = [];
     }
 
-    const btnCancelRoute = document.getElementById('btn-cancel-route');
-    if (btnCancelRoute) {
-        btnCancelRoute.addEventListener('click', () => {
-            // 1. Karte säubern
-            clearRoutes();
-            
-            // 2. UI zurücksetzen
-            document.getElementById('route-overview-ui').classList.add('hidden');
-            const bottomSheet = document.getElementById('map-bottom-sheet');
-            if (bottomSheet) {
-                bottomSheet.style.display = 'flex'; // Altes Sheet wieder da
-            }
-            
-            // 3. Sauberer FlyTo zurück zum Standort
-            if (currentCoords) {
-                libreMap.flyTo({
-                    center: currentCoords,
-                    zoom: 14,
-                    pitch: 0,
-                    bearing: 0,
-                    speed: 1.5,
-                    essential: true
-                });
-            }
-        });
-    }
+
 
     // ==========================================
 // === MAP CONTROLS LOGIC (PILL) ===
@@ -631,6 +617,34 @@ btnRecenter.addEventListener('click', (e) => {
         });
     }
 });
+
+    shrinkBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); 
+        
+        // --- NEU: ROUTE-CANCEL INTERCEPT LOGIK ---
+        const routeOverviewUI = document.getElementById('route-overview-ui');
+        if (routeOverviewUI && !routeOverviewUI.classList.contains('hidden')) {
+            // Wir sind in der Routen-Auswahl!
+            // -> Route löschen und UI zurücksetzen, aber MAP BLEIBT GROß!
+            if (typeof clearRoutes === 'function') clearRoutes();
+            routeOverviewUI.classList.add('hidden');
+            
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.style.display = 'flex';
+            
+            const pillV = document.querySelector('.map-controls-pill-v');
+            if (pillV) pillV.style.display = 'flex'; // Pille wieder einblenden
+            
+            if (currentCoords && libreMap) {
+                libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
+            }
+            return; // WICHTIG: Hier brechen wir ab! Die Karte schrumpft dadurch nicht.
+        }
+        // -----------------------------------------
+
+        mapCard.classList.remove('map-expanded');
+        expandTrigger.style.display = 'block';
+        // ... (hier folgt dein bereits bestehender Code zum Schrumpfen der Karte) ...
 
     // 2. Klick auf Nord-Button (Norden ausrichten & flach legen)
     btnNorth.addEventListener('click', (e) => {
