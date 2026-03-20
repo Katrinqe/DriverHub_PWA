@@ -380,6 +380,7 @@ libreMap.addLayer({
     // === MULTI-ROUTING & TRAFFIC LOGIC ===
     // ==========================================
     let currentRouteIds = []; // Merkt sich die IDs der gerenderten Layer
+    let currentRouteGeoJSONs = {}; // FIX: Sicherer Tresor für die GeoJSON-Daten
 
     async function drawTomTomRoute(destLat, destLng) {
         if (!currentCoords || !libreMap) return;
@@ -391,9 +392,9 @@ libreMap.addLayer({
         const bottomSheet = document.getElementById('map-bottom-sheet');
         const searchInput = document.getElementById('tomtom-search-input');
         const routeOverviewUI = document.getElementById('route-overview-ui');
-        const pillV = document.querySelector('.map-controls-pill-v'); // Pille greifen
-        const mapCard = document.querySelector('.map-snippet-card'); // Map greifen
-        const expandTrigger = document.getElementById('map-expand-trigger'); // Klickscheibe
+        const pillV = document.querySelector('.map-controls-pill-v');
+        const mapCard = document.querySelector('.map-snippet-card');
+        const expandTrigger = document.getElementById('map-expand-trigger');
         
         // 1. Karte zwingend auf Fullscreen setzen
         if (mapCard) mapCard.classList.add('map-expanded');
@@ -406,7 +407,7 @@ libreMap.addLayer({
         }
         if (searchInput) searchInput.blur();
         if (routeOverviewUI) routeOverviewUI.classList.remove('hidden');
-        if (pillV) pillV.style.display = 'none'; // Pille unsichtbar machen
+        if (pillV) pillV.style.display = 'none';
 
         // 3. ZWINGEND: Map-Interaktionen freischalten
         if (libreMap) {
@@ -430,17 +431,22 @@ libreMap.addLayer({
                 renderRouteCards(data.routes); 
                 drawAllRoutesOnMap(data.routes); 
                 
-                // Kamera auf das gesamte Routen-Netzwerk einstellen
+                // Kamera-Grenzen berechnen
                 const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
                 const bounds = allPoints.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
                 
-                libreMap.fitBounds(bounds, {
-                    padding: { top: 120, bottom: 300, left: 50, right: 50 },
-                    duration: 1000,
-                    pitch: 0 
-                });
-
-     highlightRoute(0);
+                // FIX: Wir warten 450ms, bis die Karte WIRKLICH den ganzen Bildschirm ausfüllt!
+                setTimeout(() => {
+                    if (libreMap) libreMap.resize(); // Engine updaten
+                    libreMap.fitBounds(bounds, {
+                        padding: { top: 120, bottom: 300, left: 50, right: 50 },
+                        duration: 1000,
+                        pitch: 0 
+                    });
+                    
+                    // Und erst wenn die Map bereit ist, schalten wir die Stau-Farben scharf
+                    highlightRoute(0);
+                }, 450);
             }
         } catch (error) {
             console.error("TomTom Routing Fehler:", error);
@@ -449,7 +455,6 @@ libreMap.addLayer({
 
     // --- RENDER LOGIK FÜR DIE MAP ---
     function drawAllRoutesOnMap(routes) {
-        // Wir zeichnen die Routen rückwärts, damit Route 0 (die beste) ganz oben liegt
         for (let i = routes.length - 1; i >= 0; i--) {
             const route = routes[i];
             const routePoints = route.legs[0].points.map(p => [p.longitude, p.latitude]);
@@ -458,23 +463,22 @@ libreMap.addLayer({
             
             let features = [];
 
-            // 1. Die Basis-Linie
+            // Basis-Linie
             features.push({
                 type: 'Feature',
                 properties: { trafficLevel: 0, isActive: false },
                 geometry: { type: 'LineString', coordinates: routePoints }
             });
 
-            // 2. Die Stau-Segmente (nur wenn die Route aktiv ist, werden sie farbig)
+            // Stau-Segmente
             if (route.sections) {
                 route.sections.forEach(sec => {
                     if (sec.sectionType === 'TRAFFIC') {
-                        // TomTom gibt uns den Start- und End-Index des Staus auf der Linie
                         const segCoords = routePoints.slice(sec.startPointIndex, sec.endPointIndex + 1);
                         features.push({
                             type: 'Feature',
                             properties: { 
-                                trafficLevel: sec.magnitudeOfDelay || 1, // 1=leicht, 2=mittel, 3=schwer, 4=stillstand
+                                trafficLevel: sec.magnitudeOfDelay || 1, 
                                 isActive: false 
                             },
                             geometry: { type: 'LineString', coordinates: segCoords }
@@ -483,9 +487,13 @@ libreMap.addLayer({
                 });
             }
 
+            // FIX: GeoJSON im Tresor speichern, bevor es in die Map geht
+            const geojson = { type: 'FeatureCollection', features: features };
+            currentRouteGeoJSONs[sourceId] = geojson;
+
             libreMap.addSource(sourceId, {
                 type: 'geojson',
-                data: { type: 'FeatureCollection', features: features }
+                data: geojson
             });
 
             libreMap.addLayer({
@@ -494,16 +502,15 @@ libreMap.addLayer({
                 source: sourceId,
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
                 paint: {
-                    'line-width': ['case', ['boolean', ['get', 'isActive'], false], 7, 4], // Aktive Linie ist dicker
+                    'line-width': ['case', ['boolean', ['get', 'isActive'], false], 7, 4], 
                     'line-color': [
                         'case',
-                        ['==', ['get', 'isActive'], false], '#666666', // Inaktiv = Grau
-                        // Wenn Aktiv, checke das Traffic-Level:
-                        ['==', ['get', 'trafficLevel'], 0], '#007aff', // Kein Stau = Blau
-                        ['==', ['get', 'trafficLevel'], 1], '#ff9f0a', // Leichter Stau = Orange
-                        ['==', ['get', 'trafficLevel'], 2], '#ff3b30', // Stau = Rot
-                        ['==', ['get', 'trafficLevel'], 3], '#bf0000', // Schwerer Stau = Dunkelrot
-                        '#000000' // Stillstand = Schwarz
+                        ['==', ['get', 'isActive'], false], '#666666', 
+                        ['==', ['get', 'trafficLevel'], 0], '#007aff', 
+                        ['==', ['get', 'trafficLevel'], 1], '#ff9f0a', 
+                        ['==', ['get', 'trafficLevel'], 2], '#ff3b30', 
+                        ['==', ['get', 'trafficLevel'], 3], '#bf0000', 
+                        '#000000' 
                     ],
                     'line-opacity': ['case', ['boolean', ['get', 'isActive'], false], 1.0, 0.4]
                 }
@@ -521,16 +528,13 @@ libreMap.addLayer({
         routes.forEach((route, index) => {
             const summary = route.summary;
             
-            // Zeiten und Längen formatieren
             const durationMin = Math.round(summary.travelTimeInSeconds / 60);
             const delayMin = Math.round(summary.trafficDelayInSeconds / 60);
             const distanceKm = (summary.lengthInMeters / 1000).toFixed(1);
             
-            // Ankunftszeit berechnen
             const arrival = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
             const arrivalStr = arrival.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
-            // Künstliche Stau-Wahrscheinlichkeit für das Feeling
             const trafficRisk = delayMin > 10 ? 'Hoch' : (delayMin > 3 ? 'Mittel' : 'Gering');
 
             const card = document.createElement('div');
@@ -550,44 +554,39 @@ libreMap.addLayer({
             container.appendChild(card);
         });
 
-        // Event-Listener für das Snapping (Wischen)
         container.addEventListener('scroll', () => {
             clearTimeout(container.scrollTimeout);
             container.scrollTimeout = setTimeout(() => {
                 const scrollLeft = container.scrollLeft;
-                const cardWidth = container.offsetWidth * 0.85 + 15; // Breite + Gap
+                const cardWidth = container.offsetWidth * 0.85 + 15; 
                 const activeIndex = Math.round(scrollLeft / cardWidth);
                 
-                // Limits abfangen
                 const safeIndex = Math.max(0, Math.min(activeIndex, routes.length - 1));
                 highlightRoute(safeIndex);
-            }, 150); // Kurz warten bis der Scroll steht
+            }, 150); 
         });
     }
 
-    // --- HIGHLIGHTING LOGIK (Aktiviert eine Route, graut die anderen aus) ---
+    // --- HIGHLIGHTING LOGIK ---
     function highlightRoute(activeIndex) {
-        // 1. UI Cards updaten
         document.querySelectorAll('.route-card').forEach((card, idx) => {
             if (idx === activeIndex) card.classList.add('active');
             else card.classList.remove('active');
         });
 
-        // 2. Map-Layer updaten
         currentRouteIds.forEach(id => {
             const sourceId = `tomtom-route-source-${id}`;
             const layerId = `tomtom-route-layer-${id}`;
             
-            if (libreMap.getSource(sourceId)) {
-                // GeoJSON holen, isActive Property updaten und neu setzen
-                const data = libreMap.getSource(sourceId)._data;
+            // FIX: Daten aus unserem Tresor holen, statt sie aus der Map zu erzwingen
+            if (libreMap.getSource(sourceId) && currentRouteGeoJSONs[sourceId]) {
+                const data = currentRouteGeoJSONs[sourceId];
                 const isActive = (id === activeIndex);
                 data.features.forEach(f => f.properties.isActive = isActive);
                 libreMap.getSource(sourceId).setData(data);
 
-                // Die aktive Route nach ganz oben holen
                 if (isActive) {
-                    libreMap.moveLayer(layerId); // Ohne Argument = ganz nach oben
+                    libreMap.moveLayer(layerId); 
                 }
             }
         });
@@ -602,7 +601,9 @@ libreMap.addLayer({
             if (libreMap.getSource(sourceId)) libreMap.removeSource(sourceId);
         });
         currentRouteIds = [];
+        currentRouteGeoJSONs = {}; // FIX: Tresor leeren
     }
+
 
 
 
