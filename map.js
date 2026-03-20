@@ -418,8 +418,7 @@ async function drawTomTomRoute(destLat, destLng) {
 
     try {
         // 3. API URL mit Traffic & Sections
-       const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,incident`;
-        const response = await fetch(url);
+      const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
         const data = await response.json();
 
         if (!data.routes || !data.routes[0].legs) return;
@@ -438,7 +437,7 @@ async function drawTomTomRoute(destLat, destLng) {
             });
         }
 
-    sections.forEach(section => {
+ sections.forEach(section => {
             const start = section.startPointIndex;
             const end = section.endPointIndex;
             if (typeof start !== 'number' || typeof end !== 'number') return;
@@ -446,37 +445,34 @@ async function drawTomTomRoute(destLat, destLng) {
             const segmentCoords = allPoints.slice(start, end + 1);
             if (segmentCoords.length < 2) return;
 
-            // --- BESTEHENDE FARB-LOGIK ---
+            // --- FARB-LOGIK (Verkehrsfluss) ---
             let color = null; 
             if (section.sectionType === 'TRAFFIC') {
-                if (section.simpleCategory === 'JAM') color = '#ff3b30';
-                else if (section.simpleCategory === 'SLOW') color = '#ffcc00';
-            }
-
-            // --- NEU: BAUSTELLEN-ICONS ---
-            // TomTom nutzt oft Category 6 für Baustellen (Roadworks)
-            if (section.sectionType === 'INCIDENT' && (section.incidentCategory === '6' || section.simpleCategory === 'SLOW')) {
-                const midIndex = Math.floor(segmentCoords.length / 2);
-                const iconPos = segmentCoords[midIndex]; // Wir setzen das Icon in die Mitte des Segments
-
-                const el = document.createElement('div');
-                el.className = 'incident-icon';
-                el.style.width = '24px';
-                el.style.height = '24px';
-                el.style.background = '#ffcc00'; // Apple-Gelb
-                el.style.borderRadius = '50%';
-                el.style.display = 'flex';
-                el.style.alignItems = 'center';
-                el.style.justifyContent = 'center';
-                el.style.border = '2px solid white';
-                el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.5)';
-                el.innerHTML = '<i class="fa-solid fa-person-digging" style="font-size: 12px; color: black;"></i>';
-
-                const marker = new maplibregl.Marker({ element: el })
-                    .setLngLat(iconPos)
-                    .addTo(libreMap);
+                if (section.simpleCategory === 'JAM') color = '#ff3b30'; // Stau = Rot
+                else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; // Zähflüssig = Gelb
                 
-                constructionMarkers.push(marker); // Im Array speichern für späteres Löschen
+                // --- NEU: BAUSTELLEN-ICONS INNERHALB VON TRAFFIC ---
+                // incidentCategory 6 oder 9 steht bei TomTom für Baustellen/Konstruktion
+                if (section.incidentCategory === 6 || section.incidentCategory === 9 || section.simpleCategory === 'ROAD_WORKS') {
+                    const midIndex = Math.floor(segmentCoords.length / 2);
+                    const iconPos = segmentCoords[midIndex];
+
+                    const el = document.createElement('div');
+                    el.className = 'incident-icon';
+                    el.style.width = '24px'; el.style.height = '24px';
+                    el.style.background = '#ffcc00';
+                    el.style.borderRadius = '50%';
+                    el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.justifyContent = 'center';
+                    el.style.border = '2px solid white';
+                    el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.5)';
+                    el.innerHTML = '<i class="fa-solid fa-person-digging" style="font-size: 11px; color: black;"></i>';
+
+                    const marker = new maplibregl.Marker({ element: el })
+                        .setLngLat(iconPos)
+                        .addTo(libreMap);
+                    
+                    constructionMarkers.push(marker);
+                }
             }
 
             if (color) {
