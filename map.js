@@ -440,6 +440,46 @@ libreMap.addLayer({
             console.error("TomTom Routing Fehler:", error);
         }
     }
+
+    // ==========================================
+// === MAP CONTROLS LOGIC (PILL) ===
+// ==========================================
+const btnRecenter = document.getElementById('btn-recenter-map');
+const btnNorth = document.getElementById('btn-align-north');
+
+if (btnRecenter && btnNorth) {
+    
+    // 1. Klick auf Standort-Button (Zentrieren)
+    btnRecenter.addEventListener('click', (e) => {
+        e.stopPropagation(); // Verhindert, dass Klicks aufs Bottom-Sheet gehen
+        
+        if (libreMap && currentCoords) {
+            // "FlyTo" ist geschmeidiger als jumpTo
+            libreMap.flyTo({
+                center: currentCoords,
+                zoom: 16, // Geht etwas näher ran für besseren 3D-Effekt
+                pitch: 50, // Neigt die Karte leicht, um die 3D-Gebäude zu zeigen (Premium-Move)
+                speed: 1.2,
+                essential: true
+            });
+        }
+    });
+
+    // 2. Klick auf Nord-Button (Norden ausrichten & flach legen)
+    btnNorth.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        if (libreMap) {
+            // Wir fliegen nicht nur nach Norden, sondern legen die Karte auch flach (Pitch 0)
+            libreMap.flyTo({
+                bearing: 0, // Exakt Norden
+                pitch: 0,   // Flach von oben (wichtig für Übersicht)
+                speed: 1.5,
+                essential: true
+            });
+        }
+    });
+}
     // ==========================================
     // === BOTTOM SHEET TOUCH & FOCUS LOGIC ===
     // ==========================================
