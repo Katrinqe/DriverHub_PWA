@@ -119,6 +119,44 @@ function loadMap(coords, hasLocation) {
     libreMap.on('load', () => {
         libreMap.setPadding({ right: 150, bottom: 20 });
 
+        // --- 3D-GEBÄUDE LOGIK ---
+// 1. Wir suchen den ersten Symbol-Layer (Straßennamen), um die Gebäude darunter zu schieben
+const layers = libreMap.getStyle().layers;
+let labelLayerId;
+for (let i = 0; i < layers.length; i++) {
+    if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+        labelLayerId = layers[i].id;
+        break;
+    }
+}
+
+// 2. Den 3D-Extrusion Layer hinzufügen
+libreMap.addLayer({
+    'id': '3d-buildings',
+    'source': 'carto',
+    'source-layer': 'building',
+    'type': 'fill-extrusion',
+    'minzoom': 15,
+    'paint': {
+        // Farbe dezent an das Dark Design angepasst
+        'fill-extrusion-color': '#2a2a2a',
+        
+        // Nutzt die echten Höhendaten aus den OpenStreetMap-Daten
+        'fill-extrusion-height': [
+            'interpolate', ['linear'], ['zoom'],
+            15, 0,
+            15.05, ['get', 'render_height']
+        ],
+        'fill-extrusion-base': [
+            'interpolate', ['linear'], ['zoom'],
+            15, 0,
+            15.05, ['get', 'render_min_height']
+        ],
+        'fill-extrusion-opacity': 0.8
+    }
+}, labelLayerId);
+// ------------------------
+
         libreMap.dragPan.disable();
         libreMap.scrollZoom.disable();
         libreMap.touchZoomRotate.disable();
