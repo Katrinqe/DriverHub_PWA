@@ -516,6 +516,10 @@ libreMap.addLayer({
             
             // 1. Linie löschen
             clearRoutes();
+
+            // Suchfeld leeren
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) searchInput.value = '';
             
             // 2. Neues UI ausblenden
             const routeUI = document.getElementById('route-overview-ui');
