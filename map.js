@@ -388,7 +388,7 @@ async function drawTomTomRoute(destLat, destLng) {
         const startLng = currentCoords[0];
         const startLat = currentCoords[1];
 
-        // UI-Wechsel: Normales Sheet weg, Route-Overview an
+        // 1. UI Umschalten (Fullscreen an, Menüs weg)
         const bottomSheet = document.getElementById('map-bottom-sheet');
         const searchInput = document.getElementById('tomtom-search-input');
         const routeOverviewUI = document.getElementById('route-overview-ui');
@@ -397,21 +397,19 @@ async function drawTomTomRoute(destLat, destLng) {
         const expandTrigger = document.getElementById('map-expand-trigger'); 
         const bottomNav = document.querySelector('.bottom-nav');
         
-        // 1. Karte zwingend auf Fullscreen setzen
         if (mapCard) mapCard.classList.add('map-expanded');
         if (expandTrigger) expandTrigger.style.display = 'none';
         if (bottomNav) bottomNav.style.display = 'none';
+        if (pillV) pillV.style.display = 'none';
 
-        // 2. UI Elemente umschalten
         if (bottomSheet) {
             bottomSheet.classList.remove('expanded');
             bottomSheet.style.display = 'none';
         }
         if (searchInput) searchInput.blur();
         if (routeOverviewUI) routeOverviewUI.classList.remove('hidden');
-        if (pillV) pillV.style.display = 'none';
 
-        // 3. ZWINGEND: Map-Interaktionen freischalten & PADDING NULLEN
+        // 2. Map-Controls an & altes Padding zwingend auf 0
         if (libreMap) {
             libreMap.dragPan.enable();
             libreMap.scrollZoom.enable();
@@ -420,52 +418,45 @@ async function drawTomTomRoute(destLat, destLng) {
             libreMap.dragRotate.enable();
             libreMap.dragPitch.enable();
             libreMap.touchPitch.enable();
-            
             libreMap.setPadding({ right: 0, bottom: 0 });
         }
 
-        // 4. Den 60-FPS-Trick anwenden, damit die Map-Engine beim Vergrößern mitrechnet
+        // 3. Smooth Resize starten
         let resizeInterval = setInterval(() => {
             if (libreMap) libreMap.resize();
         }, 16);
 
-try {
-            // 1. Versuch: Multi-Routing (max 3 Routen)
+        try {
+            // 4. API Call (Genau wie in der Version, die funktioniert hat!)
             let url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&maxAlternatives=2&computeTravelTimeFor=all&traffic=true&sectionType=traffic`;
             let response = await fetch(url);
             let data = await response.json();
 
-            // WICHTIG: Wenn TomTom wegen der Länge ablehnt, sofort Fallback auf 1 Route!
+            // NOTFALL-WEICHE: Falls aus irgendeinem Grund das Array leer ist, zwingen wir ihn zu einer einzigen Route!
             if (!data.routes || data.routes.length === 0) {
-                console.warn("TomTom verweigert Multi-Route (zu lang). Lade Hauptroute...");
-                url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
+                url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&computeTravelTimeFor=all&traffic=true&sectionType=traffic`;
                 response = await fetch(url);
                 data = await response.json();
             }
 
-            // Wenn wir JETZT Daten haben, zeichnen wir!
+            // 5. Linien und Cards zeichnen
             if (data.routes && data.routes.length > 0) {
                 clearRoutes(); 
-                
-                // Sicherheitscheck für das HTML
-                const container = document.getElementById('route-cards-container');
-                if (!container) {
-                    alert("HTML-Fehler: Der Container für die Cards fehlt!");
-                    return;
-                }
-
                 renderRouteCards(data.routes); 
                 drawAllRoutesOnMap(data.routes); 
                 
-                const bounds = new maplibregl.LngLatBounds();
-                data.routes[0].legs[0].points.forEach(p => bounds.extend([p.longitude, p.latitude]));
+                // Die Koordinaten exakt wie in deiner alten, funktionierenden Version zusammenbauen
+                const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
+                const bounds = allPoints.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
                 
+                // Exakt warten, bis das CSS fertig ist, dann Kamera fliegen lassen
                 setTimeout(() => {
                     clearInterval(resizeInterval); 
-                    if (libreMap && !bounds.isEmpty()) {
+                    if (libreMap) {
                         libreMap.resize(); 
+                        // ABSOLUT SICHERES PADDING VON 50!
                         libreMap.fitBounds(bounds, {
-                            padding: 50, // Dein gewünschtes 50px Padding (absolut crash-sicher)
+                            padding: 50, 
                             duration: 1000,
                             pitch: 0 
                         });
@@ -474,12 +465,11 @@ try {
                 }, 450);
             } else {
                 clearInterval(resizeInterval);
-                alert("TomTom sendet absolut keine Routen-Daten. API-Limit oder Strecken-Fehler.");
+                console.error("Script wurde hier gestoppt: Keine Routen empfangen!");
             }
         } catch (error) {
             clearInterval(resizeInterval);
-            console.error("TomTom Routing Fehler:", error);
-            alert("Netzwerkfehler: Route konnte nicht geladen werden!");
+            console.error("Netzwerkfehler im Script:", error);
         }
     }
     // --- RENDER LOGIK FÜR DIE MAP ---
