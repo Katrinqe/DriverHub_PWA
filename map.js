@@ -384,7 +384,7 @@ async function drawTomTomRoute(destLat, destLng) {
 
     console.log("Routing gestartet", startLat, startLng, destLat, destLng);
 
-    // 1. Map-Load Check (Peter's Fix)
+    // 1. Map-Load Check
     if (!libreMap.loaded()) {
         console.log("Map noch nicht bereit, warte auf load...");
         libreMap.once("load", () => drawTomTomRoute(destLat, destLng));
@@ -407,52 +407,61 @@ async function drawTomTomRoute(destLat, destLng) {
     }
     document.getElementById('tomtom-search-input').blur();
 
-    // Interaktionen sicher aktivieren
+    // Interaktionen aktivieren
     libreMap.dragPan.enable();
     libreMap.scrollZoom.enable();
     libreMap.touchZoomRotate.enable();
     libreMap.doubleClickZoom.enable();
     if (libreMap.dragRotate) libreMap.dragRotate.enable();
-    
     libreMap.setPadding({ right: 0, bottom: 0 });
 
     try {
-        // 3. API URL mit Traffic & Sections
-      const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
+        // 3. API URL mit Traffic & Sections (Nur traffic Typ nutzen für 100% Erfolg)
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
+        
+        // HIER WAR DER FEHLER: Die Definition von response!
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`API Fehler: ${response.status}`);
+        }
+
         const data = await response.json();
 
         if (!data.routes || !data.routes[0].legs) return;
 
         const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
         const sections = data.routes[0].sections || [];
-      // 4. Sektionen verarbeiten (Lückenloser Underlay-Fix)
         const routeFeatures = [];
 
-        // SCHRITT A: Die gesamte Route als Basis-Linie (Blau) immer zuerst hinzufügen
+        // 4. Lückenlose Linien & Baustellen verarbeiten
+        
+        // A: Die gesamte Route als Basis-Linie (Blau)
         if (allPoints.length > 1) {
             routeFeatures.push({
                 type: 'Feature',
-                properties: { color: '#007aff' }, // Basis Blau
+                properties: { color: '#007aff' },
                 geometry: { type: 'LineString', coordinates: allPoints }
             });
         }
 
- sections.forEach(section => {
+        // B: Traffic-Overlays & Baustellen-Icons
+        sections.forEach(section => {
             const start = section.startPointIndex;
             const end = section.endPointIndex;
+
             if (typeof start !== 'number' || typeof end !== 'number') return;
 
             const segmentCoords = allPoints.slice(start, end + 1);
             if (segmentCoords.length < 2) return;
 
-            // --- FARB-LOGIK (Verkehrsfluss) ---
+            // Farben für Stau
             let color = null; 
             if (section.sectionType === 'TRAFFIC') {
-                if (section.simpleCategory === 'JAM') color = '#ff3b30'; // Stau = Rot
-                else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; // Zähflüssig = Gelb
+                if (section.simpleCategory === 'JAM') color = '#ff3b30'; // Rot
+                else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; // Gelb
                 
-                // --- NEU: BAUSTELLEN-ICONS INNERHALB VON TRAFFIC ---
-                // incidentCategory 6 oder 9 steht bei TomTom für Baustellen/Konstruktion
+                // Baustellen-Icon (IncidentCategory 6 = Roadworks)
                 if (section.incidentCategory === 6 || section.incidentCategory === 9 || section.simpleCategory === 'ROAD_WORKS') {
                     const midIndex = Math.floor(segmentCoords.length / 2);
                     const iconPos = segmentCoords[midIndex];
@@ -471,7 +480,9 @@ async function drawTomTomRoute(destLat, destLng) {
                         .setLngLat(iconPos)
                         .addTo(libreMap);
                     
-                    constructionMarkers.push(marker);
+                    if (typeof constructionMarkers !== 'undefined') {
+                        constructionMarkers.push(marker);
+                    }
                 }
             }
 
@@ -512,17 +523,17 @@ async function drawTomTomRoute(destLat, destLng) {
             });
         }
 
-        // 6. Ziel-Marker (Peter's Global Fix)
+        // 6. Ziel-Marker
         if (destMarker) destMarker.remove();
-        const el = document.createElement('div');
-        el.className = 'dest-marker';
-        el.style.width = '18px'; el.style.height = '18px';
-        el.style.background = '#30d158'; el.style.border = '3px solid white';
-        el.style.borderRadius = '50%'; el.style.boxShadow = '0 0 15px rgba(48, 209, 88, 0.8)';
+        const elDest = document.createElement('div');
+        elDest.className = 'dest-marker';
+        elDest.style.width = '18px'; elDest.style.height = '18px';
+        elDest.style.background = '#30d158'; elDest.style.border = '3px solid white';
+        elDest.style.borderRadius = '50%'; elDest.style.boxShadow = '0 0 15px rgba(48, 209, 88, 0.8)';
         
-        destMarker = new maplibregl.Marker({ element: el }).setLngLat([destLng, destLat]).addTo(libreMap);
+        destMarker = new maplibregl.Marker({ element: elDest }).setLngLat([destLng, destLat]).addTo(libreMap);
 
-        // 7. UI Daten
+        // 7. UI Daten befüllen
         const summary = data.routes[0].summary;
         const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
         
@@ -533,7 +544,7 @@ async function drawTomTomRoute(destLat, destLng) {
         if (routeUI) routeUI.classList.remove('hidden');
         if (pillV) pillV.style.display = 'none';
 
-        // 8. Kamera-Zoom (Idle-Event statt Timeout für 100% Stabilität)
+        // 8. Kamera-Zoom (Idle-Event für Stabilität)
         const bounds = new maplibregl.LngLatBounds();
         allPoints.forEach(coord => bounds.extend(coord));
         
