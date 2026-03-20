@@ -2912,3 +2912,8 @@ body.ghost-active #ghost-chat-overlay {
     font-weight: 600;
 }
 /* Wenn wir ihn später aktivieren, kriegt er die blaue/grüne Farbe */
+
+.dest-marker {
+    transition: transform 0.2s ease-out;
+    cursor: pointer;
+}
