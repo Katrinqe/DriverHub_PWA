@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Globale MapLibre Instanz
     let libreMap = null;
     let destMarker = null; // Nur einmal definieren!
-    let constructionMarkers = []; // Liste für alle Baustellen-Icons
     let currentCoords = null; 
     
     if (btnNewExplore && newExploreScreen) {
@@ -445,7 +444,7 @@ async function drawTomTomRoute(destLat, destLng) {
             });
         }
 
-        // B: Traffic-Overlays & Baustellen-Icons
+        // B: Traffic-Overlays (Nur Farben, keine Fake-Icons)
         sections.forEach(section => {
             const start = section.startPointIndex;
             const end = section.endPointIndex;
@@ -455,35 +454,11 @@ async function drawTomTomRoute(destLat, destLng) {
             const segmentCoords = allPoints.slice(start, end + 1);
             if (segmentCoords.length < 2) return;
 
-            // Farben für Stau
+            // Farben für Stau & zähfließenden Verkehr
             let color = null; 
             if (section.sectionType === 'TRAFFIC') {
                 if (section.simpleCategory === 'JAM') color = '#ff3b30'; // Rot
                 else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; // Gelb
-                
-                // Baustellen-Icon (IncidentCategory 6 = Roadworks)
-                if (section.incidentCategory === 6 || section.incidentCategory === 9 || section.simpleCategory === 'ROAD_WORKS') {
-                    const midIndex = Math.floor(segmentCoords.length / 2);
-                    const iconPos = segmentCoords[midIndex];
-
-                    const el = document.createElement('div');
-                    el.className = 'incident-icon';
-                    el.style.width = '24px'; el.style.height = '24px';
-                    el.style.background = '#ffcc00';
-                    el.style.borderRadius = '50%';
-                    el.style.display = 'flex'; el.style.alignItems = 'center'; el.style.justifyContent = 'center';
-                    el.style.border = '2px solid white';
-                    el.style.boxShadow = '0 2px 10px rgba(0,0,0,0.5)';
-                    el.innerHTML = '<i class="fa-solid fa-person-digging" style="font-size: 11px; color: black;"></i>';
-
-                    const marker = new maplibregl.Marker({ element: el })
-                        .setLngLat(iconPos)
-                        .addTo(libreMap);
-                    
-                    if (typeof constructionMarkers !== 'undefined') {
-                        constructionMarkers.push(marker);
-                    }
-                }
             }
 
             if (color) {
@@ -573,12 +548,6 @@ function clearRoutes() {
     if (destMarker) {
         destMarker.remove();
         destMarker = null;
-    }
-
-    // 3. NEU: Alle Baustellen-Icons entfernen
-    if (constructionMarkers && constructionMarkers.length > 0) {
-        constructionMarkers.forEach(m => m.remove());
-        constructionMarkers = []; // Array leeren
     }
 }
 
