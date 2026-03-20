@@ -2726,3 +2726,80 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 .suggestion-item:last-child { border-bottom: none; }
+
+/* Container für die vertikale Pille */
+.map-controls-pill-v {
+    position: absolute;
+    right: 15px;
+    bottom: 120px; /* Hochgeschoben, damit es nicht mit dem Bottom-Sheet im Standard-Zustand kollidiert */
+    width: 48px;
+    background: rgba(30, 30, 30, 0.7); /* Deep Dark Glass */
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 0;
+    z-index: 50; /* Über der Karte, aber unter dem Bottom-Sheet im expanded Zustand */
+    opacity: 0; /* Standardmäßig unsichtbar */
+    transform: translateY(20px);
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none; /* Keine Klicks, wenn unsichtbar */
+}
+
+/* Wenn die Karte groß wird, fadet die Pille ein */
+.map-expanded .map-controls-pill-v {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Die Buttons in der Pille */
+.map-ctrl-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.85);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent; /* Klick-Rahmen auf Mobilgeräten killen */
+}
+
+.map-ctrl-btn svg {
+    width: 22px;
+    height: 22px;
+    transition: transform 0.2s ease;
+}
+
+/* Hover & Active States (Tippen) */
+.map-ctrl-btn:active {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(0.92);
+}
+
+.map-ctrl-btn#btn-recenter-map:active {
+    color: #30d158; /* DriverHub Grün beim Tippen auf Standort */
+    filter: drop-shadow(0 0 5px rgba(48, 209, 88, 0.5));
+}
+
+.compass-btn#btn-align-north:active {
+    color: #ff3b30; /* Rot beim Norden-Ausrichten */
+    filter: drop-shadow(0 0 5px rgba(255, 59, 48, 0.5));
+}
+
+/* Trennlinie in der Pille */
+.pill-v-separator {
+    width: 24px;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 2px 0;
+}
