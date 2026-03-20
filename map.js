@@ -381,12 +381,19 @@ libreMap.addLayer({
     // === SIMPLE ROUTING LOGIC (CORE) ===
     // ==========================================
     
-async function drawTomTomRoute(destLat, destLng) {
-        console.log("Routing gestartet", startLat, startLng, destLat, destLng); // <-- NEU (Schritt 2)
-
+// ==========================================
+    // === SIMPLE ROUTING LOGIC (CORE) ===
+    // ==========================================
+    
+    async function drawTomTomRoute(destLat, destLng) {
         if (!currentCoords || !libreMap) return;
 
-        // <-- NEU (Schritt 3: Der sichere Load-Check)
+        const startLng = currentCoords[0];
+        const startLat = currentCoords[1];
+
+        console.log("Routing gestartet", startLat, startLng, destLat, destLng);
+
+        // Der sichere Load-Check von Peter
         if (!libreMap.loaded()) {
             console.log("Map noch nicht bereit, warte auf load...");
             libreMap.once("load", () => {
@@ -395,10 +402,6 @@ async function drawTomTomRoute(destLat, destLng) {
             return;
         }
         
-        const startLng = currentCoords[0];
-        // ... (Rest bleibt gleich bis zum try-Block)
-        const startLat = currentCoords[1];
-
         // 1. UI aufräumen & Karte auf Fullscreen setzen
         const bottomSheet = document.getElementById('map-bottom-sheet');
         const searchInput = document.getElementById('tomtom-search-input');
@@ -436,12 +439,12 @@ async function drawTomTomRoute(destLat, destLng) {
             const response = await fetch(url);
             const data = await response.json();
 
-    if (data.routes && data.routes.length > 0) {
+            if (data.routes && data.routes.length > 0) {
                 
                 const routePoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
-                console.log("Route Punkte:", routePoints.length); // <-- NEU (Schritt 4)
+                console.log("Route Punkte:", routePoints.length); 
                 
-                // <-- NEU (Schritt 5: Layer robust updaten statt blind löschen)
+                // 5. Layer robust updaten statt blind löschen
                 if (!libreMap.getSource('simple-route-source')) {
                     libreMap.addSource('simple-route-source', {
                         type: 'geojson',
@@ -468,12 +471,20 @@ async function drawTomTomRoute(destLat, destLng) {
                 }
 
                 // 6. Kamera mit sicherem 50px Padding anpassen
-                // ... (Rest bleibt exakt gleich mit fitBounds etc.)
+                const bounds = new maplibregl.LngLatBounds();
+                routePoints.forEach(coord => bounds.extend(coord));
+                
+                setTimeout(() => {
+                    if (libreMap) {
+                        libreMap.resize();
+                        libreMap.fitBounds(bounds, { padding: 50, duration: 1000, pitch: 0 });
+                    }
+                }, 400); // 400ms warten, bis die Karte groß ist
+            } // <-- FIX: Diese Klammer hat gefehlt!
         } catch (error) {
             console.error("Routing Fehler:", error);
         }
     }
-
  
 
 
