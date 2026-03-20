@@ -2831,19 +2831,18 @@ body.ghost-active #ghost-chat-overlay {
 /* ========================================= */
 
 #route-overview-ui {
-    position: absolute;
-    top: auto;            /* FIX: Überschreibt alte Fullscreen-Befehle */
-    bottom: 120px;
-    left: 0;
-    width: 100%;
-    height: auto;         /* FIX: Nimmt exakt nur den Platz der Card ein */
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    z-index: 150;
-    pointer-events: none; /* FIX: Lässt alle Klicks auf die Karte oberhalb durch */
+    position: absolute !important;
+    top: auto !important; 
+    bottom: 40px !important; /* HIER justierst du die Höhe */
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important; 
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-end !important;
+    z-index: 150 !important;
+    pointer-events: none !important; 
 }
-
 .route-planning-card {
     pointer-events: auto; /* FIX: Die Card selbst bleibt bedienbar */
     position: relative;
