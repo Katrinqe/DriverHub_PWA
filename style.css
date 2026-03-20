@@ -2636,44 +2636,55 @@ body.ghost-active #ghost-chat-overlay {
 
 
 /* ==========================================
-   BOTTOM SHEET (APPLE MAPS STYLE)
+   BOTTOM SHEET (FLOATING PILL STYLE)
    ========================================== */
-/* Zustand 1: Collapsed (Unten). Schaut nur 100px raus! */
 .map-bottom-sheet {
     position: absolute;
-    bottom: 0; left: 0; width: 100%;
-    height: 75dvh; /* 3/4 des Bildschirms */
-    background: rgba(20, 20, 25, 0.65);
+    /* FIX: 20px Abstand von unten (Der sichtbare Schlitz!) und von den Seiten */
+    bottom: 20px; 
+    left: 20px; 
+    width: calc(100% - 40px);
+    
+    /* FIX: Höhe dynamisch. max-height begrenzt es im eingeklappten Zustand exakt auf die Pille */
+    height: auto; 
+    max-height: 88px; 
+    
+    background: rgba(25, 25, 30, 0.85); /* Minimal dunkler für echten Card-Look */
     backdrop-filter: blur(25px) saturate(150%);
     -webkit-backdrop-filter: blur(25px) saturate(150%);
-    border-top-left-radius: 28px;
-    border-top-right-radius: 28px;
-    border-top: 1px solid rgba(255,255,255,0.15);
-    box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+    
+    /* FIX: Alle Ecken komplett rund, keine harten Kanten unten mehr */
+    border-radius: 32px; 
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.7);
     z-index: 120;
     
     display: flex;
     flex-direction: column;
+    overflow: hidden; /* Wichtig: Schneidet die Vorschläge ab, solange die Pille klein ist */
     
-    transform: translateY(calc(100% - 100px)); 
+    /* FIX: Transform (translateY) gelöscht. Die Box sitzt jetzt fest verankert über dem Schlitz. */
+    transform: none !important; 
     
     opacity: 0;
     pointer-events: none;
-    visibility: hidden; /* FIX: Macht das unsichtbare Sheet komplett immun gegen Klicks! */
-    transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0.4s;
+    visibility: hidden;
+    
+    /* Wir animieren jetzt nur noch weich die max-height! */
+    transition: max-height 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0.4s;
 }
 
-/* Wird sichtbar, sobald Map Fullscreen ist */
+/* Wird sichtbar im Fullscreen */
 .map-snippet-card.map-expanded .map-bottom-sheet {
     opacity: 1;
     pointer-events: auto;
-    visibility: visible; /* FIX: Erst jetzt darf das Handy Klicks registrieren */
-    transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0s;
+    visibility: visible;
+    transition: max-height 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0s;
 }
 
-/* Zustand 2: Expanded (3/4 hochgefahren) */
+/* Zustand 2: Expanded (Wird lang nach oben) */
 .map-bottom-sheet.expanded {
-    transform: translateY(0);
+    max-height: 65dvh; /* Wächst flüssig nach oben, der Spalt unten bleibt dauerhaft erhalten! */
 }
 
 /* Der kleine graue Griff oben */
@@ -2682,21 +2693,24 @@ body.ghost-active #ghost-chat-overlay {
     background: rgba(255,255,255,0.3);
     border-radius: 5px;
     margin: 12px auto;
+    flex-shrink: 0; /* Verhindert Quetschen während der Animation */
 }
 
 /* Wrapper für saubere Abstände */
 .sheet-search-wrapper {
     padding: 0 20px 15px 20px;
+    flex-shrink: 0;
 }
 
+/* FIX: Suchfeld deutlich schmaler und eleganter */
 .map-search-input {
     width: 100%;
-    padding: 16px 20px;
-    border-radius: 20px;
+    padding: 12px 20px; /* Vorher 16px (zu dick), jetzt 12px für den Pille-Look */
+    border-radius: 18px; /* An die schmalere Form angepasst */
     background: rgba(10, 10, 12, 0.6);
     border: 1px solid rgba(255,255,255,0.1);
     color: #fff;
-    font-size: 1rem;
+    font-size: 0.95rem;
     box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
     outline: none;
     box-sizing: border-box;
@@ -2706,7 +2720,7 @@ body.ghost-active #ghost-chat-overlay {
     border-color: #30d158;
 }
 
-/* Vorschläge integrieren sich fließend in das Sheet */
+/* Vorschläge integrieren sich fließend */
 .sheet-suggestions-box {
     flex-grow: 1;
     overflow-y: auto;
