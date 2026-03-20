@@ -2816,9 +2816,7 @@ body.ghost-active #ghost-chat-overlay {
     z-index: 60;
 }
 
-#route-overview-ui:not(.hidden) {
-    pointer-events: auto;
-}
+
 
 /* Zurück-Button oben links */
 #btn-cancel-route {
