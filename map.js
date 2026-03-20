@@ -418,7 +418,7 @@ async function drawTomTomRoute(destLat, destLng) {
 
     try {
         // 3. API URL mit Traffic & Sections
-       const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&sectionType=incident`;
+       const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,incident`;
         const response = await fetch(url);
         const data = await response.json();
 
