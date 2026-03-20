@@ -433,28 +433,60 @@ libreMap.addLayer({
 
         try {
             // 3. Nackte API-Anfrage (Nur eine einzige Route, kein Traffic)
-            const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}`;
+            const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
             const response = await fetch(url);
             const data = await response.json();
 
             if (data.routes && data.routes.length > 0) {
                 
-                const routePoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
-                console.log("Route Punkte:", routePoints.length); 
+             const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
+                const sections = data.routes[0].sections || [];
                 
-                // 5. Layer robust updaten statt blind löschen
+                // Wir bauen eine FeatureCollection für verschiedene Farben
+                const routeFeatures = [];
+
+                // Falls keine Sektionen da sind (freier Weg), zeichnen wir die ganze Route blau
+                if (sections.length === 0) {
+                    routeFeatures.push({
+                        type: 'Feature',
+                        properties: { color: '#007aff' }, // Standard Blau
+                        geometry: { type: 'LineString', coordinates: allPoints }
+                    });
+                } else {
+                    sections.forEach(section => {
+                        const start = section.startPointIndex;
+                        const end = section.endPointIndex;
+                        const segmentCoords = allPoints.slice(start, end + 1);
+
+                        let color = '#007aff'; // Default Blau
+                        
+                        // Farblogik basierend auf TomTom Traffic-Daten
+                        if (section.sectionType === 'TRAFFIC') {
+                            if (section.simpleCategory === 'JAM') {
+                                color = '#ff3b30'; // Stau = Apple Red
+                            } else if (section.simpleCategory === 'SLOW') {
+                                color = '#ffcc00'; // Zähflüssig / Baustelle = Apple Yellow
+                            }
+                        }
+
+                        routeFeatures.push({
+                            type: 'Feature',
+                            properties: { color: color },
+                            geometry: { type: 'LineString', coordinates: segmentCoords }
+                        });
+                    });
+                }
+
+                // 5. Source & Layer robust updaten
                 if (!libreMap.getSource('simple-route-source')) {
                     libreMap.addSource('simple-route-source', {
                         type: 'geojson',
-                        data: {
-                            type: 'Feature',
-                            geometry: { type: 'LineString', coordinates: routePoints }
-                        }
+                        data: { type: 'FeatureCollection', features: routeFeatures }
                     });
                 } else {
                     libreMap.getSource('simple-route-source').setData({
-                        type: 'Feature',
-                        geometry: { type: 'LineString', coordinates: routePoints }
+                        type: 'FeatureCollection',
+                        features: routeFeatures
                     });
                 }
 
@@ -464,7 +496,11 @@ libreMap.addLayer({
                         type: 'line',
                         source: 'simple-route-source',
                         layout: { 'line-join': 'round', 'line-cap': 'round' },
-                        paint: { 'line-color': '#007aff', 'line-width': 6 }
+                        paint: { 
+                            // DATEN-DRIVEN STYLING: MapLibre nimmt die Farbe direkt aus dem Feature!
+                            'line-color': ['get', 'color'], 
+                            'line-width': 6 
+                        }
                     });
                 }
 
