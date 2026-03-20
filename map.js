@@ -429,49 +429,57 @@ async function drawTomTomRoute(destLat, destLng) {
             if (libreMap) libreMap.resize();
         }, 16);
 
-        try {
-            // API-Call 
-            const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&maxAlternatives=2&computeTravelTimeFor=all&traffic=true&sectionType=traffic`;
-            const response = await fetch(url);
-            const data = await response.json();
+try {
+            // 1. Versuch: Multi-Routing (max 3 Routen)
+            let url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&maxAlternatives=2&computeTravelTimeFor=all&traffic=true&sectionType=traffic`;
+            let response = await fetch(url);
+            let data = await response.json();
 
+            // WICHTIG: Wenn TomTom wegen der Länge ablehnt, sofort Fallback auf 1 Route!
+            if (!data.routes || data.routes.length === 0) {
+                console.warn("TomTom verweigert Multi-Route (zu lang). Lade Hauptroute...");
+                url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
+                response = await fetch(url);
+                data = await response.json();
+            }
+
+            // Wenn wir JETZT Daten haben, zeichnen wir!
             if (data.routes && data.routes.length > 0) {
                 clearRoutes(); 
+                
+                // Sicherheitscheck für das HTML
+                const container = document.getElementById('route-cards-container');
+                if (!container) {
+                    alert("HTML-Fehler: Der Container für die Cards fehlt!");
+                    return;
+                }
+
                 renderRouteCards(data.routes); 
                 drawAllRoutesOnMap(data.routes); 
                 
-                // FIX 1: Bulletproof Methode um die Bounding-Box aufzubauen
                 const bounds = new maplibregl.LngLatBounds();
                 data.routes[0].legs[0].points.forEach(p => bounds.extend([p.longitude, p.latitude]));
                 
-                // 5. Wir warten EXAKT bis die 400ms CSS Animation der Karte fertig ist
                 setTimeout(() => {
-                    clearInterval(resizeInterval); // Resize-Loop stoppen
-                    
+                    clearInterval(resizeInterval); 
                     if (libreMap && !bounds.isEmpty()) {
-                        libreMap.resize(); // Ein letztes Sicherheits-Update
-                        
-                        // FIX 2: Dynamisches Padding berechnen
-                        const mapHeight = libreMap.getContainer().clientHeight || window.innerHeight;
-                        const safeBottom = Math.min(300, mapHeight * 0.4); // Maximal 40% der Höhe
-                        const safeTop = Math.min(120, mapHeight * 0.15); // Maximal 15% der Höhe
-
-                 libreMap.fitBounds(bounds, {
-                    padding: 50,
-                    duration: 1000,
-                    pitch: 0 
-                });
+                        libreMap.resize(); 
+                        libreMap.fitBounds(bounds, {
+                            padding: 50, // Dein gewünschtes 50px Padding (absolut crash-sicher)
+                            duration: 1000,
+                            pitch: 0 
+                        });
                     }
-                    
-                    // Die erste Route aktivieren
                     highlightRoute(0);
                 }, 450);
             } else {
                 clearInterval(resizeInterval);
+                alert("TomTom sendet absolut keine Routen-Daten. API-Limit oder Strecken-Fehler.");
             }
         } catch (error) {
             clearInterval(resizeInterval);
             console.error("TomTom Routing Fehler:", error);
+            alert("Netzwerkfehler: Route konnte nicht geladen werden!");
         }
     }
     // --- RENDER LOGIK FÜR DIE MAP ---
