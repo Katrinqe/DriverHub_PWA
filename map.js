@@ -425,40 +425,43 @@ async function drawTomTomRoute(destLat, destLng) {
 
         const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
         const sections = data.routes[0].sections || [];
+      // 4. Sektionen verarbeiten (Lückenloser Underlay-Fix)
         const routeFeatures = [];
 
-        // 4. Sektionen verarbeiten mit harten Fallbacks (Peter's Logic)
-        if (sections.length === 0) {
-            if (allPoints.length > 1) {
-                routeFeatures.push({
-                    type: 'Feature',
-                    properties: { color: '#007aff' },
-                    geometry: { type: 'LineString', coordinates: allPoints }
-                });
+        // SCHRITT A: Die gesamte Route als Basis-Linie (Blau) immer zuerst hinzufügen
+        if (allPoints.length > 1) {
+            routeFeatures.push({
+                type: 'Feature',
+                properties: { color: '#007aff' }, // Basis Blau
+                geometry: { type: 'LineString', coordinates: allPoints }
+            });
+        }
+
+        // SCHRITT B: Traffic-Sektionen als Overlays drüberlegen
+        sections.forEach(section => {
+            const start = section.startPointIndex;
+            const end = section.endPointIndex;
+
+            if (typeof start !== 'number' || typeof end !== 'number') return;
+
+            const segmentCoords = allPoints.slice(start, end + 1);
+            if (segmentCoords.length < 2) return;
+
+            let color = null; 
+            if (section.sectionType === 'TRAFFIC') {
+                if (section.simpleCategory === 'JAM') color = '#ff3b30'; // Rot
+                else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; // Gelb
             }
-        } else {
-            sections.forEach(section => {
-                const start = section.startPointIndex;
-                const end = section.endPointIndex;
 
-                if (typeof start !== 'number' || typeof end !== 'number') return;
-
-                const segmentCoords = allPoints.slice(start, end + 1);
-                if (segmentCoords.length < 2) return;
-
-                let color = '#007aff'; // Default Blau
-                if (section.sectionType === 'TRAFFIC') {
-                    if (section.simpleCategory === 'JAM') color = '#ff3b30'; // Rot
-                    else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; // Gelb
-                }
-
+            // Nur hinzufügen, wenn es eine Traffic-Farbe ist (Blau haben wir ja schon als Basis)
+            if (color) {
                 routeFeatures.push({
                     type: 'Feature',
                     properties: { color: color },
                     geometry: { type: 'LineString', coordinates: segmentCoords }
                 });
-            });
-        }
+            }
+        });
 
         if (routeFeatures.length === 0) return;
 
