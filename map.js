@@ -463,155 +463,16 @@ libreMap.addLayer({
             console.error("Routing Fehler:", error);
         }
     }
-    // --- RENDER LOGIK FÜR DIE MAP ---
-    function drawAllRoutesOnMap(routes) {
-        for (let i = routes.length - 1; i >= 0; i--) {
-            const route = routes[i];
-            const routePoints = route.legs[0].points.map(p => [p.longitude, p.latitude]);
-            const sourceId = `tomtom-route-source-${i}`;
-            const layerId = `tomtom-route-layer-${i}`;
-            
-            let features = [];
 
-            // Basis-Linie
-            features.push({
-                type: 'Feature',
-                properties: { trafficLevel: 0, isActive: false },
-                geometry: { type: 'LineString', coordinates: routePoints }
-            });
+ 
 
-            // Stau-Segmente
-            if (route.sections) {
-                route.sections.forEach(sec => {
-                    if (sec.sectionType === 'TRAFFIC') {
-                        const segCoords = routePoints.slice(sec.startPointIndex, sec.endPointIndex + 1);
-                        features.push({
-                            type: 'Feature',
-                            properties: { 
-                                trafficLevel: sec.magnitudeOfDelay || 1, 
-                                isActive: false 
-                            },
-                            geometry: { type: 'LineString', coordinates: segCoords }
-                        });
-                    }
-                });
-            }
 
-            // FIX: GeoJSON im Tresor speichern, bevor es in die Map geht
-            const geojson = { type: 'FeatureCollection', features: features };
-            currentRouteGeoJSONs[sourceId] = geojson;
-
-            libreMap.addSource(sourceId, {
-                type: 'geojson',
-                data: geojson
-            });
-
-            libreMap.addLayer({
-                id: layerId,
-                type: 'line',
-                source: sourceId,
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: {
-                    'line-width': ['case', ['boolean', ['get', 'isActive'], false], 7, 4], 
-                    'line-color': [
-                        'case',
-                        ['==', ['get', 'isActive'], false], '#666666', 
-                        ['==', ['get', 'trafficLevel'], 0], '#007aff', 
-                        ['==', ['get', 'trafficLevel'], 1], '#ff9f0a', 
-                        ['==', ['get', 'trafficLevel'], 2], '#ff3b30', 
-                        ['==', ['get', 'trafficLevel'], 3], '#bf0000', 
-                        '#000000' 
-                    ],
-                    'line-opacity': ['case', ['boolean', ['get', 'isActive'], false], 1.0, 0.4]
-                }
-            });
-
-            currentRouteIds.push(i);
-        }
-    }
-
-    // --- KARTEN GENERIEREN UND SCROLL-LOGIK ---
-    function renderRouteCards(routes) {
-        const container = document.getElementById('route-cards-container');
-        container.innerHTML = '';
-
-        routes.forEach((route, index) => {
-            const summary = route.summary;
-            
-            const durationMin = Math.round(summary.travelTimeInSeconds / 60);
-            const delayMin = Math.round(summary.trafficDelayInSeconds / 60);
-            const distanceKm = (summary.lengthInMeters / 1000).toFixed(1);
-            
-            const arrival = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
-            const arrivalStr = arrival.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-
-            const trafficRisk = delayMin > 10 ? 'Hoch' : (delayMin > 3 ? 'Mittel' : 'Gering');
-
-            const card = document.createElement('div');
-            card.className = `route-card ${index === 0 ? 'active' : ''}`;
-            card.dataset.index = index;
-            card.innerHTML = `
-                <div class="route-card-header">
-                    <span class="route-time">${durationMin} Min</span>
-                    <span class="route-distance">${distanceKm} km</span>
-                </div>
-                <div class="route-details">
-                    <span>Ankunft: ${arrivalStr}</span>
-                    <span class="traffic-prob">Stau-Risiko: ${trafficRisk} ${delayMin > 0 ? `(+${delayMin} Min)` : ''}</span>
-                </div>
-                <button class="btn-go" disabled>Go</button>
-            `;
-            container.appendChild(card);
-        });
-
-        container.addEventListener('scroll', () => {
-            clearTimeout(container.scrollTimeout);
-            container.scrollTimeout = setTimeout(() => {
-                const scrollLeft = container.scrollLeft;
-                const cardWidth = container.offsetWidth * 0.85 + 15; 
-                const activeIndex = Math.round(scrollLeft / cardWidth);
-                
-                const safeIndex = Math.max(0, Math.min(activeIndex, routes.length - 1));
-                highlightRoute(safeIndex);
-            }, 150); 
-        });
-    }
-
-    // --- HIGHLIGHTING LOGIK ---
-    function highlightRoute(activeIndex) {
-        document.querySelectorAll('.route-card').forEach((card, idx) => {
-            if (idx === activeIndex) card.classList.add('active');
-            else card.classList.remove('active');
-        });
-
-        currentRouteIds.forEach(id => {
-            const sourceId = `tomtom-route-source-${id}`;
-            const layerId = `tomtom-route-layer-${id}`;
-            
-            // FIX: Daten aus unserem Tresor holen, statt sie aus der Map zu erzwingen
-            if (libreMap.getSource(sourceId) && currentRouteGeoJSONs[sourceId]) {
-                const data = currentRouteGeoJSONs[sourceId];
-                const isActive = (id === activeIndex);
-                data.features.forEach(f => f.properties.isActive = isActive);
-                libreMap.getSource(sourceId).setData(data);
-
-                if (isActive) {
-                    libreMap.moveLayer(layerId); 
-                }
-            }
-        });
-    }
-
-    // --- CLEANUP & CANCEL LOGIK ---
+// --- CLEANUP & CANCEL LOGIK (SIMPLE) ---
     function clearRoutes() {
-        currentRouteIds.forEach(id => {
-            const layerId = `tomtom-route-layer-${id}`;
-            const sourceId = `tomtom-route-source-${id}`;
-            if (libreMap.getLayer(layerId)) libreMap.removeLayer(layerId);
-            if (libreMap.getSource(sourceId)) libreMap.removeSource(sourceId);
-        });
-        currentRouteIds = [];
-        currentRouteGeoJSONs = {}; // FIX: Tresor leeren
+        if (libreMap && libreMap.getLayer('simple-route-layer')) {
+            libreMap.removeLayer('simple-route-layer');
+            libreMap.removeSource('simple-route-source');
+        }
     }
 
 
