@@ -377,45 +377,35 @@ libreMap.addLayer({
     }
 
 // ==========================================
-    // === MULTI-ROUTING & TRAFFIC LOGIC ===
+    // === SIMPLE ROUTING LOGIC (CORE) ===
     // ==========================================
-    let currentRouteIds = []; // Merkt sich die IDs der gerenderten Layer
-    let currentRouteGeoJSONs = {}; // FIX: Sicherer Tresor für die GeoJSON-Daten
-
-async function drawTomTomRoute(destLat, destLng) {
+    
+    async function drawTomTomRoute(destLat, destLng) {
         if (!currentCoords || !libreMap) return;
 
         const startLng = currentCoords[0];
         const startLat = currentCoords[1];
 
-        // 1. UI Umschalten (Fullscreen an, Menüs weg)
+        // 1. UI aufräumen & Karte auf Fullscreen setzen
         const bottomSheet = document.getElementById('map-bottom-sheet');
         const searchInput = document.getElementById('tomtom-search-input');
-        const routeOverviewUI = document.getElementById('route-overview-ui');
-        const pillV = document.querySelector('.map-controls-pill-v'); 
-        const mapCard = document.querySelector('.map-snippet-card'); 
-        const expandTrigger = document.getElementById('map-expand-trigger'); 
+        const mapCard = document.querySelector('.map-snippet-card');
+        const expandTrigger = document.getElementById('map-expand-trigger');
         const bottomNav = document.querySelector('.bottom-nav');
-        
+        const pillV = document.querySelector('.map-controls-pill-v');
+
         if (mapCard) mapCard.classList.add('map-expanded');
         if (expandTrigger) expandTrigger.style.display = 'none';
         if (bottomNav) bottomNav.style.display = 'none';
         if (pillV) pillV.style.display = 'none';
-
+        
         if (bottomSheet) {
             bottomSheet.classList.remove('expanded');
             bottomSheet.style.display = 'none';
         }
         if (searchInput) searchInput.blur();
-        
-        // FIX: Zwinge das UI gnadenlos in den Vordergrund
-        if (routeOverviewUI) {
-            routeOverviewUI.classList.remove('hidden');
-            routeOverviewUI.style.display = 'block';
-            routeOverviewUI.style.zIndex = '9999';
-        }
 
-        // 2. Map-Controls an (WICHTIG: Padding noch NICHT nullen!)
+        // 2. Map-Interaktionen an und Padding nullen
         if (libreMap) {
             libreMap.dragPan.enable();
             libreMap.scrollZoom.enable();
@@ -424,60 +414,53 @@ async function drawTomTomRoute(destLat, destLng) {
             libreMap.dragRotate.enable();
             libreMap.dragPitch.enable();
             libreMap.touchPitch.enable();
+            libreMap.setPadding({ right: 0, bottom: 0 });
         }
 
-        // 3. Smooth Resize starten
-        let resizeInterval = setInterval(() => {
-            if (libreMap) libreMap.resize();
-        }, 16);
-
         try {
-            // 4. API Call (Premium Route mit Traffic)
-            let url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&maxAlternatives=2&computeTravelTimeFor=all&traffic=true&sectionType=traffic`;
-            let response = await fetch(url);
-            let data = await response.json();
+            // 3. Nackte API-Anfrage (Nur eine einzige Route, kein Traffic)
+            const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}`;
+            const response = await fetch(url);
+            const data = await response.json();
 
-            // FIX: NOTFALL-WEICHE! Wenn TomTom die lange Strecke blockt, fordern wir die absolut nackte Basis-Route an.
-            if (!data.routes || data.routes.length === 0) {
-                console.warn("Lange Strecke: Fordere nackte Basis-Route an...");
-                url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}`;
-                response = await fetch(url);
-                data = await response.json();
-            }
-
-            // 5. Linien und Cards zeichnen
             if (data.routes && data.routes.length > 0) {
-                clearRoutes(); 
-                renderRouteCards(data.routes); 
-                drawAllRoutesOnMap(data.routes); 
                 
-                const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
-                const bounds = allPoints.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
+                // 4. Alte Linie löschen, falls vorhanden
+                if (libreMap.getLayer('simple-route-layer')) libreMap.removeLayer('simple-route-layer');
+                if (libreMap.getSource('simple-route-source')) libreMap.removeSource('simple-route-source');
+
+                // 5. Neue blaue Linie zeichnen
+                const routePoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
                 
-                // Exakt warten, bis die CSS Animation der Karte (400ms) zu 100% fertig ist!
-                setTimeout(() => {
-                    clearInterval(resizeInterval); 
-                    if (libreMap) {
-                        libreMap.resize(); 
-                        
-                        // FIX: ERST JETZT darf das Padding gelöscht werden, sonst crasht die Map-Kamera!
-                        libreMap.setPadding({ right: 0, bottom: 0 });
-                        
-                        libreMap.fitBounds(bounds, {
-                            padding: 50, 
-                            duration: 1000,
-                            pitch: 0 
-                        });
+                libreMap.addSource('simple-route-source', {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: { type: 'LineString', coordinates: routePoints }
                     }
-                    highlightRoute(0);
-                }, 450);
-            } else {
-                clearInterval(resizeInterval);
-                alert("TomTom Routing Fehler: Strecke nicht berechenbar.");
+                });
+
+                libreMap.addLayer({
+                    id: 'simple-route-layer',
+                    type: 'line',
+                    source: 'simple-route-source',
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: { 'line-color': '#007aff', 'line-width': 6 }
+                });
+
+                // 6. Kamera mit sicherem 50px Padding anpassen
+                const bounds = new maplibregl.LngLatBounds();
+                routePoints.forEach(coord => bounds.extend(coord));
+                
+                setTimeout(() => {
+                    if (libreMap) {
+                        libreMap.resize();
+                        libreMap.fitBounds(bounds, { padding: 50, duration: 1000, pitch: 0 });
+                    }
+                }, 400); // 400ms warten, bis die Karte groß ist
             }
         } catch (error) {
-            clearInterval(resizeInterval);
-            console.error("Netzwerkfehler im Script:", error);
+            console.error("Routing Fehler:", error);
         }
     }
     // --- RENDER LOGIK FÜR DIE MAP ---
@@ -645,14 +628,26 @@ async function drawTomTomRoute(destLat, destLng) {
         // 1. Klick auf Standort-Button (Zentrieren)
         btnRecenter.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (libreMap && currentCoords) {
-                libreMap.flyTo({
-                    center: currentCoords,
-                    zoom: 16,
-                    speed: 1.2,
-                    essential: true
-                });
+        // --- SIMPLE ROUTE CANCEL INTERCEPT ---
+            if (libreMap && libreMap.getLayer('simple-route-layer')) {
+                // Route löschen
+                libreMap.removeLayer('simple-route-layer');
+                libreMap.removeSource('simple-route-source');
+                
+                // UI zurücksetzen
+                const bottomSheet = document.getElementById('map-bottom-sheet');
+                if (bottomSheet) bottomSheet.style.display = 'flex';
+                
+                const pillV = document.querySelector('.map-controls-pill-v');
+                if (pillV) pillV.style.display = 'flex';
+                
+                // Zum Standort zurückfliegen
+                if (currentCoords) {
+                    libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
+                }
+                return; // WICHTIG: Hier abbrechen! Die Karte schrumpft dadurch nicht.
             }
+            // -----------------------------------------
         });
 
         // 2. Klick auf Nord-Button (Norden ausrichten & flach legen)
