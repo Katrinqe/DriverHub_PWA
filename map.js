@@ -475,6 +475,20 @@ libreMap.addLayer({
                     if (libreMap) {
                         libreMap.resize();
                         libreMap.fitBounds(bounds, { padding: 50, duration: 1000, pitch: 0 });
+                        // --- NEU: Routen-Daten auslesen und ins UI pushen ---
+                    const summary = data.routes[0].summary;
+                    const durationMin = Math.round(summary.travelTimeInSeconds / 60);
+                    const distanceKm = (summary.lengthInMeters / 1000).toFixed(1);
+                    
+                    const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
+                    const arrivalStr = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+                    document.getElementById('route-info-time').textContent = `${durationMin} Min`;
+                    document.getElementById('route-info-dist').textContent = `${distanceKm} km`;
+                    document.getElementById('route-info-arrival').textContent = arrivalStr;
+
+                    const routeUI = document.getElementById('route-overview-ui');
+                    if (routeUI) routeUI.classList.remove('hidden');
                     }
                 }, 400); // 400ms warten, bis die Karte groß ist
             } // <-- FIX: Diese Klammer hat gefehlt!
@@ -494,7 +508,32 @@ libreMap.addLayer({
     }
 
 
-
+// --- NEU: X-BUTTON LOGIK (ROUTE ABBRECHEN) ---
+    const btnCancelRoute = document.getElementById('btn-cancel-route');
+    if (btnCancelRoute) {
+        btnCancelRoute.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // 1. Linie löschen
+            clearRoutes();
+            
+            // 2. Neues UI ausblenden
+            const routeUI = document.getElementById('route-overview-ui');
+            if (routeUI) routeUI.classList.add('hidden');
+            
+            // 3. Altes Menü wieder einblenden
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.style.display = 'flex';
+            
+            const pillV = document.querySelector('.map-controls-pill-v');
+            if (pillV) pillV.style.display = 'flex';
+            
+            // 4. Kamera zurück zum Startpunkt fliegen
+            if (currentCoords && libreMap) {
+                libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
+            }
+        });
+    }
 
 // ==========================================
     // === MAP CONTROLS LOGIC (PILL) ===
