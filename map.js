@@ -456,11 +456,11 @@ async function drawTomTomRoute(destLat, destLng) {
                         const safeBottom = Math.min(300, mapHeight * 0.4); // Maximal 40% der Höhe
                         const safeTop = Math.min(120, mapHeight * 0.15); // Maximal 15% der Höhe
 
-                        libreMap.fitBounds(bounds, {
-                            padding: { top: safeTop, bottom: safeBottom, left: 40, right: 40 }, 
-                            duration: 1000,
-                            pitch: 0 
-                        });
+                 libreMap.fitBounds(bounds, {
+                    padding: 50,
+                    duration: 1000,
+                    pitch: 0 
+                });
                     }
                     
                     // Die erste Route aktivieren
