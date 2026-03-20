@@ -376,7 +376,18 @@ libreMap.addLayer({
         });
     }
 
-// UI-Wechsel: Normales Sheet weg, Route-Overview an
+// ==========================================
+    // === MULTI-ROUTING & TRAFFIC LOGIC ===
+    // ==========================================
+    let currentRouteIds = []; // Merkt sich die IDs der gerenderten Layer
+
+    async function drawTomTomRoute(destLat, destLng) {
+        if (!currentCoords || !libreMap) return;
+
+        const startLng = currentCoords[0];
+        const startLat = currentCoords[1];
+
+        // UI-Wechsel: Normales Sheet weg, Route-Overview an
         const bottomSheet = document.getElementById('map-bottom-sheet');
         const searchInput = document.getElementById('tomtom-search-input');
         const routeOverviewUI = document.getElementById('route-overview-ui');
@@ -384,7 +395,7 @@ libreMap.addLayer({
         const mapCard = document.querySelector('.map-snippet-card'); // Map greifen
         const expandTrigger = document.getElementById('map-expand-trigger'); // Klickscheibe
         
-        // 1. Karte zwingend auf Fullscreen setzen (falls aus kleinem Zustand gesucht wurde)
+        // 1. Karte zwingend auf Fullscreen setzen
         if (mapCard) mapCard.classList.add('map-expanded');
         if (expandTrigger) expandTrigger.style.display = 'none';
 
@@ -397,7 +408,7 @@ libreMap.addLayer({
         if (routeOverviewUI) routeOverviewUI.classList.remove('hidden');
         if (pillV) pillV.style.display = 'none'; // Pille unsichtbar machen
 
-        // 3. ZWINGEND: Map-Interaktionen freischalten, sonst ist sie statisch!
+        // 3. ZWINGEND: Map-Interaktionen freischalten
         if (libreMap) {
             libreMap.dragPan.enable();
             libreMap.scrollZoom.enable();
@@ -415,23 +426,26 @@ libreMap.addLayer({
             const data = await response.json();
 
             if (data.routes && data.routes.length > 0) {
-                clearRoutes(); // Alte Linien restlos entfernen
-                renderRouteCards(data.routes); // Cards unten generieren
-                drawAllRoutesOnMap(data.routes); // Auf die Map zeichnen
+                clearRoutes(); 
+                renderRouteCards(data.routes); 
+                drawAllRoutesOnMap(data.routes); 
                 
                 // Kamera auf das gesamte Routen-Netzwerk einstellen
                 const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
                 const bounds = allPoints.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
                 
                 libreMap.fitBounds(bounds, {
-                    padding: { top: 120, bottom: 300, left: 50, right: 50 }, // Unten mehr Platz für die Cards
+                    padding: { top: 120, bottom: 300, left: 50, right: 50 },
                     duration: 1000,
-                    pitch: 0 // Übersicht von oben
+                    pitch: 0 
                 });
 
-                // Die erste Route direkt als aktiv markieren
                 highlightRoute(0);
             }
+        } catch (error) {
+            console.error("TomTom Routing Fehler:", error);
+        }
+    }
         } catch (error) {
             console.error("TomTom Routing Fehler:", error);
         }
@@ -596,71 +610,122 @@ libreMap.addLayer({
 
 
 
-    // ==========================================
-// === MAP CONTROLS LOGIC (PILL) ===
 // ==========================================
-const btnRecenter = document.getElementById('btn-recenter-map');
-const btnNorth = document.getElementById('btn-align-north');
+    // === MAP CONTROLS LOGIC (PILL) ===
+    // ==========================================
+    const btnRecenter = document.getElementById('btn-recenter-map');
+    const btnNorth = document.getElementById('btn-align-north');
 
-if (btnRecenter && btnNorth) {
-    
-    // 1. Klick auf Standort-Button (Zentrieren)
-btnRecenter.addEventListener('click', (e) => {
-    e.stopPropagation();
-    
-    if (libreMap && currentCoords) {
-        libreMap.flyTo({
-            center: currentCoords,
-            zoom: 16,
-            speed: 1.2,
-            essential: true
+    if (btnRecenter && btnNorth) {
+        
+        // 1. Klick auf Standort-Button (Zentrieren)
+        btnRecenter.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (libreMap && currentCoords) {
+                libreMap.flyTo({
+                    center: currentCoords,
+                    zoom: 16,
+                    speed: 1.2,
+                    essential: true
+                });
+            }
+        });
+
+        // 2. Klick auf Nord-Button (Norden ausrichten & flach legen)
+        btnNorth.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (libreMap) {
+                libreMap.flyTo({
+                    bearing: 0, 
+                    pitch: 0,   
+                    speed: 1.5,
+                    essential: true
+                });
+            }
         });
     }
-});
 
-    shrinkBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); 
-        
-        // --- NEU: ROUTE-CANCEL INTERCEPT LOGIK ---
-        const routeOverviewUI = document.getElementById('route-overview-ui');
-        if (routeOverviewUI && !routeOverviewUI.classList.contains('hidden')) {
-            // Wir sind in der Routen-Auswahl!
-            // -> Route löschen und UI zurücksetzen, aber MAP BLEIBT GROß!
-            if (typeof clearRoutes === 'function') clearRoutes();
-            routeOverviewUI.classList.add('hidden');
+    // ==========================================
+    // === SHRINK BUTTON / CANCEL ROUTE LOGIC ===
+    // ==========================================
+    const shrinkBtn = document.getElementById('btn-shrink-map');
+    const mapCard = document.querySelector('.map-snippet-card');
+    const expandTrigger = document.getElementById('map-expand-trigger');
+
+    if (shrinkBtn && mapCard && expandTrigger) {
+        shrinkBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
             
-            const bottomSheet = document.getElementById('map-bottom-sheet');
-            if (bottomSheet) bottomSheet.style.display = 'flex';
-            
-            const pillV = document.querySelector('.map-controls-pill-v');
-            if (pillV) pillV.style.display = 'flex'; // Pille wieder einblenden
-            
-            if (currentCoords && libreMap) {
-                libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
+            // --- NEU: ROUTE-CANCEL INTERCEPT LOGIK ---
+            const routeOverviewUI = document.getElementById('route-overview-ui');
+            if (routeOverviewUI && !routeOverviewUI.classList.contains('hidden')) {
+                // Wir sind in der Routen-Auswahl -> Nur Route löschen!
+                if (typeof clearRoutes === 'function') clearRoutes();
+                routeOverviewUI.classList.add('hidden');
+                
+                const bottomSheet = document.getElementById('map-bottom-sheet');
+                if (bottomSheet) bottomSheet.style.display = 'flex';
+                
+                const pillV = document.querySelector('.map-controls-pill-v');
+                if (pillV) pillV.style.display = 'flex'; // Pille wieder einblenden
+                
+                if (currentCoords && libreMap) {
+                    libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
+                }
+                return; // WICHTIG: Hier brechen wir ab! Die Karte schrumpft dadurch nicht.
             }
-            return; // WICHTIG: Hier brechen wir ab! Die Karte schrumpft dadurch nicht.
-        }
-        // -----------------------------------------
+            // -----------------------------------------
 
-        mapCard.classList.remove('map-expanded');
-        expandTrigger.style.display = 'block';
-        // ... (hier folgt dein bereits bestehender Code zum Schrumpfen der Karte) ...
+            // --- DEIN ALTER CODE ZUM SCHRUMPFEN DER KARTE ---
+            mapCard.classList.remove('map-expanded');
+            expandTrigger.style.display = 'block';
 
-    // 2. Klick auf Nord-Button (Norden ausrichten & flach legen)
-    btnNorth.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
-        if (libreMap) {
-            // Wir fliegen nicht nur nach Norden, sondern legen die Karte auch flach (Pitch 0)
-            libreMap.flyTo({
-                bearing: 0, // Exakt Norden
-                pitch: 0,   // Flach von oben (wichtig für Übersicht)
-                speed: 1.5,
-                essential: true
-            });
-        }
-    });
-}
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav) bottomNav.style.display = 'flex';
+
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.classList.remove('expanded');
+
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) searchInput.blur();
+
+            if (!libreMap) return;
+
+            libreMap.dragPan.disable();
+            libreMap.scrollZoom.disable();
+            libreMap.touchZoomRotate.disable();
+            libreMap.doubleClickZoom.disable();
+            libreMap.setPadding({ right: 150, bottom: 10 });
+
+            if (currentCoords) {
+                libreMap.flyTo({
+                    center: currentCoords,
+                    zoom: 14,
+                    bearing: 0,  
+                    pitch: 0,    
+                    speed: 1.5,
+                    essential: true
+                });
+            }
+
+            let start = Date.now();
+            let resizeInterval = setInterval(() => {
+                libreMap.resize();
+                if (Date.now() - start > 450) {
+                    clearInterval(resizeInterval);
+                    if (currentCoords) {
+                        libreMap.jumpTo({ 
+                            center: currentCoords, 
+                            zoom: 14, 
+                            bearing: 0, 
+                            pitch: 0 
+                        });
+                    }
+                }
+            }, 16); 
+        });
+    }
+
     // ==========================================
     // === BOTTOM SHEET TOUCH & FOCUS LOGIC ===
     // ==========================================
@@ -669,24 +734,19 @@ btnRecenter.addEventListener('click', (e) => {
 
     if (bottomSheet && tomtomInput) {
         
-        // 1. Wenn du in die Searchbar klickst -> Sheet sofort ausfahren UND Browser-Scroll killen
         tomtomInput.addEventListener('focus', () => {
             bottomSheet.classList.add('expanded');
 
-            // FIX: Safari/Chrome daran hindern, den ganzen Screen nach oben zu schieben!
-            // Wir ziehen den Bildschirm in den ersten Millisekunden gnadenlos auf 0 zurück.
             const preventScroll = () => {
                 window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 document.body.scrollTop = 0;
             };
 
-            // Mehrere Timeouts, weil die Tastatur-Animation auf verschiedenen Handys unterschiedlich lange dauert
             setTimeout(preventScroll, 10);
             setTimeout(preventScroll, 150);
             setTimeout(preventScroll, 300);
         });
 
-        // 2. Wisch-Logik (Swipe Up / Swipe Down)
         let startY = 0;
 
         bottomSheet.addEventListener('touchstart', (e) => {
@@ -697,16 +757,13 @@ btnRecenter.addEventListener('click', (e) => {
             let endY = e.changedTouches[0].clientY;
             let diff = startY - endY;
 
-            // Wisch nach oben (mehr als 30px) -> Ausfahren
             if (diff > 30) {
                 bottomSheet.classList.add('expanded');
             } 
-            // Wisch nach unten (mehr als 30px) -> Einklappen
             else if (diff < -30) {
                 bottomSheet.classList.remove('expanded');
-                tomtomInput.blur(); // Tastatur einklappen, wenn offen!
+                tomtomInput.blur(); 
             }
         });
     }
-});
-
+}); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
