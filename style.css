@@ -2818,78 +2818,7 @@ body.ghost-active #ghost-chat-overlay {
 
 
 
-/* Zurück-Button oben links */
-#btn-cancel-route {
-    position: absolute;
-    top: 50px;
-    left: 20px;
-    background: rgba(30, 30, 30, 0.8);
-    backdrop-filter: blur(15px);
-    pointer-events: auto;
-}
 
-/* Die Swipe-Area unten (ca 25% vom Screen) */
-.route-cards-wrapper {
-    position: absolute;
-    bottom: 30px;
-    width: 100%;
-    pointer-events: auto;
-}
-
-.route-cards-scroll {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none;  /* IE and Edge */
-    padding: 0 20px;
-    gap: 15px;
-}
-.route-cards-scroll::-webkit-scrollbar {
-    display: none; /* Chrome, Safari */
-}
-
-
-.route-card.active {
-    border-color: #007aff; /* Apple Blue für die aktive Route */
-    transform: scale(1);
-}
-
-.route-card:not(.active) {
-    transform: scale(0.95);
-    opacity: 0.7;
-}
-
-/* Card Inhalte */
-.route-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-.route-time { font-size: 24px; font-weight: 700; color: #30d158; }
-.route-distance { font-size: 16px; color: rgba(255,255,255,0.6); }
-
-.route-details {
-    display: flex;
-    justify-content: space-between;
-    font-size: 14px;
-    margin-bottom: 16px;
-    color: rgba(255,255,255,0.8);
-}
-.traffic-prob { color: #ff3b30; font-weight: 600; }
-
-.btn-go {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.3);
-    font-size: 16px;
-    font-weight: 600;
-}
-/* Wenn wir ihn später aktivieren, kriegt er die blaue/grüne Farbe */
 
 .dest-marker {
     transition: transform 0.2s ease-out;
