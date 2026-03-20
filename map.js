@@ -3,14 +3,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const newExploreScreen = document.getElementById('new-explore-screen');
     const allNavItems = document.querySelectorAll('.nav-item');
     const mapContainerId = 'maplibre-snippet';
-    
 
-// Globale MapLibre Instanz
+    // Globale MapLibre Instanz
     let libreMap = null;
-    let destMarker = null; // Speichert den grünen Ziel-Punkt
-    let currentCoords = null; // NEU: Merkt sich deinen Standort
-    let destMarker = null;
+    let destMarker = null; // Nur einmal definieren!
+    let currentCoords = null; 
+    
     if (btnNewExplore && newExploreScreen) {
+        // ... restlicher Code
         
         // FIX: Globaler Listener für die Nav-Bar (Farben weg)
         allNavItems.forEach(nav => {
