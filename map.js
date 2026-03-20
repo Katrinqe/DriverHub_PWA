@@ -376,69 +376,238 @@ libreMap.addLayer({
         });
     }
 
-    // 3. Die Route holen und auf die Karte zeichnen
+ // ==========================================
+    // === MULTI-ROUTING & TRAFFIC LOGIC ===
+    // ==========================================
+    let currentRouteIds = []; // Merkt sich die IDs der gerenderten Layer
+
     async function drawTomTomRoute(destLat, destLng) {
         if (!currentCoords || !libreMap) return;
 
         const startLng = currentCoords[0];
         const startLat = currentCoords[1];
 
+        // UI-Wechsel: Normales Sheet weg, Route-Overview an
+        const bottomSheet = document.getElementById('map-bottom-sheet');
+        const searchInput = document.getElementById('tomtom-search-input');
+        const routeOverviewUI = document.getElementById('route-overview-ui');
+        
+        if (bottomSheet) bottomSheet.classList.remove('expanded');
+        if (bottomSheet) bottomSheet.style.display = 'none';
+        if (searchInput) searchInput.blur();
+        if (routeOverviewUI) routeOverviewUI.classList.remove('hidden');
+
         try {
-            // TomTom Routing API: Startpunkt zu Zielpunkt
-            const response = await fetch(`https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}`);
+            // API-Call mit maxAlternatives=2 (ergibt max 3 Routen) + Traffic-Daten
+            const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&maxAlternatives=2&computeTravelTimeFor=all&traffic=true&sectionType=traffic`;
+            const response = await fetch(url);
             const data = await response.json();
 
             if (data.routes && data.routes.length > 0) {
-                // TomTom gibt uns ein Array aus {latitude, longitude}. MapLibre braucht [lng, lat].
-                const routePoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
-
-                const geojson = {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: routePoints
-                    }
-                };
-
-                // Bestehende Route updaten oder neu zeichnen
-                if (libreMap.getSource('tomtom-route')) {
-                    libreMap.getSource('tomtom-route').setData(geojson);
-                } else {
-                    libreMap.addSource('tomtom-route', {
-                        type: 'geojson',
-                        data: geojson
-                    });
-
-                    libreMap.addLayer({
-                        id: 'tomtom-route-line',
-                        type: 'line',
-                        source: 'tomtom-route',
-                        layout: {
-                            'line-join': 'round',
-                            'line-cap': 'round'
-                        },
-                        paint: {
-                            'line-color': '#007aff', 
-                            'line-width': 6,         
-                            'line-opacity': 0.8      
-                        }
-                    });
-                }
-
-                // Kamera elegant so verschieben, dass die ganze Route sichtbar wird
-                const bounds = routePoints.reduce((bounds, coord) => {
-                    return bounds.extend(coord);
-                }, new maplibregl.LngLatBounds(routePoints[0], routePoints[0]));
-
+                clearRoutes(); // Alte Linien restlos entfernen
+                renderRouteCards(data.routes); // Cards unten generieren
+                drawAllRoutesOnMap(data.routes); // Auf die Map zeichnen
+                
+                // Kamera auf das gesamte Routen-Netzwerk einstellen
+                const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
+                const bounds = allPoints.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
+                
                 libreMap.fitBounds(bounds, {
-                    padding: { top: 150, bottom: 100, left: 50, right: 50 },
-                    duration: 1000 
+                    padding: { top: 120, bottom: 300, left: 50, right: 50 }, // Unten mehr Platz für die Cards
+                    duration: 1000,
+                    pitch: 0 // Übersicht von oben
                 });
+
+                // Die erste Route direkt als aktiv markieren
+                highlightRoute(0);
             }
         } catch (error) {
             console.error("TomTom Routing Fehler:", error);
         }
+    }
+
+    // --- RENDER LOGIK FÜR DIE MAP ---
+    function drawAllRoutesOnMap(routes) {
+        // Wir zeichnen die Routen rückwärts, damit Route 0 (die beste) ganz oben liegt
+        for (let i = routes.length - 1; i >= 0; i--) {
+            const route = routes[i];
+            const routePoints = route.legs[0].points.map(p => [p.longitude, p.latitude]);
+            const sourceId = `tomtom-route-source-${i}`;
+            const layerId = `tomtom-route-layer-${i}`;
+            
+            let features = [];
+
+            // 1. Die Basis-Linie
+            features.push({
+                type: 'Feature',
+                properties: { trafficLevel: 0, isActive: false },
+                geometry: { type: 'LineString', coordinates: routePoints }
+            });
+
+            // 2. Die Stau-Segmente (nur wenn die Route aktiv ist, werden sie farbig)
+            if (route.sections) {
+                route.sections.forEach(sec => {
+                    if (sec.sectionType === 'TRAFFIC') {
+                        // TomTom gibt uns den Start- und End-Index des Staus auf der Linie
+                        const segCoords = routePoints.slice(sec.startPointIndex, sec.endPointIndex + 1);
+                        features.push({
+                            type: 'Feature',
+                            properties: { 
+                                trafficLevel: sec.magnitudeOfDelay || 1, // 1=leicht, 2=mittel, 3=schwer, 4=stillstand
+                                isActive: false 
+                            },
+                            geometry: { type: 'LineString', coordinates: segCoords }
+                        });
+                    }
+                });
+            }
+
+            libreMap.addSource(sourceId, {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: features }
+            });
+
+            libreMap.addLayer({
+                id: layerId,
+                type: 'line',
+                source: sourceId,
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: {
+                    'line-width': ['case', ['boolean', ['get', 'isActive'], false], 7, 4], // Aktive Linie ist dicker
+                    'line-color': [
+                        'case',
+                        ['==', ['get', 'isActive'], false], '#666666', // Inaktiv = Grau
+                        // Wenn Aktiv, checke das Traffic-Level:
+                        ['==', ['get', 'trafficLevel'], 0], '#007aff', // Kein Stau = Blau
+                        ['==', ['get', 'trafficLevel'], 1], '#ff9f0a', // Leichter Stau = Orange
+                        ['==', ['get', 'trafficLevel'], 2], '#ff3b30', // Stau = Rot
+                        ['==', ['get', 'trafficLevel'], 3], '#bf0000', // Schwerer Stau = Dunkelrot
+                        '#000000' // Stillstand = Schwarz
+                    ],
+                    'line-opacity': ['case', ['boolean', ['get', 'isActive'], false], 1.0, 0.4]
+                }
+            });
+
+            currentRouteIds.push(i);
+        }
+    }
+
+    // --- KARTEN GENERIEREN UND SCROLL-LOGIK ---
+    function renderRouteCards(routes) {
+        const container = document.getElementById('route-cards-container');
+        container.innerHTML = '';
+
+        routes.forEach((route, index) => {
+            const summary = route.summary;
+            
+            // Zeiten und Längen formatieren
+            const durationMin = Math.round(summary.travelTimeInSeconds / 60);
+            const delayMin = Math.round(summary.trafficDelayInSeconds / 60);
+            const distanceKm = (summary.lengthInMeters / 1000).toFixed(1);
+            
+            // Ankunftszeit berechnen
+            const arrival = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
+            const arrivalStr = arrival.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+            // Künstliche Stau-Wahrscheinlichkeit für das Feeling
+            const trafficRisk = delayMin > 10 ? 'Hoch' : (delayMin > 3 ? 'Mittel' : 'Gering');
+
+            const card = document.createElement('div');
+            card.className = `route-card ${index === 0 ? 'active' : ''}`;
+            card.dataset.index = index;
+            card.innerHTML = `
+                <div class="route-card-header">
+                    <span class="route-time">${durationMin} Min</span>
+                    <span class="route-distance">${distanceKm} km</span>
+                </div>
+                <div class="route-details">
+                    <span>Ankunft: ${arrivalStr}</span>
+                    <span class="traffic-prob">Stau-Risiko: ${trafficRisk} ${delayMin > 0 ? `(+${delayMin} Min)` : ''}</span>
+                </div>
+                <button class="btn-go" disabled>Go</button>
+            `;
+            container.appendChild(card);
+        });
+
+        // Event-Listener für das Snapping (Wischen)
+        container.addEventListener('scroll', () => {
+            clearTimeout(container.scrollTimeout);
+            container.scrollTimeout = setTimeout(() => {
+                const scrollLeft = container.scrollLeft;
+                const cardWidth = container.offsetWidth * 0.85 + 15; // Breite + Gap
+                const activeIndex = Math.round(scrollLeft / cardWidth);
+                
+                // Limits abfangen
+                const safeIndex = Math.max(0, Math.min(activeIndex, routes.length - 1));
+                highlightRoute(safeIndex);
+            }, 150); // Kurz warten bis der Scroll steht
+        });
+    }
+
+    // --- HIGHLIGHTING LOGIK (Aktiviert eine Route, graut die anderen aus) ---
+    function highlightRoute(activeIndex) {
+        // 1. UI Cards updaten
+        document.querySelectorAll('.route-card').forEach((card, idx) => {
+            if (idx === activeIndex) card.classList.add('active');
+            else card.classList.remove('active');
+        });
+
+        // 2. Map-Layer updaten
+        currentRouteIds.forEach(id => {
+            const sourceId = `tomtom-route-source-${id}`;
+            const layerId = `tomtom-route-layer-${id}`;
+            
+            if (libreMap.getSource(sourceId)) {
+                // GeoJSON holen, isActive Property updaten und neu setzen
+                const data = libreMap.getSource(sourceId)._data;
+                const isActive = (id === activeIndex);
+                data.features.forEach(f => f.properties.isActive = isActive);
+                libreMap.getSource(sourceId).setData(data);
+
+                // Die aktive Route nach ganz oben holen
+                if (isActive) {
+                    libreMap.moveLayer(layerId); // Ohne Argument = ganz nach oben
+                }
+            }
+        });
+    }
+
+    // --- CLEANUP & CANCEL LOGIK ---
+    function clearRoutes() {
+        currentRouteIds.forEach(id => {
+            const layerId = `tomtom-route-layer-${id}`;
+            const sourceId = `tomtom-route-source-${id}`;
+            if (libreMap.getLayer(layerId)) libreMap.removeLayer(layerId);
+            if (libreMap.getSource(sourceId)) libreMap.removeSource(sourceId);
+        });
+        currentRouteIds = [];
+    }
+
+    const btnCancelRoute = document.getElementById('btn-cancel-route');
+    if (btnCancelRoute) {
+        btnCancelRoute.addEventListener('click', () => {
+            // 1. Karte säubern
+            clearRoutes();
+            
+            // 2. UI zurücksetzen
+            document.getElementById('route-overview-ui').classList.add('hidden');
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) {
+                bottomSheet.style.display = 'flex'; // Altes Sheet wieder da
+            }
+            
+            // 3. Sauberer FlyTo zurück zum Standort
+            if (currentCoords) {
+                libreMap.flyTo({
+                    center: currentCoords,
+                    zoom: 14,
+                    pitch: 0,
+                    bearing: 0,
+                    speed: 1.5,
+                    essential: true
+                });
+            }
+        });
     }
 
     // ==========================================
