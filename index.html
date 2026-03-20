@@ -808,25 +808,33 @@
             </div>
 <div id="route-overview-ui" class="hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; pointer-events: none;">
                 
-                <button id="btn-cancel-route" style="position: absolute; top: calc(env(safe-area-inset-top, 40px) + 10px); left: 20px; background: rgba(30, 30, 30, 0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.2); color: white; width: 45px; height: 45px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+          <button id="btn-cancel-route" class="close-route-btn"><i class="fa-solid fa-xmark"></i></button>
 
-                <div style="position: absolute; bottom: 30px; left: 20px; right: 20px; pointer-events: auto;">
-                    <div style="background: rgba(25, 25, 25, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 20px; color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.6);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span id="route-info-time" style="font-size: 24px; font-weight: 800; color: #30d158;">-- Min</span>
-                            <span id="route-info-dist" style="font-size: 16px; color: rgba(255,255,255,0.6); font-weight: 700;">-- km</span>
-                        </div>
-                        <div style="font-size: 14px; color: rgba(255,255,255,0.8); font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-regular fa-clock" style="color: #007aff;"></i>
-                            Ankunft: <span id="route-info-arrival" style="color: white; font-weight: 800;">--:--</span> Uhr
-                        </div>
-                        <button id="btn-start-nav" style="width: 100%; margin-top: 20px; padding: 16px; border-radius: 14px; border: none; background: #007aff; color: white; font-size: 16px; font-weight: 900; letter-spacing: 1px; cursor: pointer; box-shadow: 0 5px 15px rgba(0, 122, 255, 0.4);">
-                            GO
-                        </button>
-                    </div>
-                </div>
+    <div class="route-planning-card">
+        <div class="route-locations">
+            <div class="location-pill start-pill">
+                <div class="dot blue-dot"></div>
+                <span>Mein Standort</span>
+            </div>
+            
+            <div class="connecting-line"></div>
+            
+            <div class="location-pill dest-pill">
+                <div class="dot green-dot"></div>
+                <span id="dest-name-display">Zielort</span>
+            </div>
+        </div>
+
+        <div class="route-action-pill">
+            <div class="route-stats">
+                <span class="route-time" id="route-info-time">-- Min</span>
+                <span class="route-details">
+                    <span id="route-info-dist">-- km</span> • Ankunft <span id="route-info-arrival">--:--</span>
+                </span>
+            </div>
+            <button id="btn-start-nav" class="go-button">GO</button>
+        </div>
+    </div>
             </div>
 
         </div>
