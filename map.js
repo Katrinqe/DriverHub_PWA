@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let libreMap = null;
     let destMarker = null; // Speichert den grünen Ziel-Punkt
     let currentCoords = null; // NEU: Merkt sich deinen Standort
+    let destMarker = null;
     if (btnNewExplore && newExploreScreen) {
         
         // FIX: Globaler Listener für die Nav-Bar (Farben weg)
@@ -95,16 +96,15 @@ function loadMap(coords, hasLocation) {
     // 1. Standort sichern
     currentCoords = coords; 
 
-    // 2. Map initialisieren
-    libreMap = new maplibregl.Map({
+libreMap = new maplibregl.Map({
         container: mapContainerId,
         style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         center: coords,
         zoom: 14,
-        interactive: true, 
+        interactive: true,
+        dragRotate: true, // FIX: Von Anfang an aktiv für Desktop-Stabilität
         attributionControl: false 
     });
-
    // --- BLAUER PUNKT (Zwingend zeichnen, Original-Klassen nutzen!) ---
     const customMarkerElement = document.createElement('div');
     customMarkerElement.className = 'user-marker-wrap';
@@ -375,188 +375,156 @@ libreMap.addLayer({
         });
     }
 
-// ==========================================
-    // === SIMPLE ROUTING LOGIC (CORE) ===
-    // ==========================================
-    
-// ==========================================
-    // === SIMPLE ROUTING LOGIC (CORE) ===
-    // ==========================================
-    
-    async function drawTomTomRoute(destLat, destLng) {
-        if (!currentCoords || !libreMap) return;
+async function drawTomTomRoute(destLat, destLng) {
+    if (!currentCoords || !libreMap) return;
 
-        const startLng = currentCoords[0];
-        const startLat = currentCoords[1];
+    const startLng = currentCoords[0];
+    const startLat = currentCoords[1];
 
-        console.log("Routing gestartet", startLat, startLng, destLat, destLng);
+    console.log("Routing gestartet", startLat, startLng, destLat, destLng);
 
-        // Der sichere Load-Check von Peter
-        if (!libreMap.loaded()) {
-            console.log("Map noch nicht bereit, warte auf load...");
-            libreMap.once("load", () => {
-                drawTomTomRoute(destLat, destLng);
-            });
-            return;
-        }
-        
-        // 1. UI aufräumen & Karte auf Fullscreen setzen
-        const bottomSheet = document.getElementById('map-bottom-sheet');
-        const searchInput = document.getElementById('tomtom-search-input');
-        const mapCard = document.querySelector('.map-snippet-card');
-        const expandTrigger = document.getElementById('map-expand-trigger');
-        const bottomNav = document.querySelector('.bottom-nav');
-        const pillV = document.querySelector('.map-controls-pill-v');
-
-        if (mapCard) mapCard.classList.add('map-expanded');
-        if (expandTrigger) expandTrigger.style.display = 'none';
-        if (bottomNav) bottomNav.style.display = 'none';
-        if (pillV) pillV.style.display = 'none';
-        
-        if (bottomSheet) {
-            bottomSheet.classList.remove('expanded');
-            bottomSheet.style.display = 'none';
-        }
-        if (searchInput) searchInput.blur();
-
-// 2. Map-Interaktionen an und Padding nullen
-        if (libreMap) {
-            libreMap.dragPan.enable();
-            libreMap.scrollZoom.enable();
-            libreMap.touchZoomRotate.enable();
-            libreMap.doubleClickZoom.enable();
-            
-            if (libreMap.dragRotate) libreMap.dragRotate.enable();
-            
-            libreMap.setPadding({ right: 0, bottom: 0 });
-        }
-
-        try {
-            // 3. Nackte API-Anfrage (Nur eine einzige Route, kein Traffic)
-            const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
-            const response = await fetch(url);
-            const data = await response.json();
-
-            if (data.routes && data.routes.length > 0) {
-                
-             const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
-                const sections = data.routes[0].sections || [];
-                
-                // Wir bauen eine FeatureCollection für verschiedene Farben
-                const routeFeatures = [];
-
-                // Falls keine Sektionen da sind (freier Weg), zeichnen wir die ganze Route blau
-                if (sections.length === 0) {
-                    routeFeatures.push({
-                        type: 'Feature',
-                        properties: { color: '#007aff' }, // Standard Blau
-                        geometry: { type: 'LineString', coordinates: allPoints }
-                    });
-                } else {
-                    sections.forEach(section => {
-                        const start = section.startPointIndex;
-                        const end = section.endPointIndex;
-                        const segmentCoords = allPoints.slice(start, end + 1);
-
-                        let color = '#007aff'; // Default Blau
-                        
-                        // Farblogik basierend auf TomTom Traffic-Daten
-                        if (section.sectionType === 'TRAFFIC') {
-                            if (section.simpleCategory === 'JAM') {
-                                color = '#ff3b30'; // Stau = Apple Red
-                            } else if (section.simpleCategory === 'SLOW') {
-                                color = '#ffcc00'; // Zähflüssig / Baustelle = Apple Yellow
-                            }
-                        }
-
-                        routeFeatures.push({
-                            type: 'Feature',
-                            properties: { color: color },
-                            geometry: { type: 'LineString', coordinates: segmentCoords }
-                        });
-                    });
-                }
-
-                // 5. Source & Layer robust updaten
-                if (!libreMap.getSource('simple-route-source')) {
-                    libreMap.addSource('simple-route-source', {
-                        type: 'geojson',
-                        data: { type: 'FeatureCollection', features: routeFeatures }
-                    });
-                } else {
-                    libreMap.getSource('simple-route-source').setData({
-                        type: 'FeatureCollection',
-                        features: routeFeatures
-                    });
-                }
-
-                if (!libreMap.getLayer('simple-route-layer')) {
-                    libreMap.addLayer({
-                        id: 'simple-route-layer',
-                        type: 'line',
-                        source: 'simple-route-source',
-                        layout: { 'line-join': 'round', 'line-cap': 'round' },
-                        paint: { 
-                            // DATEN-DRIVEN STYLING: MapLibre nimmt die Farbe direkt aus dem Feature!
-                            'line-color': ['get', 'color'], 
-                            'line-width': 6 
-                        }
-                    });
-                }
-
-      // 6. Kamera dynamisch an das UI anpassen (Bottom-Card aussparen)
-                const bounds = new maplibregl.LngLatBounds();
-                routePoints.forEach(coord => bounds.extend(coord));
-                
-                setTimeout(() => {
-                    if (libreMap) {
-                        libreMap.resize();
-                        // Asymmetrisches Padding: Oben Platz für X-Button, unten Platz für Info-Card
-                        // --- NEU: GRÜNER ZIEL-MARKER ---
-                if (destMarker) destMarker.remove(); // Alten Marker löschen falls vorhanden
-
-                const el = document.createElement('div');
-                el.className = 'dest-marker';
-                el.style.width = '18px';
-                el.style.height = '18px';
-                el.style.background = '#30d158'; // Dein Grün
-                el.style.border = '3px solid white';
-                el.style.borderRadius = '50%';
-                el.style.boxShadow = '0 0 15px rgba(48, 209, 88, 0.8)';
-
-                destMarker = new maplibregl.Marker({ element: el })
-                    .setLngLat([destLng, destLat])
-                    .addTo(libreMap);
-                        libreMap.fitBounds(bounds, { 
-                            padding: { top: 120, bottom: 320, left: 60, right: 60 }, 
-                            duration: 1000, 
-                            pitch: 0 
-                        });
-
-                        
-                        
-                        // --- NEU: Routen-Daten auslesen und ins UI pushen ---
-                        const summary = data.routes[0].summary;
-                        const durationMin = Math.round(summary.travelTimeInSeconds / 60);
-                        const distanceKm = (summary.lengthInMeters / 1000).toFixed(1);
-                        
-                        const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
-                        const arrivalStr = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-
-                        document.getElementById('route-info-time').textContent = `${durationMin} Min`;
-                        document.getElementById('route-info-dist').textContent = `${distanceKm} km`;
-                        document.getElementById('route-info-arrival').textContent = arrivalStr;
-
-                        const routeUI = document.getElementById('route-overview-ui');
-                        if (routeUI) routeUI.classList.remove('hidden');
-                    }
-                }, 400); // 400ms warten, bis die Karte groß ist
-            } // <-- FIX: Diese Klammer hat gefehlt!
-        } catch (error) {
-            console.error("Routing Fehler:", error);
-        }
+    // 1. Map-Load Check (Peter's Fix)
+    if (!libreMap.loaded()) {
+        console.log("Map noch nicht bereit, warte auf load...");
+        libreMap.once("load", () => drawTomTomRoute(destLat, destLng));
+        return;
     }
- 
+
+    // 2. UI & Interaktionen vorbereiten
+    const routeUI = document.getElementById('route-overview-ui');
+    const bottomSheet = document.getElementById('map-bottom-sheet');
+    const pillV = document.querySelector('.map-controls-pill-v');
+
+    if (document.querySelector('.map-snippet-card')) document.querySelector('.map-snippet-card').classList.add('map-expanded');
+    document.getElementById('map-expand-trigger').style.display = 'none';
+    const navBar = document.querySelector('.bottom-nav');
+    if (navBar) navBar.style.display = 'none';
+    
+    if (bottomSheet) {
+        bottomSheet.classList.remove('expanded');
+        bottomSheet.style.display = 'none';
+    }
+    document.getElementById('tomtom-search-input').blur();
+
+    // Interaktionen sicher aktivieren
+    libreMap.dragPan.enable();
+    libreMap.scrollZoom.enable();
+    libreMap.touchZoomRotate.enable();
+    libreMap.doubleClickZoom.enable();
+    if (libreMap.dragRotate) libreMap.dragRotate.enable();
+    
+    libreMap.setPadding({ right: 0, bottom: 0 });
+
+    try {
+        // 3. API URL mit Traffic & Sections
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data.routes || !data.routes[0].legs) return;
+
+        const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
+        const sections = data.routes[0].sections || [];
+        const routeFeatures = [];
+
+        // 4. Sektionen verarbeiten mit harten Fallbacks (Peter's Logic)
+        if (sections.length === 0) {
+            if (allPoints.length > 1) {
+                routeFeatures.push({
+                    type: 'Feature',
+                    properties: { color: '#007aff' },
+                    geometry: { type: 'LineString', coordinates: allPoints }
+                });
+            }
+        } else {
+            sections.forEach(section => {
+                const start = section.startPointIndex;
+                const end = section.endPointIndex;
+
+                if (typeof start !== 'number' || typeof end !== 'number') return;
+
+                const segmentCoords = allPoints.slice(start, end + 1);
+                if (segmentCoords.length < 2) return;
+
+                let color = '#007aff'; // Default Blau
+                if (section.sectionType === 'TRAFFIC') {
+                    if (section.simpleCategory === 'JAM') color = '#ff3b30'; // Rot
+                    else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; // Gelb
+                }
+
+                routeFeatures.push({
+                    type: 'Feature',
+                    properties: { color: color },
+                    geometry: { type: 'LineString', coordinates: segmentCoords }
+                });
+            });
+        }
+
+        if (routeFeatures.length === 0) return;
+
+        // 5. Source & Layer Update
+        if (!libreMap.getSource('simple-route-source')) {
+            libreMap.addSource('simple-route-source', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: routeFeatures }
+            });
+        } else {
+            libreMap.getSource('simple-route-source').setData({
+                type: 'FeatureCollection',
+                features: routeFeatures
+            });
+        }
+
+        if (!libreMap.getLayer('simple-route-layer')) {
+            libreMap.addLayer({
+                id: 'simple-route-layer',
+                type: 'line',
+                source: 'simple-route-source',
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: { 
+                    'line-color': ['get', 'color'], 
+                    'line-width': 6 
+                }
+            });
+        }
+
+        // 6. Ziel-Marker (Peter's Global Fix)
+        if (destMarker) destMarker.remove();
+        const el = document.createElement('div');
+        el.className = 'dest-marker';
+        el.style.width = '18px'; el.style.height = '18px';
+        el.style.background = '#30d158'; el.style.border = '3px solid white';
+        el.style.borderRadius = '50%'; el.style.boxShadow = '0 0 15px rgba(48, 209, 88, 0.8)';
+        
+        destMarker = new maplibregl.Marker({ element: el }).setLngLat([destLng, destLat]).addTo(libreMap);
+
+        // 7. UI Daten
+        const summary = data.routes[0].summary;
+        const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
+        
+        document.getElementById('route-info-time').textContent = `${Math.round(summary.travelTimeInSeconds / 60)} Min`;
+        document.getElementById('route-info-dist').textContent = `${(summary.lengthInMeters / 1000).toFixed(1)} km`;
+        document.getElementById('route-info-arrival').textContent = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+        if (routeUI) routeUI.classList.remove('hidden');
+        if (pillV) pillV.style.display = 'none';
+
+        // 8. Kamera-Zoom (Idle-Event statt Timeout für 100% Stabilität)
+        const bounds = new maplibregl.LngLatBounds();
+        allPoints.forEach(coord => bounds.extend(coord));
+        
+        libreMap.resize();
+        libreMap.once('idle', () => {
+            libreMap.fitBounds(bounds, { 
+                padding: { top: 120, bottom: 320, left: 60, right: 60 }, 
+                duration: 1000 
+            });
+        });
+
+    } catch (error) {
+        console.error("Routing Fehler:", error);
+    }
+}
 
 
 function clearRoutes() {
