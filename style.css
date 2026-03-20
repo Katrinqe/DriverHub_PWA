@@ -2641,8 +2641,8 @@ body.ghost-active #ghost-chat-overlay {
 .map-bottom-sheet {
     position: absolute;
     bottom: 20px; 
-    left: 20px; 
-    width: calc(100% - 40px);
+    left: 10px; /* Nur noch 10px Abstand nach links */
+    width: calc(100% - 20px); /* 100% Breite minus 10px links und 10px rechts */
     
     /* FIX 1: Feste Start-Höhe statt 'auto' oder 'max-height'. Das ist die Pille! */
     height: 88px; 
