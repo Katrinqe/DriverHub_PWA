@@ -381,7 +381,10 @@ libreMap.addLayer({
     // ==========================================
     
     async function drawTomTomRoute(destLat, destLng) {
-        if (!currentCoords || !libreMap) return;
+       if (!currentCoords || !libreMap || !libreMap.isStyleLoaded()) {
+            console.log("Routing abgebrochen: Map oder Style noch nicht bereit.");
+            return;
+        }
 
         const startLng = currentCoords[0];
         const startLat = currentCoords[1];
