@@ -440,12 +440,8 @@ libreMap.addLayer({
                     pitch: 0 
                 });
 
-                highlightRoute(0);
+     highlightRoute(0);
             }
-        } catch (error) {
-            console.error("TomTom Routing Fehler:", error);
-        }
-    }
         } catch (error) {
             console.error("TomTom Routing Fehler:", error);
         }
