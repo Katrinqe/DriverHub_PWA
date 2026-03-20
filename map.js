@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Globale MapLibre Instanz
     let libreMap = null;
+    let destMarker = null; // Speichert den grünen Ziel-Punkt
     let currentCoords = null; // NEU: Merkt sich deinen Standort
     if (btnNewExplore && newExploreScreen) {
         
@@ -475,11 +476,28 @@ libreMap.addLayer({
                     if (libreMap) {
                         libreMap.resize();
                         // Asymmetrisches Padding: Oben Platz für X-Button, unten Platz für Info-Card
+                        // --- NEU: GRÜNER ZIEL-MARKER ---
+                if (destMarker) destMarker.remove(); // Alten Marker löschen falls vorhanden
+
+                const el = document.createElement('div');
+                el.className = 'dest-marker';
+                el.style.width = '18px';
+                el.style.height = '18px';
+                el.style.background = '#30d158'; // Dein Grün
+                el.style.border = '3px solid white';
+                el.style.borderRadius = '50%';
+                el.style.boxShadow = '0 0 15px rgba(48, 209, 88, 0.8)';
+
+                destMarker = new maplibregl.Marker({ element: el })
+                    .setLngLat([destLng, destLat])
+                    .addTo(libreMap);
                         libreMap.fitBounds(bounds, { 
                             padding: { top: 120, bottom: 320, left: 60, right: 60 }, 
                             duration: 1000, 
                             pitch: 0 
                         });
+
+                        
                         
                         // --- NEU: Routen-Daten auslesen und ins UI pushen ---
                         const summary = data.routes[0].summary;
@@ -505,11 +523,15 @@ libreMap.addLayer({
  
 
 
-// --- CLEANUP & CANCEL LOGIK (SIMPLE) ---
-    function clearRoutes() {
+function clearRoutes() {
         if (libreMap && libreMap.getLayer('simple-route-layer')) {
             libreMap.removeLayer('simple-route-layer');
             libreMap.removeSource('simple-route-source');
+        }
+        // Ziel-Punkt entfernen
+        if (destMarker) {
+            destMarker.remove();
+            destMarker = null;
         }
     }
 
