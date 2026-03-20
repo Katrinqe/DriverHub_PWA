@@ -350,8 +350,9 @@ libreMap.addLayer({
                             // Baut die Adresse sauber zusammen
                             div.textContent = result.address.freeformAddress || result.address.municipality || "Unbekannter Ort"; 
                             
-                            // 2. Klick auf einen Vorschlag: Route berechnen
+                          // 2. Klick auf einen Vorschlag: Route berechnen
                             div.addEventListener('click', () => {
+                                console.log("STADT GEKLICKT", div.textContent); // <-- NEU (Schritt 1)
                                 searchInput.value = div.textContent;
                                 suggestionsBox.classList.add('hidden');
                                 drawTomTomRoute(result.position.lat, result.position.lon);
@@ -380,13 +381,22 @@ libreMap.addLayer({
     // === SIMPLE ROUTING LOGIC (CORE) ===
     // ==========================================
     
-    async function drawTomTomRoute(destLat, destLng) {
-       if (!currentCoords || !libreMap || !libreMap.isStyleLoaded()) {
-            console.log("Routing abgebrochen: Map oder Style noch nicht bereit.");
+async function drawTomTomRoute(destLat, destLng) {
+        console.log("Routing gestartet", startLat, startLng, destLat, destLng); // <-- NEU (Schritt 2)
+
+        if (!currentCoords || !libreMap) return;
+
+        // <-- NEU (Schritt 3: Der sichere Load-Check)
+        if (!libreMap.loaded()) {
+            console.log("Map noch nicht bereit, warte auf load...");
+            libreMap.once("load", () => {
+                drawTomTomRoute(destLat, destLng);
+            });
             return;
         }
-
+        
         const startLng = currentCoords[0];
+        // ... (Rest bleibt gleich bis zum try-Block)
         const startLat = currentCoords[1];
 
         // 1. UI aufräumen & Karte auf Fullscreen setzen
@@ -426,42 +436,39 @@ libreMap.addLayer({
             const response = await fetch(url);
             const data = await response.json();
 
-            if (data.routes && data.routes.length > 0) {
+    if (data.routes && data.routes.length > 0) {
                 
-                // 4. Alte Linie löschen, falls vorhanden
-                if (libreMap.getLayer('simple-route-layer')) libreMap.removeLayer('simple-route-layer');
-                if (libreMap.getSource('simple-route-source')) libreMap.removeSource('simple-route-source');
-
-                // 5. Neue blaue Linie zeichnen
                 const routePoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
+                console.log("Route Punkte:", routePoints.length); // <-- NEU (Schritt 4)
                 
-                libreMap.addSource('simple-route-source', {
-                    type: 'geojson',
-                    data: {
+                // <-- NEU (Schritt 5: Layer robust updaten statt blind löschen)
+                if (!libreMap.getSource('simple-route-source')) {
+                    libreMap.addSource('simple-route-source', {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            geometry: { type: 'LineString', coordinates: routePoints }
+                        }
+                    });
+                } else {
+                    libreMap.getSource('simple-route-source').setData({
                         type: 'Feature',
                         geometry: { type: 'LineString', coordinates: routePoints }
-                    }
-                });
+                    });
+                }
 
-                libreMap.addLayer({
-                    id: 'simple-route-layer',
-                    type: 'line',
-                    source: 'simple-route-source',
-                    layout: { 'line-join': 'round', 'line-cap': 'round' },
-                    paint: { 'line-color': '#007aff', 'line-width': 6 }
-                });
+                if (!libreMap.getLayer('simple-route-layer')) {
+                    libreMap.addLayer({
+                        id: 'simple-route-layer',
+                        type: 'line',
+                        source: 'simple-route-source',
+                        layout: { 'line-join': 'round', 'line-cap': 'round' },
+                        paint: { 'line-color': '#007aff', 'line-width': 6 }
+                    });
+                }
 
                 // 6. Kamera mit sicherem 50px Padding anpassen
-                const bounds = new maplibregl.LngLatBounds();
-                routePoints.forEach(coord => bounds.extend(coord));
-                
-                setTimeout(() => {
-                    if (libreMap) {
-                        libreMap.resize();
-                        libreMap.fitBounds(bounds, { padding: 50, duration: 1000, pitch: 0 });
-                    }
-                }, 400); // 400ms warten, bis die Karte groß ist
-            }
+                // ... (Rest bleibt exakt gleich mit fitBounds etc.)
         } catch (error) {
             console.error("Routing Fehler:", error);
         }
