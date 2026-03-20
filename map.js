@@ -157,15 +157,13 @@ libreMap.addLayer({
 }, labelLayerId);
 // ------------------------
 
-        libreMap.dragPan.disable();
+ libreMap.dragPan.disable();
         libreMap.scrollZoom.disable();
         libreMap.touchZoomRotate.disable();
         libreMap.doubleClickZoom.disable();
-        libreMap.dragRotate.disable();
-
-        libreMap.touchPitch.disable();
+        
+        if (libreMap.dragRotate) libreMap.dragRotate.disable();
     });
-
     setTimeout(() => { if (libreMap) libreMap.resize(); }, 300);
 }
     // ==========================================
@@ -187,16 +185,15 @@ libreMap.addLayer({
             if (bottomNav) bottomNav.style.display = 'none';
 
             if (libreMap) {
-                // Interaktion freischalten
+           // Interaktion freischalten
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
                 libreMap.touchZoomRotate.enable();
                 libreMap.doubleClickZoom.enable();
                 
-                // FIX: dragRotate MUSS aktiv sein, damit Pitch funktioniert!
-                libreMap.dragRotate.enable(); 
-               
-                libreMap.touchPitch.enable(); // Für Zwei-Finger-Wisch auf dem Handy
+                if (libreMap.dragRotate) libreMap.dragRotate.enable(); 
+
+                // Optischen Mittelpunkt zentrieren (Padding entfernen)
 
                 // Optischen Mittelpunkt zentrieren (Padding entfernen)
                 libreMap.setPadding({ right: 0, bottom: 0 });
@@ -421,15 +418,15 @@ libreMap.addLayer({
         }
         if (searchInput) searchInput.blur();
 
-        // 2. Map-Interaktionen an und Padding nullen
+// 2. Map-Interaktionen an und Padding nullen
         if (libreMap) {
             libreMap.dragPan.enable();
             libreMap.scrollZoom.enable();
             libreMap.touchZoomRotate.enable();
             libreMap.doubleClickZoom.enable();
-            libreMap.dragRotate.enable();
-           
-            libreMap.touchPitch.enable();
+            
+            if (libreMap.dragRotate) libreMap.dragRotate.enable();
+            
             libreMap.setPadding({ right: 0, bottom: 0 });
         }
 
