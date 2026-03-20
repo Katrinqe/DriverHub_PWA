@@ -2925,17 +2925,22 @@ body.ghost-active #ghost-chat-overlay {
 
 #route-overview-ui {
     position: absolute;
-    bottom: 40px; /* Abstand vom unteren Bildschirmrand */
+    top: auto;            /* FIX: Überschreibt alte Fullscreen-Befehle */
+    bottom: 40px;
     left: 0;
     width: 100%;
+    height: auto;         /* FIX: Nimmt exakt nur den Platz der Card ein */
     display: flex;
     justify-content: center;
+    align-items: flex-end;
     z-index: 150;
+    pointer-events: none; /* FIX: Lässt alle Klicks auf die Karte oberhalb durch */
 }
 
 .route-planning-card {
+    pointer-events: auto; /* FIX: Die Card selbst bleibt bedienbar */
     position: relative;
-    background: rgba(30, 30, 30, 0.85); /* Dark Glassmorphism */
+    background: rgba(30, 30, 30, 0.85); 
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
