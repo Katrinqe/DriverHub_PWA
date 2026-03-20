@@ -518,13 +518,21 @@ async function drawTomTomRoute(destLat, destLng) {
         
         destMarker = new maplibregl.Marker({ element: elDest }).setLngLat([destLng, destLat]).addTo(libreMap);
 
-        // 7. UI Daten befüllen
+ // 7. UI Daten befüllen
         const summary = data.routes[0].summary;
         const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
         
         document.getElementById('route-info-time').textContent = `${Math.round(summary.travelTimeInSeconds / 60)} Min`;
         document.getElementById('route-info-dist').textContent = `${(summary.lengthInMeters / 1000).toFixed(1)} km`;
         document.getElementById('route-info-arrival').textContent = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+        // NEU: Zielort in die grüne Pille eintragen
+        const destNameDisplay = document.getElementById('dest-name-display');
+        const searchInput = document.getElementById('tomtom-search-input');
+        if (destNameDisplay && searchInput) {
+            // Wir nehmen den Text aus der Suchleiste. Falls leer, Fallback auf "Zielort".
+            destNameDisplay.textContent = searchInput.value || "Zielort";
+        }
 
         if (routeUI) routeUI.classList.remove('hidden');
         if (pillV) pillV.style.display = 'none';
