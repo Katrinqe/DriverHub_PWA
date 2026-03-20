@@ -327,10 +327,20 @@ libreMap.addLayer({
             suggestionsBox.innerHTML = '<div class="suggestion-item" style="color: rgba(255,255,255,0.5);">Suche läuft...</div>';
             suggestionsBox.classList.remove('hidden');
 
-            // Wir warten 400ms nach dem letzten Tastendruck, um TomTom nicht zu überlasten
-            debounceTimer = setTimeout(async () => {
+           debounceTimer = setTimeout(async () => {
                 try {
-                    const response = await fetch(`https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&language=de-DE&limit=5`);
+                    // --- NEU: INTELLIGENTE LOKALE SUCHE ---
+                    // Basis-URL
+                    let searchUrl = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&language=de-DE&limit=5`;
+                    
+                    // Location Biasing: Wenn wir den Standort haben, zwingen wir TomTom, lokal zu priorisieren!
+                    if (currentCoords) {
+                        // currentCoords[1] ist Latitude, currentCoords[0] ist Longitude
+                        searchUrl += `&lat=${currentCoords[1]}&lon=${currentCoords[0]}`;
+                    }
+
+                    const response = await fetch(searchUrl);
+                    // --------------------------------------
                     
                     // NEU: Wenn TomTom den API-Key ablehnt, zeigen wir es dir sofort an!
                     if (!response.ok) {
