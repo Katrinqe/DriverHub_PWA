@@ -2680,7 +2680,7 @@ body.ghost-active #ghost-chat-overlay {
 /* Zustand 2: Expanded (Wächst flüssig nach oben) */
 .map-bottom-sheet.expanded {
     /* FIX 3: Zwingt die Pille beim Reinklicken / Wischen auf 65% Höhe, auch wenn sie leer ist! */
-    height: 65dvh; 
+    height: 85dvh; 
 }
 /* Der kleine graue Griff oben */
 .sheet-drag-handle {
