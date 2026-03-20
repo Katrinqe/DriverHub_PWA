@@ -2926,7 +2926,7 @@ body.ghost-active #ghost-chat-overlay {
 #route-overview-ui {
     position: absolute;
     top: auto;            /* FIX: Überschreibt alte Fullscreen-Befehle */
-    bottom: 80px;
+    bottom: 120px;
     left: 0;
     width: 100%;
     height: auto;         /* FIX: Nimmt exakt nur den Platz der Card ein */
@@ -2950,7 +2950,7 @@ body.ghost-active #ghost-chat-overlay {
     flex-direction: column;
     gap: 24px;
     width: calc(100% - 40px);
-    max-width: 800px;
+    max-width: 1000px;
     color: white;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
 }
