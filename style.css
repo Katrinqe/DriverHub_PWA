@@ -2917,3 +2917,161 @@ body.ghost-active #ghost-chat-overlay {
     transition: transform 0.2s ease-out;
     cursor: pointer;
 }
+
+
+/* ========================================= */
+/* === ROUTE OVERVIEW CARD (NEUES DESIGN) === */
+/* ========================================= */
+
+#route-overview-ui {
+    position: absolute;
+    bottom: 40px; /* Abstand vom unteren Bildschirmrand */
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 150;
+}
+
+.route-planning-card {
+    position: relative;
+    background: rgba(30, 30, 30, 0.85); /* Dark Glassmorphism */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    padding: 24px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    width: calc(100% - 40px);
+    max-width: 500px;
+    color: white;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* X-Button zum Schließen */
+.close-route-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: background 0.2s;
+}
+
+.close-route-btn:active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* --- OBEN: START & ZIEL --- */
+.route-locations {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-right: 20px; /* Platz für das X */
+}
+
+.location-pill {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-radius: 18px;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.start-pill {
+    background: rgba(0, 122, 255, 0.1);
+    border: 1px solid rgba(0, 122, 255, 0.3);
+}
+
+.dest-pill {
+    background: rgba(48, 209, 88, 0.1);
+    border: 1px solid rgba(48, 209, 88, 0.3);
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.blue-dot { color: #007aff; background: #007aff; }
+.green-dot { color: #30d158; background: #30d158; }
+
+.connecting-line {
+    position: absolute;
+    left: 23px; /* Exakt zentriert zwischen den Punkten */
+    top: 36px;
+    bottom: 36px;
+    width: 2px;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.3),
+        rgba(255, 255, 255, 0.3) 4px,
+        transparent 4px,
+        transparent 8px
+    );
+}
+
+/* --- UNTEN: ACTION PILLE --- */
+.route-action-pill {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 22px;
+    padding: 12px 12px 12px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.route-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.route-time {
+    font-size: 26px;
+    font-weight: 800;
+    color: #30d158;
+    letter-spacing: -0.5px;
+}
+
+.route-details {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+}
+
+.go-button {
+    background: #30d158;
+    color: #000;
+    border: none;
+    border-radius: 16px;
+    padding: 16px 32px;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(48, 209, 88, 0.4);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s;
+}
+
+.go-button:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 10px rgba(48, 209, 88, 0.6);
+}
