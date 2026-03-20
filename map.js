@@ -450,20 +450,18 @@ const btnNorth = document.getElementById('btn-align-north');
 if (btnRecenter && btnNorth) {
     
     // 1. Klick auf Standort-Button (Zentrieren)
-    btnRecenter.addEventListener('click', (e) => {
-        e.stopPropagation(); // Verhindert, dass Klicks aufs Bottom-Sheet gehen
-        
-        if (libreMap && currentCoords) {
-            // "FlyTo" ist geschmeidiger als jumpTo
-            libreMap.flyTo({
-                center: currentCoords,
-                zoom: 16, // Geht etwas näher ran für besseren 3D-Effekt
-                pitch: 50, // Neigt die Karte leicht, um die 3D-Gebäude zu zeigen (Premium-Move)
-                speed: 1.2,
-                essential: true
-            });
-        }
-    });
+btnRecenter.addEventListener('click', (e) => {
+    e.stopPropagation();
+    
+    if (libreMap && currentCoords) {
+        libreMap.flyTo({
+            center: currentCoords,
+            zoom: 16,
+            speed: 1.2,
+            essential: true
+        });
+    }
+});
 
     // 2. Klick auf Nord-Button (Norden ausrichten & flach legen)
     btnNorth.addEventListener('click', (e) => {
