@@ -644,9 +644,7 @@ libreMap.addLayer({
     // ==========================================
     // === SHRINK BUTTON / CANCEL ROUTE LOGIC ===
     // ==========================================
-    const shrinkBtn = document.getElementById('btn-shrink-map');
-    const mapCard = document.querySelector('.map-snippet-card');
-    const expandTrigger = document.getElementById('map-expand-trigger');
+
 
     if (shrinkBtn && mapCard && expandTrigger) {
         shrinkBtn.addEventListener('click', (e) => {
