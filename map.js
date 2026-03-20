@@ -407,9 +407,15 @@ async function drawTomTomRoute(destLat, destLng) {
             bottomSheet.style.display = 'none';
         }
         if (searchInput) searchInput.blur();
-        if (routeOverviewUI) routeOverviewUI.classList.remove('hidden');
+        
+        // FIX: Zwinge das UI gnadenlos in den Vordergrund
+        if (routeOverviewUI) {
+            routeOverviewUI.classList.remove('hidden');
+            routeOverviewUI.style.display = 'block';
+            routeOverviewUI.style.zIndex = '9999';
+        }
 
-        // 2. Map-Controls an & altes Padding zwingend auf 0
+        // 2. Map-Controls an (WICHTIG: Padding noch NICHT nullen!)
         if (libreMap) {
             libreMap.dragPan.enable();
             libreMap.scrollZoom.enable();
@@ -418,7 +424,6 @@ async function drawTomTomRoute(destLat, destLng) {
             libreMap.dragRotate.enable();
             libreMap.dragPitch.enable();
             libreMap.touchPitch.enable();
-            libreMap.setPadding({ right: 0, bottom: 0 });
         }
 
         // 3. Smooth Resize starten
@@ -427,14 +432,15 @@ async function drawTomTomRoute(destLat, destLng) {
         }, 16);
 
         try {
-            // 4. API Call (Genau wie in der Version, die funktioniert hat!)
+            // 4. API Call (Premium Route mit Traffic)
             let url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&maxAlternatives=2&computeTravelTimeFor=all&traffic=true&sectionType=traffic`;
             let response = await fetch(url);
             let data = await response.json();
 
-            // NOTFALL-WEICHE: Falls aus irgendeinem Grund das Array leer ist, zwingen wir ihn zu einer einzigen Route!
+            // FIX: NOTFALL-WEICHE! Wenn TomTom die lange Strecke blockt, fordern wir die absolut nackte Basis-Route an.
             if (!data.routes || data.routes.length === 0) {
-                url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&computeTravelTimeFor=all&traffic=true&sectionType=traffic`;
+                console.warn("Lange Strecke: Fordere nackte Basis-Route an...");
+                url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}`;
                 response = await fetch(url);
                 data = await response.json();
             }
@@ -445,16 +451,18 @@ async function drawTomTomRoute(destLat, destLng) {
                 renderRouteCards(data.routes); 
                 drawAllRoutesOnMap(data.routes); 
                 
-                // Die Koordinaten exakt wie in deiner alten, funktionierenden Version zusammenbauen
                 const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
                 const bounds = allPoints.reduce((b, coord) => b.extend(coord), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
                 
-                // Exakt warten, bis das CSS fertig ist, dann Kamera fliegen lassen
+                // Exakt warten, bis die CSS Animation der Karte (400ms) zu 100% fertig ist!
                 setTimeout(() => {
                     clearInterval(resizeInterval); 
                     if (libreMap) {
                         libreMap.resize(); 
-                        // ABSOLUT SICHERES PADDING VON 50!
+                        
+                        // FIX: ERST JETZT darf das Padding gelöscht werden, sonst crasht die Map-Kamera!
+                        libreMap.setPadding({ right: 0, bottom: 0 });
+                        
                         libreMap.fitBounds(bounds, {
                             padding: 50, 
                             duration: 1000,
@@ -465,7 +473,7 @@ async function drawTomTomRoute(destLat, destLng) {
                 }, 450);
             } else {
                 clearInterval(resizeInterval);
-                console.error("Script wurde hier gestoppt: Keine Routen empfangen!");
+                alert("TomTom Routing Fehler: Strecke nicht berechenbar.");
             }
         } catch (error) {
             clearInterval(resizeInterval);
