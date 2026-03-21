@@ -431,10 +431,10 @@ async function drawTomTomRoute(destLat, destLng) {
            
 allPoints.forEach(coord => bounds.extend(coord));
             
-        // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
+   // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
             RouteLogic.routePointsData[index] = allPoints;
-            RouteLogic.routeDistances[index] = summary.lengthInMeters;
-            
+            // FIX: Direkt über 'route' aufrufen, da 'summary' hier noch nicht existiert!
+            RouteLogic.routeDistances[index] = route.summary.lengthInMeters;
             // NEU: Wir erstellen ein Array für die Farben. Standard ist komplett Grün.
             const pointColors = new Array(allPoints.length).fill('#30d158');
 
@@ -1122,7 +1122,7 @@ function clearRoutes() {
         const ctx = canvas.getContext('2d');
 
         const exactWidth = window.innerWidth - 86; 
-        const exactHeight = 50;
+        const exactHeight = 60;
 
         const dpr = window.devicePixelRatio || 1;
         canvas.width = exactWidth * dpr;
