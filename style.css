@@ -3134,7 +3134,7 @@ body.ghost-active #ghost-chat-overlay {
     background: #1c1c1e;
     box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
     z-index: 200;
-    padding: 20px;
+    padding: 12px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
@@ -3144,7 +3144,7 @@ body.ghost-active #ghost-chat-overlay {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .route-title-text {
