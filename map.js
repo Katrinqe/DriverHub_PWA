@@ -510,33 +510,58 @@ async function drawTomTomRoute(destLat, destLng) {
             const summary = route.summary;
             const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
             
-            // --- NEUE ZEIT-LOGIK (Stunden & Minuten) ---
-            const totalMins = Math.round(summary.travelTimeInSeconds / 60);
+            // Zeiten extrahieren (TomTom travelTime beinhaltet bereits den Stau)
+            const totalSeconds = summary.travelTimeInSeconds;
+            const delaySeconds = summary.trafficDelayInSeconds || 0;
+            const normalSeconds = totalSeconds - delaySeconds; // Wie lange es ohne Stau dauern würde
+            
+            const totalMins = Math.round(totalSeconds / 60);
+            const delayMins = Math.round(delaySeconds / 60);
+
+            // 1. Zeit-String bauen (Stunden & Minuten)
             let timeString = "";
             if (totalMins >= 60) {
                 const hours = Math.floor(totalMins / 60);
                 const remainingMins = totalMins % 60;
-                // Wenn es glatt aufgeht (z.B. 120 Min), zeigen wir nur "2 Std" an
                 timeString = remainingMins > 0 ? `${hours} Std ${remainingMins} Min` : `${hours} Std`;
             } else {
                 timeString = `${totalMins} Min`;
             }
             
-            document.getElementById(`opt-time-${index}`).textContent = timeString;
+            const timeElement = document.getElementById(`opt-time-${index}`);
+            const delayElement = document.getElementById(`opt-delay-${index}`);
             
-            // --- NEU: STAU-VERZÖGERUNG ANZEIGEN ---
-            const delayMins = Math.round((summary.trafficDelayInSeconds || 0) / 60);
-            const delaySpan = document.getElementById(`opt-delay-${index}`);
-            if (delaySpan) {
-                // Nur anzeigen, wenn es mindestens 1 Minute Stau gibt
-                if (delayMins > 0) {
-                    delaySpan.textContent = `+${delayMins} Min`;
-                    delaySpan.classList.remove('hidden');
+            timeElement.textContent = timeString;
+
+            // 2. Intelligente Prozent-Logik für die Farben
+            let timeColor = '#30d158'; // Standard: Schönes Grün (Kein Stau)
+            let delayText = '';
+
+            if (delayMins > 0 && normalSeconds > 0) {
+                // Verhältnis ausrechnen: Wie viel % macht der Stau auf dieser Strecke aus?
+                const percentDelay = (delaySeconds / normalSeconds) * 100;
+                
+                if (percentDelay >= 35) {
+                    timeColor = '#b30000'; // Dunkelrot (Massiver Zeitverlust, z.B. 10 Min Stau auf 15 Min Strecke)
+                } else if (percentDelay >= 15) {
+                    timeColor = '#ff3b30'; // Rot (Deutlicher Stau)
                 } else {
-                    delaySpan.classList.add('hidden');
+                    timeColor = '#ffcc00'; // Gelb (Leichter Verkehr, kaum relevant)
                 }
+                
+                delayText = `${delayMins} Min länger als gewöhnlich`;
             }
-            // ---------------------------------------
+
+            // Farbe hart auf die Zahl anwenden
+            timeElement.style.color = timeColor;
+
+            // Den Erklär-Text einblenden oder verstecken
+            if (delayText) {
+                delayElement.textContent = delayText;
+                delayElement.classList.remove('hidden');
+            } else {
+                delayElement.classList.add('hidden');
+            }
 
             document.getElementById(`opt-dist-${index}`).textContent = `${(summary.lengthInMeters / 1000).toFixed(1)} km`;
             document.getElementById(`opt-eta-${index}`).textContent = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
@@ -549,7 +574,7 @@ async function drawTomTomRoute(destLat, destLng) {
             if (index === 1) {
                 document.getElementById('route-opt-1').classList.remove('hidden');
             }
-        }); // <-- HIER IST DAS ECHTE ENDE DER SCHLEIFE
+        }); // <-- ECHTES ENDE DER SCHLEIFE
 
         // Falls TomTom keine Alternative schickt, die zweite Pille hart ausblenden
         if (data.routes.length === 1) {
