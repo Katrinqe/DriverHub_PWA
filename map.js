@@ -205,39 +205,7 @@ libreMap.addLayer({
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
-            // --- KUGELSICHERE ROUTE-CANCEL LOGIK ---
-            if (libreMap && libreMap.getLayer('simple-route-layer')) {
-                console.log("Route aktiv -> Breche nur die Navigation ab!");
-                
-                // Linie und Marker löschen
-                if (typeof clearRoutes === 'function') clearRoutes();
-                
-                // Neue Route-Card unten ausblenden
-                const routeOverviewUI = document.getElementById('route-overview-ui');
-                if (routeOverviewUI) routeOverviewUI.classList.add('hidden');
-                
-                // Suchfeld leeren und Tastatur schließen
-                const searchInput = document.getElementById('tomtom-search-input');
-                if (searchInput) {
-                    searchInput.value = '';
-                    searchInput.blur();
-                }
-                
-                // Standard-UI wiederherstellen
-                const bottomSheet = document.getElementById('map-bottom-sheet');
-                if (bottomSheet) bottomSheet.style.display = 'flex';
-                
-                const pillV = document.querySelector('.map-controls-pill-v');
-                if (pillV) pillV.style.display = 'flex';
-                
-                // Kamera sanft zum Standort zurückfliegen
-                if (currentCoords) {
-                    libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
-                }
-                
-                // WICHTIG: Hier brechen wir ab! Der Rest (Karte schrumpfen) passiert NICHT.
-                return; 
-            }
+      
             // -----------------------------------------
 
             // --- NORMALER SHRINK CODE (Nur wenn keine Route offen ist) ---
