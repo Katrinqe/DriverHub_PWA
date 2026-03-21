@@ -3050,12 +3050,15 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 
-/* --- NEU: WETTER SPUR --- */
+/* --- NEU: WETTER SPUR (ÜBERLAGERT) --- */
 #weather-track-container {
-    position: relative;
+    position: absolute; /* Hart über das Canvas gelegt */
+    bottom: 12px; /* Setzt die Icons genau auf den Boden des aufgeklappten Containers */
+    left: 16px; /* Entspricht dem Padding-Left der Card */
+    right: 16px; /* Entspricht dem Padding-Right der Card */
     height: 25px;
-    width: 100%;
-    margin-top: 6px;
+    z-index: 10; /* Stellt sicher, dass die Icons ÜBER dem grünen Canvas-Feld liegen */
+    pointer-events: none; /* Klicks gehen durch das Icon-Feld hindurch auf die Card/den GO-Button */
 }
 
 .weather-point {
@@ -3064,13 +3067,17 @@ body.ghost-active #ghost-chat-overlay {
     display: flex;
     flex-direction: column;
     align-items: center;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 10px;
+    /* Wir ändern die Farben für perfekte Lesbarkeit auf dem grünen Hintergrund */
+    color: #fff; /* Temperatur in reinem Weiß */
+    font-size: 11px;
     font-weight: 800;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5); /* Kleiner Schatten für Kontrast */
 }
 
 .weather-point i {
-    font-size: 14px;
-    margin-bottom: 2px;
-    color: #fff;
+    font-size: 15px; /* Icon etwas größer */
+    margin-bottom: 1px;
+    /* Ein dezent angepasstes Weiß/Silber für das Icon, damit es edel wirkt */
+    color: #f0f0f0; 
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
 }
