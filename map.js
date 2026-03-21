@@ -504,14 +504,19 @@ async function drawTomTomRoute(destLat, destLng) {
         if (routeUI) routeUI.classList.remove('hidden');
         if (pillV) pillV.style.display = 'none';
 
-        // 8. Kamera-Zoom (Idle-Event für Stabilität)
+ // 8. Kamera-Zoom (Idle-Event für Stabilität)
         const bounds = new maplibregl.LngLatBounds();
         allPoints.forEach(coord => bounds.extend(coord));
         
         libreMap.resize();
         libreMap.once('idle', () => {
             libreMap.fitBounds(bounds, { 
-                padding: { top: 120, bottom: 320, left: 60, right: 60 }, 
+                padding: { 
+                    top: 120, 
+                    bottom: 450, /* FIX: Massiv erhöht, damit die Route sicher über der Card schwebt */
+                    left: 60, 
+                    right: 60 
+                }, 
                 duration: 1000 
             });
         });
