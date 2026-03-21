@@ -439,7 +439,7 @@ async function drawTomTomRoute(destLat, destLng) {
                 });
             }
 
-     // B: Traffic-Overlays (Kugelsicher mit Magnitude-Erkennung)
+  // B: Traffic-Overlays (Kugelsicher mit feiner Magnitude-Erkennung)
             sections.forEach(section => {
                 const start = section.startPointIndex;
                 const end = section.endPointIndex;
@@ -452,13 +452,17 @@ async function drawTomTomRoute(destLat, destLng) {
                 let color = null; 
                 
                 if (section.sectionType && section.sectionType.toUpperCase() === 'TRAFFIC') {
-                    // TomTom nutzt 'magnitudeOfDelay' (1 = leicht, 2 = moderat, 3 = schwer, 4 = gesperrt)
+                    // TomTom 'magnitudeOfDelay': 1=Leicht, 2=Moderat, 3=Schwer, 4=Stillstand/Gesperrt
                     const delay = section.magnitudeOfDelay || 0;
                     
-                    if (delay >= 3 || section.simpleCategory === 'JAM') {
-                        color = '#ff3b30'; // Rot (Schwerer Stau)
-                    } else if (delay >= 1 || section.simpleCategory === 'SLOW') {
-                        color = '#ffcc00'; // Gelb (Zähfließend)
+                    if (delay === 4) {
+                        color = '#8b0000'; // Dunkelrot (Massiver Stillstand / Gesperrt)
+                    } else if (delay === 3 || section.simpleCategory === 'JAM') {
+                        color = '#ff3b30'; // Knallrot (Echter Stau)
+                    } else if (delay === 2) {
+                        color = '#ff9500'; // Orange (Stockender Verkehr)
+                    } else if (delay === 1 || section.simpleCategory === 'SLOW') {
+                        color = '#ffcc00'; // Gelb (Zähfließend, man rollt noch)
                     } else {
                         color = '#ffcc00'; // Fallback
                     }
@@ -467,7 +471,7 @@ async function drawTomTomRoute(destLat, destLng) {
                 if (color) {
                     routeFeatures.push({
                         type: 'Feature',
-                        properties: { color: color, isTraffic: true }, // 'isTraffic' Flag für das Design
+                        properties: { color: color, isTraffic: true },
                         geometry: { type: 'LineString', coordinates: segmentCoords }
                     });
                 }
