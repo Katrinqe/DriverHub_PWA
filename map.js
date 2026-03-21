@@ -930,19 +930,11 @@ function clearRoutes() {
 
             this.updateMapLayers();
             
-            // NEU: Wir übergeben jetzt auch die gespeicherten Farben an das Diagramm!
+            // NEU: Beim Klick auf eine andere Route zeichnet sich das Höhenprofil dynamisch neu!
             if (this.routePointsData[index]) {
                 window.loadElevationData(this.routePointsData[index], this.routeColorsData[index]);
             }
-        },
-        // ... (ab hier bleibt updateMapLayers etc. exakt gleich)
-            
-            // NEU: Beim Klick auf eine andere Route zeichnet sich das Höhenprofil dynamisch neu!
-            if (this.routePointsData[index]) {
-                window.loadElevationData(this.routePointsData[index]);
-            }
-        },
-        // ... (Der Rest von RouteLogic bleibt exakt so wie er ist)
+        }, // <-- DIESE KLAMMER UND DAS KOMMA HABEN BEI DIR GEFEHLT!
 
         // Zeichnet die Linien auf der Karte neu (Aktiv = Bunt/Blau, Inaktiv = Grau)
         updateMapLayers: function() {
