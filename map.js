@@ -439,24 +439,35 @@ async function drawTomTomRoute(destLat, destLng) {
                 });
             }
 
-            // B: Traffic-Overlays
+     // B: Traffic-Overlays (Kugelsicher mit Magnitude-Erkennung)
             sections.forEach(section => {
                 const start = section.startPointIndex;
                 const end = section.endPointIndex;
+
                 if (typeof start !== 'number' || typeof end !== 'number') return;
+
                 const segmentCoords = allPoints.slice(start, end + 1);
                 if (segmentCoords.length < 2) return;
 
                 let color = null; 
-                if (section.sectionType === 'TRAFFIC') {
-                    if (section.simpleCategory === 'JAM') color = '#ff3b30'; 
-                    else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; 
+                
+                if (section.sectionType && section.sectionType.toUpperCase() === 'TRAFFIC') {
+                    // TomTom nutzt 'magnitudeOfDelay' (1 = leicht, 2 = moderat, 3 = schwer, 4 = gesperrt)
+                    const delay = section.magnitudeOfDelay || 0;
+                    
+                    if (delay >= 3 || section.simpleCategory === 'JAM') {
+                        color = '#ff3b30'; // Rot (Schwerer Stau)
+                    } else if (delay >= 1 || section.simpleCategory === 'SLOW') {
+                        color = '#ffcc00'; // Gelb (Zähfließend)
+                    } else {
+                        color = '#ffcc00'; // Fallback
+                    }
                 }
 
                 if (color) {
                     routeFeatures.push({
                         type: 'Feature',
-                        properties: { color: color },
+                        properties: { color: color, isTraffic: true }, // 'isTraffic' Flag für das Design
                         geometry: { type: 'LineString', coordinates: segmentCoords }
                     });
                 }
@@ -465,13 +476,26 @@ async function drawTomTomRoute(destLat, destLng) {
             // Im Objekt speichern für späteres Umschalten (Aktiv/Grau)
             RouteLogic.routeGeoJSONs[index] = routeFeatures;
 
-            // Layer sofort anlegen (aber farblich noch von selectRouteOpt steuern lassen)
+            // Layer sofort anlegen
             const sourceId = `route-source-${index}`;
             const layerId = `route-layer-${index}`;
 
             libreMap.addSource(sourceId, {
                 type: 'geojson',
                 data: { type: 'FeatureCollection', features: routeFeatures }
+            });
+
+            libreMap.addLayer({
+                id: layerId,
+                type: 'line',
+                source: sourceId,
+                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                paint: { 
+                    'line-color': ['get', 'color'], 
+                    // Pro-Tipp: Wenn es eine Stau-Linie ist (isTraffic = true), machen wir sie 1px dicker (7 statt 6). 
+                    // Das verhindert, dass die blaue Basis-Linie an den Rändern hässlich durchschimmert.
+                    'line-width': ['case', ['==', ['get', 'isTraffic'], true], 7, 6] 
+                }
             });
 
             libreMap.addLayer({
