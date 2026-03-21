@@ -523,33 +523,6 @@ async function drawTomTomRoute(destLat, destLng) {
             }
             
             document.getElementById(`opt-time-${index}`).textContent = timeString;
-            document.getElementById(`opt-dist-${index}`).textContent = `${(summary.lengthInMeters / 1000).toFixed(1)} km`;
-            document.getElementById(`opt-eta-${index}`).textContent = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-            
-            // Autobahn-Erkennung ("über A3")
-            const viaText = RouteLogic.extractHighway(route.guidance ? route.guidance.instructions : null);
-            document.getElementById(`opt-via-${index}`).textContent = index === 0 && viaText === "Lokale Route" ? "Schnellste Route" : viaText;
-
-            // Die zweite Pille einblenden, falls TomTom eine Alternative geschickt hat
-            if (index === 1) {
-                document.getElementById('route-opt-1').classList.remove('hidden');
-            }
-          // --- UI DATEN BEFÜLLEN ---
-            const summary = route.summary;
-            const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
-            
-            // --- NEUE ZEIT-LOGIK (Stunden & Minuten) ---
-            const totalMins = Math.round(summary.travelTimeInSeconds / 60);
-            let timeString = "";
-            if (totalMins >= 60) {
-                const hours = Math.floor(totalMins / 60);
-                const remainingMins = totalMins % 60;
-                timeString = remainingMins > 0 ? `${hours} Std ${remainingMins} Min` : `${hours} Std`;
-            } else {
-                timeString = `${totalMins} Min`;
-            }
-            
-            document.getElementById(`opt-time-${index}`).textContent = timeString;
             
             // --- NEU: STAU-VERZÖGERUNG ANZEIGEN ---
             const delayMins = Math.round((summary.trafficDelayInSeconds || 0) / 60);
@@ -576,7 +549,7 @@ async function drawTomTomRoute(destLat, destLng) {
             if (index === 1) {
                 document.getElementById('route-opt-1').classList.remove('hidden');
             }
-        }); // <-- HIER ist das echte Ende der Schleife
+        }); // <-- HIER IST DAS ECHTE ENDE DER SCHLEIFE
 
         // Falls TomTom keine Alternative schickt, die zweite Pille hart ausblenden
         if (data.routes.length === 1) {
@@ -602,7 +575,7 @@ async function drawTomTomRoute(destLat, destLng) {
         if (routeUI) routeUI.classList.remove('hidden');
         if (pillV) pillV.style.display = 'none';
 
-      // 8. Kamera-Zoom (Dynamisches Padding für die große Route-Card)
+        // 8. Kamera-Zoom (Dynamisches Padding für die große Route-Card)
         libreMap.resize();
         libreMap.once('idle', () => {
             libreMap.fitBounds(bounds, { 
