@@ -3100,15 +3100,13 @@ body.ghost-active #ghost-chat-overlay {
 .route-expand-trigger:active { color: white; }
 
 
+/* --- STAU-VERZÖGERUNG TEXT --- */
 .opt-delay {
-    font-size: 14px;
-    font-weight: 800;
-    color: #ff3b30; /* Warnrot */
-    background: rgba(255, 59, 48, 0.15); /* Transparenter roter Kasten */
-    padding: 3px 8px;
-    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6); /* Dezentes Grau */
     margin-left: 8px;
-    vertical-align: middle;
+    vertical-align: baseline;
     display: inline-block;
 }
 
@@ -3116,7 +3114,7 @@ body.ghost-active #ghost-chat-overlay {
     display: none !important;
 }
 
-/* Wenn die Pille inaktiv ist, machen wir den Badge auch etwas blasser */
-.route-opt-pill:not(.active) .opt-delay {
-    opacity: 0.5;
+/* WICHTIG: Erlaubt uns, die Farbe per JavaScript zu überschreiben, ohne dass CSS dazwischenfunkt */
+.route-opt-pill:not(.active) .opt-time {
+    opacity: 0.6; 
 }
