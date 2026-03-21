@@ -1063,7 +1063,7 @@ function clearRoutes() {
             const data = await response.json();
 
             if (data && data.elevation) {
-                drawElevationChart(data.elevation, sampledColors, 120, totalDistMeters); 
+                drawElevationChart(data.elevation, sampledColors, 140, totalDistMeters); 
             }
         } catch (error) {
             console.error("Höhendaten Fehler:", error);
@@ -1152,13 +1152,13 @@ function clearRoutes() {
         }
     };
 
-    function drawElevationChart(elevations, pointColors, canvasHeight, totalDistMeters) { 
+ function drawElevationChart(elevations, pointColors, canvasHeight, totalDistMeters) { 
         const canvas = document.getElementById('elevation-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
         const exactWidth = window.innerWidth - 86; 
-        const exactHeight = canvasHeight || 120; 
+        const exactHeight = 140; // Fest auf unsere neue Canvas-Höhe gesetzt!
 
         const dpr = window.devicePixelRatio || 1;
         canvas.width = exactWidth * dpr;
@@ -1174,14 +1174,14 @@ function clearRoutes() {
         ctx.clearRect(0, 0, exactWidth, exactHeight);
         if (diff === 0) return;
 
-        // --- DIE MAGISCHEN BEREICHE ---
-        const paddingTop = 10;
-        const paddingBottom = 25; // Platz für den X-Achsen Text
-        const iconSafeZone = 25; // UNSER NEUER GRÜNER BALKEN FÜR DIE ICONS!
+        // --- DIE MAGISCHEN BEREICHE (Deine Logik in Code gegossen!) ---
+        const paddingTop = 15; // Luft nach oben zum Card-Rand
+        const textZoneHeight = 25; // Die unteren 25px gehören NUR den "40 km" Texten
+        const iconSafeZone = 45; // DEIN GRÜNER BALKEN! Exakt so hoch wie der CSS-Container.
         
-        const baseY = exactHeight - paddingBottom; // Boden des grünen Bereichs
-        const graphBaseY = baseY - iconSafeZone; // Tiefster Punkt, den der Berg erreichen darf!
-        const chartHeight = graphBaseY - paddingTop; // Der Platz für die eigentlichen Berge
+        const baseY = exactHeight - textZoneHeight; // y=115: Boden der grünen Masse
+        const graphBaseY = baseY - iconSafeZone; // y=70: Tiefster Punkt, den das Tal erreichen darf!
+        const chartHeight = graphBaseY - paddingTop; // y=55: Der nutzbare Raum für die Bergspitzen
 
         const xStep = exactWidth / (elevations.length - 1);
 
