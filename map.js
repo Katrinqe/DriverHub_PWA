@@ -537,8 +537,9 @@ async function drawTomTomRoute(destLat, destLng) {
             
             timeElement.textContent = timeString;
 
-          // 2. Intelligente Prozent-Logik für die Farben
+       // 2. Intelligente Prozent-Logik für die Farben
             let timeColor = '#30d158'; // Standard: Schönes Grün (Kein Stau)
+            let delayColor = '#ffcc00'; // Farbe für den +X Min Text unten
             let delayText = '';
 
             if (delayMins > 0 && normalSeconds > 0) {
@@ -547,16 +548,30 @@ async function drawTomTomRoute(destLat, destLng) {
                 
                 if (percentDelay >= 35) {
                     timeColor = '#b30000'; // Dunkelrot (Massiver Zeitverlust)
+                    delayColor = '#b30000';
                 } else if (percentDelay >= 15) {
                     timeColor = '#ff3b30'; // Rot (Deutlicher Stau)
+                    delayColor = '#ff3b30';
                 } else {
                     timeColor = '#ffcc00'; // Gelb (Leichter Verkehr)
+                    delayColor = '#ffcc00';
                 }
                 
-                // HIER DIE ÄNDERUNG: Clean & minimalistisch
-                delayText = `+${delayMins} Min`; 
+                // Mit Klammern sieht es neben dem "über A3" Text eleganter aus
+                delayText = `(+${delayMins} Min)`; 
             }
 
+            // Farbe hart auf die Hauptzeit anwenden
+            timeElement.style.color = timeColor;
+
+            // Den Erklär-Text einblenden, färben oder verstecken
+            if (delayText) {
+                delayElement.textContent = delayText;
+                delayElement.style.color = delayColor; // <-- NEU: Stau-Farbe auf Text anwenden
+                delayElement.classList.remove('hidden');
+            } else {
+                delayElement.classList.add('hidden');
+            }
             // Farbe hart auf die Zahl anwenden
             timeElement.style.color = timeColor;
 
