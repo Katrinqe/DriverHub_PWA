@@ -1023,6 +1023,18 @@ function clearRoutes() {
 // ==========================================
     // === ELEVATION API & WEATHER RENDERING ===
     // ==========================================
+
+    // Hilfsfunktion: Welches Wetter ist "schlimmer"? (Höherer Score = Schlimmer)
+    function getWeatherSeverity(code) {
+        if (code >= 95) return 7; // Gewitter
+        if (code >= 71 && code <= 77) return 6; // Schnee
+        if (code >= 80 && code <= 82) return 5; // Starker Schauer
+        if (code >= 51 && code <= 67) return 4; // Regen
+        if (code >= 45 && code <= 48) return 3; // Nebel
+        if (code >= 1 && code <= 3) return 2; // Bewölkt
+        return 1; // Klar
+    }
+
     window.loadElevationData = async function(allPoints, allColors, totalDistMeters) { 
         if (!allPoints || allPoints.length === 0) return;
 
@@ -1051,72 +1063,90 @@ function clearRoutes() {
             const data = await response.json();
 
             if (data && data.elevation) {
-                // Zeichnen mit 120px Höhe anstoßen
                 drawElevationChart(data.elevation, sampledColors, 120, totalDistMeters); 
             }
         } catch (error) {
             console.error("Höhendaten Fehler:", error);
         }
 
-        // --- 2. WETTER LOGIK (Die Flächen-Zentrierung) ---
+        // --- 2. WETTER INTELLIGENZ ---
         const weatherContainer = document.getElementById('weather-track-container');
         if (weatherContainer) weatherContainer.innerHTML = ''; 
 
-        // UNTER 80KM: Brutal abbrechen, kein Wetter!
-        if (!totalDistMeters || totalDistMeters < 80000) return; 
+        if (!totalDistMeters || totalDistMeters < 80000) return; // Unter 80km: Abbruch!
 
-        // Wie viele harte 40km Blöcke haben wir?
-        const numIntervals = Math.floor(totalDistMeters / 40000); 
-        const weatherLats = [];
-        const weatherLons = [];
-        const weatherPercentages = [];
+        // Wir berechnen visuelle Sektoren (Maximal 5!)
+        const numVisualSegments = Math.min(5, Math.floor(totalDistMeters / 40000));
+        const visualSegLength = totalDistMeters / numVisualSegments;
 
-        // Wir berechnen den visuellen Mittelpunkt jeder 40km-Fläche
-        for (let i = 0; i <= numIntervals; i++) {
-            const dataDist = i * 40000; 
-            if (dataDist >= totalDistMeters) break; 
+        // Wir holen trotzdem alle 40km die echten Daten!
+        const numFetches = Math.floor(totalDistMeters / 40000); 
+        const fetchLats = [];
+        const fetchLons = [];
+        const fetchMapToVisual = []; // Speichert, zu welchem visuellen Sektor dieser Punkt gehört
 
-            // Optischer Mittelpunkt der Fläche (z.B. bei 20km für die 0-40km Fläche)
-            const blockEnd = Math.min((i + 1) * 40000, totalDistMeters);
-            const visualDistCenter = dataDist + ((blockEnd - dataDist) / 2);
-            const visualPercentage = visualDistCenter / totalDistMeters;
+        for (let i = 1; i <= numFetches; i++) {
+            const dist = i * 40000;
+            const ptIndex = Math.floor((dist / totalDistMeters) * (allPoints.length - 1));
+            fetchLats.push(allPoints[ptIndex][1]);
+            fetchLons.push(allPoints[ptIndex][0]);
 
-            // Wir holen aber das Wetter vom STARTPUNKT dieser Fläche (also 0km, 40km, 80km)
-            const ptIndex = Math.floor((dataDist / totalDistMeters) * (allPoints.length - 1));
-            const pt = allPoints[ptIndex];
-
-            weatherLats.push(pt[1]);
-            weatherLons.push(pt[0]);
-            weatherPercentages.push(visualPercentage * 100); // Hier wird das Icon platziert
+            // Zu welchem Sektor gehört dieser 40km-Punkt?
+            let visIdx = Math.floor((dist - 1) / visualSegLength);
+            if (visIdx >= numVisualSegments) visIdx = numVisualSegments - 1;
+            fetchMapToVisual.push(visIdx);
         }
 
         try {
-            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLats.join(',')}&longitude=${weatherLons.join(',')}&current_weather=true`;
+            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${fetchLats.join(',')}&longitude=${fetchLons.join(',')}&current_weather=true`;
             const wRes = await fetch(weatherUrl);
             const wData = await wRes.json();
 
             const results = Array.isArray(wData) ? wData : [wData];
 
+            // Wir bereiten 5 leere Eimer vor, in die wir das SCHLECHTESTE Wetter pro Sektor werfen
+            const visualWeather = [];
+            for (let i = 0; i < numVisualSegments; i++) {
+                visualWeather.push({ temp: 0, code: -1, severity: -1, hasData: false });
+            }
+
+            // Auswerten und Schlechtestes filtern
             results.forEach((res, idx) => {
                 if (!res.current_weather) return;
                 const temp = Math.round(res.current_weather.temperature);
                 const code = res.current_weather.weathercode;
-                let icon = 'fa-cloud'; 
+                const severity = getWeatherSeverity(code);
 
-                if (code === 0) icon = 'fa-sun';
-                else if (code >= 1 && code <= 3) icon = 'fa-cloud-sun';
-                else if (code >= 45 && code <= 48) icon = 'fa-smog';
-                else if (code >= 51 && code <= 67) icon = 'fa-cloud-rain';
-                else if (code >= 71 && code <= 77) icon = 'fa-snowflake';
-                else if (code >= 80 && code <= 82) icon = 'fa-cloud-showers-heavy';
-                else if (code >= 95) icon = 'fa-cloud-bolt';
+                const visIdx = fetchMapToVisual[idx];
+                // Wenn dieses Wetter schlimmer ist als das bisherige in diesem Sektor -> Überschreiben!
+                if (severity > visualWeather[visIdx].severity) {
+                    visualWeather[visIdx] = { temp, code, severity, hasData: true };
+                }
+            });
+
+            // Jetzt zeichnen wir maximal 5 perfekt verteilte Icons
+            visualWeather.forEach((vw, i) => {
+                if (!vw.hasData) return;
+                
+                let icon = 'fa-cloud'; 
+                if (vw.code === 0) icon = 'fa-sun';
+                else if (vw.code >= 1 && vw.code <= 3) icon = 'fa-cloud-sun';
+                else if (vw.code >= 45 && vw.code <= 48) icon = 'fa-smog';
+                else if (vw.code >= 51 && vw.code <= 67) icon = 'fa-cloud-rain';
+                else if (vw.code >= 71 && vw.code <= 77) icon = 'fa-snowflake';
+                else if (vw.code >= 80 && vw.code <= 82) icon = 'fa-cloud-showers-heavy';
+                else if (vw.code >= 95) icon = 'fa-cloud-bolt';
+
+                // Icon exakt in die Mitte des Sektors setzen
+                const centerPercentage = ((i + 0.5) * visualSegLength) / totalDistMeters;
 
                 const div = document.createElement('div');
                 div.className = 'weather-point';
-                div.style.left = `${weatherPercentages[idx]}%`;
-                div.innerHTML = `<i class="fa-solid ${icon}"></i><span>${temp}°</span>`;
+                div.style.left = `${centerPercentage * 100}%`;
+                div.innerHTML = `<i class="fa-solid ${icon}"></i><span>${vw.temp}°</span>`;
                 weatherContainer.appendChild(div);
             });
+
         } catch(e) {
             console.error("Wetter Fehler:", e);
         }
@@ -1144,14 +1174,18 @@ function clearRoutes() {
         ctx.clearRect(0, 0, exactWidth, exactHeight);
         if (diff === 0) return;
 
-        // NEU: Platz für die X-Achse am Boden lassen!
+        // --- DIE MAGISCHEN BEREICHE ---
         const paddingTop = 10;
-        const paddingBottom = 25; // Exakt hier drunter stehen die "40 km" Texte
-        const chartHeight = exactHeight - paddingTop - paddingBottom;
-        const baseY = exactHeight - paddingBottom; // Das ist der Boden des grünen Graphens
+        const paddingBottom = 25; // Platz für den X-Achsen Text
+        const iconSafeZone = 25; // UNSER NEUER GRÜNER BALKEN FÜR DIE ICONS!
+        
+        const baseY = exactHeight - paddingBottom; // Boden des grünen Bereichs
+        const graphBaseY = baseY - iconSafeZone; // Tiefster Punkt, den der Berg erreichen darf!
+        const chartHeight = graphBaseY - paddingTop; // Der Platz für die eigentlichen Berge
+
         const xStep = exactWidth / (elevations.length - 1);
 
-        // 1. FLÄCHEN-LOGIK (Die grüne Masse bis zur X-Achse)
+        // 1. FLÄCHEN-LOGIK (Füllt alles bis tief unten zum Text-Rand)
         ctx.beginPath();
         ctx.moveTo(0, baseY); 
         
@@ -1166,11 +1200,11 @@ function clearRoutes() {
 
         const gradient = ctx.createLinearGradient(0, 0, 0, baseY);
         gradient.addColorStop(0, 'rgba(48, 209, 88, 0.4)'); 
-        gradient.addColorStop(1, 'rgba(48, 209, 88, 0.1)'); 
+        gradient.addColorStop(1, 'rgba(48, 209, 88, 0.15)'); 
         ctx.fillStyle = gradient;
         ctx.fill();
 
-        // 2. HARTE OBERE LINIE (Die Stau-Farben)
+        // 2. BERG-LINIE (Mit Staufarben)
         ctx.lineWidth = 2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
@@ -1179,6 +1213,7 @@ function clearRoutes() {
             ctx.beginPath();
             const y1_norm = (elevations[i] - minElev) / diff;
             const y1 = paddingTop + chartHeight - (y1_norm * chartHeight);
+            
             const y2_norm = (elevations[i+1] - minElev) / diff;
             const y2 = paddingTop + chartHeight - (y2_norm * chartHeight);
 
@@ -1189,55 +1224,50 @@ function clearRoutes() {
             ctx.stroke();
         }
 
-        // 3. X-ACHSE & GESTRICHELTE TRENNWÄNDE (Nur bei über 80km!)
+        // 3. X-ACHSE & GESTRICHELTE TRENNWÄNDE (Max. 5 Sektoren)
         ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
         ctx.font = '10px sans-serif';
         ctx.textBaseline = 'top';
 
         if (totalDistMeters && totalDistMeters >= 80000) {
-            const numIntervals = Math.floor(totalDistMeters / 40000);
+            const numVisualSegments = Math.min(5, Math.floor(totalDistMeters / 40000));
+            const visualSegLength = totalDistMeters / numVisualSegments;
             
-            for (let i = 0; i <= numIntervals; i++) {
-                const dist = i * 40000;
+            for (let i = 0; i <= numVisualSegments; i++) {
+                const dist = i * visualSegLength;
                 const percentage = dist / totalDistMeters;
                 const x = percentage * exactWidth;
 
-                // Kilometer-Texte sauber ausrichten
-                ctx.textAlign = i === 0 ? 'left' : (i === numIntervals && dist > totalDistMeters - 5000 ? 'right' : 'center');
-                ctx.fillText(`${i * 40} km`, x, baseY + 8);
+                // Text sauber anordnen
+                ctx.textAlign = i === 0 ? 'left' : (i === numVisualSegments ? 'right' : 'center');
+                ctx.fillText(`${(dist / 1000).toFixed(0)} km`, x, baseY + 6);
 
-                // Die gestrichelte Wand einziehen (Außer ganz links bei 0km)
-                if (i > 0) { 
+                // Gestrichelte Trennwände ziehen (Nur innen)
+                if (i > 0 && i < numVisualSegments) { 
                     ctx.beginPath();
-                    ctx.setLineDash([4, 4]); // 4px Strich, 4px Lücke
+                    ctx.setLineDash([3, 4]); 
                     ctx.moveTo(x, baseY);
                     
-                    // Finde den exakten Y-Punkt auf der Berglinie, um die Wand dort enden zu lassen
+                    // Wand geht exakt hoch bis zur Berg-Oberfläche
                     const ptIndex = Math.min(Math.floor(percentage * (elevations.length - 1)), elevations.length - 1);
                     const y_norm = (elevations[ptIndex] - minElev) / diff;
                     const y = paddingTop + chartHeight - (y_norm * chartHeight);
                     
                     ctx.lineTo(x, y);
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
                     ctx.lineWidth = 1;
                     ctx.stroke();
-                    ctx.setLineDash([]); // Zurücksetzen
+                    ctx.setLineDash([]); 
                 }
             }
-            
-            // Ganz am Ende nochmal die Gesamt-Kilometer anzeigen, falls noch Platz ist
-            if (totalDistMeters - (numIntervals * 40000) > 8000) {
-                ctx.textAlign = 'right';
-                ctx.fillText(`${(totalDistMeters/1000).toFixed(0)} km`, exactWidth, baseY + 8);
-            }
-            
         } else if (totalDistMeters) {
-            // UNTER 80KM: Keine Wände, nur minimaler Start- und End-Text
+            // Unter 80km: Nur Start und Ende
             ctx.textAlign = 'left';
-            ctx.fillText(`0 km`, 0, baseY + 8);
+            ctx.fillText(`0 km`, 0, baseY + 6);
             ctx.textAlign = 'right';
-            ctx.fillText(`${(totalDistMeters/1000).toFixed(0)} km`, exactWidth, baseY + 8);
+            ctx.fillText(`${(totalDistMeters/1000).toFixed(0)} km`, exactWidth, baseY + 6);
         }
     }
-    
-}); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
+
+}); // <-- Dies ist die allerletzte Klammer deiner Datei
+
