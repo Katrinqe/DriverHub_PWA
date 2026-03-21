@@ -3098,3 +3098,25 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 .route-expand-trigger:active { color: white; }
+
+
+.opt-delay {
+    font-size: 14px;
+    font-weight: 800;
+    color: #ff3b30; /* Warnrot */
+    background: rgba(255, 59, 48, 0.15); /* Transparenter roter Kasten */
+    padding: 3px 8px;
+    border-radius: 8px;
+    margin-left: 8px;
+    vertical-align: middle;
+    display: inline-block;
+}
+
+.opt-delay.hidden {
+    display: none !important;
+}
+
+/* Wenn die Pille inaktiv ist, machen wir den Badge auch etwas blasser */
+.route-opt-pill:not(.active) .opt-delay {
+    opacity: 0.5;
+}
