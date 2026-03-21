@@ -796,14 +796,16 @@
                 <div id="tomtom-suggestions" class="sheet-suggestions-box hidden"></div>
             </div>
 <div id="route-overview-ui" class="hidden">
-    <div class="route-planning-card">
+<div class="route-planning-card" id="swipeable-route-card">
+        
+        <div class="card-drag-handle"></div>
         
         <div class="route-card-header-new">
             <span class="route-title-text">ROUTE</span>
             <button id="btn-cancel-route-new" class="close-card-btn"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-   <div class="route-options-container">
+        <div class="route-options-container">
             <div class="route-opt-pill active" id="route-opt-0" onclick="RouteLogic.selectRouteOpt(0)">
                 <div class="opt-main">
                     <span class="opt-time" id="opt-time-0">-- Min</span>
@@ -812,7 +814,8 @@
                 <div class="opt-details">
                     <div class="via-group">
                         <span class="opt-via" id="opt-via-0">Schnellste Route</span>
-                        <span class="opt-delay hidden" id="opt-delay-0"></span> </div>
+                        <span class="opt-delay hidden" id="opt-delay-0"></span>
+                    </div>
                     <span class="opt-eta">Ankunft <span id="opt-eta-0">--:--</span></span>
                 </div>
             </div>
@@ -825,18 +828,14 @@
                 <div class="opt-details">
                     <div class="via-group">
                         <span class="opt-via" id="opt-via-1">Alternative</span>
-                        <span class="opt-delay hidden" id="opt-delay-1"></span> </div>
+                        <span class="opt-delay hidden" id="opt-delay-1"></span>
+                    </div>
                     <span class="opt-eta">Ankunft <span id="opt-eta-1">--:--</span></span>
                 </div>
             </div>
         </div>
-        <button id="btn-start-nav" class="go-button">GO</button>
 
-        <div class="route-expand-trigger" onclick="RouteLogic.toggleRouteDetails()">
-            <i class="fa-solid fa-chevron-down" id="route-expand-icon"></i>
-        </div>
-
-        <div class="route-locations hidden" id="route-locations-box">
+        <div class="route-locations-swipe" id="route-locations-box">
             <div class="location-pill start-pill">
                 <div class="dot blue-dot"></div>
                 <span>Mein Standort</span>
@@ -847,6 +846,8 @@
                 <span id="dest-name-display">Zielort</span>
             </div>
         </div>
+
+        <button id="btn-start-nav" class="go-button">GO</button>
 
     </div>
 </div>
