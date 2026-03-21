@@ -428,8 +428,11 @@ async function drawTomTomRoute(destLat, destLng) {
             const sections = route.sections || [];
             const routeFeatures = [];
 
-            allPoints.forEach(coord => bounds.extend(coord));
-
+           
+allPoints.forEach(coord => bounds.extend(coord));
+            
+            // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
+            RouteLogic.routePointsData[index] = allPoints;
             // A: Basis-Linie (Blau)
             if (allPoints.length > 1) {
                 routeFeatures.push({
@@ -656,6 +659,12 @@ async function drawTomTomRoute(destLat, destLng) {
                 }, 
                 duration: 1000 
             });
+
+// Lade das Höhenprofil sofort für die primäre Route (Route 0)
+        if (RouteLogic.routePointsData[0]) {
+            window.loadElevationData(RouteLogic.routePointsData[0]);
+        }
+            
         });
 
     } catch (error) {
@@ -893,22 +902,26 @@ function clearRoutes() {
 // ==========================================
     // === ROUTE LOGIC (MULTI-ROUTE & UI) ===
     // ==========================================
-    window.RouteLogic = {
+window.RouteLogic = {
         routeGeoJSONs: [null, null],
+        routePointsData: [null, null], // NEU: Speichert die Koordinaten für das Höhenprofil
         activeIndex: 0,
 
-        // Schaltet zwischen Route 1 und Route 2 um
         selectRouteOpt: function(index) {
-            if (!this.routeGeoJSONs[index]) return; // Route existiert nicht
+            if (!this.routeGeoJSONs[index]) return; 
             this.activeIndex = index;
 
-            // UI Pillen anpassen
             document.getElementById('route-opt-0').classList.toggle('active', index === 0);
             document.getElementById('route-opt-1').classList.toggle('active', index === 1);
 
-            // Karten-Layer anpassen
             this.updateMapLayers();
+            
+            // NEU: Beim Klick auf eine andere Route zeichnet sich das Höhenprofil dynamisch neu!
+            if (this.routePointsData[index]) {
+                window.loadElevationData(this.routePointsData[index]);
+            }
         },
+        // ... (Der Rest von RouteLogic bleibt exakt so wie er ist)
 
         // Zeichnet die Linien auf der Karte neu (Aktiv = Bunt/Blau, Inaktiv = Grau)
         updateMapLayers: function() {
@@ -988,4 +1001,108 @@ function clearRoutes() {
             });
         }
     }
+
+
+// ==========================================
+    // === ELEVATION API & CHART RENDERING ===
+    // ==========================================
+    window.loadElevationData = async function(allPoints) {
+        if (!allPoints || allPoints.length === 0) return;
+
+        // 1. Array auf ca. 50 Punkte reduzieren (Sample), damit die API pfeilschnell antwortet
+        const sampleSize = 50;
+        const step = Math.max(1, Math.floor(allPoints.length / sampleSize));
+        const sampledPoints = [];
+        for (let i = 0; i < allPoints.length; i += step) {
+            sampledPoints.push(allPoints[i]);
+        }
+        // Zielpunkt zwingend anhängen
+        if (sampledPoints[sampledPoints.length - 1] !== allPoints[allPoints.length - 1]) {
+            sampledPoints.push(allPoints[allPoints.length - 1]);
+        }
+
+        const lats = sampledPoints.map(p => p[1]).join(',');
+        const lons = sampledPoints.map(p => p[0]).join(',');
+
+        try {
+            // Echte Topografie-Daten abrufen (Open-Meteo API)
+            const url = `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data && data.elevation) {
+                drawElevationChart(data.elevation);
+            }
+        } catch (error) {
+            console.error("Höhendaten konnten nicht geladen werden:", error);
+        }
+    };
+
+    function drawElevationChart(elevations) {
+        const canvas = document.getElementById('elevation-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        // Berechnet die absolute Pixelbreite, auch wenn das Canvas gerade display: none ist!
+        // Bildschirmbreite minus alle Paddings/Margins
+        const exactWidth = window.innerWidth - 86; 
+        const exactHeight = 50;
+
+        // Retina Display Sharpness Fix
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = exactWidth * dpr;
+        canvas.height = exactHeight * dpr;
+        ctx.scale(dpr, dpr);
+
+        // Statistik Min/Max berechnen
+        const minElev = Math.min(...elevations);
+        const maxElev = Math.max(...elevations);
+        const diff = maxElev - minElev;
+
+        document.getElementById('elevation-stats').textContent = `▲ ${Math.round(maxElev)}m  ▼ ${Math.round(minElev)}m`;
+
+        ctx.clearRect(0, 0, exactWidth, exactHeight);
+        if (diff === 0) return;
+
+        const paddingY = 4;
+        const chartHeight = exactHeight - paddingY * 2;
+        const xStep = exactWidth / (elevations.length - 1);
+
+        // 1. Farb-Verlauf für die Fläche (Apple Premium Look)
+        ctx.beginPath();
+        ctx.moveTo(0, exactHeight);
+
+        for (let i = 0; i < elevations.length; i++) {
+            const x = i * xStep;
+            const normalizedY = (elevations[i] - minElev) / diff;
+            const y = paddingY + chartHeight - (normalizedY * chartHeight);
+            ctx.lineTo(x, y);
+        }
+
+        ctx.lineTo(exactWidth, exactHeight);
+        ctx.closePath();
+
+        const gradient = ctx.createLinearGradient(0, 0, 0, exactHeight);
+        gradient.addColorStop(0, 'rgba(48, 209, 88, 0.4)'); // Grün oben
+        gradient.addColorStop(1, 'rgba(48, 209, 88, 0.0)'); // Transparent unten
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // 2. Harte obere Strich-Linie
+        ctx.beginPath();
+        for (let i = 0; i < elevations.length; i++) {
+            const x = i * xStep;
+            const normalizedY = (elevations[i] - minElev) / diff;
+            const y = paddingY + chartHeight - (normalizedY * chartHeight);
+
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#30d158'; // Unser Navi-Grün
+        ctx.lineWidth = 2;
+        ctx.lineJoin = 'round';
+        ctx.stroke();
+    }
+
+    
 }); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
