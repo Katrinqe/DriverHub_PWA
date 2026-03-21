@@ -3100,21 +3100,23 @@ body.ghost-active #ghost-chat-overlay {
 .route-expand-trigger:active { color: white; }
 
 
-/* --- STAU-VERZÖGERUNG TEXT --- */
+/* --- STAU-VERZÖGERUNG TEXT NEU --- */
+.via-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 .opt-delay {
     font-size: 13px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.6); /* Dezentes Grau */
-    margin-left: 8px;
-    vertical-align: baseline;
-    display: inline-block;
+    font-weight: 700;
+    /* Farbe wird jetzt dynamisch vom JavaScript gesetzt! */
 }
 
 .opt-delay.hidden {
     display: none !important;
 }
 
-/* WICHTIG: Erlaubt uns, die Farbe per JavaScript zu überschreiben, ohne dass CSS dazwischenfunkt */
 .route-opt-pill:not(.active) .opt-time {
     opacity: 0.6; 
 }
