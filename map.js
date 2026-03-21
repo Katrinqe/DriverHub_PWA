@@ -630,14 +630,16 @@ async function drawTomTomRoute(destLat, destLng) {
         if (routeUI) routeUI.classList.remove('hidden');
         if (pillV) pillV.style.display = 'none';
 
-        // --- NEU: HÖHE MESSEN FÜR SMOOTHEN SWIPE NACH UNTEN ---
+   // --- NEU: HÖHE MESSEN FÜR SMOOTHEN SWIPE NACH UNTEN ---
         setTimeout(() => {
             const routeCardInfo = document.getElementById('route-overview-card');
             if (routeCardInfo && !routeCardInfo.classList.contains('expanded')) {
-                routeCardInfo.style.height = 'auto'; // Kurz auf auto setzen
-                const exactHeight = routeCardInfo.offsetHeight; // Reale Pixel abmessen
-                routeCardInfo.style.setProperty('--closed-height', exactHeight + 'px'); // Als CSS-Variable speichern
-                routeCardInfo.style.height = 'var(--closed-height)'; // Festen Wert zuweisen
+                // 1. Etwaige Blockaden lösen
+                routeCardInfo.style.height = ''; 
+                // 2. Reale Pixel abmessen
+                const exactHeight = routeCardInfo.offsetHeight; 
+                // 3. NUR als Variable speichern. Das CSS erledigt den Rest!
+                routeCardInfo.style.setProperty('--closed-height', exactHeight + 'px'); 
             }
         }, 50);
         // -------------------------------------------------------
