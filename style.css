@@ -3122,64 +3122,63 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 
-/* --- SWIPEABLE ROUTE CARD LOGIC (V2: SMOOTH & SLIM) --- */
+/* --- SWIPEABLE ROUTE CARD LOGIC (V3: SCHWEBEND & SMOOTH) --- */
 #swipeable-route-card {
+    /* 1. Schwebendes Design (Abstand zum Rand, Rundung überall) */
+    position: absolute;
+    bottom: 20px;
+    left: 15px;
+    width: calc(100% - 30px);
+    border-radius: 28px;
+    background: #1c1c1e;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+    z-index: 200;
+    padding: 15px 20px 20px 20px;
+    box-sizing: border-box;
+
     display: flex;
     flex-direction: column;
-    /* Chirurgischer Schnitt: Wir animieren NICHT die Höhe, sondern die Position. Das ist der Trick für 60fps Smoothness! */
-    transition: transform 0.4s cubic-bezier(0.3, 1, 0.4, 1);
     
-    /* Positionierung der Card am unteren Rand */
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
+    /* 2. Wir rendern die Karte immer in voller 75vh-Größe... */
+    height: 75vh; 
     
-    /* Etwas schlanker und breiter (weniger Padding) */
-    padding: 10px 15px 25px 15px; 
-    height: auto; /* Höhe passt sich dem Inhalt an */
-    max-height: 90vh; /* Verhindert, dass sie über den oberen Rand schießt */
+    /* ...aber schieben sie so weit nach unten, dass nur die obersten 260px rausschauen */
+    transform: translateY(calc(100% - 260px));
     
-    background: #1a1a1a;
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
-    z-index: 10;
+    /* Hardwarebeschleunigte, ruckelfreie Animation */
+    transition: transform 0.4s cubic-bezier(0.2, 1, 0.3, 1);
 }
 
-/* Der kleine Griff oben (Drag Handle) */
+/* Zustand, wenn die Karte hochgewischt wurde */
+#swipeable-route-card.expanded {
+    transform: translateY(0); /* Fährt sanft auf die vollen 75vh hoch */
+}
+
+/* Der kleine Griff oben */
 .card-drag-handle {
     width: 40px;
     height: 4px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 2px;
-    margin: 0 auto 10px auto; /* Sauber zentriert, wenig Abstand */
+    margin: 0 auto 15px auto;
 }
 
-/* Header-Layout (ROUTE Titel rutscht nach oben neben den Griff) */
-.route-card-header-new {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    margin-top: -5px; /* Zieht den Titel hoch neben den Handle */
-}
-
-.route-title-text {
-    font-size: 14px;
-    font-weight: 800;
-    color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 1px;
-}
-
-/* Zustand, wenn die Karte hochgewischt wurde (3/4 Ansicht per JS gesteuert) */
-/* Wir setzen die Standard-Position im CSS und steuern das "Hochfahren" im JS! */
-
-/* Standorte ausblenden (wird im JS gesteuert) */
+/* Standorte sanft einblenden */
 .route-locations-swipe {
-    display: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    margin-top: 15px;
 }
 
-/* GO-Button Anpassungen */
+#swipeable-route-card.expanded .route-locations-swipe {
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0.1s; /* Kommt erst, wenn die Card fast oben ist */
+}
+
+/* GO-Button bleibt immer dynamisch unten */
 .go-button {
-    margin-top: 25px; /* Definiert den Abstand, wenn Card klein ist */
+    margin-top: auto; /* Drückt den Button automatisch an den unteren Rand der Card */
+    width: 100%;
 }
