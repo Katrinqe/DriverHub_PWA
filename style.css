@@ -2837,11 +2837,10 @@ body.ghost-active #ghost-chat-overlay {
     pointer-events: none; 
 }
 
-/* --- ROUTE CARD STATIC --- */
 #route-overview-card {
     pointer-events: auto;
     position: absolute;
-    bottom: 15px; /* Dein perfekter Wert bleibt fest verankert! */
+    bottom: 15px; 
     left: 15px;
     width: calc(100% - 30px);
     border-radius: 24px;
@@ -2851,18 +2850,18 @@ body.ghost-active #ghost-chat-overlay {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Erzwingt IMMER 20px Platz zwischen den Elementen */
+    gap: 20px;
     
-    /* --- LOGIK FÜR DAS AUFKLAPPEN --- */
-    height: auto; 
-    max-height: 350px; /* Start-Höhe für eine flüssige Animation */
+    /* --- DIE NEUE ANIMATIONS-LOGIK --- */
+    /* Nutzt die gemessene Höhe (oder fallback auto) */
+    height: var(--closed-height, auto); 
     overflow: hidden;
-    transition: max-height 0.4s cubic-bezier(0.2, 1, 0.3, 1), height 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+    /* Jetzt ist die Transition für die Höhe butterweich */
+    transition: height 0.4s cubic-bezier(0.2, 1, 0.3, 1);
 }
 
-/* Der Zustand nach dem Hochwischen */
+/* Zustand nach dem Hochwischen */
 #route-overview-card.expanded {
-    max-height: 85vh;
     height: 85vh;
 }
 
