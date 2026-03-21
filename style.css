@@ -2825,59 +2825,47 @@ body.ghost-active #ghost-chat-overlay {
     cursor: pointer;
 }
 
-
 /* ========================================= */
-/* === ROUTE OVERVIEW CARD (NEUES DESIGN) === */
+/* === ROUTE OVERVIEW CARD (STATIC CLEAN) === */
 /* ========================================= */
 
+/* Unsichtbarer Container, lässt Klicks auf die Karte durch */
 #route-overview-ui {
-    position: absolute !important;
-    top: auto !important; 
-    bottom: 20px !important; /* HIER justierst du die Höhe */
-    left: 0 !important;
-    width: 100% !important;
-    height: auto !important; 
-    
-    /* FIX: Hier darf KEIN !important stehen, sonst funktioniert .hidden nicht mehr! */
-    display: flex; 
-    
-    justify-content: center !important;
-    align-items: flex-end !important;
-    z-index: 150 !important;
-    pointer-events: none !important; 
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 150;
+    pointer-events: none; 
 }
-.route-planning-card {
-    pointer-events: auto; /* FIX: Die Card selbst bleibt bedienbar */
-    position: relative;
-    background: rgba(30, 30, 30, 0.85); 
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 28px;
-    padding: 24px 20px 20px 20px;
+
+/* Die neue, saubere Card */
+#route-overview-card {
+    pointer-events: auto; /* Card ist bedienbar */
+    position: absolute;
+    bottom: 10px;
+    left: 15px;
+    width: calc(100% - 30px);
+    border-radius: 24px;
+    background: #1c1c1e;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+    padding: 12px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    width: calc(100% - 40px);
-    max-width: 1000px;
-    color: white;
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
 }
 
+/* --- HEADER --- */
 .route-card-header-new {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: -10px; /* Zieht die Pillen etwas näher ran */
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 10px;
 }
 
 .route-title-text {
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
-    color: rgba(255, 255, 255, 0.4);
-    letter-spacing: 1.5px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
 }
 
 .close-card-btn {
@@ -2899,132 +2887,6 @@ body.ghost-active #ghost-chat-overlay {
     transform: scale(0.9);
 }
 
-/* X-Button zum Schließen */
-.close-route-btn {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 10;
-    transition: background 0.2s;
-}
-
-.close-route-btn:active {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* --- OBEN: START & ZIEL --- */
-.route-locations {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding-right: 20px; /* Platz für das X */
-}
-
-.location-pill {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 18px;
-    border-radius: 18px;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.start-pill {
-    background: rgba(0, 122, 255, 0.1);
-    border: 1px solid rgba(0, 122, 255, 0.3);
-}
-
-.dest-pill {
-    background: rgba(48, 209, 88, 0.1);
-    border: 1px solid rgba(48, 209, 88, 0.3);
-}
-
-.dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    box-shadow: 0 0 10px currentColor;
-}
-
-.blue-dot { color: #007aff; background: #007aff; }
-.green-dot { color: #30d158; background: #30d158; }
-
-.connecting-line {
-    position: absolute;
-    left: 23px; /* Exakt zentriert zwischen den Punkten */
-    top: 36px;
-    bottom: 36px;
-    width: 2px;
-    background: repeating-linear-gradient(
-        to bottom,
-        rgba(255, 255, 255, 0.3),
-        rgba(255, 255, 255, 0.3) 4px,
-        transparent 4px,
-        transparent 8px
-    );
-}
-
-/* --- UNTEN: ACTION PILLE --- */
-.route-action-pill {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 22px;
-    padding: 12px 12px 12px 20px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.route-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.route-time {
-    font-size: 26px;
-    font-weight: 800;
-    color: #30d158;
-    letter-spacing: -0.5px;
-}
-
-.route-details {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.5);
-    font-weight: 500;
-}
-
-.go-button {
-    background: #30d158;
-    color: #000;
-    border: none;
-    border-radius: 16px;
-    padding: 16px 32px;
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: 0.5px;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(48, 209, 88, 0.4);
-    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s;
-}
-
-.go-button:active {
-    transform: scale(0.92);
-    box-shadow: 0 2px 10px rgba(48, 209, 88, 0.6);
-}
-
 /* --- MULTI-ROUTE OPTIONS --- */
 .route-options-container {
     display: flex;
@@ -3043,7 +2905,7 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 .route-opt-pill.active {
-    background: rgba(0, 122, 255, 0.15); /* Leicht bläulich, da aktiv */
+    background: rgba(0, 122, 255, 0.15); 
     border: 1px solid rgba(0, 122, 255, 0.4);
     transform: scale(1);
     opacity: 1;
@@ -3052,10 +2914,9 @@ body.ghost-active #ghost-chat-overlay {
 .route-opt-pill:not(.active) {
     transform: scale(0.97);
     opacity: 0.5;
-    padding: 12px 20px; /* Wird schmaler, wenn inaktiv */
+    padding: 12px 20px; 
 }
 
-/* Versteckt die Details in der inaktiven Pille komplett */
 .route-opt-pill:not(.active) .opt-details {
     display: none;
 }
@@ -3068,11 +2929,11 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 .route-opt-pill:not(.active) .opt-main {
-    margin-bottom: 0; /* Kein Margin, da Details weg sind */
+    margin-bottom: 0; 
 }
 
 .opt-time { font-size: 24px; font-weight: 800; color: #30d158; }
-.route-opt-pill:not(.active) .opt-time { color: rgba(255,255,255,0.7); font-size: 18px; }
+.route-opt-pill:not(.active) .opt-time { color: rgba(255,255,255,0.7); font-size: 18px; opacity: 0.6; }
 
 .opt-dist { font-size: 16px; font-weight: 600; color: white; }
 
@@ -3086,21 +2947,7 @@ body.ghost-active #ghost-chat-overlay {
 
 .opt-via { color: #007aff; font-weight: 600; }
 
-/* Expand Trigger */
-.route-expand-trigger {
-    text-align: center;
-    color: rgba(255, 255, 255, 0.3);
-    padding: 5px 0;
-    cursor: pointer;
-    font-size: 1.2rem;
-    transition: color 0.2s;
-    margin-top: -10px;
-}
-
-.route-expand-trigger:active { color: white; }
-
-
-/* --- STAU-VERZÖGERUNG TEXT NEU --- */
+/* --- STAU-VERZÖGERUNG TEXT --- */
 .via-group {
     display: flex;
     align-items: center;
@@ -3110,60 +2957,32 @@ body.ghost-active #ghost-chat-overlay {
 .opt-delay {
     font-size: 13px;
     font-weight: 700;
-    /* Farbe wird jetzt dynamisch vom JavaScript gesetzt! */
 }
 
 .opt-delay.hidden {
     display: none !important;
 }
 
-.route-opt-pill:not(.active) .opt-time {
-    opacity: 0.6; 
-}
-
-
-
-
-/* --- ROUTE CARD STATIC (CLEAN & SIMPLE) --- */
-#route-overview-card {
-    position: absolute;
-    bottom: 10px;
-    left: 15px;
-    width: calc(100% - 30px);
-    border-radius: 24px;
-    background: #1c1c1e;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
-    z-index: 200;
-    padding: 12px;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-}
-
-.route-card-header-new {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.route-title-text {
-    font-size: 14px;
-    font-weight: 800;
-    color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 1px;
-}
-
+/* --- GO BUTTON (Design & Layout vereint) --- */
 .go-button {
+    background: #30d158;
+    color: #000;
+    border: none;
+    border-radius: 16px;
+    padding: 16px 32px;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(48, 209, 88, 0.4);
+    transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s;
+    
+    /* Layout */
     margin-top: 15px;
     width: 100%;
 }
 
-
-
-
-/* GO-Button bleibt immer dynamisch unten */
-.go-button {
-    margin-top: auto; /* Drückt den Button automatisch an den unteren Rand der Card */
-    width: 100%;
+.go-button:active {
+    transform: scale(0.92);
+    box-shadow: 0 2px 10px rgba(48, 209, 88, 0.6);
 }
