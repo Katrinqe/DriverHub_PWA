@@ -2833,7 +2833,7 @@ body.ghost-active #ghost-chat-overlay {
 #route-overview-ui {
     position: absolute !important;
     top: auto !important; 
-    bottom: 40px !important; /* HIER justierst du die Höhe */
+    bottom: 20px !important; /* HIER justierst du die Höhe */
     left: 0 !important;
     width: 100% !important;
     height: auto !important; 
