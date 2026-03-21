@@ -502,9 +502,18 @@ async function drawTomTomRoute(destLat, destLng) {
         if (routeUI) routeUI.classList.remove('hidden');
         if (pillV) pillV.style.display = 'none';
 
+      // 8. Kamera-Zoom (Dynamisches Padding für die große Route-Card)
         libreMap.resize();
         libreMap.once('idle', () => {
-            libreMap.fitBounds(bounds, { padding: { top: 120, bottom: 400, left: 60, right: 60 }, duration: 1000 });
+            libreMap.fitBounds(bounds, { 
+                padding: { 
+                    top: 120, 
+                    bottom: 480, /* FIX: Wert massiv erhöht (von 400 auf 480). Hier kannst du nachjustieren! */
+                    left: 60, 
+                    right: 60 
+                }, 
+                duration: 1000 
+            });
         });
 
     } catch (error) {
