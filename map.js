@@ -942,14 +942,12 @@ function clearRoutes() {
         }
     };
 // ==========================================
-    // === ROUTE CARD SWIPE LOGIC (V2: TRANSFORMS) ===
+    // === ROUTE CARD SWIPE LOGIC (V3: CSS-GESTEUERT) ===
     // ==========================================
     const swipeableCard = document.getElementById('swipeable-route-card');
-    const routeLocationsBox = document.getElementById('route-locations-box');
     
-    if (swipeableCard && routeLocationsBox) {
+    if (swipeableCard) {
         let cardStartY = 0;
-        let isExpanded = false;
 
         swipeableCard.addEventListener('touchstart', (e) => {
             cardStartY = e.touches[0].clientY;
@@ -957,49 +955,26 @@ function clearRoutes() {
 
         swipeableCard.addEventListener('touchend', (e) => {
             let cardEndY = e.changedTouches[0].clientY;
-            let diff = cardStartY - cardEndY; // Positiv = Swipe nach OBEN
+            let diff = cardStartY - cardEndY; 
 
-            // Wischt nach OBEN (> 50px) -> EXPAND
-            if (diff > 50 && !isExpanded) {
-                // Die Höhe des gesamten Screens holen
-                const screenHeight = window.innerHeight;
-                // Wie weit muss die Card hochfahren, um bei 85% zu landen?
-                // Wir berechnen den negativen Translate-Wert.
-                // 1. Holen wir uns die aktuelle Höhe der Card (klein)
-                const cardHeight = swipeableCard.offsetHeight;
-                // 2. Wir berechnen das Ziel (85% der Screen-Höhe)
-                const targetHeight = screenHeight * 0.85;
-                // 3. Die Differenz ist der Translate-Wert
-                const translateValue = targetHeight - cardHeight;
-                
-                // --- SMOOTH ANIMATION START ---
-                // Wir schieben die Card um die Differenz nach oben
-                swipeableCard.style.transform = `translateY(-${translateValue}px)`;
-                
-                // Wir blenden die Standorte ein (mit einer kleinen Verzögerung für den Flow)
-                routeLocationsBox.style.display = 'block';
-                routeLocationsBox.style.opacity = '0';
-                setTimeout(() => {
-                    routeLocationsBox.style.transition = 'opacity 0.3s ease';
-                    routeLocationsBox.style.opacity = '1';
-                }, 150);
-                
-                isExpanded = true;
-            } 
-            // Wischt nach UNTEN (< -50px) -> SHRINK
-            else if (diff < -50 && isExpanded) {
-                // Zurück auf die Standard-Position (Translate 0)
-                swipeableCard.style.transform = `translateY(0px)`;
-                
-                // Standorte ausblenden
-                routeLocationsBox.style.opacity = '0';
-                setTimeout(() => {
-                    routeLocationsBox.style.display = 'none';
-                }, 300);
-                
-                isExpanded = false;
+            if (diff > 40) {
+                // Wisch nach OBEN: CSS übernimmt die flüssige Animation
+                swipeableCard.classList.add('expanded');
+            } else if (diff < -40) {
+                // Wisch nach UNTEN
+                swipeableCard.classList.remove('expanded');
             }
         });
+
+        // WICHTIG: Beim Klick auf das X (Abbruch) muss die Card auch wieder runterfahren
+        const btnCancel = document.getElementById('btn-cancel-route-new');
+        if (btnCancel) {
+            // Hängt sich an den bestehenden Onclick-Befehl von vorhin dran
+            btnCancel.addEventListener('click', () => {
+                swipeableCard.classList.remove('expanded');
+            });
+        }
+    }
 
         // WICHTIG: Wenn der Cancel-Button (X) gedrückt wird, muss die Card auch zurückfahren!
         const btnCancel = document.getElementById('btn-cancel-route-new');
