@@ -796,7 +796,7 @@
                 <div id="tomtom-suggestions" class="sheet-suggestions-box hidden"></div>
             </div>
 <div id="route-overview-ui" class="hidden">
-<div class="route-planning-card static-card" id="route-overview-card">
+    <div class="route-planning-card static-card" id="route-overview-card">
         
         <div class="route-card-header-new">
             <span class="route-title-text">ROUTE</span>
@@ -804,8 +804,33 @@
         </div>
 
         <div class="route-options-container">
-            <div class="route-opt-pill active" id="route-opt-0" onclick="RouteLogic.selectRouteOpt(0)">...</div>
-            <div class="route-opt-pill hidden" id="route-opt-1" onclick="RouteLogic.selectRouteOpt(1)">...</div>
+            <div class="route-opt-pill active" id="route-opt-0" onclick="RouteLogic.selectRouteOpt(0)">
+                <div class="opt-main">
+                    <span class="opt-time" id="opt-time-0">-- Min</span>
+                    <span class="opt-dist" id="opt-dist-0">-- km</span>
+                </div>
+                <div class="opt-details">
+                    <div class="via-group">
+                        <span class="opt-via" id="opt-via-0">Schnellste Route</span>
+                        <span class="opt-delay hidden" id="opt-delay-0"></span>
+                    </div>
+                    <span class="opt-eta">Ankunft <span id="opt-eta-0">--:--</span></span>
+                </div>
+            </div>
+            
+            <div class="route-opt-pill hidden" id="route-opt-1" onclick="RouteLogic.selectRouteOpt(1)">
+                <div class="opt-main">
+                    <span class="opt-time" id="opt-time-1">-- Min</span>
+                    <span class="opt-dist" id="opt-dist-1">-- km</span>
+                </div>
+                <div class="opt-details">
+                    <div class="via-group">
+                        <span class="opt-via" id="opt-via-1">Alternative</span>
+                        <span class="opt-delay hidden" id="opt-delay-1"></span>
+                    </div>
+                    <span class="opt-eta">Ankunft <span id="opt-eta-1">--:--</span></span>
+                </div>
+            </div>
         </div>
 
         <div id="elevation-profile-card" class="elevation-profile-card">
@@ -819,9 +844,7 @@
         <button id="btn-start-nav" class="go-button">GO</button>
 
     </div> 
-       
-
-    </div>
+</div>
 </div>
         </div> </div> </div> <div id="global-nav" class="bottom-nav interactive-element">
     <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
