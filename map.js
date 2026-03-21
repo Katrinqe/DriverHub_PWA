@@ -431,8 +431,12 @@ async function drawTomTomRoute(destLat, destLng) {
            
 allPoints.forEach(coord => bounds.extend(coord));
             
-            // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
+        // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
             RouteLogic.routePointsData[index] = allPoints;
+            
+            // NEU: Wir erstellen ein Array für die Farben. Standard ist komplett Grün.
+            const pointColors = new Array(allPoints.length).fill('#30d158');
+
             // A: Basis-Linie (Blau)
             if (allPoints.length > 1) {
                 routeFeatures.push({
@@ -442,7 +446,7 @@ allPoints.forEach(coord => bounds.extend(coord));
                 });
             }
 
-  // B: Traffic-Overlays (Kugelsicher mit feiner Magnitude-Erkennung)
+            // B: Traffic-Overlays (Kugelsicher mit feiner Magnitude-Erkennung)
             sections.forEach(section => {
                 const start = section.startPointIndex;
                 const end = section.endPointIndex;
@@ -455,19 +459,18 @@ allPoints.forEach(coord => bounds.extend(coord));
                 let color = null; 
                 
                 if (section.sectionType && section.sectionType.toUpperCase() === 'TRAFFIC') {
-                    // TomTom 'magnitudeOfDelay': 1=Leicht, 2=Moderat, 3=Schwer, 4=Stillstand/Gesperrt
                     const delay = section.magnitudeOfDelay || 0;
                     
                     if (delay === 4) {
-                        color = '#8b0000'; // Dunkelrot (Massiver Stillstand / Gesperrt)
+                        color = '#8b0000'; // Stillstand
                     } else if (delay === 3 || section.simpleCategory === 'JAM') {
-                        color = '#ff3b30'; // Knallrot (Echter Stau)
+                        color = '#ff3b30'; // Stau
                     } else if (delay === 2) {
-                        color = '#ff9500'; // Orange (Stockender Verkehr)
+                        color = '#ff9500'; // Stockend
                     } else if (delay === 1 || section.simpleCategory === 'SLOW') {
-                        color = '#ffcc00'; // Gelb (Zähfließend, man rollt noch)
+                        color = '#ffcc00'; // Zäh
                     } else {
-                        color = '#ffcc00'; // Fallback
+                        color = '#ffcc00'; 
                     }
                 }
 
@@ -477,8 +480,16 @@ allPoints.forEach(coord => bounds.extend(coord));
                         properties: { color: color, isTraffic: true },
                         geometry: { type: 'LineString', coordinates: segmentCoords }
                     });
+                    
+                    // NEU: Wir "malen" die Stau-Farbe exakt auf die betroffenen Punkte im Array!
+                    for (let k = start; k <= end; k++) {
+                        pointColors[k] = color;
+                    }
                 }
             });
+
+            // NEU: Fertiges Farb-Array in unserer Logik abspeichern
+            RouteLogic.routeColorsData[index] = pointColors;
 
             // Im Objekt speichern für späteres Umschalten (Aktiv/Grau)
             RouteLogic.routeGeoJSONs[index] = routeFeatures;
@@ -661,8 +672,10 @@ allPoints.forEach(coord => bounds.extend(coord));
             });
 
 // Lade das Höhenprofil sofort für die primäre Route (Route 0)
+       // Lade das Höhenprofil sofort für die primäre Route (Route 0)
         if (RouteLogic.routePointsData[0]) {
-            window.loadElevationData(RouteLogic.routePointsData[0]);
+            // NEU: Zweiter Parameter übergeben
+            window.loadElevationData(RouteLogic.routePointsData[0], RouteLogic.routeColorsData[0]); 
         }
             
         });
@@ -902,9 +915,10 @@ function clearRoutes() {
 // ==========================================
     // === ROUTE LOGIC (MULTI-ROUTE & UI) ===
     // ==========================================
-window.RouteLogic = {
+    window.RouteLogic = {
         routeGeoJSONs: [null, null],
-        routePointsData: [null, null], // NEU: Speichert die Koordinaten für das Höhenprofil
+        routePointsData: [null, null], 
+        routeColorsData: [null, null], // <-- NEU: Hier speichern wir die Stau-Farben für jeden Punkt
         activeIndex: 0,
 
         selectRouteOpt: function(index) {
@@ -915,6 +929,13 @@ window.RouteLogic = {
             document.getElementById('route-opt-1').classList.toggle('active', index === 1);
 
             this.updateMapLayers();
+            
+            // NEU: Wir übergeben jetzt auch die gespeicherten Farben an das Diagramm!
+            if (this.routePointsData[index]) {
+                window.loadElevationData(this.routePointsData[index], this.routeColorsData[index]);
+            }
+        },
+        // ... (ab hier bleibt updateMapLayers etc. exakt gleich)
             
             // NEU: Beim Klick auf eine andere Route zeichnet sich das Höhenprofil dynamisch neu!
             if (this.routePointsData[index]) {
@@ -1006,55 +1027,54 @@ window.RouteLogic = {
 // ==========================================
     // === ELEVATION API & CHART RENDERING ===
     // ==========================================
-    window.loadElevationData = async function(allPoints) {
+    window.loadElevationData = async function(allPoints, allColors) { // <-- NEU: allColors
         if (!allPoints || allPoints.length === 0) return;
 
-        // 1. Array auf ca. 50 Punkte reduzieren (Sample), damit die API pfeilschnell antwortet
         const sampleSize = 50;
         const step = Math.max(1, Math.floor(allPoints.length / sampleSize));
         const sampledPoints = [];
+        const sampledColors = []; // <-- NEU
+
         for (let i = 0; i < allPoints.length; i += step) {
             sampledPoints.push(allPoints[i]);
+            sampledColors.push(allColors ? allColors[i] : '#30d158'); // <-- NEU
         }
-        // Zielpunkt zwingend anhängen
+        
         if (sampledPoints[sampledPoints.length - 1] !== allPoints[allPoints.length - 1]) {
             sampledPoints.push(allPoints[allPoints.length - 1]);
+            sampledColors.push(allColors ? allColors[allColors.length - 1] : '#30d158'); // <-- NEU
         }
 
         const lats = sampledPoints.map(p => p[1]).join(',');
         const lons = sampledPoints.map(p => p[0]).join(',');
 
         try {
-            // Echte Topografie-Daten abrufen (Open-Meteo API)
             const url = `https://api.open-meteo.com/v1/elevation?latitude=${lats}&longitude=${lons}`;
             const response = await fetch(url);
             const data = await response.json();
 
             if (data && data.elevation) {
-                drawElevationChart(data.elevation);
+                // NEU: Farben an den Zeichner übergeben
+                drawElevationChart(data.elevation, sampledColors); 
             }
         } catch (error) {
             console.error("Höhendaten konnten nicht geladen werden:", error);
         }
     };
 
-    function drawElevationChart(elevations) {
+    function drawElevationChart(elevations, pointColors) { // <-- NEU: pointColors
         const canvas = document.getElementById('elevation-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
-        // Berechnet die absolute Pixelbreite, auch wenn das Canvas gerade display: none ist!
-        // Bildschirmbreite minus alle Paddings/Margins
         const exactWidth = window.innerWidth - 86; 
         const exactHeight = 50;
 
-        // Retina Display Sharpness Fix
         const dpr = window.devicePixelRatio || 1;
         canvas.width = exactWidth * dpr;
         canvas.height = exactHeight * dpr;
         ctx.scale(dpr, dpr);
 
-        // Statistik Min/Max berechnen
         const minElev = Math.min(...elevations);
         const maxElev = Math.max(...elevations);
         const diff = maxElev - minElev;
@@ -1068,40 +1088,46 @@ window.RouteLogic = {
         const chartHeight = exactHeight - paddingY * 2;
         const xStep = exactWidth / (elevations.length - 1);
 
-        // 1. Farb-Verlauf für die Fläche (Apple Premium Look)
+        // 1. Farb-Verlauf für die Fläche (Bleibt dezent grün)
         ctx.beginPath();
         ctx.moveTo(0, exactHeight);
-
         for (let i = 0; i < elevations.length; i++) {
             const x = i * xStep;
             const normalizedY = (elevations[i] - minElev) / diff;
             const y = paddingY + chartHeight - (normalizedY * chartHeight);
             ctx.lineTo(x, y);
         }
-
         ctx.lineTo(exactWidth, exactHeight);
         ctx.closePath();
 
         const gradient = ctx.createLinearGradient(0, 0, 0, exactHeight);
-        gradient.addColorStop(0, 'rgba(48, 209, 88, 0.4)'); // Grün oben
-        gradient.addColorStop(1, 'rgba(48, 209, 88, 0.0)'); // Transparent unten
+        gradient.addColorStop(0, 'rgba(48, 209, 88, 0.4)'); 
+        gradient.addColorStop(1, 'rgba(48, 209, 88, 0.0)'); 
         ctx.fillStyle = gradient;
         ctx.fill();
 
-        // 2. Harte obere Strich-Linie
-        ctx.beginPath();
-        for (let i = 0; i < elevations.length; i++) {
-            const x = i * xStep;
-            const normalizedY = (elevations[i] - minElev) / diff;
-            const y = paddingY + chartHeight - (normalizedY * chartHeight);
-
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        }
-        ctx.strokeStyle = '#30d158'; // Unser Navi-Grün
+        // 2. Harte obere Strich-Linie (BUNT GEZEICHNET!)
         ctx.lineWidth = 2;
         ctx.lineJoin = 'round';
-        ctx.stroke();
+        ctx.lineCap = 'round';
+
+        // Wir zeichnen die Linie Segment für Segment, um die Farbe wechseln zu können
+        for (let i = 0; i < elevations.length - 1; i++) {
+            ctx.beginPath();
+            
+            const x1 = i * xStep;
+            const y1 = paddingY + chartHeight - (((elevations[i] - minElev) / diff) * chartHeight);
+            
+            const x2 = (i + 1) * xStep;
+            const y2 = paddingY + chartHeight - (((elevations[i + 1] - minElev) / diff) * chartHeight);
+
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            
+            // Wir nehmen die Farbe des aktuellen Punktes (Grün, Gelb, Rot, etc.)
+            ctx.strokeStyle = pointColors[i] || '#30d158'; 
+            ctx.stroke();
+        }
     }
 
     
