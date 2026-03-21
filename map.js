@@ -1051,38 +1051,46 @@ function clearRoutes() {
             const data = await response.json();
 
             if (data && data.elevation) {
-                // NEU: exactHeight auf 70px erhöht für einen tieferen Block!
-                drawElevationChart(data.elevation, sampledColors, 70); 
+                // Zeichnen mit 120px Höhe anstoßen
+                drawElevationChart(data.elevation, sampledColors, 120, totalDistMeters); 
             }
         } catch (error) {
             console.error("Höhendaten Fehler:", error);
         }
 
-        // --- 2. WETTER LOGIK (Deine 80km Regel) ---
+        // --- 2. WETTER LOGIK (Die Flächen-Zentrierung) ---
         const weatherContainer = document.getElementById('weather-track-container');
-        if (weatherContainer) weatherContainer.innerHTML = ''; // Reset
+        if (weatherContainer) weatherContainer.innerHTML = ''; 
 
-        if (!totalDistMeters || totalDistMeters < 80000) return; // Unter 80km = Kein Wetter!
+        // UNTER 80KM: Brutal abbrechen, kein Wetter!
+        if (!totalDistMeters || totalDistMeters < 80000) return; 
 
-        // Berechne, wie viele 40km-Blöcke in die Strecke passen
-        const numPoints = Math.floor(totalDistMeters / 40000); 
+        // Wie viele harte 40km Blöcke haben wir?
+        const numIntervals = Math.floor(totalDistMeters / 40000); 
         const weatherLats = [];
         const weatherLons = [];
         const weatherPercentages = [];
 
-        for (let i = 0; i < numPoints; i++) {
-            const targetDist = i * 40000;
-            const percentage = targetDist / totalDistMeters;
-            const ptIndex = Math.floor(percentage * (allPoints.length - 1));
+        // Wir berechnen den visuellen Mittelpunkt jeder 40km-Fläche
+        for (let i = 0; i <= numIntervals; i++) {
+            const dataDist = i * 40000; 
+            if (dataDist >= totalDistMeters) break; 
+
+            // Optischer Mittelpunkt der Fläche (z.B. bei 20km für die 0-40km Fläche)
+            const blockEnd = Math.min((i + 1) * 40000, totalDistMeters);
+            const visualDistCenter = dataDist + ((blockEnd - dataDist) / 2);
+            const visualPercentage = visualDistCenter / totalDistMeters;
+
+            // Wir holen aber das Wetter vom STARTPUNKT dieser Fläche (also 0km, 40km, 80km)
+            const ptIndex = Math.floor((dataDist / totalDistMeters) * (allPoints.length - 1));
             const pt = allPoints[ptIndex];
 
             weatherLats.push(pt[1]);
             weatherLons.push(pt[0]);
-            weatherPercentages.push(percentage * 100);
+            weatherPercentages.push(visualPercentage * 100); // Hier wird das Icon platziert
         }
 
         try {
-            // Wir holen alle Koordinaten mit einem einzigen API-Call!
             const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLats.join(',')}&longitude=${weatherLons.join(',')}&current_weather=true`;
             const wRes = await fetch(weatherUrl);
             const wData = await wRes.json();
@@ -1114,13 +1122,13 @@ function clearRoutes() {
         }
     };
 
-    function drawElevationChart(elevations, pointColors, canvasHeight) { // <-- NEU: canvasHeight Parameter
+    function drawElevationChart(elevations, pointColors, canvasHeight, totalDistMeters) { 
         const canvas = document.getElementById('elevation-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
         const exactWidth = window.innerWidth - 86; 
-        const exactHeight = canvasHeight || 70; // Wir nutzen die übergebene Tiefe
+        const exactHeight = canvasHeight || 120; 
 
         const dpr = window.devicePixelRatio || 1;
         canvas.width = exactWidth * dpr;
@@ -1136,58 +1144,43 @@ function clearRoutes() {
         ctx.clearRect(0, 0, exactWidth, exactHeight);
         if (diff === 0) return;
 
-        // NEU: Wir definieren ein festes Padding NUR OBEN, damit die Linie nicht am Rand klebt.
-        // UNTEN lassen wir den grünen Block hart an den Canvas-Boden laufen!
-        const paddingTop = 4;
+        // NEU: Platz für die X-Achse am Boden lassen!
+        const paddingTop = 10;
+        const paddingBottom = 25; // Exakt hier drunter stehen die "40 km" Texte
+        const chartHeight = exactHeight - paddingTop - paddingBottom;
+        const baseY = exactHeight - paddingBottom; // Das ist der Boden des grünen Graphens
         const xStep = exactWidth / (elevations.length - 1);
 
-        // -------------------------------------------------------------------------
-        // 1. NEUE FLÄCHEN-LOGIK: Wir zeichnen eine tiefe, halbtransparente Masse
-        // -------------------------------------------------------------------------
+        // 1. FLÄCHEN-LOGIK (Die grüne Masse bis zur X-Achse)
         ctx.beginPath();
-        // Wir starten hart am unteren, linken Rand des Canvas (exactHeight)
-        ctx.moveTo(0, exactHeight); 
+        ctx.moveTo(0, baseY); 
         
         for (let i = 0; i < elevations.length; i++) {
             const x = i * xStep;
-            // Wir berechnen Y, sodass paddingTop beachtet wird, aber der Boden exactHeight ist.
             const normalizedY = (elevations[i] - minElev) / diff;
-            // Wir berechnen Y so, dass der höchste Punkt paddingTop Abstand vom Deckel hat.
-            const chartAreaHeight = exactHeight - paddingTop;
-            const y = paddingTop + chartAreaHeight - (normalizedY * chartAreaHeight);
+            const y = paddingTop + chartHeight - (normalizedY * chartHeight);
             ctx.lineTo(x, y);
         }
-        // Wir schließen die Form hart am unteren, rechten Rand des Canvas
-        ctx.lineTo(exactWidth, exactHeight);
+        ctx.lineTo(exactWidth, baseY);
         ctx.closePath();
 
-        // NEU: Ein sehr dezent abgestufter Verlauf. Er fadet nicht ins Transparente aus,
-        // sondern wird unten einfach nur etwas dunkler/solider.
-        const gradient = ctx.createLinearGradient(0, 0, 0, exactHeight);
-        gradient.addColorStop(0, 'rgba(48, 209, 88, 0.5)'); // Oben: Hellgrün, halbtransparent
-        gradient.addColorStop(1, 'rgba(48, 209, 88, 0.3)'); // Unten: Etwas dunkler, soliderer Block
+        const gradient = ctx.createLinearGradient(0, 0, 0, baseY);
+        gradient.addColorStop(0, 'rgba(48, 209, 88, 0.4)'); 
+        gradient.addColorStop(1, 'rgba(48, 209, 88, 0.1)'); 
         ctx.fillStyle = gradient;
         ctx.fill();
 
-        // -------------------------------------------------------------------------
-        // 2. Harte obere Strich-Linie (Unverändert, bunt gezeichnet!)
-        // -------------------------------------------------------------------------
+        // 2. HARTE OBERE LINIE (Die Stau-Farben)
         ctx.lineWidth = 2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
 
-        // Wir zeichnen die Linie Segment für Segment, um die Farbe wechseln zu können
         for (let i = 0; i < elevations.length - 1; i++) {
             ctx.beginPath();
-            
-            // Gleiche Y-Logik wie oben für die Füllung nutzen
-            const chartAreaHeight = exactHeight - paddingTop;
-
             const y1_norm = (elevations[i] - minElev) / diff;
-            const y1 = paddingTop + chartAreaHeight - (y1_norm * chartAreaHeight);
-            
+            const y1 = paddingTop + chartHeight - (y1_norm * chartHeight);
             const y2_norm = (elevations[i+1] - minElev) / diff;
-            const y2 = paddingTop + chartAreaHeight - (y2_norm * chartAreaHeight);
+            const y2 = paddingTop + chartHeight - (y2_norm * chartHeight);
 
             ctx.moveTo(i * xStep, y1);
             ctx.lineTo((i + 1) * xStep, y2);
@@ -1195,7 +1188,56 @@ function clearRoutes() {
             ctx.strokeStyle = pointColors[i] || '#30d158'; 
             ctx.stroke();
         }
-    }
 
+        // 3. X-ACHSE & GESTRICHELTE TRENNWÄNDE (Nur bei über 80km!)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.font = '10px sans-serif';
+        ctx.textBaseline = 'top';
+
+        if (totalDistMeters && totalDistMeters >= 80000) {
+            const numIntervals = Math.floor(totalDistMeters / 40000);
+            
+            for (let i = 0; i <= numIntervals; i++) {
+                const dist = i * 40000;
+                const percentage = dist / totalDistMeters;
+                const x = percentage * exactWidth;
+
+                // Kilometer-Texte sauber ausrichten
+                ctx.textAlign = i === 0 ? 'left' : (i === numIntervals && dist > totalDistMeters - 5000 ? 'right' : 'center');
+                ctx.fillText(`${i * 40} km`, x, baseY + 8);
+
+                // Die gestrichelte Wand einziehen (Außer ganz links bei 0km)
+                if (i > 0) { 
+                    ctx.beginPath();
+                    ctx.setLineDash([4, 4]); // 4px Strich, 4px Lücke
+                    ctx.moveTo(x, baseY);
+                    
+                    // Finde den exakten Y-Punkt auf der Berglinie, um die Wand dort enden zu lassen
+                    const ptIndex = Math.min(Math.floor(percentage * (elevations.length - 1)), elevations.length - 1);
+                    const y_norm = (elevations[ptIndex] - minElev) / diff;
+                    const y = paddingTop + chartHeight - (y_norm * chartHeight);
+                    
+                    ctx.lineTo(x, y);
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                    ctx.setLineDash([]); // Zurücksetzen
+                }
+            }
+            
+            // Ganz am Ende nochmal die Gesamt-Kilometer anzeigen, falls noch Platz ist
+            if (totalDistMeters - (numIntervals * 40000) > 8000) {
+                ctx.textAlign = 'right';
+                ctx.fillText(`${(totalDistMeters/1000).toFixed(0)} km`, exactWidth, baseY + 8);
+            }
+            
+        } else if (totalDistMeters) {
+            // UNTER 80KM: Keine Wände, nur minimaler Start- und End-Text
+            ctx.textAlign = 'left';
+            ctx.fillText(`0 km`, 0, baseY + 8);
+            ctx.textAlign = 'right';
+            ctx.fillText(`${(totalDistMeters/1000).toFixed(0)} km`, exactWidth, baseY + 8);
+        }
+    }
     
 }); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
