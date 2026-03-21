@@ -3006,11 +3006,12 @@ body.ghost-active #ghost-chat-overlay {
 /* ========================================= */
 
 .elevation-profile-card {
+    position: relative; /* <--- DAS IST DIE MAGISCHE ZEILE! Hält die Icons gefangen. */
     /* WICHTIG: Kein display: none! Wir nutzen height:0 für sauberes Canvas-Rendering */
     max-height: 0;
     opacity: 0;
     overflow: hidden;
-    padding: 0 16px; /* Padding oben/unten wegnehmen, damit es 0 Platz braucht */
+    padding: 0 16px; 
     margin-top: 0;
     border: none;
     background: rgba(255, 255, 255, 0.04);
