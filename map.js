@@ -513,30 +513,29 @@ async function drawTomTomRoute(destLat, destLng) {
 }
 
 function clearRoutes() {
-    for (let i = 0; i < 2; i++) {
-        if (libreMap && libreMap.getLayer(`route-layer-${i}`)) {
-            libreMap.removeLayer(`route-layer-${i}`);
-            libreMap.removeSource(`route-source-${i}`);
-        }
-    }
+    if (!libreMap) return;
+
+    // 1. Wir löschen radikal alle Layers (altes & neues System)
+    const layersToRemove = ['simple-route-layer', 'route-layer-0', 'route-layer-1'];
+    layersToRemove.forEach(layer => {
+        if (libreMap.getLayer(layer)) libreMap.removeLayer(layer);
+    });
+
+    // 2. Wir löschen alle Sources
+    const sourcesToRemove = ['simple-route-source', 'route-source-0', 'route-source-1'];
+    sourcesToRemove.forEach(source => {
+        if (libreMap.getSource(source)) libreMap.removeSource(source);
+    });
+
+    // 3. Ziel-Marker entfernen
     if (destMarker) {
         destMarker.remove();
         destMarker = null;
     }
-}
 
-
-function clearRoutes() {
-    // 1. Linie entfernen
-    if (libreMap && libreMap.getLayer('simple-route-layer')) {
-        libreMap.removeLayer('simple-route-layer');
-        libreMap.removeSource('simple-route-source');
-    }
-
-    // 2. Grünen Ziel-Marker entfernen
-    if (destMarker) {
-        destMarker.remove();
-        destMarker = null;
+    // 4. Den Multi-Route Zwischenspeicher leeren
+    if (window.RouteLogic) {
+        window.RouteLogic.routeGeoJSONs = [null, null];
     }
 }
 
@@ -657,29 +656,30 @@ function clearRoutes() {
         });
     }
 
-    // ==========================================
-    // === NEUE CANCEL ROUTE LOGIK (X-BUTTON IN CARD) ===
+// ==========================================
+    // === NEUE CANCEL ROUTE LOGIK (X-BUTTON) ===
     // ==========================================
     const btnCancelRouteNew = document.getElementById('btn-cancel-route-new');
     if (btnCancelRouteNew) {
-        btnCancelRouteNew.addEventListener('click', (e) => {
+        // .onclick überschreibt alle fehlerhaften Alt-Befehle hart!
+        btnCancelRouteNew.onclick = (e) => {
             e.stopPropagation();
 
-            // 1. Linie und Marker restlos löschen
-            if (typeof clearRoutes === 'function') clearRoutes();
+            // 1. Karte komplett abräumen (Nuke)
+            clearRoutes();
             
             // 2. Card unten ausblenden
             const routeOverviewUI = document.getElementById('route-overview-ui');
             if (routeOverviewUI) routeOverviewUI.classList.add('hidden');
             
-            // 3. UI wiederherstellen (Pillen und Search)
+            // 3. UI wiederherstellen (Suchfeld & Map-Controls)
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.style.display = 'flex';
             
             const pillV = document.querySelector('.map-controls-pill-v');
             if (pillV) pillV.style.display = 'flex';
             
-            // 4. Suchfeld leeren
+            // 4. Suchfeld leeren und Tastatur schließen
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) {
                 searchInput.value = '';
@@ -693,13 +693,12 @@ function clearRoutes() {
                 shrinkBtnMap.style.pointerEvents = 'auto';
             }
             
-            // 6. Zurück zum eigenen Standort fliegen
+            // 6. Kamera sanft zurück zum eigenen Standort fliegen
             if (currentCoords && libreMap) {
                 libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
             }
-        });
+        };
     }
-
     // ==========================================
     // === BOTTOM SHEET TOUCH & FOCUS LOGIC ===
     // ==========================================
