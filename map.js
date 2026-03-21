@@ -388,12 +388,22 @@ async function drawTomTomRoute(destLat, destLng) {
         return;
     }
 
-    // 2. UI & Interaktionen vorbereiten
+   // 2. UI & Interaktionen vorbereiten
     const routeUI = document.getElementById('route-overview-ui');
     const bottomSheet = document.getElementById('map-bottom-sheet');
     const pillV = document.querySelector('.map-controls-pill-v');
+    
+    // NEU: Pfeil oben links ausblenden, solange die Route aktiv ist
+    const shrinkBtn = document.getElementById('btn-shrink-map');
+    if (shrinkBtn) {
+        shrinkBtn.style.opacity = '0'; 
+        shrinkBtn.style.pointerEvents = 'none';
+    }
 
-    if (document.querySelector('.map-snippet-card')) document.querySelector('.map-snippet-card').classList.add('map-expanded');
+    if (document.querySelector('.map-snippet-card')) {
+        document.querySelector('.map-snippet-card').classList.add('map-expanded');
+    }
+    
     document.getElementById('map-expand-trigger').style.display = 'none';
     const navBar = document.querySelector('.bottom-nav');
     if (navBar) navBar.style.display = 'none';
@@ -413,6 +423,7 @@ async function drawTomTomRoute(destLat, destLng) {
     libreMap.setPadding({ right: 0, bottom: 0 });
 
     try {
+        // 3. API URL mit Traffic & Sections ...
         // 3. API URL mit Traffic & Sections (Nur traffic Typ nutzen für 100% Erfolg)
         const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
         
