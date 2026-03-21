@@ -435,6 +435,7 @@ allPoints.forEach(coord => bounds.extend(coord));
          // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
             RouteLogic.routePointsData[index] = allPoints;
             RouteLogic.routeDistances[index] = route.summary.lengthInMeters; // <--- HIER MUSS route.summary STEHEN!
+            RouteLogic.routeTimesData[index] = route.summary.travelTimeInSeconds;
             // NEU: Wir erstellen ein Array für die Farben. Standard ist komplett Grün.
             const pointColors = new Array(allPoints.length).fill('#30d158');
 
@@ -677,7 +678,8 @@ allPoints.forEach(coord => bounds.extend(coord));
             window.loadElevationData(
                 RouteLogic.routePointsData[0], 
                 RouteLogic.routeColorsData[0], 
-                RouteLogic.routeDistances[0] // <-- NEU: Distanz übergeben
+                RouteLogic.routeDistances[0], 
+                RouteLogic.routeTimesData[0] // <-- NEU: Zeit übergeben
             ); 
         }
             
@@ -918,11 +920,12 @@ function clearRoutes() {
 // ==========================================
     // === ROUTE LOGIC (MULTI-ROUTE & UI) ===
     // ==========================================
-  window.RouteLogic = {
+    window.RouteLogic = {
         routeGeoJSONs: [null, null],
         routePointsData: [null, null], 
         routeColorsData: [null, null], 
-        routeDistances: [null, null], // <--- DIESE ZEILE HAT BEI DIR GEFEHLT!
+        routeDistances: [null, null], 
+        routeTimesData: [null, null], // <-- NEU: Speichert die Reisezeit in Sekunden
         activeIndex: 0,
 
         selectRouteOpt: function(index) {
@@ -934,12 +937,11 @@ function clearRoutes() {
 
             this.updateMapLayers();
             
-            // NEU: Beim Klick auf eine andere Route zeichnet sich das Höhenprofil dynamisch neu!
             if (this.routePointsData[index]) {
-               window.loadElevationData(this.routePointsData[index], this.routeColorsData[index], this.routeDistances[index]);
+                // NEU: Zeit als 4. Parameter übergeben!
+                window.loadElevationData(this.routePointsData[index], this.routeColorsData[index], this.routeDistances[index], this.routeTimesData[index]);
             }
-        }, // <-- DIESE KLAMMER UND DAS KOMMA HABEN BEI DIR GEFEHLT!
-
+        },
         // Zeichnet die Linien auf der Karte neu (Aktiv = Bunt/Blau, Inaktiv = Grau)
         updateMapLayers: function() {
             for (let i = 0; i < 2; i++) {
@@ -1035,7 +1037,7 @@ function clearRoutes() {
         return 1; // Klar
     }
 
-    window.loadElevationData = async function(allPoints, allColors, totalDistMeters) { 
+  window.loadElevationData = async function(allPoints, allColors, totalDistMeters, totalTimeSeconds) { 
         if (!allPoints || allPoints.length === 0) return;
 
         // --- 1. HÖHENDATEN ABFRAGEN ---
@@ -1069,21 +1071,19 @@ function clearRoutes() {
             console.error("Höhendaten Fehler:", error);
         }
 
-        // --- 2. WETTER INTELLIGENZ ---
+        // --- 2. ZEITREISE-WETTER INTELLIGENZ ---
         const weatherContainer = document.getElementById('weather-track-container');
         if (weatherContainer) weatherContainer.innerHTML = ''; 
 
         if (!totalDistMeters || totalDistMeters < 80000) return; // Unter 80km: Abbruch!
 
-        // Wir berechnen visuelle Sektoren (Maximal 5!)
         const numVisualSegments = Math.min(5, Math.floor(totalDistMeters / 40000));
         const visualSegLength = totalDistMeters / numVisualSegments;
 
-        // Wir holen trotzdem alle 40km die echten Daten!
         const numFetches = Math.floor(totalDistMeters / 40000); 
         const fetchLats = [];
         const fetchLons = [];
-        const fetchMapToVisual = []; // Speichert, zu welchem visuellen Sektor dieser Punkt gehört
+        const fetchMapToVisual = []; 
 
         for (let i = 1; i <= numFetches; i++) {
             const dist = i * 40000;
@@ -1091,53 +1091,71 @@ function clearRoutes() {
             fetchLats.push(allPoints[ptIndex][1]);
             fetchLons.push(allPoints[ptIndex][0]);
 
-            // Zu welchem Sektor gehört dieser 40km-Punkt?
             let visIdx = Math.floor((dist - 1) / visualSegLength);
             if (visIdx >= numVisualSegments) visIdx = numVisualSegments - 1;
             fetchMapToVisual.push(visIdx);
         }
 
         try {
-            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${fetchLats.join(',')}&longitude=${fetchLons.join(',')}&current_weather=true`;
+            // NEU: Wir holen hourly=temperature_2m,weathercode,is_day im UNIX-Zeitformat!
+            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${fetchLats.join(',')}&longitude=${fetchLons.join(',')}&hourly=temperature_2m,weathercode,is_day&timeformat=unixtime`;
             const wRes = await fetch(weatherUrl);
             const wData = await wRes.json();
 
             const results = Array.isArray(wData) ? wData : [wData];
 
-            // Wir bereiten 5 leere Eimer vor, in die wir das SCHLECHTESTE Wetter pro Sektor werfen
             const visualWeather = [];
             for (let i = 0; i < numVisualSegments; i++) {
-                visualWeather.push({ temp: 0, code: -1, severity: -1, hasData: false });
+                visualWeather.push({ temp: 0, code: -1, severity: -1, isDay: 1, hasData: false });
             }
 
-            // Auswerten und Schlechtestes filtern
+            // Aktuelle UNIX-Zeit in Sekunden
+            const nowUnix = Math.floor(Date.now() / 1000);
+
             results.forEach((res, idx) => {
-                if (!res.current_weather) return;
-                const temp = Math.round(res.current_weather.temperature);
-                const code = res.current_weather.weathercode;
+                if (!res.hourly || !res.hourly.time) return;
+
+                // 1. Berechne die lineare ETA für genau diesen 40km-Abfrage-Punkt
+                const distRatio = ((idx + 1) * 40000) / totalDistMeters;
+                const etaUnix = nowUnix + Math.floor(distRatio * totalTimeSeconds);
+
+                // 2. Finde die exakte Vorhersage-Stunde, die dieser ETA am nächsten kommt
+                let closestHourIdx = 0;
+                let minDiff = Infinity;
+                for(let h = 0; h < res.hourly.time.length; h++) {
+                    const diff = Math.abs(res.hourly.time[h] - etaUnix);
+                    if(diff < minDiff) {
+                        minDiff = diff;
+                        closestHourIdx = h;
+                    }
+                }
+
+                // 3. Greife die Daten für exakt diese zukünftige Stunde ab!
+                const temp = Math.round(res.hourly.temperature_2m[closestHourIdx]);
+                const code = res.hourly.weathercode[closestHourIdx];
+                const isDay = res.hourly.is_day[closestHourIdx]; // 1 = Tag, 0 = Nacht
                 const severity = getWeatherSeverity(code);
 
                 const visIdx = fetchMapToVisual[idx];
-                // Wenn dieses Wetter schlimmer ist als das bisherige in diesem Sektor -> Überschreiben!
                 if (severity > visualWeather[visIdx].severity) {
-                    visualWeather[visIdx] = { temp, code, severity, hasData: true };
+                    visualWeather[visIdx] = { temp, code, severity, isDay, hasData: true };
                 }
             });
 
-            // Jetzt zeichnen wir maximal 5 perfekt verteilte Icons
+            // Zeichnen
             visualWeather.forEach((vw, i) => {
                 if (!vw.hasData) return;
                 
                 let icon = 'fa-cloud'; 
-                if (vw.code === 0) icon = 'fa-sun';
-                else if (vw.code >= 1 && vw.code <= 3) icon = 'fa-cloud-sun';
+                // NEU: Tag & Nacht Prüfung mit MOND-ICONS!
+                if (vw.code === 0) icon = vw.isDay ? 'fa-sun' : 'fa-moon';
+                else if (vw.code >= 1 && vw.code <= 3) icon = vw.isDay ? 'fa-cloud-sun' : 'fa-cloud-moon';
                 else if (vw.code >= 45 && vw.code <= 48) icon = 'fa-smog';
                 else if (vw.code >= 51 && vw.code <= 67) icon = 'fa-cloud-rain';
                 else if (vw.code >= 71 && vw.code <= 77) icon = 'fa-snowflake';
                 else if (vw.code >= 80 && vw.code <= 82) icon = 'fa-cloud-showers-heavy';
                 else if (vw.code >= 95) icon = 'fa-cloud-bolt';
 
-                // Icon exakt in die Mitte des Sektors setzen
                 const centerPercentage = ((i + 0.5) * visualSegLength) / totalDistMeters;
 
                 const div = document.createElement('div');
