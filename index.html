@@ -752,22 +752,14 @@
     </div>
 
 <div id="new-explore-screen" class="screen hidden interactive-element" style="background: #050505;">
-    
     <div class="new-explore-content" style="position: absolute; top: env(safe-area-inset-top, 40px); left: 0; width: 100%; height: calc(100vh - 120px); overflow-y: auto; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px;">
         
-<div class="explore-card map-snippet-card interactive-element" style="position: relative; overflow: hidden; height: 180px; border-radius: 28px; background: rgba(15, 15, 18, 0.5); backdrop-filter: blur(30px) saturate(150%); -webkit-backdrop-filter: blur(30px) saturate(150%); border: 1px solid rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.15); box-shadow: 0 15px 35px rgba(0,0,0,0.8); flex-shrink: 0;">
+        <div class="explore-card map-snippet-card interactive-element" style="position: relative; overflow: hidden; height: 180px; border-radius: 28px; background: rgba(15, 15, 18, 0.5); backdrop-filter: blur(30px) saturate(150%); -webkit-backdrop-filter: blur(30px) saturate(150%); border: 1px solid rgba(255,255,255,0.05); border-top: 1px solid rgba(255,255,255,0.15); box-shadow: 0 15px 35px rgba(0,0,0,0.8); flex-shrink: 0;">
             
             <button id="btn-shrink-map" class="map-shrink-btn-new"><i class="fa-solid fa-chevron-left"></i></button>
 
             <div class="map-expanded-fade-top"></div>
-
-    <div class="map-expanded-fade-top"></div>
-
-         
-
-      <div id="map-expand-trigger" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 8; cursor: pointer;"></div>
-
-       
+            <div id="map-expand-trigger" style="position: absolute; top:0; left:0; width:100%; height:100%; z-index: 8; cursor: pointer;"></div>
 
             <div id="maplibre-snippet" style="width: 100%; height: 100%; position: absolute; top:0; left:0; z-index: 1;">
                 <div class="loading-background" style="position: absolute; top:0; left:0; width:100%; height:100%; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); z-index: 0;">
@@ -775,20 +767,18 @@
                 </div>
 
                 <div class="map-controls-pill-v">
-   <button id="btn-recenter-map" class="map-ctrl-btn" title="Standort">
-    <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
-</button>
-<div class="pill-v-separator"></div>
-<button id="btn-align-north" class="map-ctrl-btn compass-btn" title="Norden">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
-    </svg>
-</button>
-</div>
+                    <button id="btn-recenter-map" class="map-ctrl-btn" title="Standort">
+                        <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
+                    </button>
+                    <div class="pill-v-separator"></div>
+                    <button id="btn-align-north" class="map-ctrl-btn compass-btn" title="Norden">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                        </svg>
+                    </button>
+                </div>
             </div>
-
-    
 
             <div class="map-blur-corner"></div>
 
@@ -797,46 +787,16 @@
                 <button class="map-round-btn" id="btn-explore-navi"><i class="fa-solid fa-location-arrow"></i></button>
                 <button class="map-round-btn" id="btn-explore-gas"><i class="fa-solid fa-gas-pump"></i></button>
             </div>
+
             <div id="map-bottom-sheet" class="map-bottom-sheet">
                 <div class="sheet-drag-handle"></div>
-                
                 <div class="sheet-search-wrapper">
                     <input type="text" id="tomtom-search-input" class="map-search-input" placeholder="Ziel suchen..." autocomplete="off">
                 </div>
-                
                 <div id="tomtom-suggestions" class="sheet-suggestions-box hidden"></div>
             </div>
-<div id="route-overview-ui" class="hidden" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; pointer-events: none;">
-                
-     
 
-    <div class="route-planning-card">
-        <div class="route-locations">
-            <div class="location-pill start-pill">
-                <div class="dot blue-dot"></div>
-                <span>Mein Standort</span>
-            </div>
-            
-            <div class="connecting-line"></div>
-            
-            <div class="location-pill dest-pill">
-                <div class="dot green-dot"></div>
-                <span id="dest-name-display">Zielort</span>
-            </div>
-        </div>
-
-        <div class="route-action-pill">
-            <div class="route-stats">
-                <span class="route-time" id="route-info-time">-- Min</span>
-                <span class="route-details">
-                    <span id="route-info-dist">-- km</span> • Ankunft <span id="route-info-arrival">--:--</span>
-                </span>
-            </div>
-            <button id="btn-start-nav" class="go-button">GO</button>
-        </div>
-    </div>
-
-<div id="route-overview-ui" class="hidden">
+            <div id="route-overview-ui" class="hidden">
                 <div class="route-planning-card">
                     
                     <div class="route-card-header-new">
@@ -867,17 +827,15 @@
                         </div>
                         <button id="btn-start-nav" class="go-button">GO</button>
                     </div>
-                </div>
-            </div>
 
-        </div> </div> </div> <div id="global-nav" class="bottom-nav interactive-element">
+                </div>
+            </div> </div> </div> </div> <div id="global-nav" class="bottom-nav interactive-element">
     <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
     <div class="nav-item" id="nav-perf"><i class="fa-solid fa-gauge-high"></i><span>Perf</span></div>
     <div class="nav-item" id="nav-explore"><i class="fa-solid fa-map"></i><span>Map</span></div>
     <div class="nav-item" id="nav-new-explore"><i class="fa-solid fa-map"></i><span>Explore</span></div>
     <div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
 </div>
-
 
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
