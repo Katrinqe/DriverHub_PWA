@@ -570,36 +570,7 @@ function clearRoutes() {
 }
 
 
-// --- NEU: X-BUTTON LOGIK (ROUTE ABBRECHEN) ---
-    const btnCancelRoute = document.getElementById('btn-cancel-route');
-    if (btnCancelRoute) {
-        btnCancelRoute.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            // 1. Linie löschen
-            clearRoutes();
 
-            // Suchfeld leeren
-            const searchInput = document.getElementById('tomtom-search-input');
-            if (searchInput) searchInput.value = '';
-            
-            // 2. Neues UI ausblenden
-            const routeUI = document.getElementById('route-overview-ui');
-            if (routeUI) routeUI.classList.add('hidden');
-            
-            // 3. Altes Menü wieder einblenden
-            const bottomSheet = document.getElementById('map-bottom-sheet');
-            if (bottomSheet) bottomSheet.style.display = 'flex';
-            
-            const pillV = document.querySelector('.map-controls-pill-v');
-            if (pillV) pillV.style.display = 'flex';
-            
-            // 4. Kamera zurück zum Startpunkt fliegen
-            if (currentCoords && libreMap) {
-                libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
-            }
-        });
-    }
 
 // ==========================================
     // === MAP CONTROLS LOGIC (PILL) ===
@@ -663,25 +634,40 @@ function clearRoutes() {
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
-            // --- NEU: ROUTE-CANCEL INTERCEPT LOGIK ---
+      // --- NEU: ROUTE-CANCEL INTERCEPT LOGIK ---
             const routeOverviewUI = document.getElementById('route-overview-ui');
             if (routeOverviewUI && !routeOverviewUI.classList.contains('hidden')) {
-                // Wir sind in der Routen-Auswahl -> Nur Route löschen!
+                
+                // 1. Linie und Marker auf der Karte restlos löschen
                 if (typeof clearRoutes === 'function') clearRoutes();
+                
+                // 2. Die neue Route-Card unten ausblenden
                 routeOverviewUI.classList.add('hidden');
                 
+                // 3. WICHTIG: Suchfeld komplett leeren und Tastatur schließen
+                const searchInput = document.getElementById('tomtom-search-input');
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.blur(); 
+                }
+                
+                // 4. Die Standard-Such-Pille und die kleine vertikale Pille wieder einblenden
                 const bottomSheet = document.getElementById('map-bottom-sheet');
                 if (bottomSheet) bottomSheet.style.display = 'flex';
                 
                 const pillV = document.querySelector('.map-controls-pill-v');
-                if (pillV) pillV.style.display = 'flex'; // Pille wieder einblenden
+                if (pillV) pillV.style.display = 'flex';
                 
+                // 5. Kamera sanft zurück zum eigenen Standort fliegen lassen
                 if (currentCoords && libreMap) {
                     libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
                 }
-                return; // WICHTIG: Hier brechen wir ab! Die Karte schrumpft dadurch nicht.
+                
+                // 6. HIER ABBRECHEN! Verhindert, dass die Karte sich schließt (Shrink-Logik wird übersprungen)
+                return; 
             }
             // -----------------------------------------
+          
 
             // --- DEIN ALTER CODE ZUM SCHRUMPFEN DER KARTE ---
             mapCard.classList.remove('map-expanded');
