@@ -2841,7 +2841,7 @@ body.ghost-active #ghost-chat-overlay {
 #route-overview-card {
     pointer-events: auto; /* Card ist bedienbar */
     position: absolute;
-    bottom: 10px;
+    bottom: 15px;
     left: 15px;
     width: calc(100% - 30px);
     border-radius: 24px;
