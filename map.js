@@ -630,46 +630,47 @@ function clearRoutes() {
     // ==========================================
 
 
-    if (shrinkBtn && mapCard && expandTrigger) {
+if (shrinkBtn && mapCard && expandTrigger) {
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
-      // --- NEU: ROUTE-CANCEL INTERCEPT LOGIK ---
-            const routeOverviewUI = document.getElementById('route-overview-ui');
-            if (routeOverviewUI && !routeOverviewUI.classList.contains('hidden')) {
+            // --- KUGELSICHERE ROUTE-CANCEL INTERCEPT LOGIK ---
+            // Wir fragen die Map Engine: Existiert der Routen-Layer?
+            if (libreMap && libreMap.getLayer('simple-route-layer')) {
+                console.log("Route aktiv -> Breche nur die Navigation ab!");
                 
-                // 1. Linie und Marker auf der Karte restlos löschen
+                // 1. Linie und Marker restlos löschen
                 if (typeof clearRoutes === 'function') clearRoutes();
                 
                 // 2. Die neue Route-Card unten ausblenden
-                routeOverviewUI.classList.add('hidden');
+                const routeOverviewUI = document.getElementById('route-overview-ui');
+                if (routeOverviewUI) routeOverviewUI.classList.add('hidden');
                 
-                // 3. WICHTIG: Suchfeld komplett leeren und Tastatur schließen
+                // 3. Suchfeld leeren und Blur auslösen (Tastatur zu)
                 const searchInput = document.getElementById('tomtom-search-input');
                 if (searchInput) {
                     searchInput.value = '';
-                    searchInput.blur(); 
+                    searchInput.blur();
                 }
                 
-                // 4. Die Standard-Such-Pille und die kleine vertikale Pille wieder einblenden
+                // 4. Standard-UI wiederherstellen
                 const bottomSheet = document.getElementById('map-bottom-sheet');
                 if (bottomSheet) bottomSheet.style.display = 'flex';
                 
                 const pillV = document.querySelector('.map-controls-pill-v');
                 if (pillV) pillV.style.display = 'flex';
                 
-                // 5. Kamera sanft zurück zum eigenen Standort fliegen lassen
-                if (currentCoords && libreMap) {
+                // 5. Kamera sanft zum Standort zurückfliegen
+                if (currentCoords) {
                     libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
                 }
                 
-                // 6. HIER ABBRECHEN! Verhindert, dass die Karte sich schließt (Shrink-Logik wird übersprungen)
+                // 6. ABSOLUT WICHTIG: Hier steigen wir aus! Der Code drunter wird nicht ausgeführt.
                 return; 
             }
             // -----------------------------------------
-          
 
-            // --- DEIN ALTER CODE ZUM SCHRUMPFEN DER KARTE ---
+            // --- NORMALER SHRINK CODE (Wird nur ausgeführt, wenn KEINE Route aktiv ist) ---
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
 
