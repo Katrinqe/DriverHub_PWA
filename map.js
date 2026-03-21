@@ -969,23 +969,10 @@ function clearRoutes() {
         // WICHTIG: Beim Klick auf das X (Abbruch) muss die Card auch wieder runterfahren
         const btnCancel = document.getElementById('btn-cancel-route-new');
         if (btnCancel) {
-            // Hängt sich an den bestehenden Onclick-Befehl von vorhin dran
             btnCancel.addEventListener('click', () => {
                 swipeableCard.classList.remove('expanded');
             });
         }
     }
 
-        // WICHTIG: Wenn der Cancel-Button (X) gedrückt wird, muss die Card auch zurückfahren!
-        const btnCancel = document.getElementById('btn-cancel-route-new');
-        if (btnCancel) {
-            // Wir hängen uns an den bestehenden Klick-Handler an
-            btnCancel.addEventListener('click', () => {
-                swipeableCard.style.transform = `translateY(0px)`;
-                routeLocationsBox.style.display = 'none';
-                isExpanded = false;
-            });
-        }
-    }
-    
 }); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
