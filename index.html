@@ -795,41 +795,59 @@
                 </div>
                 <div id="tomtom-suggestions" class="sheet-suggestions-box hidden"></div>
             </div>
+<div id="route-overview-ui" class="hidden">
+    <div class="route-planning-card">
+        
+        <div class="route-card-header-new">
+            <span class="route-title-text">ROUTE</span>
+            <button id="btn-cancel-route-new" class="close-card-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
 
-            <div id="route-overview-ui" class="hidden">
-                <div class="route-planning-card">
-                    
-                    <div class="route-card-header-new">
-                        <span class="route-title-text">ROUTE</span>
-                        <button id="btn-cancel-route-new" class="close-card-btn"><i class="fa-solid fa-xmark"></i></button>
-                    </div>
-
-                    <div class="route-locations">
-                        <div class="location-pill start-pill">
-                            <div class="dot blue-dot"></div>
-                            <span>Mein Standort</span>
-                        </div>
-                        
-                        <div class="connecting-line"></div>
-                        
-                        <div class="location-pill dest-pill">
-                            <div class="dot green-dot"></div>
-                            <span id="dest-name-display">Zielort</span>
-                        </div>
-                    </div>
-
-                    <div class="route-action-pill">
-                        <div class="route-stats">
-                            <span class="route-time" id="route-info-time">-- Min</span>
-                            <span class="route-details">
-                                <span id="route-info-dist">-- km</span> • Ankunft <span id="route-info-arrival">--:--</span>
-                            </span>
-                        </div>
-                        <button id="btn-start-nav" class="go-button">GO</button>
-                    </div>
-
+        <div class="route-options-container">
+            <div class="route-opt-pill active" id="route-opt-0" onclick="RouteLogic.selectRouteOpt(0)">
+                <div class="opt-main">
+                    <span class="opt-time" id="opt-time-0">-- Min</span>
+                    <span class="opt-dist" id="opt-dist-0">-- km</span>
                 </div>
-            </div> </div> </div> </div> <div id="global-nav" class="bottom-nav interactive-element">
+                <div class="opt-details">
+                    <span class="opt-via" id="opt-via-0">Schnellste Route</span>
+                    <span class="opt-eta">Ankunft <span id="opt-eta-0">--:--</span></span>
+                </div>
+            </div>
+            
+            <div class="route-opt-pill hidden" id="route-opt-1" onclick="RouteLogic.selectRouteOpt(1)">
+                <div class="opt-main">
+                    <span class="opt-time" id="opt-time-1">-- Min</span>
+                    <span class="opt-dist" id="opt-dist-1">-- km</span>
+                </div>
+                <div class="opt-details">
+                    <span class="opt-via" id="opt-via-1">Alternative</span>
+                    <span class="opt-eta">Ankunft <span id="opt-eta-1">--:--</span></span>
+                </div>
+            </div>
+        </div>
+
+        <button id="btn-start-nav" class="go-button">GO</button>
+
+        <div class="route-expand-trigger" onclick="RouteLogic.toggleRouteDetails()">
+            <i class="fa-solid fa-chevron-down" id="route-expand-icon"></i>
+        </div>
+
+        <div class="route-locations hidden" id="route-locations-box">
+            <div class="location-pill start-pill">
+                <div class="dot blue-dot"></div>
+                <span>Mein Standort</span>
+            </div>
+            <div class="connecting-line"></div>
+            <div class="location-pill dest-pill">
+                <div class="dot green-dot"></div>
+                <span id="dest-name-display">Zielort</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+        </div> </div> </div> <div id="global-nav" class="bottom-nav interactive-element">
     <div class="nav-item active-home" id="nav-home"><i class="fa-solid fa-house"></i><span>Home</span></div>
     <div class="nav-item" id="nav-perf"><i class="fa-solid fa-gauge-high"></i><span>Perf</span></div>
     <div class="nav-item" id="nav-explore"><i class="fa-solid fa-map"></i><span>Map</span></div>
