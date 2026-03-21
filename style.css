@@ -3127,7 +3127,7 @@ body.ghost-active #ghost-chat-overlay {
 /* --- ROUTE CARD STATIC (CLEAN & SIMPLE) --- */
 #route-overview-card {
     position: absolute;
-    bottom: 20px;
+    bottom: 10px;
     left: 15px;
     width: calc(100% - 30px);
     border-radius: 24px;
