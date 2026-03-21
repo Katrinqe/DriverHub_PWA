@@ -941,5 +941,37 @@ function clearRoutes() {
             return "Lokale Route"; // Wenn keine Autobahn gefunden wurde
         }
     };
+// ==========================================
+    // === ROUTE CARD SWIPE LOGIC (CLEAN) ===
+    // ==========================================
+    const routeCard = document.getElementById('route-overview-card');
+    
+    if (routeCard) {
+        let startY = 0;
 
+        routeCard.addEventListener('touchstart', (e) => {
+            startY = e.touches[0].clientY;
+        }, { passive: true });
+
+        routeCard.addEventListener('touchend', (e) => {
+            let endY = e.changedTouches[0].clientY;
+            let diff = startY - endY; // Positiv = Wisch nach OBEN
+
+            if (diff > 40) {
+                // Hochwischen -> Card wird 85% hoch
+                routeCard.classList.add('expanded');
+            } else if (diff < -40) {
+                // Runterwischen -> Card wird wieder klein
+                routeCard.classList.remove('expanded');
+            }
+        });
+
+        // Beim Klick auf das X muss die Card auch wieder schrumpfen
+        const btnCancel = document.getElementById('btn-cancel-route-new');
+        if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+                routeCard.classList.remove('expanded');
+            });
+        }
+    }
 }); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
