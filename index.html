@@ -803,36 +803,33 @@
             <button id="btn-cancel-route-new" class="close-card-btn"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <div class="route-options-container">
-          <div class="route-opt-pill active" id="route-opt-0" onclick="RouteLogic.selectRouteOpt(0)">
+   <div class="route-options-container">
+            <div class="route-opt-pill active" id="route-opt-0" onclick="RouteLogic.selectRouteOpt(0)">
                 <div class="opt-main">
-                    <div>
-                        <span class="opt-time" id="opt-time-0">-- Min</span>
-                        <span class="opt-delay hidden" id="opt-delay-0"></span>
-                    </div>
+                    <span class="opt-time" id="opt-time-0">-- Min</span>
                     <span class="opt-dist" id="opt-dist-0">-- km</span>
                 </div>
                 <div class="opt-details">
-                    <span class="opt-via" id="opt-via-0">Schnellste Route</span>
+                    <div class="via-group">
+                        <span class="opt-via" id="opt-via-0">Schnellste Route</span>
+                        <span class="opt-delay hidden" id="opt-delay-0"></span> </div>
                     <span class="opt-eta">Ankunft <span id="opt-eta-0">--:--</span></span>
                 </div>
             </div>
             
             <div class="route-opt-pill hidden" id="route-opt-1" onclick="RouteLogic.selectRouteOpt(1)">
                 <div class="opt-main">
-                    <div>
-                        <span class="opt-time" id="opt-time-1">-- Min</span>
-                        <span class="opt-delay hidden" id="opt-delay-1"></span>
-                    </div>
+                    <span class="opt-time" id="opt-time-1">-- Min</span>
                     <span class="opt-dist" id="opt-dist-1">-- km</span>
                 </div>
                 <div class="opt-details">
-                    <span class="opt-via" id="opt-via-1">Alternative</span>
+                    <div class="via-group">
+                        <span class="opt-via" id="opt-via-1">Alternative</span>
+                        <span class="opt-delay hidden" id="opt-delay-1"></span> </div>
                     <span class="opt-eta">Ankunft <span id="opt-eta-1">--:--</span></span>
                 </div>
             </div>
         </div>
-
         <button id="btn-start-nav" class="go-button">GO</button>
 
         <div class="route-expand-trigger" onclick="RouteLogic.toggleRouteDetails()">
