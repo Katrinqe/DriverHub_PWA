@@ -176,43 +176,74 @@ libreMap.addLayer({
 
     if (expandTrigger && shrinkBtn && mapCard) {
         
-// Karte groß machen
+        // 1. Karte groß machen (Fullscreen)
         expandTrigger.addEventListener('click', () => {
             mapCard.classList.add('map-expanded');
             expandTrigger.style.display = 'none'; // Klickscheibe wegnehmen
 
-            // Nav-Bar ausblenden (mit Sicherheitsabfrage)
+            // Nav-Bar ausblenden
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) bottomNav.style.display = 'none';
 
             if (libreMap) {
-           // Interaktion freischalten
+                // Interaktion freischalten
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
                 libreMap.touchZoomRotate.enable();
                 libreMap.doubleClickZoom.enable();
-                
                 if (libreMap.dragRotate) libreMap.dragRotate.enable(); 
 
-                // Optischen Mittelpunkt zentrieren (Padding entfernen)
-
-                // Optischen Mittelpunkt zentrieren (Padding entfernen)
+                // Optischen Mittelpunkt zentrieren
                 libreMap.setPadding({ right: 0, bottom: 0 });
 
-                // Map zwingen, sich an den neuen Fullscreen anzupassen
-                setTimeout(() => libreMap.resize(), 400); // 400ms entspricht der CSS Animation
+                // Map an Fullscreen anpassen
+                setTimeout(() => libreMap.resize(), 400); 
             }
         });
 
-
-
- shrinkBtn.addEventListener('click', (e) => {
+        // 2. Karte wieder klein machen ODER Route abbrechen (EINZIGER LISTENER!)
+        shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
+            // --- KUGELSICHERE ROUTE-CANCEL LOGIK ---
+            if (libreMap && libreMap.getLayer('simple-route-layer')) {
+                console.log("Route aktiv -> Breche nur die Navigation ab!");
+                
+                // Linie und Marker löschen
+                if (typeof clearRoutes === 'function') clearRoutes();
+                
+                // Neue Route-Card unten ausblenden
+                const routeOverviewUI = document.getElementById('route-overview-ui');
+                if (routeOverviewUI) routeOverviewUI.classList.add('hidden');
+                
+                // Suchfeld leeren und Tastatur schließen
+                const searchInput = document.getElementById('tomtom-search-input');
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.blur();
+                }
+                
+                // Standard-UI wiederherstellen
+                const bottomSheet = document.getElementById('map-bottom-sheet');
+                if (bottomSheet) bottomSheet.style.display = 'flex';
+                
+                const pillV = document.querySelector('.map-controls-pill-v');
+                if (pillV) pillV.style.display = 'flex';
+                
+                // Kamera sanft zum Standort zurückfliegen
+                if (currentCoords) {
+                    libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
+                }
+                
+                // WICHTIG: Hier brechen wir ab! Der Rest (Karte schrumpfen) passiert NICHT.
+                return; 
+            }
+            // -----------------------------------------
+
+            // --- NORMALER SHRINK CODE (Nur wenn keine Route offen ist) ---
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
 
-            // --- HIER EINFÜGEN: UI-Elemente & Nav-Bar zurücksetzen ---
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) bottomNav.style.display = 'flex';
 
@@ -221,84 +252,41 @@ libreMap.addLayer({
 
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) searchInput.blur();
-            // ---------------------------------------------------------
 
             if (!libreMap) return;
 
             libreMap.dragPan.disable();
-
             libreMap.scrollZoom.disable();
-
             libreMap.touchZoomRotate.disable();
-
             libreMap.doubleClickZoom.disable();
-
-
-
             libreMap.setPadding({ right: 150, bottom: 10 });
 
-
-
-            // 3. Kamerafahrt nach Hause starten (INKLUSIVE NORDEN & FLACH)
-
             if (currentCoords) {
-
                 libreMap.flyTo({
-
                     center: currentCoords,
-
                     zoom: 14,
-
-                    bearing: 0,  // FIX: Rotiert die Karte sauber nach Norden zurück
-
-                    pitch: 0,    // FIX: Nimmt die 3D-Neigung raus (wieder flach von oben)
-
+                    bearing: 0,  
+                    pitch: 0,    
                     speed: 1.5,
-
                     essential: true
-
                 });
-
             }
 
-
-
-            // 4. Der 60-FPS-Trick für den sauberen Resize während der CSS-Animation
-
             let start = Date.now();
-
             let resizeInterval = setInterval(() => {
-
                 libreMap.resize();
-
-                
-
                 if (Date.now() - start > 450) {
-
                     clearInterval(resizeInterval);
-
-                    // Sicherstellen, dass die Karte im finalen Zustand 100% perfekt sitzt
-
                     if (currentCoords) {
-
                         libreMap.jumpTo({ 
-
                             center: currentCoords, 
-
                             zoom: 14, 
-
-                            bearing: 0, // Hier ebenfalls absichern!
-
+                            bearing: 0, 
                             pitch: 0 
-
                         });
-
                     }
-
                 }
-
             }, 16); 
-
         });
     }
 // ==========================================
