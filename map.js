@@ -433,6 +433,7 @@ allPoints.forEach(coord => bounds.extend(coord));
             
         // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
             RouteLogic.routePointsData[index] = allPoints;
+            RouteLogic.routeDistances[index] = summary.lengthInMeters;
             
             // NEU: Wir erstellen ein Array für die Farben. Standard ist komplett Grün.
             const pointColors = new Array(allPoints.length).fill('#30d158');
@@ -672,10 +673,12 @@ allPoints.forEach(coord => bounds.extend(coord));
             });
 
 // Lade das Höhenprofil sofort für die primäre Route (Route 0)
-       // Lade das Höhenprofil sofort für die primäre Route (Route 0)
         if (RouteLogic.routePointsData[0]) {
-            // NEU: Zweiter Parameter übergeben
-            window.loadElevationData(RouteLogic.routePointsData[0], RouteLogic.routeColorsData[0]); 
+            window.loadElevationData(
+                RouteLogic.routePointsData[0], 
+                RouteLogic.routeColorsData[0], 
+                RouteLogic.routeDistances[0] // <-- NEU: Distanz übergeben
+            ); 
         }
             
         });
@@ -932,7 +935,7 @@ function clearRoutes() {
             
             // NEU: Beim Klick auf eine andere Route zeichnet sich das Höhenprofil dynamisch neu!
             if (this.routePointsData[index]) {
-                window.loadElevationData(this.routePointsData[index], this.routeColorsData[index]);
+               window.loadElevationData(this.routePointsData[index], this.routeColorsData[index], this.routeDistances[index]);
             }
         }, // <-- DIESE KLAMMER UND DAS KOMMA HABEN BEI DIR GEFEHLT!
 
@@ -1017,24 +1020,25 @@ function clearRoutes() {
 
 
 // ==========================================
-    // === ELEVATION API & CHART RENDERING ===
+    // === ELEVATION API & WEATHER RENDERING ===
     // ==========================================
-    window.loadElevationData = async function(allPoints, allColors) { // <-- NEU: allColors
+    window.loadElevationData = async function(allPoints, allColors, totalDistMeters) { 
         if (!allPoints || allPoints.length === 0) return;
 
+        // --- 1. HÖHENDATEN ABFRAGEN ---
         const sampleSize = 50;
         const step = Math.max(1, Math.floor(allPoints.length / sampleSize));
         const sampledPoints = [];
-        const sampledColors = []; // <-- NEU
+        const sampledColors = []; 
 
         for (let i = 0; i < allPoints.length; i += step) {
             sampledPoints.push(allPoints[i]);
-            sampledColors.push(allColors ? allColors[i] : '#30d158'); // <-- NEU
+            sampledColors.push(allColors ? allColors[i] : '#30d158'); 
         }
         
         if (sampledPoints[sampledPoints.length - 1] !== allPoints[allPoints.length - 1]) {
             sampledPoints.push(allPoints[allPoints.length - 1]);
-            sampledColors.push(allColors ? allColors[allColors.length - 1] : '#30d158'); // <-- NEU
+            sampledColors.push(allColors ? allColors[allColors.length - 1] : '#30d158'); 
         }
 
         const lats = sampledPoints.map(p => p[1]).join(',');
@@ -1046,11 +1050,69 @@ function clearRoutes() {
             const data = await response.json();
 
             if (data && data.elevation) {
-                // NEU: Farben an den Zeichner übergeben
+                // HIER auch die exactHeight von 50 auf 60 erhöhen!
                 drawElevationChart(data.elevation, sampledColors); 
             }
         } catch (error) {
-            console.error("Höhendaten konnten nicht geladen werden:", error);
+            console.error("Höhendaten Fehler:", error);
+        }
+
+        // --- 2. WETTER LOGIK (Deine 80km Regel) ---
+        const weatherContainer = document.getElementById('weather-track-container');
+        if (weatherContainer) weatherContainer.innerHTML = ''; // Reset
+
+        if (!totalDistMeters || totalDistMeters < 80000) return; // Unter 80km = Kein Wetter!
+
+        // Berechne, wie viele 40km-Blöcke in die Strecke passen
+        const numPoints = Math.floor(totalDistMeters / 40000); 
+        const weatherLats = [];
+        const weatherLons = [];
+        const weatherPercentages = [];
+
+        for (let i = 0; i < numPoints; i++) {
+            const targetDist = i * 40000;
+            const percentage = targetDist / totalDistMeters;
+            // Wir suchen uns den GPS-Punkt, der exakt an dieser X% Marke der Strecke liegt
+            const ptIndex = Math.floor(percentage * (allPoints.length - 1));
+            const pt = allPoints[ptIndex];
+
+            weatherLats.push(pt[1]);
+            weatherLons.push(pt[0]);
+            weatherPercentages.push(percentage * 100);
+        }
+
+        try {
+            // Wir holen alle Koordinaten mit einem einzigen API-Call!
+            const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLats.join(',')}&longitude=${weatherLons.join(',')}&current_weather=true`;
+            const wRes = await fetch(weatherUrl);
+            const wData = await wRes.json();
+
+            // Open-Meteo liefert ein Array, wenn es mehrere Koordinaten sind
+            const results = Array.isArray(wData) ? wData : [wData];
+
+            results.forEach((res, idx) => {
+                if (!res.current_weather) return;
+                const temp = Math.round(res.current_weather.temperature);
+                const code = res.current_weather.weathercode;
+                let icon = 'fa-cloud'; 
+
+                // WMO Codes zu FontAwesome Icons mappen
+                if (code === 0) icon = 'fa-sun';
+                else if (code >= 1 && code <= 3) icon = 'fa-cloud-sun';
+                else if (code >= 45 && code <= 48) icon = 'fa-smog';
+                else if (code >= 51 && code <= 67) icon = 'fa-cloud-rain';
+                else if (code >= 71 && code <= 77) icon = 'fa-snowflake';
+                else if (code >= 80 && code <= 82) icon = 'fa-cloud-showers-heavy';
+                else if (code >= 95) icon = 'fa-cloud-bolt';
+
+                const div = document.createElement('div');
+                div.className = 'weather-point';
+                div.style.left = `${weatherPercentages[idx]}%`;
+                div.innerHTML = `<i class="fa-solid ${icon}"></i><span>${temp}°</span>`;
+                weatherContainer.appendChild(div);
+            });
+        } catch(e) {
+            console.error("Wetter Fehler:", e);
         }
     };
 
