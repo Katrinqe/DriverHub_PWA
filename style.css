@@ -2860,9 +2860,10 @@ body.ghost-active #ghost-chat-overlay {
     transition: height 0.4s cubic-bezier(0.2, 1, 0.3, 1);
 }
 
-/* Zustand nach dem Hochwischen */
+/* Der Zustand nach dem Hochwischen */
 #route-overview-card.expanded {
-    height: 85vh;
+    max-height: 85vh !important;
+    height: 85vh !important;
 }
 
 /* --- HEADER --- */
