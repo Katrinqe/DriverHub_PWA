@@ -925,20 +925,7 @@ function clearRoutes() {
             }
         },
 
-        // Klappt die Start/Ziel Details unter den Pillen aus
-        toggleRouteDetails: function() {
-            const box = document.getElementById('route-locations-box');
-            const icon = document.getElementById('route-expand-icon');
-            if (!box || !icon) return;
-
-            if (box.classList.contains('hidden')) {
-                box.classList.remove('hidden');
-                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
-            } else {
-                box.classList.add('hidden');
-                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
-            }
-        },
+  
 
         // Extrahiert die Autobahn (z.B. "A3") aus den TomTom Instruktionen
         extractHighway: function(instructions) {
@@ -954,4 +941,31 @@ function clearRoutes() {
             return "Lokale Route"; // Wenn keine Autobahn gefunden wurde
         }
     };
+// ==========================================
+    // === ROUTE CARD SWIPE GESTURE LOGIC ===
+    // ==========================================
+    const swipeableCard = document.getElementById('swipeable-route-card');
+    if (swipeableCard) {
+        let cardStartY = 0;
+
+        swipeableCard.addEventListener('touchstart', (e) => {
+            // Verhindert Swipe, wenn man auf den Scrollbereich innerhalb der Card tippt (falls es scrollbar wird)
+            cardStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        swipeableCard.addEventListener('touchend', (e) => {
+            let cardEndY = e.changedTouches[0].clientY;
+            let diff = cardStartY - cardEndY;
+
+            // Wischt nach OBEN (> 40px)
+            if (diff > 40) {
+                swipeableCard.classList.add('expanded');
+            } 
+            // Wischt nach UNTEN (< -40px)
+            else if (diff < -40) {
+                swipeableCard.classList.remove('expanded');
+            }
+        });
+    }
+    
 }); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
