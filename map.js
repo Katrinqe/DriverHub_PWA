@@ -941,38 +941,5 @@ function clearRoutes() {
             return "Lokale Route"; // Wenn keine Autobahn gefunden wurde
         }
     };
-// ==========================================
-    // === ROUTE CARD SWIPE LOGIC (V3: CSS-GESTEUERT) ===
-    // ==========================================
-    const swipeableCard = document.getElementById('swipeable-route-card');
-    
-    if (swipeableCard) {
-        let cardStartY = 0;
-
-        swipeableCard.addEventListener('touchstart', (e) => {
-            cardStartY = e.touches[0].clientY;
-        }, { passive: true });
-
-        swipeableCard.addEventListener('touchend', (e) => {
-            let cardEndY = e.changedTouches[0].clientY;
-            let diff = cardStartY - cardEndY; 
-
-            if (diff > 40) {
-                // Wisch nach OBEN: CSS übernimmt die flüssige Animation
-                swipeableCard.classList.add('expanded');
-            } else if (diff < -40) {
-                // Wisch nach UNTEN
-                swipeableCard.classList.remove('expanded');
-            }
-        });
-
-        // WICHTIG: Beim Klick auf das X (Abbruch) muss die Card auch wieder runterfahren
-        const btnCancel = document.getElementById('btn-cancel-route-new');
-        if (btnCancel) {
-            btnCancel.addEventListener('click', () => {
-                swipeableCard.classList.remove('expanded');
-            });
-        }
-    }
 
 }); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
