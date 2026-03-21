@@ -432,9 +432,9 @@ async function drawTomTomRoute(destLat, destLng) {
 allPoints.forEach(coord => bounds.extend(coord));
             
    // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
+         // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
             RouteLogic.routePointsData[index] = allPoints;
-            // FIX: Direkt über 'route' aufrufen, da 'summary' hier noch nicht existiert!
-            RouteLogic.routeDistances[index] = route.summary.lengthInMeters;
+            RouteLogic.routeDistances[index] = route.summary.lengthInMeters; // <--- HIER MUSS route.summary STEHEN!
             // NEU: Wir erstellen ein Array für die Farben. Standard ist komplett Grün.
             const pointColors = new Array(allPoints.length).fill('#30d158');
 
@@ -918,10 +918,11 @@ function clearRoutes() {
 // ==========================================
     // === ROUTE LOGIC (MULTI-ROUTE & UI) ===
     // ==========================================
-    window.RouteLogic = {
+  window.RouteLogic = {
         routeGeoJSONs: [null, null],
         routePointsData: [null, null], 
-        routeColorsData: [null, null], // <-- NEU: Hier speichern wir die Stau-Farben für jeden Punkt
+        routeColorsData: [null, null], 
+        routeDistances: [null, null], // <--- DIESE ZEILE HAT BEI DIR GEFEHLT!
         activeIndex: 0,
 
         selectRouteOpt: function(index) {
