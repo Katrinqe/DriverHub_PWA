@@ -2851,6 +2851,7 @@ body.ghost-active #ghost-chat-overlay {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    gap: 20px; /* Erzwingt IMMER 20px Platz zwischen den Elementen */
     
     /* --- LOGIK FÜR DAS AUFKLAPPEN --- */
     height: auto; 
@@ -2870,7 +2871,7 @@ body.ghost-active #ghost-chat-overlay {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+   
 }
 
 .route-title-text {
