@@ -347,32 +347,24 @@ async function drawTomTomRoute(destLat, destLng) {
     const startLng = currentCoords[0];
     const startLat = currentCoords[1];
 
-    console.log("Routing gestartet", startLat, startLng, destLat, destLng);
-
-    // 1. Map-Load Check
     if (!libreMap.loaded()) {
-        console.log("Map noch nicht bereit, warte auf load...");
         libreMap.once("load", () => drawTomTomRoute(destLat, destLng));
         return;
     }
 
-   // 2. UI & Interaktionen vorbereiten
     const routeUI = document.getElementById('route-overview-ui');
     const bottomSheet = document.getElementById('map-bottom-sheet');
     const pillV = document.querySelector('.map-controls-pill-v');
-    
-    // NEU: Pfeil oben links ausblenden, solange die Route aktiv ist
     const shrinkBtn = document.getElementById('btn-shrink-map');
+    
     if (shrinkBtn) {
         shrinkBtn.style.opacity = '0'; 
         shrinkBtn.style.pointerEvents = 'none';
     }
 
-    if (document.querySelector('.map-snippet-card')) {
-        document.querySelector('.map-snippet-card').classList.add('map-expanded');
-    }
-    
+    if (document.querySelector('.map-snippet-card')) document.querySelector('.map-snippet-card').classList.add('map-expanded');
     document.getElementById('map-expand-trigger').style.display = 'none';
+    
     const navBar = document.querySelector('.bottom-nav');
     if (navBar) navBar.style.display = 'none';
     
@@ -382,7 +374,6 @@ async function drawTomTomRoute(destLat, destLng) {
     }
     document.getElementById('tomtom-search-input').blur();
 
-    // Interaktionen aktivieren
     libreMap.dragPan.enable();
     libreMap.scrollZoom.enable();
     libreMap.touchZoomRotate.enable();
@@ -391,138 +382,146 @@ async function drawTomTomRoute(destLat, destLng) {
     libreMap.setPadding({ right: 0, bottom: 0 });
 
     try {
-        // 3. API URL mit Traffic & Sections ...
-        // 3. API URL mit Traffic & Sections (Nur traffic Typ nutzen für 100% Erfolg)
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic`;
+        // NEU: maxAlternatives=1 liefert uns bis zu 2 Routen. instructionsType liefert Straßennamen.
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=text&language=de-DE`;
         
-        // HIER WAR DER FEHLER: Die Definition von response!
         const response = await fetch(url);
+        if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
         
-        if (!response.ok) {
-            throw new Error(`API Fehler: ${response.status}`);
-        }
-
         const data = await response.json();
+        if (!data.routes || data.routes.length === 0) return;
 
-        if (!data.routes || !data.routes[0].legs) return;
+        // Alte Routen restlos löschen, bevor wir neu zeichnen
+        clearRoutes();
+        RouteLogic.routeGeoJSONs = [null, null];
+        RouteLogic.activeIndex = 0;
 
-        const allPoints = data.routes[0].legs[0].points.map(p => [p.longitude, p.latitude]);
-        const sections = data.routes[0].sections || [];
-        const routeFeatures = [];
+        const bounds = new maplibregl.LngLatBounds();
 
-        // 4. Lückenlose Linien & Baustellen verarbeiten
-        
-        // A: Die gesamte Route als Basis-Linie (Blau)
-        if (allPoints.length > 1) {
-            routeFeatures.push({
-                type: 'Feature',
-                properties: { color: '#007aff' },
-                geometry: { type: 'LineString', coordinates: allPoints }
-            });
-        }
+        // BEIDE ROUTEN VERARBEITEN (Hauptroute = 0, Alternative = 1)
+        data.routes.forEach((route, index) => {
+            if (index > 1) return; // Wir zeigen maximal 2 Routen an
 
-        // B: Traffic-Overlays (Nur Farben, keine Fake-Icons)
-        sections.forEach(section => {
-            const start = section.startPointIndex;
-            const end = section.endPointIndex;
+            const allPoints = route.legs[0].points.map(p => [p.longitude, p.latitude]);
+            const sections = route.sections || [];
+            const routeFeatures = [];
 
-            if (typeof start !== 'number' || typeof end !== 'number') return;
+            allPoints.forEach(coord => bounds.extend(coord));
 
-            const segmentCoords = allPoints.slice(start, end + 1);
-            if (segmentCoords.length < 2) return;
-
-            // Farben für Stau & zähfließenden Verkehr
-            let color = null; 
-            if (section.sectionType === 'TRAFFIC') {
-                if (section.simpleCategory === 'JAM') color = '#ff3b30'; // Rot
-                else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; // Gelb
-            }
-
-            if (color) {
+            // A: Basis-Linie (Blau)
+            if (allPoints.length > 1) {
                 routeFeatures.push({
                     type: 'Feature',
-                    properties: { color: color },
-                    geometry: { type: 'LineString', coordinates: segmentCoords }
+                    properties: { color: '#007aff' },
+                    geometry: { type: 'LineString', coordinates: allPoints }
                 });
             }
-        });
 
-        if (routeFeatures.length === 0) return;
+            // B: Traffic-Overlays
+            sections.forEach(section => {
+                const start = section.startPointIndex;
+                const end = section.endPointIndex;
+                if (typeof start !== 'number' || typeof end !== 'number') return;
+                const segmentCoords = allPoints.slice(start, end + 1);
+                if (segmentCoords.length < 2) return;
 
-        // 5. Source & Layer Update
-        if (!libreMap.getSource('simple-route-source')) {
-            libreMap.addSource('simple-route-source', {
+                let color = null; 
+                if (section.sectionType === 'TRAFFIC') {
+                    if (section.simpleCategory === 'JAM') color = '#ff3b30'; 
+                    else if (section.simpleCategory === 'SLOW') color = '#ffcc00'; 
+                }
+
+                if (color) {
+                    routeFeatures.push({
+                        type: 'Feature',
+                        properties: { color: color },
+                        geometry: { type: 'LineString', coordinates: segmentCoords }
+                    });
+                }
+            });
+
+            // Im Objekt speichern für späteres Umschalten (Aktiv/Grau)
+            RouteLogic.routeGeoJSONs[index] = routeFeatures;
+
+            // Layer sofort anlegen (aber farblich noch von selectRouteOpt steuern lassen)
+            const sourceId = `route-source-${index}`;
+            const layerId = `route-layer-${index}`;
+
+            libreMap.addSource(sourceId, {
                 type: 'geojson',
                 data: { type: 'FeatureCollection', features: routeFeatures }
             });
-        } else {
-            libreMap.getSource('simple-route-source').setData({
-                type: 'FeatureCollection',
-                features: routeFeatures
-            });
-        }
 
-        if (!libreMap.getLayer('simple-route-layer')) {
             libreMap.addLayer({
-                id: 'simple-route-layer',
+                id: layerId,
                 type: 'line',
-                source: 'simple-route-source',
+                source: sourceId,
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: { 
-                    'line-color': ['get', 'color'], 
-                    'line-width': 6 
-                }
+                paint: { 'line-color': ['get', 'color'], 'line-width': 6 }
             });
+
+            // --- UI DATEN BEFÜLLEN ---
+            const summary = route.summary;
+            const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
+            
+            document.getElementById(`opt-time-${index}`).textContent = `${Math.round(summary.travelTimeInSeconds / 60)} Min`;
+            document.getElementById(`opt-dist-${index}`).textContent = `${(summary.lengthInMeters / 1000).toFixed(1)} km`;
+            document.getElementById(`opt-eta-${index}`).textContent = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+            
+            // Autobahn-Erkennung ("über A3")
+            const viaText = RouteLogic.extractHighway(route.guidance ? route.guidance.instructions : null);
+            document.getElementById(`opt-via-${index}`).textContent = index === 0 && viaText === "Lokale Route" ? "Schnellste Route" : viaText;
+
+            // Die zweite Pille einblenden, falls TomTom eine Alternative geschickt hat
+            if (index === 1) {
+                document.getElementById('route-opt-1').classList.remove('hidden');
+            }
+        });
+
+        // Falls TomTom keine Alternative schickt, die zweite Pille hart ausblenden
+        if (data.routes.length === 1) {
+            document.getElementById('route-opt-1').classList.add('hidden');
         }
 
-        // 6. Ziel-Marker
+        // Initiale Einfärbung (Route 0 wird blau/bunt, Route 1 wird grau)
+        RouteLogic.updateMapLayers();
+
+        // Ziel-Marker zeichnen
         if (destMarker) destMarker.remove();
         const elDest = document.createElement('div');
         elDest.className = 'dest-marker';
         elDest.style.width = '18px'; elDest.style.height = '18px';
         elDest.style.background = '#30d158'; elDest.style.border = '3px solid white';
         elDest.style.borderRadius = '50%'; elDest.style.boxShadow = '0 0 15px rgba(48, 209, 88, 0.8)';
-        
         destMarker = new maplibregl.Marker({ element: elDest }).setLngLat([destLng, destLat]).addTo(libreMap);
 
- // 7. UI Daten befüllen
-        const summary = data.routes[0].summary;
-        const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
-        
-        document.getElementById('route-info-time').textContent = `${Math.round(summary.travelTimeInSeconds / 60)} Min`;
-        document.getElementById('route-info-dist').textContent = `${(summary.lengthInMeters / 1000).toFixed(1)} km`;
-        document.getElementById('route-info-arrival').textContent = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-
-        // NEU: Zielort in die grüne Pille eintragen
         const destNameDisplay = document.getElementById('dest-name-display');
         const searchInput = document.getElementById('tomtom-search-input');
-        if (destNameDisplay && searchInput) {
-            // Wir nehmen den Text aus der Suchleiste. Falls leer, Fallback auf "Zielort".
-            destNameDisplay.textContent = searchInput.value || "Zielort";
-        }
+        if (destNameDisplay && searchInput) destNameDisplay.textContent = searchInput.value || "Zielort";
 
         if (routeUI) routeUI.classList.remove('hidden');
         if (pillV) pillV.style.display = 'none';
 
- // 8. Kamera-Zoom (Idle-Event für Stabilität)
-        const bounds = new maplibregl.LngLatBounds();
-        allPoints.forEach(coord => bounds.extend(coord));
-        
         libreMap.resize();
         libreMap.once('idle', () => {
-            libreMap.fitBounds(bounds, { 
-                padding: { 
-                    top: 120, 
-                    bottom: 450, /* FIX: Massiv erhöht, damit die Route sicher über der Card schwebt */
-                    left: 60, 
-                    right: 60 
-                }, 
-                duration: 1000 
-            });
+            libreMap.fitBounds(bounds, { padding: { top: 120, bottom: 400, left: 60, right: 60 }, duration: 1000 });
         });
 
     } catch (error) {
         console.error("Routing Fehler:", error);
+    }
+}
+
+function clearRoutes() {
+    for (let i = 0; i < 2; i++) {
+        if (libreMap && libreMap.getLayer(`route-layer-${i}`)) {
+            libreMap.removeLayer(`route-layer-${i}`);
+            libreMap.removeSource(`route-source-${i}`);
+        }
+    }
+    if (destMarker) {
+        destMarker.remove();
+        destMarker = null;
     }
 }
 
@@ -741,5 +740,82 @@ function clearRoutes() {
             }
         });
     }
+// ==========================================
+    // === ROUTE LOGIC (MULTI-ROUTE & UI) ===
+    // ==========================================
+    window.RouteLogic = {
+        routeGeoJSONs: [null, null],
+        activeIndex: 0,
 
+        // Schaltet zwischen Route 1 und Route 2 um
+        selectRouteOpt: function(index) {
+            if (!this.routeGeoJSONs[index]) return; // Route existiert nicht
+            this.activeIndex = index;
+
+            // UI Pillen anpassen
+            document.getElementById('route-opt-0').classList.toggle('active', index === 0);
+            document.getElementById('route-opt-1').classList.toggle('active', index === 1);
+
+            // Karten-Layer anpassen
+            this.updateMapLayers();
+        },
+
+        // Zeichnet die Linien auf der Karte neu (Aktiv = Bunt/Blau, Inaktiv = Grau)
+        updateMapLayers: function() {
+            for (let i = 0; i < 2; i++) {
+                if (!this.routeGeoJSONs[i]) continue;
+                
+                const isAct = (i === this.activeIndex);
+                const layerId = `route-layer-${i}`;
+                const sourceId = `route-source-${i}`;
+
+                // Kopie der Originaldaten für den grauen Modus erstellen
+                let displayFeatures = JSON.parse(JSON.stringify(this.routeGeoJSONs[i]));
+                
+                if (!isAct) {
+                    // Wenn inaktiv, überschreiben wir alle Farben hart mit Grau
+                    displayFeatures.forEach(f => { f.properties.color = '#555555'; });
+                }
+
+                if (libreMap.getSource(sourceId)) {
+                    libreMap.getSource(sourceId).setData({ type: 'FeatureCollection', features: displayFeatures });
+                }
+
+                if (libreMap.getLayer(layerId)) {
+                    // Aktive Route dicker machen und nach vorne holen (Opazität)
+                    libreMap.setPaintProperty(layerId, 'line-width', isAct ? 6 : 4);
+                    libreMap.setPaintProperty(layerId, 'line-opacity', isAct ? 1 : 0.4);
+                }
+            }
+        },
+
+        // Klappt die Start/Ziel Details unter den Pillen aus
+        toggleRouteDetails: function() {
+            const box = document.getElementById('route-locations-box');
+            const icon = document.getElementById('route-expand-icon');
+            if (!box || !icon) return;
+
+            if (box.classList.contains('hidden')) {
+                box.classList.remove('hidden');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                box.classList.add('hidden');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        },
+
+        // Extrahiert die Autobahn (z.B. "A3") aus den TomTom Instruktionen
+        extractHighway: function(instructions) {
+            if (!instructions) return "Schnellste Route";
+            for (let i = 0; i < instructions.length; i++) {
+                let inst = instructions[i];
+                if (inst.roadNumbers && inst.roadNumbers.length > 0) {
+                    let road = inst.roadNumbers[0];
+                    // Wir akzeptieren nur A-Straßen (Autobahnen in DE)
+                    if (road.startsWith('A')) return `über ${road}`; 
+                }
+            }
+            return "Lokale Route"; // Wenn keine Autobahn gefunden wurde
+        }
+    };
 }); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
