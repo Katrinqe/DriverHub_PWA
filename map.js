@@ -1051,8 +1051,8 @@ function clearRoutes() {
             const data = await response.json();
 
             if (data && data.elevation) {
-                // HIER auch die exactHeight von 50 auf 60 erhöhen!
-                drawElevationChart(data.elevation, sampledColors); 
+                // NEU: exactHeight auf 70px erhöht für einen tieferen Block!
+                drawElevationChart(data.elevation, sampledColors, 70); 
             }
         } catch (error) {
             console.error("Höhendaten Fehler:", error);
@@ -1073,7 +1073,6 @@ function clearRoutes() {
         for (let i = 0; i < numPoints; i++) {
             const targetDist = i * 40000;
             const percentage = targetDist / totalDistMeters;
-            // Wir suchen uns den GPS-Punkt, der exakt an dieser X% Marke der Strecke liegt
             const ptIndex = Math.floor(percentage * (allPoints.length - 1));
             const pt = allPoints[ptIndex];
 
@@ -1088,7 +1087,6 @@ function clearRoutes() {
             const wRes = await fetch(weatherUrl);
             const wData = await wRes.json();
 
-            // Open-Meteo liefert ein Array, wenn es mehrere Koordinaten sind
             const results = Array.isArray(wData) ? wData : [wData];
 
             results.forEach((res, idx) => {
@@ -1097,7 +1095,6 @@ function clearRoutes() {
                 const code = res.current_weather.weathercode;
                 let icon = 'fa-cloud'; 
 
-                // WMO Codes zu FontAwesome Icons mappen
                 if (code === 0) icon = 'fa-sun';
                 else if (code >= 1 && code <= 3) icon = 'fa-cloud-sun';
                 else if (code >= 45 && code <= 48) icon = 'fa-smog';
@@ -1117,13 +1114,13 @@ function clearRoutes() {
         }
     };
 
-    function drawElevationChart(elevations, pointColors) { // <-- NEU: pointColors
+    function drawElevationChart(elevations, pointColors, canvasHeight) { // <-- NEU: canvasHeight Parameter
         const canvas = document.getElementById('elevation-canvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
 
         const exactWidth = window.innerWidth - 86; 
-        const exactHeight = 60;
+        const exactHeight = canvasHeight || 70; // Wir nutzen die übergebene Tiefe
 
         const dpr = window.devicePixelRatio || 1;
         canvas.width = exactWidth * dpr;
@@ -1139,29 +1136,42 @@ function clearRoutes() {
         ctx.clearRect(0, 0, exactWidth, exactHeight);
         if (diff === 0) return;
 
-        const paddingY = 4;
-        const chartHeight = exactHeight - paddingY * 2;
+        // NEU: Wir definieren ein festes Padding NUR OBEN, damit die Linie nicht am Rand klebt.
+        // UNTEN lassen wir den grünen Block hart an den Canvas-Boden laufen!
+        const paddingTop = 4;
         const xStep = exactWidth / (elevations.length - 1);
 
-        // 1. Farb-Verlauf für die Fläche (Bleibt dezent grün)
+        // -------------------------------------------------------------------------
+        // 1. NEUE FLÄCHEN-LOGIK: Wir zeichnen eine tiefe, halbtransparente Masse
+        // -------------------------------------------------------------------------
         ctx.beginPath();
-        ctx.moveTo(0, exactHeight);
+        // Wir starten hart am unteren, linken Rand des Canvas (exactHeight)
+        ctx.moveTo(0, exactHeight); 
+        
         for (let i = 0; i < elevations.length; i++) {
             const x = i * xStep;
+            // Wir berechnen Y, sodass paddingTop beachtet wird, aber der Boden exactHeight ist.
             const normalizedY = (elevations[i] - minElev) / diff;
-            const y = paddingY + chartHeight - (normalizedY * chartHeight);
+            // Wir berechnen Y so, dass der höchste Punkt paddingTop Abstand vom Deckel hat.
+            const chartAreaHeight = exactHeight - paddingTop;
+            const y = paddingTop + chartAreaHeight - (normalizedY * chartAreaHeight);
             ctx.lineTo(x, y);
         }
+        // Wir schließen die Form hart am unteren, rechten Rand des Canvas
         ctx.lineTo(exactWidth, exactHeight);
         ctx.closePath();
 
+        // NEU: Ein sehr dezent abgestufter Verlauf. Er fadet nicht ins Transparente aus,
+        // sondern wird unten einfach nur etwas dunkler/solider.
         const gradient = ctx.createLinearGradient(0, 0, 0, exactHeight);
-        gradient.addColorStop(0, 'rgba(48, 209, 88, 0.4)'); 
-        gradient.addColorStop(1, 'rgba(48, 209, 88, 0.0)'); 
+        gradient.addColorStop(0, 'rgba(48, 209, 88, 0.5)'); // Oben: Hellgrün, halbtransparent
+        gradient.addColorStop(1, 'rgba(48, 209, 88, 0.3)'); // Unten: Etwas dunkler, soliderer Block
         ctx.fillStyle = gradient;
         ctx.fill();
 
-        // 2. Harte obere Strich-Linie (BUNT GEZEICHNET!)
+        // -------------------------------------------------------------------------
+        // 2. Harte obere Strich-Linie (Unverändert, bunt gezeichnet!)
+        // -------------------------------------------------------------------------
         ctx.lineWidth = 2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
@@ -1170,16 +1180,18 @@ function clearRoutes() {
         for (let i = 0; i < elevations.length - 1; i++) {
             ctx.beginPath();
             
-            const x1 = i * xStep;
-            const y1 = paddingY + chartHeight - (((elevations[i] - minElev) / diff) * chartHeight);
-            
-            const x2 = (i + 1) * xStep;
-            const y2 = paddingY + chartHeight - (((elevations[i + 1] - minElev) / diff) * chartHeight);
+            // Gleiche Y-Logik wie oben für die Füllung nutzen
+            const chartAreaHeight = exactHeight - paddingTop;
 
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
+            const y1_norm = (elevations[i] - minElev) / diff;
+            const y1 = paddingTop + chartAreaHeight - (y1_norm * chartAreaHeight);
             
-            // Wir nehmen die Farbe des aktuellen Punktes (Grün, Gelb, Rot, etc.)
+            const y2_norm = (elevations[i+1] - minElev) / diff;
+            const y2 = paddingTop + chartAreaHeight - (y2_norm * chartAreaHeight);
+
+            ctx.moveTo(i * xStep, y1);
+            ctx.lineTo((i + 1) * xStep, y2);
+            
             ctx.strokeStyle = pointColors[i] || '#30d158'; 
             ctx.stroke();
         }
