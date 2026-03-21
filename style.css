@@ -3024,3 +3024,77 @@ body.ghost-active #ghost-chat-overlay {
     transform: scale(0.92);
     box-shadow: 0 2px 10px rgba(48, 209, 88, 0.6);
 }
+
+/* --- MULTI-ROUTE OPTIONS --- */
+.route-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.route-opt-pill {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+.route-opt-pill.active {
+    background: rgba(0, 122, 255, 0.15); /* Leicht bläulich, da aktiv */
+    border: 1px solid rgba(0, 122, 255, 0.4);
+    transform: scale(1);
+    opacity: 1;
+}
+
+.route-opt-pill:not(.active) {
+    transform: scale(0.97);
+    opacity: 0.5;
+    padding: 12px 20px; /* Wird schmaler, wenn inaktiv */
+}
+
+/* Versteckt die Details in der inaktiven Pille komplett */
+.route-opt-pill:not(.active) .opt-details {
+    display: none;
+}
+
+.opt-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.route-opt-pill:not(.active) .opt-main {
+    margin-bottom: 0; /* Kein Margin, da Details weg sind */
+}
+
+.opt-time { font-size: 24px; font-weight: 800; color: #30d158; }
+.route-opt-pill:not(.active) .opt-time { color: rgba(255,255,255,0.7); font-size: 18px; }
+
+.opt-dist { font-size: 16px; font-weight: 600; color: white; }
+
+.opt-details {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+}
+
+.opt-via { color: #007aff; font-weight: 600; }
+
+/* Expand Trigger */
+.route-expand-trigger {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 5px 0;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: color 0.2s;
+    margin-top: -10px;
+}
+
+.route-expand-trigger:active { color: white; }
