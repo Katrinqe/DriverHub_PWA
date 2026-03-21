@@ -460,11 +460,23 @@ async function drawTomTomRoute(destLat, destLng) {
                 paint: { 'line-color': ['get', 'color'], 'line-width': 6 }
             });
 
-            // --- UI DATEN BEFÜLLEN ---
+// --- UI DATEN BEFÜLLEN ---
             const summary = route.summary;
             const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
             
-            document.getElementById(`opt-time-${index}`).textContent = `${Math.round(summary.travelTimeInSeconds / 60)} Min`;
+            // --- NEUE ZEIT-LOGIK (Stunden & Minuten) ---
+            const totalMins = Math.round(summary.travelTimeInSeconds / 60);
+            let timeString = "";
+            if (totalMins >= 60) {
+                const hours = Math.floor(totalMins / 60);
+                const remainingMins = totalMins % 60;
+                // Wenn es glatt aufgeht (z.B. 120 Min), zeigen wir nur "2 Std" an
+                timeString = remainingMins > 0 ? `${hours} Std ${remainingMins} Min` : `${hours} Std`;
+            } else {
+                timeString = `${totalMins} Min`;
+            }
+            
+            document.getElementById(`opt-time-${index}`).textContent = timeString;
             document.getElementById(`opt-dist-${index}`).textContent = `${(summary.lengthInMeters / 1000).toFixed(1)} km`;
             document.getElementById(`opt-eta-${index}`).textContent = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
             
