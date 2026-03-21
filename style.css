@@ -2837,11 +2837,11 @@ body.ghost-active #ghost-chat-overlay {
     pointer-events: none; 
 }
 
-/* Die neue, saubere Card */
+/* --- ROUTE CARD STATIC --- */
 #route-overview-card {
-    pointer-events: auto; /* Card ist bedienbar */
+    pointer-events: auto;
     position: absolute;
-    bottom: 15px;
+    bottom: 15px; /* Dein perfekter Wert bleibt fest verankert! */
     left: 15px;
     width: calc(100% - 30px);
     border-radius: 24px;
@@ -2851,6 +2851,18 @@ body.ghost-active #ghost-chat-overlay {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    
+    /* --- LOGIK FÜR DAS AUFKLAPPEN --- */
+    height: auto; 
+    max-height: 350px; /* Start-Höhe für eine flüssige Animation */
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.2, 1, 0.3, 1), height 0.4s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+/* Der Zustand nach dem Hochwischen */
+#route-overview-card.expanded {
+    max-height: 85vh;
+    height: 85vh;
 }
 
 /* --- HEADER --- */
@@ -2963,7 +2975,7 @@ body.ghost-active #ghost-chat-overlay {
     display: none !important;
 }
 
-/* --- GO BUTTON (Design & Layout vereint) --- */
+/* --- GO BUTTON --- */
 .go-button {
     background: #30d158;
     color: #000;
@@ -2977,8 +2989,8 @@ body.ghost-active #ghost-chat-overlay {
     box-shadow: 0 4px 20px rgba(48, 209, 88, 0.4);
     transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s;
     
-    /* Layout */
-    margin-top: 15px;
+    /* DAS IST DER TRICK: Drückt den Button IMMER an den unteren Rand der Card */
+    margin-top: auto; 
     width: 100%;
 }
 
