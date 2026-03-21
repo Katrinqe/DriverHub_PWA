@@ -593,54 +593,17 @@ function clearRoutes() {
     }
 
     // ==========================================
-    // === SHRINK BUTTON / CANCEL ROUTE LOGIC ===
+    // === SHRINK BUTTON LOGIC (PFEIL OBEN LINKS) ===
     // ==========================================
-
-
-if (shrinkBtn && mapCard && expandTrigger) {
+    if (shrinkBtn && mapCard && expandTrigger) {
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
-            // --- KUGELSICHERE ROUTE-CANCEL INTERCEPT LOGIK ---
-            // Wir fragen die Map Engine: Existiert der Routen-Layer?
-            if (libreMap && libreMap.getLayer('simple-route-layer')) {
-                console.log("Route aktiv -> Breche nur die Navigation ab!");
-                
-                // 1. Linie und Marker restlos löschen
-                if (typeof clearRoutes === 'function') clearRoutes();
-                
-                // 2. Die neue Route-Card unten ausblenden
-                const routeOverviewUI = document.getElementById('route-overview-ui');
-                if (routeOverviewUI) routeOverviewUI.classList.add('hidden');
-                
-                // 3. Suchfeld leeren und Blur auslösen (Tastatur zu)
-                const searchInput = document.getElementById('tomtom-search-input');
-                if (searchInput) {
-                    searchInput.value = '';
-                    searchInput.blur();
-                }
-                
-                // 4. Standard-UI wiederherstellen
-                const bottomSheet = document.getElementById('map-bottom-sheet');
-                if (bottomSheet) bottomSheet.style.display = 'flex';
-                
-                const pillV = document.querySelector('.map-controls-pill-v');
-                if (pillV) pillV.style.display = 'flex';
-                
-                // 5. Kamera sanft zum Standort zurückfliegen
-                if (currentCoords) {
-                    libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
-                }
-                
-                // 6. ABSOLUT WICHTIG: Hier steigen wir aus! Der Code drunter wird nicht ausgeführt.
-                return; 
-            }
-            // -----------------------------------------
-
-            // --- NORMALER SHRINK CODE (Wird nur ausgeführt, wenn KEINE Route aktiv ist) ---
+            // Karte wieder klein machen
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
 
+            // Nav-Bar WIEDER EINBLENDEN!
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) bottomNav.style.display = 'flex';
 
@@ -652,12 +615,14 @@ if (shrinkBtn && mapCard && expandTrigger) {
 
             if (!libreMap) return;
 
+            // Karte für kleine Ansicht sperren
             libreMap.dragPan.disable();
             libreMap.scrollZoom.disable();
             libreMap.touchZoomRotate.disable();
             libreMap.doubleClickZoom.disable();
             libreMap.setPadding({ right: 150, bottom: 10 });
 
+            // Zurück zum Standort fliegen
             if (currentCoords) {
                 libreMap.flyTo({
                     center: currentCoords,
@@ -669,6 +634,7 @@ if (shrinkBtn && mapCard && expandTrigger) {
                 });
             }
 
+            // Fix für sauberes Resizen während der Animation
             let start = Date.now();
             let resizeInterval = setInterval(() => {
                 libreMap.resize();
@@ -688,15 +654,58 @@ if (shrinkBtn && mapCard && expandTrigger) {
     }
 
     // ==========================================
+    // === NEUE CANCEL ROUTE LOGIK (X-BUTTON IN CARD) ===
+    // ==========================================
+    const btnCancelRouteNew = document.getElementById('btn-cancel-route-new');
+    if (btnCancelRouteNew) {
+        btnCancelRouteNew.addEventListener('click', (e) => {
+            e.stopPropagation();
+
+            // 1. Linie und Marker restlos löschen
+            if (typeof clearRoutes === 'function') clearRoutes();
+            
+            // 2. Card unten ausblenden
+            const routeOverviewUI = document.getElementById('route-overview-ui');
+            if (routeOverviewUI) routeOverviewUI.classList.add('hidden');
+            
+            // 3. UI wiederherstellen (Pillen und Search)
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.style.display = 'flex';
+            
+            const pillV = document.querySelector('.map-controls-pill-v');
+            if (pillV) pillV.style.display = 'flex';
+            
+            // 4. Suchfeld leeren
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.blur();
+            }
+
+            // 5. Pfeil oben links WIEDER EINBLENDEN
+            const shrinkBtnMap = document.getElementById('btn-shrink-map');
+            if (shrinkBtnMap) {
+                shrinkBtnMap.style.opacity = '1';
+                shrinkBtnMap.style.pointerEvents = 'auto';
+            }
+            
+            // 6. Zurück zum eigenen Standort fliegen
+            if (currentCoords && libreMap) {
+                libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
+            }
+        });
+    }
+
+    // ==========================================
     // === BOTTOM SHEET TOUCH & FOCUS LOGIC ===
     // ==========================================
-    const bottomSheet = document.getElementById('map-bottom-sheet');
-    const tomtomInput = document.getElementById('tomtom-search-input');
+    const bottomSheetElement = document.getElementById('map-bottom-sheet');
+    const tomtomInputElement = document.getElementById('tomtom-search-input');
 
-    if (bottomSheet && tomtomInput) {
+    if (bottomSheetElement && tomtomInputElement) {
         
-        tomtomInput.addEventListener('focus', () => {
-            bottomSheet.classList.add('expanded');
+        tomtomInputElement.addEventListener('focus', () => {
+            bottomSheetElement.classList.add('expanded');
 
             const preventScroll = () => {
                 window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -710,21 +719,22 @@ if (shrinkBtn && mapCard && expandTrigger) {
 
         let startY = 0;
 
-        bottomSheet.addEventListener('touchstart', (e) => {
+        bottomSheetElement.addEventListener('touchstart', (e) => {
             startY = e.touches[0].clientY;
         }, { passive: true });
 
-        bottomSheet.addEventListener('touchend', (e) => {
+        bottomSheetElement.addEventListener('touchend', (e) => {
             let endY = e.changedTouches[0].clientY;
             let diff = startY - endY;
 
             if (diff > 30) {
-                bottomSheet.classList.add('expanded');
+                bottomSheetElement.classList.add('expanded');
             } 
             else if (diff < -30) {
-                bottomSheet.classList.remove('expanded');
-                tomtomInput.blur(); 
+                bottomSheetElement.classList.remove('expanded');
+                tomtomInputElement.blur(); 
             }
         });
     }
+
 }); // <-- Dies ist die allerletzte Klammer deiner Datei (schließt den DOMContentLoaded)
