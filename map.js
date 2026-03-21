@@ -307,18 +307,40 @@ libreMap.addLayer({
                     const data = await response.json();
                     suggestionsBox.innerHTML = '';
                     
-                    if (data.results && data.results.length > 0) {
+              if (data.results && data.results.length > 0) {
                         data.results.forEach(result => {
                             const div = document.createElement('div');
                             div.className = 'suggestion-item';
-                            // Baut die Adresse sauber zusammen
-                            div.textContent = result.address.freeformAddress || result.address.municipality || "Unbekannter Ort"; 
                             
-                          // 2. Klick auf einen Vorschlag: Route berechnen
+                            // --- NEUE POI-LOGIK: Erkennt Orte wie "REWE" oder "Pizzeria" ---
+                            let primaryName = "";
+                            let secondaryName = "";
+
+                            // Prüfen, ob TomTom ein Geschäft/Ort (POI) erkannt hat
+                            if (result.poi && result.poi.name) {
+                                primaryName = result.poi.name;
+                                secondaryName = result.address.freeformAddress || result.address.municipality || "";
+                            } else {
+                                // Es ist nur eine normale Adresse/Stadt
+                                primaryName = result.address.freeformAddress || result.address.municipality || "Unbekannter Ort";
+                            }
+
+                            // Elegantes zweizeiliges Layout für das Dropdown
+                            if (secondaryName) {
+                                div.innerHTML = `<div style="font-weight: 600; color: #fff; font-size: 15px;">${primaryName}</div>
+                                                 <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px;">${secondaryName}</div>`;
+                            } else {
+                                div.innerHTML = `<div style="font-weight: 600; color: #fff; font-size: 15px;">${primaryName}</div>`;
+                            }
+                            
+                            // Klick auf einen Vorschlag
                             div.addEventListener('click', () => {
-                                console.log("STADT GEKLICKT", div.textContent); // <-- NEU (Schritt 1)
-                                searchInput.value = div.textContent;
+                                console.log("ORT GEKLICKT:", primaryName); 
+                                
+                                // Wir schreiben bewusst nur den sauberen Namen (z.B. "REWE") in die Suchleiste
+                                searchInput.value = primaryName; 
                                 suggestionsBox.classList.add('hidden');
+                                
                                 drawTomTomRoute(result.position.lat, result.position.lon);
                             });
 
