@@ -3120,3 +3120,56 @@ body.ghost-active #ghost-chat-overlay {
 .route-opt-pill:not(.active) .opt-time {
     opacity: 0.6; 
 }
+
+
+/* --- SWIPEABLE ROUTE CARD LOGIC --- */
+#swipeable-route-card {
+    display: flex;
+    flex-direction: column;
+    transition: height 0.3s cubic-bezier(0.2, 1, 0.3, 1), padding 0.3s ease;
+    overflow: hidden; /* Verhindert, dass Inhalt rausschaut, wenn klein */
+}
+
+/* Der kleine Griff oben zum Ziehen */
+.card-drag-handle {
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    margin: -5px auto 15px auto; /* Zieht ihn schön nach oben */
+}
+
+/* Der Zustand, wenn die Karte hochgewischt wurde (3/4 Ansicht) */
+#swipeable-route-card.expanded {
+    height: 80vh !important;
+}
+
+/* Standorte ausblenden, wenn klein */
+.route-locations-swipe {
+    display: none;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Standorte einblenden, wenn Card groß ist */
+#swipeable-route-card.expanded .route-locations-swipe {
+    display: block;
+    animation: fadeIn 0.4s ease forwards;
+}
+
+/* GO-Button Anpassungen */
+.go-button {
+    margin-top: 20px; /* Tiefer gesetzt, da der Pfeil weg ist */
+    transition: margin-top 0.3s;
+}
+
+#swipeable-route-card.expanded .go-button {
+    margin-top: auto; /* Drückt den Button in der großen Ansicht ganz nach unten ans Ende der Card */
+    margin-bottom: 20px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
