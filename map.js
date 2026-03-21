@@ -533,7 +533,7 @@ async function drawTomTomRoute(destLat, destLng) {
             
             timeElement.textContent = timeString;
 
-            // 2. Intelligente Prozent-Logik für die Farben
+          // 2. Intelligente Prozent-Logik für die Farben
             let timeColor = '#30d158'; // Standard: Schönes Grün (Kein Stau)
             let delayText = '';
 
@@ -542,16 +542,27 @@ async function drawTomTomRoute(destLat, destLng) {
                 const percentDelay = (delaySeconds / normalSeconds) * 100;
                 
                 if (percentDelay >= 35) {
-                    timeColor = '#b30000'; // Dunkelrot (Massiver Zeitverlust, z.B. 10 Min Stau auf 15 Min Strecke)
+                    timeColor = '#b30000'; // Dunkelrot (Massiver Zeitverlust)
                 } else if (percentDelay >= 15) {
                     timeColor = '#ff3b30'; // Rot (Deutlicher Stau)
                 } else {
-                    timeColor = '#ffcc00'; // Gelb (Leichter Verkehr, kaum relevant)
+                    timeColor = '#ffcc00'; // Gelb (Leichter Verkehr)
                 }
                 
-                delayText = `${delayMins} Min länger als gewöhnlich`;
+                // HIER DIE ÄNDERUNG: Clean & minimalistisch
+                delayText = `+${delayMins} Min`; 
             }
 
+            // Farbe hart auf die Zahl anwenden
+            timeElement.style.color = timeColor;
+
+            // Den Erklär-Text einblenden oder verstecken
+            if (delayText) {
+                delayElement.textContent = delayText;
+                delayElement.classList.remove('hidden');
+            } else {
+                delayElement.classList.add('hidden');
+            }
             // Farbe hart auf die Zahl anwenden
             timeElement.style.color = timeColor;
 
