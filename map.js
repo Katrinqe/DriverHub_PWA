@@ -1491,13 +1491,22 @@ function clearRoutes() {
                                     if (man.includes('KEEP_RIGHT')) iconClass = 'fa-arrow-up-right';
                                     if (man.includes('U_TURN')) iconClass = 'fa-arrow-rotate-left';
                                     if (man.includes('ROUNDABOUT')) iconClass = 'fa-arrows-spin';
-                                    if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
+                                   if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
                                     
                                     iconEl.className = `fa-solid ${iconClass}`;
                                 }
                             }
                         }
                     }
+
+                // === HIER HABEN DIE KLAMMERN GEFEHLT ===
+                }, (error) => {
+                    console.warn("GPS Signal verloren:", error);
+                }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+            }
+        });
+    }
+    // ===================================================
 
     // ==========================================
     // === NOT-AUS: DER NUKLEAR-ABBRUCH ===
