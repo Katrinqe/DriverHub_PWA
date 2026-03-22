@@ -452,4 +452,99 @@ const NaviLogic = {
             showHome();
         };
     }
-};
+
+    // ==========================================
+    // === PHASE 1: GO BUTTON & 3D LAUNCH ===
+    // ==========================================
+    const btnStartRoute = document.getElementById('btn-start-route'); // Checke, ob deine ID in der HTML so heißt!
+    
+    if (btnStartRoute) {
+        btnStartRoute.addEventListener('click', async () => {
+            // 1. Visueller Abgang der Route-Card
+            const routeUI = document.getElementById('route-overview-ui');
+            if (routeUI) routeUI.classList.add('fade-out');
+
+            // 2. Navigations-Pille hochfahren lassen
+            const navHud = document.getElementById('navigation-hud-pill');
+            if (navHud) navHud.classList.remove('hidden');
+
+            // 3. UI-Daten für die Pille aus RouteLogic übernehmen
+            const activeRouteIndex = RouteLogic.activeIndex;
+            const distanceText = document.getElementById(`opt-dist-${activeRouteIndex}`).textContent;
+            document.getElementById('hud-remaining-dist').textContent = distanceText;
+            
+            // 4. MAPLIBRE 3D KAMERA-FAHRT (Der kinoreife Sturzflug)
+            if (libreMap && currentCoords) {
+                // Wir schalten Interaktionen aus, damit der Nutzer nicht während der Fahrt wischt
+                libreMap.dragPan.disable();
+                libreMap.scrollZoom.disable();
+
+                libreMap.flyTo({
+                    center: currentCoords, // Wir zentrieren hart auf dich
+                    zoom: 17.5, // Sehr nah ran für den Fahr-Modus
+                    pitch: 65, // Kippt die Karte massiv an (3D Gebäude ploppen hoch)
+                    bearing: 0, // Später drehen wir das noch in Fahrrichtung
+                    // Padding Bottom ist extrem wichtig! Es schiebt deinen blauen Pfeil 
+                    // an den unteren Rand, damit du weit nach vorne in den Horizont schauen kannst.
+                    padding: { top: 0, bottom: window.innerHeight * 0.4, left: 0, right: 0 }, 
+                    duration: 2500, // Butterweiche 2,5 Sekunden
+                    essential: true
+                });
+            }
+
+            // 5. STIMME AUSLÖSEN (Firestore + Google TTS)
+            const destName = document.getElementById('dest-name-display') ? document.getElementById('dest-name-display').textContent : "deinem Ziel";
+            const welcomeText = `Route nach ${destName} wird gestartet. Driver Hub wünscht eine sichere Fahrt.`;
+            
+            triggerGoogleVoice(welcomeText);
+        });
+    }
+
+    // ==========================================
+    // === GOOGLE TEXT-TO-SPEECH ENGINE ===
+    // ==========================================
+
+    async function triggerGoogleVoice(text) {
+        try {
+            // 1. API-Key aus Firestore holen 
+            // (Geht davon aus, dass 'db' deine exportierte Firestore-Instanz ist)
+            // Falls du Firebase Modular (v9) nutzt, musst du ggf. doc und getDoc importieren!
+            const docRef = doc(db, "config", "api_keys");
+            const docSnap = await getDoc(docRef);
+            
+            if (!docSnap.exists()) {
+                console.error("Kein API Key in Firestore gefunden!");
+                return;
+            }
+            
+            const apiKey = docSnap.data().google_tts;
+
+            // 2. Google Cloud API Anfrage feuern
+            const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    input: { text: text },
+                    // Die deutsche Premium "Journey" Stimme
+                    voice: { languageCode: 'de-DE', name: 'de-DE-Wavenet-F' }, 
+                    audioConfig: { 
+                        audioEncoding: 'MP3',
+                        pitch: 0,
+                        speakingRate: 1.0 
+                    }
+                })
+            });
+
+            if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
+
+            const data = await response.json();
+            
+            // 3. Audio-String in echte Töne umwandeln und direkt abspielen
+            const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+            audio.play();
+
+        } catch (error) {
+            console.error("Sprachausgabe fehlgeschlagen:", error);
+        }
+    }
+}; // ENDE 
