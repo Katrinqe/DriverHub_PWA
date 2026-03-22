@@ -3169,9 +3169,8 @@ body.ghost-active #ghost-chat-overlay {
     color: rgba(255, 255, 255, 0.4);
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-top: 2px;
+    margin-bottom: 2px; /* <-- NEU: Abstand nach unten statt nach oben */
 }
-
 /* WICHTIG: Damit die Route-Card weich verschwindet */
 #route-overview-ui {
     transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
