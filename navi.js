@@ -5,24 +5,24 @@ const NaviLogic = {
     previewMap: null,
     previewRouteLayer: null,
     previewBounds: null,
-    
+
     currentDestination: null,
     searchTimeout: null,
     isNavigating: false,
     navMode: 'ghost', 
     navStartTime: 0,
     navInterval: null,
-    
+
     routeDistance: 0,
     routeDuration: 0,
     routeSteps: [],
     destMarker: null,
-    
+
     distanceFactor: 1.0,
-    
+
     recordStats: null,
     lastSpeedCheck: 0,
-    
+
     init: function() {
         console.log("Navi Init");
         const input = document.getElementById('nav-search-input');
@@ -86,12 +86,12 @@ const NaviLogic = {
                 this.currentDestination = { name: name, lat: endLat, lng: endLng };
                 this.routeSteps = data.routes[0].legs[0].steps;
                 this.drawRoute(data.routes[0]);
-                
+
                 const destLatLng = L.latLng(endLat, endLng);
                 const airDistKm = userMarker.getLatLng().distanceTo(destLatLng) / 1000;
                 const roadDistKm = data.routes[0].distance / 1000;
                 this.distanceFactor = (airDistKm > 0) ? (roadDistKm / airDistKm) : 1.0;
-                
+
                 this.showPreview(data.routes[0], name, [startLat, startLng], [endLat, endLng]);
             } else { alert("No route found."); }
         }).catch(e => {
@@ -106,7 +106,7 @@ const NaviLogic = {
 
         const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]); 
         this.routeLayer = L.polyline(coordinates, { color: '#bf5af2', weight: 6, opacity: 0.8, lineCap: 'round' }).addTo(map);
-        
+
         if(this.currentDestination) {
             const endIcon = L.divIcon({className: 'preview-end-icon', html:'<i class="fa-solid fa-flag-checkered"></i>', iconSize:[20,20]});
             this.destMarker = L.marker([this.currentDestination.lat, this.currentDestination.lng], {icon: endIcon}).addTo(map);
@@ -170,7 +170,7 @@ const NaviLogic = {
         document.getElementById('preview-time').innerText = timeDisplay;
         document.getElementById('preview-dist').innerText = distKm + " km";
         document.getElementById('preview-dest-name').innerText = destName;
-        
+
         const modal = document.getElementById('route-preview-modal');
         modal.classList.remove('hidden');
         setTimeout(() => modal.classList.add('active'), 10);
@@ -204,26 +204,26 @@ const NaviLogic = {
         this.isNavigating = true;
         this.navStartTime = Date.now();
 
-        document.getElementById('btn-nav-recenter').classList.add('hidden');
+
 
         document.getElementById('global-top-fade').classList.remove('visible');
         document.getElementById('background-map').classList.add('map-smooth-rotate');
 
         document.getElementById('route-preview-modal').classList.remove('active');
         setTimeout(() => document.getElementById('route-preview-modal').classList.add('hidden'), 300);
-        
+
         document.getElementById('explore-screen').classList.add('hidden');
         document.getElementById('global-nav').classList.add('hidden'); 
-        
+
         const navScreen = document.getElementById('navi-screen');
         navScreen.classList.remove('hidden');
         setTimeout(() => navScreen.classList.add('active'), 10);
 
         map.dragging.enable();
         map.touchZoom.enable();
-        
+
         if(userMarker) {
-            if(typeof isAutoPanning !== 'undefined') isAutoPanning = true; 
+
             map.setView(userMarker.getLatLng(), 18, { animate: false });
             const el = userMarker.getElement();
             if(el) {
@@ -233,7 +233,7 @@ const NaviLogic = {
         }
 
         this.startNavLoop();
-        
+
         if (mode === 'record') {
             this.recordStats = { dist: 0, startTime: Date.now(), path: [] };
         }
@@ -246,7 +246,7 @@ const NaviLogic = {
         this.navInterval = setInterval(() => {
             this.updateETA();
             const elapsedSec = (Date.now() - this.navStartTime) / 1000;
-            
+
             let distRemain = 0;
             if(userMarker && this.currentDestination) {
                 const destLatLng = L.latLng(this.currentDestination.lat, this.currentDestination.lng);
@@ -257,7 +257,7 @@ const NaviLogic = {
 
             let remainSec = Math.max(0, this.routeDuration - elapsedSec);
             let remainMin = Math.ceil(remainSec / 60);
-            
+
             let timeStr = remainMin + " min";
             if (remainMin > 60) {
                 const h = Math.floor(remainMin / 60);
@@ -348,9 +348,9 @@ const NaviLogic = {
 
     recenterNav: function() {
         if(userMarker) {
-            if(typeof isAutoPanning !== 'undefined') isAutoPanning = true; 
+
             map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
-            document.getElementById('btn-nav-recenter').classList.add('hidden');
+
         }
     },
 
@@ -393,7 +393,7 @@ const NaviLogic = {
         const durationMin = Math.floor(durationMs / 60000);
         const durationSec = Math.floor((durationMs % 60000) / 1000);
         const timeStr = `${durationMin.toString().padStart(2,'0')}:${durationSec.toString().padStart(2,'0')}`;
-        
+
         let totalDist = 0;
         for(let i=0; i < this.recordStats.path.length-1; i++) {
             const p1 = L.latLng(this.recordStats.path[i]);
@@ -413,9 +413,9 @@ const NaviLogic = {
         document.getElementById('sum-real-time').innerText = durationMin + " min";
 
         switchScreen('summary-screen');
-        
-        // FIX: Auch hier sicherstellen, dass Nav Bar hidden ist
-        document.getElementById('global-nav').classList.add('hidden');
+
+
+
 
         setTimeout(() => {
             const mapContainer = document.getElementById('summary-map');
@@ -423,12 +423,12 @@ const NaviLogic = {
                 window.summaryMapInstance.remove();
                 window.summaryMapInstance = null;
             }
-            
+
             if(mapContainer) {
                 mapContainer.innerHTML = ""; 
                 window.summaryMapInstance = L.map('summary-map', { zoomControl: false, attributionControl: false }).setView([51.1657, 10.4515], 13);
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window.summaryMapInstance);
-                
+
                 if (this.recordStats.path.length > 1) {
                     const latLngs = this.recordStats.path.map(p => [p.lat, p.lng]);
                     const line = L.polyline(latLngs, {color: '#bf5af2', weight: 4}).addTo(window.summaryMapInstance);
@@ -452,99 +452,4 @@ const NaviLogic = {
             showHome();
         };
     }
-
-    // ==========================================
-    // === PHASE 1: GO BUTTON & 3D LAUNCH ===
-    // ==========================================
-    const btnStartRoute = document.getElementById('btn-start-route'); // Checke, ob deine ID in der HTML so heißt!
-    
-    if (btnStartRoute) {
-        btnStartRoute.addEventListener('click', async () => {
-            // 1. Visueller Abgang der Route-Card
-            const routeUI = document.getElementById('route-overview-ui');
-            if (routeUI) routeUI.classList.add('fade-out');
-
-            // 2. Navigations-Pille hochfahren lassen
-            const navHud = document.getElementById('navigation-hud-pill');
-            if (navHud) navHud.classList.remove('hidden');
-
-            // 3. UI-Daten für die Pille aus RouteLogic übernehmen
-            const activeRouteIndex = RouteLogic.activeIndex;
-            const distanceText = document.getElementById(`opt-dist-${activeRouteIndex}`).textContent;
-            document.getElementById('hud-remaining-dist').textContent = distanceText;
-            
-            // 4. MAPLIBRE 3D KAMERA-FAHRT (Der kinoreife Sturzflug)
-            if (libreMap && currentCoords) {
-                // Wir schalten Interaktionen aus, damit der Nutzer nicht während der Fahrt wischt
-                libreMap.dragPan.disable();
-                libreMap.scrollZoom.disable();
-
-                libreMap.flyTo({
-                    center: currentCoords, // Wir zentrieren hart auf dich
-                    zoom: 17.5, // Sehr nah ran für den Fahr-Modus
-                    pitch: 65, // Kippt die Karte massiv an (3D Gebäude ploppen hoch)
-                    bearing: 0, // Später drehen wir das noch in Fahrrichtung
-                    // Padding Bottom ist extrem wichtig! Es schiebt deinen blauen Pfeil 
-                    // an den unteren Rand, damit du weit nach vorne in den Horizont schauen kannst.
-                    padding: { top: 0, bottom: window.innerHeight * 0.4, left: 0, right: 0 }, 
-                    duration: 2500, // Butterweiche 2,5 Sekunden
-                    essential: true
-                });
-            }
-
-            // 5. STIMME AUSLÖSEN (Firestore + Google TTS)
-            const destName = document.getElementById('dest-name-display') ? document.getElementById('dest-name-display').textContent : "deinem Ziel";
-            const welcomeText = `Route nach ${destName} wird gestartet. Driver Hub wünscht eine sichere Fahrt.`;
-            
-            triggerGoogleVoice(welcomeText);
-        });
-    }
-
-    // ==========================================
-    // === GOOGLE TEXT-TO-SPEECH ENGINE ===
-    // ==========================================
-
-    async function triggerGoogleVoice(text) {
-        try {
-            // 1. API-Key aus Firestore holen 
-            // (Geht davon aus, dass 'db' deine exportierte Firestore-Instanz ist)
-            // Falls du Firebase Modular (v9) nutzt, musst du ggf. doc und getDoc importieren!
-            const docRef = doc(db, "config", "api_keys");
-            const docSnap = await getDoc(docRef);
-            
-            if (!docSnap.exists()) {
-                console.error("Kein API Key in Firestore gefunden!");
-                return;
-            }
-            
-            const apiKey = docSnap.data().google_tts;
-
-            // 2. Google Cloud API Anfrage feuern
-            const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    input: { text: text },
-                    // Die deutsche Premium "Journey" Stimme
-                    voice: { languageCode: 'de-DE', name: 'de-DE-Wavenet-F' }, 
-                    audioConfig: { 
-                        audioEncoding: 'MP3',
-                        pitch: 0,
-                        speakingRate: 1.0 
-                    }
-                })
-            });
-
-            if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
-
-            const data = await response.json();
-            
-            // 3. Audio-String in echte Töne umwandeln und direkt abspielen
-            const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
-            audio.play();
-
-        } catch (error) {
-            console.error("Sprachausgabe fehlgeschlagen:", error);
-        }
-    }
-}; // ENDE 
+};
