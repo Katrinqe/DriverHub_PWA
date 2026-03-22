@@ -1290,7 +1290,7 @@ function clearRoutes() {
     // ==========================================
     // === PHASE 1: GO BUTTON & 3D LAUNCH ===
     // ==========================================
-    const btnStartRoute = document.getElementById('btn-start-route'); // Checke, ob deine ID in der HTML so heißt!
+    const btnStartRoute = document.getElementById('btn-start-nav'); // Checke, ob deine ID in der HTML so heißt!
     
     if (btnStartRoute) {
         btnStartRoute.addEventListener('click', async () => {
