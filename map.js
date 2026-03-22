@@ -1322,7 +1322,7 @@ function clearRoutes() {
            // NEU:
 libreMap.flyTo({
     center: currentCoords, 
-    zoom: 18,        // Sehr nah dran für den perfekten Stadt-Überblick
+    zoom: 17,        // Sehr nah dran für den perfekten Stadt-Überblick
     pitch: 0,        // Flach von oben (2D-Modus)
     bearing: 0,      // Später drehen wir das noch live in Fahrtrichtung
     padding: { bottom: 120 }, // Nur leicht nach oben geschoben, damit dein Punkt exakt ÜBER der neuen schwarzen Pille sitzt
