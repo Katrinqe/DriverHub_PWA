@@ -1314,7 +1314,7 @@ function clearRoutes() {
                 // Padding entfernen für perfekte Zentrierung
                 libreMap.setPadding({ left: 0, right: 0, top: 0, bottom: 0 });
                 
-                // HIER IST DEIN PUNKT 3: Wir reißen alle Sperren ein!
+                // Wir reißen alle Sperren ein!
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
                 libreMap.touchZoomRotate.enable();
@@ -1332,12 +1332,13 @@ function clearRoutes() {
                 });
             }
 
-            // 5. STIMME & X-BUTTON EINBLENDEN
-            const destName = document.getElementById('dest-name-display') ? document.getElementById('dest-name-display').textContent : "deinem Ziel";
-            triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
-            
+            // 5. SICHERHEIT: Zuerst das X einblenden!
             const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
             if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
+
+            // 6. STIMME AUSLÖSEN
+            const destName = document.getElementById('dest-name-display') ? document.getElementById('dest-name-display').textContent : "deinem Ziel";
+            triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
         });
     }
 
@@ -1347,7 +1348,6 @@ function clearRoutes() {
     const btnCancelActiveNav = document.getElementById('btn-cancel-active-nav');
     
     if (btnCancelActiveNav) {
-        // .onclick überschreibt alles und verhindert doppelte Auslösungen
         btnCancelActiveNav.onclick = (e) => {
             e.stopPropagation();
 
@@ -1355,10 +1355,10 @@ function clearRoutes() {
             document.getElementById('navigation-hud-pill').classList.add('hidden');
             btnCancelActiveNav.classList.add('hidden');
             
-            // 2. Route Card hart verstecken (verhindert das Flackern)
+            // 2. Route Card hart verstecken
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) {
-                routeUI.classList.remove('fade-out'); // Animation zurücksetzen
+                routeUI.classList.remove('fade-out'); 
                 routeUI.classList.add('hidden');
             }
 
@@ -1385,11 +1385,10 @@ function clearRoutes() {
             // 5. Alle Linien von der Karte reißen
             clearRoutes();
 
-            // 6. Kamera zurücksetzen (aber Bewegung erlaubt lassen!)
+            // 6. Kamera zurücksetzen
             if (libreMap && currentCoords) {
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
-                
                 libreMap.flyTo({ 
                     center: currentCoords, 
                     zoom: 14, 
@@ -1401,5 +1400,44 @@ function clearRoutes() {
             }
         };
     }
-}); // <-- Dies ist die allerletzte Klammer deiner Datei
+
+    // ==========================================
+    // === GOOGLE TEXT-TO-SPEECH ENGINE ===
+    // ==========================================
+    async function triggerGoogleVoice(text) {
+        try {
+            // Firebase V8 Compat Syntax!
+            const docRef = db.collection("config").doc("api_keys");
+            const docSnap = await docRef.get();
+            
+            if (!docSnap.exists) {
+                console.error("Kein API Key in Firestore gefunden!");
+                return;
+            }
+            
+            const apiKey = docSnap.data().google_tts;
+
+            const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    input: { text: text },
+                    voice: { languageCode: 'de-DE', name: 'de-DE-Wavenet-F' }, 
+                    audioConfig: { audioEncoding: 'MP3', pitch: 0, speakingRate: 1.0 }
+                })
+            });
+
+            if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
+
+            const data = await response.json();
+            const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+            audio.play();
+
+        } catch (error) {
+            console.error("Sprachausgabe fehlgeschlagen:", error);
+        }
+    }
+
+}); // <-- Das ist und bleibt deine allerletzte Klammer in der map.js!
+
 
