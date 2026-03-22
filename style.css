@@ -3096,9 +3096,16 @@ body.ghost-active #ghost-chat-overlay {
     width: 90%;
     max-width: 400px;
     height: 80px;
-    background: #1c1c1e;
+    
+    /* Premium Glassmorphism */
+    background: rgba(15, 15, 18, 0.6);
+    backdrop-filter: blur(25px) saturate(150%);
+    -webkit-backdrop-filter: blur(25px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 40px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -3114,7 +3121,7 @@ body.ghost-active #ghost-chat-overlay {
     pointer-events: none;
 }
 
-/* --- HUD Elemente --- */
+/* --- HUD Layout & Typografie --- */
 .hud-eta, .hud-distance {
     display: flex;
     flex-direction: column;
@@ -3122,21 +3129,23 @@ body.ghost-active #ghost-chat-overlay {
     width: 25%;
 }
 
-.hud-distance {
-    align-items: flex-end;
-    font-size: 16px;
+.hud-eta { align-items: flex-start; }
+.hud-distance { align-items: flex-end; }
+
+.hud-label {
+    font-size: 10px;
     font-weight: 700;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1px;
+    margin-bottom: 2px;
 }
 
-#hud-arrival-time {
+.hud-val {
     font-size: 16px;
-    font-weight: 700;
+    font-weight: 800;
     color: #fff;
+    letter-spacing: 0.5px;
 }
-
-.hud-delay-good { color: #30d158; font-size: 12px; font-weight: 600; margin-top: 2px; }
-.hud-delay-bad { color: #ff3b30; font-size: 12px; font-weight: 600; margin-top: 2px; }
 
 .hud-speed {
     display: flex;
@@ -3147,7 +3156,7 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 #hud-current-speed {
-    font-size: 38px;
+    font-size: 42px;
     font-weight: 800;
     color: #fff;
     line-height: 1;
@@ -3157,7 +3166,7 @@ body.ghost-active #ghost-chat-overlay {
 .hud-speed-unit {
     font-size: 11px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
     text-transform: uppercase;
     letter-spacing: 1px;
     margin-top: 2px;
