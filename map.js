@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let libreMap = null;
     let destMarker = null; // Nur einmal definieren!
     let currentCoords = null; 
+    let navWatchId = null; // <-- NEU: Hier speichern wir den Motor
     
     if (btnNewExplore && newExploreScreen) {
         // ... restlicher Code
@@ -112,7 +113,8 @@ libreMap = new maplibregl.Map({
         <div class="user-pulse"></div>
         <div class="user-dot"></div>
     `;
-    new maplibregl.Marker({ element: customMarkerElement })
+ // NEU:
+    window.userLocationMarker = new maplibregl.Marker({ element: customMarkerElement })
         .setLngLat(coords)
         .addTo(libreMap);
 
@@ -840,6 +842,15 @@ function clearRoutes() {
         btnCancelRouteNew.onclick = (e) => {
             e.stopPropagation();
 
+            // 0. GPS MOTOR ABWÜRGEN
+            if (navWatchId !== null) {
+                navigator.geolocation.clearWatch(navWatchId);
+                navWatchId = null;
+            }
+            // HUD Speed wieder auf 0 setzen
+            const speedDisplay = document.getElementById('hud-current-speed');
+            if (speedDisplay) speedDisplay.textContent = '0';
+
             // 1. Karte komplett abräumen (Nuke)
             clearRoutes();
             
@@ -1284,7 +1295,7 @@ function clearRoutes() {
         }
     }
 
-    // ==========================================
+   // ==========================================
     // === PHASE 1: GO BUTTON & 3D LAUNCH ===
     // ==========================================
     const btnStartRoute = document.getElementById('btn-start-nav'); 
@@ -1306,26 +1317,20 @@ function clearRoutes() {
             const etaText = document.getElementById(`opt-eta-${activeRouteIndex}`).textContent;
             document.getElementById('hud-arrival-time').textContent = etaText;
             
-            // 4. MAPLIBRE: TOTALE FREIHEIT & 3D STURZFLUG
+            // 4. MAPLIBRE: TOTALE FREIHEIT & CITY-ZOOM (2D)
             if (libreMap && currentCoords) {
-                // Padding entfernen für perfekte Zentrierung
                 libreMap.setPadding({ left: 0, right: 0, top: 0, bottom: 0 });
-                
-                // Wir reißen alle Sperren ein!
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
-                // Rotation blockieren für angenehmes Wischen im 3D Modus
                 libreMap.touchZoomRotate.disable(); 
                 libreMap.doubleClickZoom.disable();
                 if (libreMap.dragRotate) libreMap.dragRotate.disable();
 
-// NEU:
                 libreMap.flyTo({
                     center: currentCoords, 
-                    zoom: 16.5,      // Dein perfekter Stadt-Zoom
-                    pitch: 0,        // Flach in 2D
+                    zoom: 16.5, 
+                    pitch: 0, 
                     bearing: 0, 
-                    // Der wichtigste Fix: Alle Werte radikal auf 0 für pures, sauberes Wischen!
                     padding: { top: 0, bottom: 0, left: 0, right: 0 }, 
                     duration: 2000, 
                     essential: true
@@ -1336,10 +1341,57 @@ function clearRoutes() {
             const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
             if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
 
-            // 6. STIMME AUSLÖSEN (Mit echtem Zielnamen)
+            // 6. STIMME AUSLÖSEN
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
             triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
+
+            // 7. LIVE GPS MOTOR STARTEN
+            if (navigator.geolocation) {
+                if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
+
+                navWatchId = navigator.geolocation.watchPosition((position) => {
+                    const lng = position.coords.longitude;
+                    const lat = position.coords.latitude;
+                    const heading = position.coords.heading; // 0 bis 360 Grad
+                    const speed = position.coords.speed; // Meter pro Sekunde
+
+                    currentCoords = [lng, lat];
+
+                    // 7a. HUD Speed updaten (m/s in km/h)
+                    const speedKmh = speed ? Math.round(speed * 3.6) : 0;
+                    const speedDisplay = document.getElementById('hud-current-speed');
+                    if (speedDisplay) speedDisplay.textContent = speedKmh;
+
+                    // 7b. Blauen Punkt bewegen
+                    if (window.userLocationMarker) {
+                        window.userLocationMarker.setLngLat(currentCoords);
+                    }
+
+                    // 7c. Kamera weich mitziehen und rotieren
+                    if (libreMap) {
+                        const cameraOpts = {
+                            center: currentCoords,
+                            duration: 1000, // 1 Sekunde für weiche Überblendungen
+                            easing: (t) => t // Lineare Bewegung ohne Ruckeln
+                        };
+
+                        // Anti-Zitter-Logik: Wir drehen die Karte nur, wenn wir schneller als ~3 km/h fahren.
+                        if (heading !== null && speed !== null && speed > 0.8) {
+                            cameraOpts.bearing = heading;
+                        }
+
+                        libreMap.easeTo(cameraOpts);
+                    }
+
+                }, (error) => {
+                    console.warn("GPS Signal verloren:", error);
+                }, {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 5000
+                });
+            }
         });
     }
 
