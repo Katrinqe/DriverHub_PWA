@@ -1290,9 +1290,9 @@ function clearRoutes() {
     // ==========================================
     // === PHASE 1: GO BUTTON & 3D LAUNCH ===
     // ==========================================
-    const btnStartRoute = document.getElementById('btn-start-nav'); // Checke, ob deine ID in der HTML so heißt!
+    const btnStartRoute = document.getElementById('btn-start-nav'); 
     
-  if (btnStartRoute) {
+    if (btnStartRoute) {
         btnStartRoute.addEventListener('click', async () => {
             // 1. Visueller Abgang der Route-Card
             const routeUI = document.getElementById('route-overview-ui');
@@ -1304,29 +1304,29 @@ function clearRoutes() {
 
             // 3. UI-Daten für die Pille aus RouteLogic übernehmen
             const activeRouteIndex = RouteLogic.activeIndex;
-            // Distanz
             const distanceText = document.getElementById(`opt-dist-${activeRouteIndex}`).textContent;
             document.getElementById('hud-remaining-dist').textContent = distanceText;
-            // ETA (Uhrzeit) - FIX!
             const etaText = document.getElementById(`opt-eta-${activeRouteIndex}`).textContent;
             document.getElementById('hud-arrival-time').textContent = etaText;
             
-            // 4. MAPLIBRE 3D KAMERA-FAHRT
+            // 4. MAPLIBRE: TOTALE FREIHEIT & 3D STURZFLUG
             if (libreMap && currentCoords) {
-                // FIX: Altes Menü-Padding radikal nullen, damit es perfekt zentriert ist!
+                // Padding entfernen für perfekte Zentrierung
                 libreMap.setPadding({ left: 0, right: 0, top: 0, bottom: 0 });
                 
-                // FIX: Karte voll bedienbar lassen!
+                // HIER IST DEIN PUNKT 3: Wir reißen alle Sperren ein!
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
                 libreMap.touchZoomRotate.enable();
+                libreMap.doubleClickZoom.enable();
+                if (libreMap.dragRotate) libreMap.dragRotate.enable();
 
                 libreMap.flyTo({
                     center: currentCoords, 
                     zoom: 17.5, 
-                    pitch: 60, // Leicht reduziert für eine saubere Optik am Horizont
+                    pitch: 60, 
                     bearing: 0, 
-                    padding: { bottom: 250 }, // Schiebt den Punkt in das untere Drittel
+                    padding: { bottom: 250 }, 
                     duration: 2500, 
                     essential: true
                 });
@@ -1336,77 +1336,70 @@ function clearRoutes() {
             const destName = document.getElementById('dest-name-display') ? document.getElementById('dest-name-display').textContent : "deinem Ziel";
             triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
             
-            // Den neuen Cancel-Button einblenden
             const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
             if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
         });
     }
-// HIER REIN KOMMT DER NEUE KOLLEGE:
+
     // ==========================================
-    // === NOT-AUS: NAVIGATION ABBRECHEN ===
+    // === NOT-AUS: DER NUKLEAR-ABBRUCH ===
     // ==========================================
     const btnCancelActiveNav = document.getElementById('btn-cancel-active-nav');
+    
     if (btnCancelActiveNav) {
-        btnCancelActiveNav.addEventListener('click', () => {
-            // Pille und X-Button ausblenden
+        // .onclick überschreibt alles und verhindert doppelte Auslösungen
+        btnCancelActiveNav.onclick = (e) => {
+            e.stopPropagation();
+
+            // 1. Renn-Modus UI sofort killen
             document.getElementById('navigation-hud-pill').classList.add('hidden');
             btnCancelActiveNav.classList.add('hidden');
             
-            // Routen radikal löschen
-            clearRoutes();
-            
-            // Kamera zurück auf Standard setzen
-            if (libreMap && currentCoords) {
-                libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, padding: { right: 0, bottom: 0 }, duration: 1500 });
+            // 2. Route Card hart verstecken (verhindert das Flackern)
+            const routeUI = document.getElementById('route-overview-ui');
+            if (routeUI) {
+                routeUI.classList.remove('fade-out'); // Animation zurücksetzen
+                routeUI.classList.add('hidden');
             }
-            
-            // UI wiederherstellen
+
+            // 3. Ziel aus der Suche gnadenlos löschen
+            const searchInput = document.getElementById('tomtom-search-input');
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.blur();
+            }
+
+            // 4. Standard UI wieder hochfahren
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.style.display = 'flex';
+            
+            const pillV = document.querySelector('.map-controls-pill-v');
+            if (pillV) pillV.style.display = 'flex';
             
             const shrinkBtnMap = document.getElementById('btn-shrink-map');
             if (shrinkBtnMap) {
                 shrinkBtnMap.style.opacity = '1';
                 shrinkBtnMap.style.pointerEvents = 'auto';
             }
-        });
+
+            // 5. Alle Linien von der Karte reißen
+            clearRoutes();
+
+            // 6. Kamera zurücksetzen (aber Bewegung erlaubt lassen!)
+            if (libreMap && currentCoords) {
+                libreMap.dragPan.enable();
+                libreMap.scrollZoom.enable();
+                
+                libreMap.flyTo({ 
+                    center: currentCoords, 
+                    zoom: 14, 
+                    pitch: 0, 
+                    bearing: 0, 
+                    padding: { right: 0, bottom: 0 }, 
+                    duration: 1500 
+                });
+            }
+        };
     }
-  // ==========================================
-// === GOOGLE TEXT-TO-SPEECH ENGINE ===
-// ==========================================
-async function triggerGoogleVoice(text) {
-    try {
-        // FIX: Firebase V8 Compat Syntax nutzen!
-        const docRef = db.collection("config").doc("api_keys");
-        const docSnap = await docRef.get();
-        
-        if (!docSnap.exists) {
-            console.error("Kein API Key in Firestore gefunden!");
-            return;
-        }
-        
-        const apiKey = docSnap.data().google_tts;
-
-        // ... (der restliche fetch-Code mit dem apiKey bleibt exakt gleich!)
-        const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                input: { text: text },
-                voice: { languageCode: 'de-DE', name: 'de-DE-Wavenet-F' }, 
-                audioConfig: { audioEncoding: 'MP3', pitch: 0, speakingRate: 1.0 }
-            })
-        });
-
-        if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
-        const data = await response.json();
-        const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
-        audio.play();
-
-    } catch (error) {
-        console.error("Sprachausgabe fehlgeschlagen:", error);
-    }
-}
-
 }); // <-- Dies ist die allerletzte Klammer deiner Datei
 
