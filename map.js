@@ -1465,17 +1465,49 @@ function clearRoutes() {
                                 }
                             }
 
-                            // E: Das Glas-HUD Updaten
+             // ==============================================
+                            // E: Das Glas-HUD Updaten (NEU: 3-Zeilen Layout)
+                            // ==============================================
                             if (currIdx < instructions.length) {
-                                const textEl = document.getElementById('nav-top-instruction');
-                                if (textEl) textEl.textContent = currentManeuver.message;
+                                const man = currentManeuver.maneuver || '';
+                                
+                                // 1. Befehl radikal auf das Wesentliche kürzen
+                                let actionText = "Geradeaus";
+                                if (man.includes('TURN_LEFT')) actionText = "Links abbiegen";
+                                else if (man.includes('TURN_RIGHT')) actionText = "Rechts abbiegen";
+                                else if (man.includes('KEEP_LEFT')) actionText = "Links halten";
+                                else if (man.includes('KEEP_RIGHT')) actionText = "Rechts halten";
+                                else if (man.includes('U_TURN')) actionText = "Wenden";
+                                else if (man.includes('ROUNDABOUT')) actionText = "Kreisverkehr";
+                                else if (man.includes('ARRIVE') || man.includes('FINISH')) actionText = "Ziel erreicht";
+                                else if (man.includes('DEPART')) actionText = "Route folgen";
+
+                                // 2. Straße sicher auslesen (TomTom liefert sie getrennt mit!)
+                                let streetText = currentManeuver.street || "";
+                                if (!streetText && currentManeuver.roadNumbers && currentManeuver.roadNumbers.length > 0) {
+                                    streetText = currentManeuver.roadNumbers[0];
+                                }
+                                if (streetText) streetText = "auf " + streetText;
+
+                                // 3. UI Elemente befüllen
+                                const actionEl = document.getElementById('nav-top-action');
+                                if (actionEl) actionEl.textContent = actionText;
+
+                                const streetEl = document.getElementById('nav-top-street');
+                                if (streetEl) {
+                                    if (streetText) {
+                                        streetEl.textContent = streetText;
+                                        streetEl.style.display = 'block'; // Zeigen, wenn eine Straße da ist
+                                    } else {
+                                        streetEl.style.display = 'none'; // Verstecken, wenn keine da ist (spart Platz)
+                                    }
+                                }
 
                                 const distEl = document.getElementById('nav-top-distance');
                                 if (distEl) {
                                     if (distMeters >= 1000) {
                                         distEl.textContent = `in ${(distMeters / 1000).toFixed(1)} km`;
                                     } else {
-                                        // Runden auf volle Meter für saubere Optik
                                         distEl.textContent = `in ${Math.round(distMeters)} m`;
                                     }
                                 }
@@ -1483,15 +1515,13 @@ function clearRoutes() {
                                 const iconEl = document.getElementById('nav-top-icon');
                                 if (iconEl) {
                                     let iconClass = 'fa-arrow-up'; 
-                                    const man = currentManeuver.maneuver || '';
-                                    
                                     if (man.includes('LEFT')) iconClass = 'fa-arrow-left';
                                     if (man.includes('RIGHT')) iconClass = 'fa-arrow-right';
                                     if (man.includes('KEEP_LEFT')) iconClass = 'fa-arrow-up-left';
                                     if (man.includes('KEEP_RIGHT')) iconClass = 'fa-arrow-up-right';
                                     if (man.includes('U_TURN')) iconClass = 'fa-arrow-rotate-left';
                                     if (man.includes('ROUNDABOUT')) iconClass = 'fa-arrows-spin';
-                                   if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
+                                    if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
                                     
                                     iconEl.className = `fa-solid ${iconClass}`;
                                 }
