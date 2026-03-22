@@ -1292,7 +1292,7 @@ function clearRoutes() {
     // ==========================================
     const btnStartRoute = document.getElementById('btn-start-nav'); // Checke, ob deine ID in der HTML so heißt!
     
-    if (btnStartRoute) {
+  if (btnStartRoute) {
         btnStartRoute.addEventListener('click', async () => {
             // 1. Visueller Abgang der Route-Card
             const routeUI = document.getElementById('route-overview-ui');
@@ -1304,83 +1304,109 @@ function clearRoutes() {
 
             // 3. UI-Daten für die Pille aus RouteLogic übernehmen
             const activeRouteIndex = RouteLogic.activeIndex;
+            // Distanz
             const distanceText = document.getElementById(`opt-dist-${activeRouteIndex}`).textContent;
             document.getElementById('hud-remaining-dist').textContent = distanceText;
+            // ETA (Uhrzeit) - FIX!
+            const etaText = document.getElementById(`opt-eta-${activeRouteIndex}`).textContent;
+            document.getElementById('hud-arrival-time').textContent = etaText;
             
-            // 4. MAPLIBRE 3D KAMERA-FAHRT (Der kinoreife Sturzflug)
+            // 4. MAPLIBRE 3D KAMERA-FAHRT
             if (libreMap && currentCoords) {
-                // Wir schalten Interaktionen aus, damit der Nutzer nicht während der Fahrt wischt
-                libreMap.dragPan.disable();
-                libreMap.scrollZoom.disable();
+                // FIX: Altes Menü-Padding radikal nullen, damit es perfekt zentriert ist!
+                libreMap.setPadding({ left: 0, right: 0, top: 0, bottom: 0 });
+                
+                // FIX: Karte voll bedienbar lassen!
+                libreMap.dragPan.enable();
+                libreMap.scrollZoom.enable();
+                libreMap.touchZoomRotate.enable();
 
                 libreMap.flyTo({
-                    center: currentCoords, // Wir zentrieren hart auf dich
-                    zoom: 17.5, // Sehr nah ran für den Fahr-Modus
-                    pitch: 65, // Kippt die Karte massiv an (3D Gebäude ploppen hoch)
-                    bearing: 0, // Später drehen wir das noch in Fahrrichtung
-                    // Padding Bottom ist extrem wichtig! Es schiebt deinen blauen Pfeil 
-                    // an den unteren Rand, damit du weit nach vorne in den Horizont schauen kannst.
-                    padding: { top: 0, bottom: window.innerHeight * 0.4, left: 0, right: 0 }, 
-                    duration: 2500, // Butterweiche 2,5 Sekunden
+                    center: currentCoords, 
+                    zoom: 17.5, 
+                    pitch: 60, // Leicht reduziert für eine saubere Optik am Horizont
+                    bearing: 0, 
+                    padding: { bottom: 250 }, // Schiebt den Punkt in das untere Drittel
+                    duration: 2500, 
                     essential: true
                 });
             }
 
-            // 5. STIMME AUSLÖSEN (Firestore + Google TTS)
+            // 5. STIMME & X-BUTTON EINBLENDEN
             const destName = document.getElementById('dest-name-display') ? document.getElementById('dest-name-display').textContent : "deinem Ziel";
-            const welcomeText = `Route nach ${destName} wird gestartet. Driver Hub wünscht eine sichere Fahrt.`;
+            triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
             
-            triggerGoogleVoice(welcomeText);
+            // Den neuen Cancel-Button einblenden
+            const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
+            if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
         });
     }
-
-  // ==========================================
-    // === GOOGLE TEXT-TO-SPEECH ENGINE ===
+// HIER REIN KOMMT DER NEUE KOLLEGE:
     // ==========================================
-    async function triggerGoogleVoice(text) {
-        try {
-            // 1. API-Key aus Firestore holen 
-            // (Geht davon aus, dass 'db' deine exportierte Firestore-Instanz ist)
-            // Falls du Firebase Modular (v9) nutzt, musst du ggf. doc und getDoc importieren!
-            const docRef = doc(db, "config", "api_keys");
-            const docSnap = await getDoc(docRef);
+    // === NOT-AUS: NAVIGATION ABBRECHEN ===
+    // ==========================================
+    const btnCancelActiveNav = document.getElementById('btn-cancel-active-nav');
+    if (btnCancelActiveNav) {
+        btnCancelActiveNav.addEventListener('click', () => {
+            // Pille und X-Button ausblenden
+            document.getElementById('navigation-hud-pill').classList.add('hidden');
+            btnCancelActiveNav.classList.add('hidden');
             
-            if (!docSnap.exists()) {
-                console.error("Kein API Key in Firestore gefunden!");
-                return;
+            // Routen radikal löschen
+            clearRoutes();
+            
+            // Kamera zurück auf Standard setzen
+            if (libreMap && currentCoords) {
+                libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, padding: { right: 0, bottom: 0 }, duration: 1500 });
             }
             
-            const apiKey = docSnap.data().google_tts;
-
-            // 2. Google Cloud API Anfrage feuern
-            const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    input: { text: text },
-                    // Die deutsche Premium "Journey" Stimme
-                    // NEU (WaveNet):
-voice: { languageCode: 'de-DE', name: 'de-DE-Wavenet-F' }, 
-                    audioConfig: { 
-                        audioEncoding: 'MP3',
-                        pitch: 0,
-                        speakingRate: 1.0 
-                    }
-                })
-            });
-
-            if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
-
-            const data = await response.json();
+            // UI wiederherstellen
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.style.display = 'flex';
             
-            // 3. Audio-String in echte Töne umwandeln und direkt abspielen
-            const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
-            audio.play();
-
-        } catch (error) {
-            console.error("Sprachausgabe fehlgeschlagen:", error);
-        }
+            const shrinkBtnMap = document.getElementById('btn-shrink-map');
+            if (shrinkBtnMap) {
+                shrinkBtnMap.style.opacity = '1';
+                shrinkBtnMap.style.pointerEvents = 'auto';
+            }
+        });
     }
+  // ==========================================
+// === GOOGLE TEXT-TO-SPEECH ENGINE ===
+// ==========================================
+async function triggerGoogleVoice(text) {
+    try {
+        // FIX: Firebase V8 Compat Syntax nutzen!
+        const docRef = db.collection("config").doc("api_keys");
+        const docSnap = await docRef.get();
+        
+        if (!docSnap.exists) {
+            console.error("Kein API Key in Firestore gefunden!");
+            return;
+        }
+        
+        const apiKey = docSnap.data().google_tts;
+
+        // ... (der restliche fetch-Code mit dem apiKey bleibt exakt gleich!)
+        const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                input: { text: text },
+                voice: { languageCode: 'de-DE', name: 'de-DE-Wavenet-F' }, 
+                audioConfig: { audioEncoding: 'MP3', pitch: 0, speakingRate: 1.0 }
+            })
+        });
+
+        if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
+        const data = await response.json();
+        const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
+        audio.play();
+
+    } catch (error) {
+        console.error("Sprachausgabe fehlgeschlagen:", error);
+    }
+}
 
 }); // <-- Dies ist die allerletzte Klammer deiner Datei
 
