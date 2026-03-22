@@ -3082,3 +3082,93 @@ body.ghost-active #ghost-chat-overlay {
     color: #ffffff; 
     filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
 }
+
+
+/* ========================================= */
+/* === PHASE 1: NAVIGATION HUD PILL === */
+/* ========================================= */
+
+.nav-hud-pill {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    width: 90%;
+    max-width: 400px;
+    height: 80px;
+    background: #1c1c1e;
+    border-radius: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 24px;
+    z-index: 100;
+    transition: all 0.6s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+/* Versteckter Zustand (Slide down & Fade out) */
+.nav-hud-pill.hidden {
+    transform: translateX(-50%) translateY(120px);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* --- HUD Elemente --- */
+.hud-eta, .hud-distance {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 25%;
+}
+
+.hud-distance {
+    align-items: flex-end;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+#hud-arrival-time {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.hud-delay-good { color: #30d158; font-size: 12px; font-weight: 600; margin-top: 2px; }
+.hud-delay-bad { color: #ff3b30; font-size: 12px; font-weight: 600; margin-top: 2px; }
+
+.hud-speed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
+}
+
+#hud-current-speed {
+    font-size: 38px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -1px;
+}
+
+.hud-speed-unit {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 2px;
+}
+
+/* WICHTIG: Damit die Route-Card weich verschwindet */
+#route-overview-ui {
+    transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+}
+#route-overview-ui.fade-out {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+    pointer-events: none;
+}
