@@ -167,7 +167,7 @@ libreMap.addLayer({
     });
     setTimeout(() => { if (libreMap) libreMap.resize(); }, 300);
 }
-    // ==========================================
+ // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
     // ==========================================
     const expandTrigger = document.getElementById('map-expand-trigger');
@@ -205,9 +205,6 @@ libreMap.addLayer({
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
-      
-            // -----------------------------------------
-
             // --- NORMALER SHRINK CODE (Nur wenn keine Route offen ist) ---
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
@@ -1317,14 +1314,15 @@ function clearRoutes() {
                 // Wir reißen alle Sperren ein!
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
-                libreMap.touchZoomRotate.enable();
-                libreMap.doubleClickZoom.enable();
-                if (libreMap.dragRotate) libreMap.dragRotate.enable();
+                // Rotation blockieren für angenehmes Wischen im 3D Modus
+                libreMap.touchZoomRotate.disable(); 
+                libreMap.doubleClickZoom.disable();
+                if (libreMap.dragRotate) libreMap.dragRotate.disable();
 
                 libreMap.flyTo({
                     center: currentCoords, 
                     zoom: 17.5, 
-                    pitch: 60, 
+                    pitch: 45, // Flacherer Winkel für bessere Übersicht
                     bearing: 0, 
                     padding: { bottom: 250 }, 
                     duration: 2500, 
@@ -1336,8 +1334,9 @@ function clearRoutes() {
             const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
             if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
 
-            // 6. STIMME AUSLÖSEN
-            const destName = document.getElementById('dest-name-display') ? document.getElementById('dest-name-display').textContent : "deinem Ziel";
+            // 6. STIMME AUSLÖSEN (Mit echtem Zielnamen)
+            const searchInput = document.getElementById('tomtom-search-input');
+            const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
             triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
         });
     }
@@ -1376,11 +1375,12 @@ function clearRoutes() {
             const pillV = document.querySelector('.map-controls-pill-v');
             if (pillV) pillV.style.display = 'flex';
             
-            const shrinkBtnMap = document.getElementById('btn-shrink-map');
-            if (shrinkBtnMap) {
-                shrinkBtnMap.style.opacity = '1';
-                shrinkBtnMap.style.pointerEvents = 'auto';
-            }
+          // NEU:
+const shrinkBtnMap = document.getElementById('btn-shrink-map');
+if (shrinkBtnMap) {
+    shrinkBtnMap.style.opacity = ''; 
+    shrinkBtnMap.style.pointerEvents = '';
+}
 
             // 5. Alle Linien von der Karte reißen
             clearRoutes();
