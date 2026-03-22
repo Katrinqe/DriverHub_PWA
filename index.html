@@ -847,7 +847,11 @@
     </div> 
 </div>
 
-<div id="navigation-hud-pill" class="nav-hud-pill hidden">
+<button id="btn-cancel-active-nav" class="hidden" style="position: absolute; top: env(safe-area-inset-top, 40px); right: 20px; z-index: 9999; width: 45px; height: 45px; border-radius: 50%; background: rgba(255, 59, 48, 0.2); border: 1px solid rgba(255, 59, 48, 0.5); color: #ff3b30; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+
+    <div id="navigation-hud-pill" class="nav-hud-pill hidden">
         <div class="hud-eta">
             <span id="hud-arrival-time">--:--</span>
             <span id="hud-delay" class="hud-delay-good">Lokal</span>
@@ -860,7 +864,6 @@
             <span id="hud-remaining-dist">-- km</span>
         </div>
     </div>
-
             
 </div>
         </div> </div> </div> <div id="global-nav" class="bottom-nav interactive-element">
