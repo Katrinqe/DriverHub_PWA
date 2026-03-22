@@ -1319,15 +1319,16 @@ function clearRoutes() {
                 libreMap.doubleClickZoom.disable();
                 if (libreMap.dragRotate) libreMap.dragRotate.disable();
 
-                libreMap.flyTo({
-                    center: currentCoords, 
-                    zoom: 17.5, 
-                    pitch: 45, // Flacherer Winkel für bessere Übersicht
-                    bearing: 0, 
-                    padding: { bottom: 250 }, 
-                    duration: 2500, 
-                    essential: true
-                });
+           // NEU:
+libreMap.flyTo({
+    center: currentCoords, 
+    zoom: 18,        // Sehr nah dran für den perfekten Stadt-Überblick
+    pitch: 0,        // Flach von oben (2D-Modus)
+    bearing: 0,      // Später drehen wir das noch live in Fahrtrichtung
+    padding: { bottom: 120 }, // Nur leicht nach oben geschoben, damit dein Punkt exakt ÜBER der neuen schwarzen Pille sitzt
+    duration: 2000,  // Etwas knackiger (2 Sekunden)
+    essential: true
+});
             }
 
             // 5. SICHERHEIT: Zuerst das X einblenden!
