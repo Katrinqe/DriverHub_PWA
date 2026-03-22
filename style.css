@@ -3190,64 +3190,75 @@ body.ghost-active #ghost-chat-overlay {
     top: env(safe-area-inset-top, 40px);
     left: 50%;
     transform: translateX(-50%) translateY(0);
-    width: 90%;
-    max-width: 400px;
-    height: 70px;
+    width: 95%; /* Etwas breiter */
+    max-width: 450px;
+    min-height: 90px; /* Deutlich höher! */
     
     /* Premium Glassmorphism */
-    background: rgba(15, 15, 18, 0.6);
+    background: rgba(15, 15, 18, 0.7);
     backdrop-filter: blur(25px) saturate(150%);
     -webkit-backdrop-filter: blur(25px) saturate(150%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 20px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
     
     display: flex;
     align-items: center;
-    padding: 0 15px;
-    z-index: 100;
+    padding: 15px 20px;
+    z-index: 9999; /* FIX: Zwingt die Karte absolut in den Vordergrund! */
     transition: all 0.6s cubic-bezier(0.2, 1, 0.3, 1);
 }
 
 .nav-top-card.hidden {
-    transform: translateX(-50%) translateY(-100px);
+    transform: translateX(-50%) translateY(-120px);
     opacity: 0;
     pointer-events: none;
 }
 
 .top-card-icon-box {
-    width: 40px;
-    height: 40px;
+    width: 50px;
+    height: 50px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 24px;
+    font-size: 32px; /* Pfeil massiv vergrößert */
     color: #fff;
-    margin-right: 15px;
+    margin-right: 20px;
 }
 
 .top-card-text-box {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    flex: 1; /* Nimmt den restlichen Platz ein */
-    min-width: 0; /* WICHTIG: Erlaubt dem Text, abgeschnitten zu werden! */
+    flex: 1; 
+    min-width: 0; 
 }
 
-#nav-top-instruction {
-    font-size: 16px;
+#nav-top-action {
+    font-size: 22px; /* Der Hauptbefehl, groß und fett */
     font-weight: 800;
     color: #fff;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Schneidet lange Straßennamen mit "..." ab */
-    line-height: 1.2;
+    text-overflow: ellipsis; 
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+
+#nav-top-street {
+    font-size: 15px; /* Die Straße, etwas dezenter */
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    margin-top: 2px;
 }
 
 #nav-top-distance {
-    font-size: 13px;
-    font-weight: 700;
-    color: #30d158; /* Das DriverHub Grün für den Countdown */
-    margin-top: 2px;
+    font-size: 16px; 
+    font-weight: 800;
+    color: #30d158; /* DriverHub Grün */
+    margin-top: 6px;
 }
