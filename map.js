@@ -491,6 +491,21 @@ allPoints.forEach(coord => bounds.extend(coord));
 
             // NEU: Fertiges Farb-Array in unserer Logik abspeichern
             RouteLogic.routeColorsData[index] = pointColors;
+            // --- NEU: ECHTE STRAßENMETER VORBERECHNEN ---
+            const cumulativeDists = [0];
+            let currentDist = 0;
+            for (let k = 1; k < allPoints.length; k++) {
+                // Wir messen die kurzen Stücke zwischen jedem TomTom-Punkt
+                currentDist += calculateDistance(allPoints[k-1][1], allPoints[k-1][0], allPoints[k][1], allPoints[k][0]);
+                cumulativeDists.push(currentDist);
+            }
+            RouteLogic.routeCumulativeDistances[index] = cumulativeDists;
+            
+            // --- NEU FÜR PHASE 2: INSTRUCTIONS SPEICHERN ---
+            if (index === 0 && route.guidance && route.guidance.instructions) {
+                RouteLogic.currentInstructions = route.guidance.instructions;
+                RouteLogic.currentInstructionIndex = 0; // Reset für den Start
+            }
 
             // Im Objekt speichern für späteres Umschalten (Aktiv/Grau)
             RouteLogic.routeGeoJSONs[index] = routeFeatures;
@@ -926,6 +941,21 @@ function clearRoutes() {
         });
     }
 // ==========================================
+    // === MATH: ECHTE LUFTLINIEN-DISTANZ IN METER ===
+    // ==========================================
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // Erdradius in Metern
+        const rad = Math.PI / 180;
+        const dLat = (lat2 - lat1) * rad;
+        const dLon = (lon2 - lon1) * rad;
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                  Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+                  Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    // ==========================================
     // === ROUTE LOGIC (MULTI-ROUTE & UI) ===
     // ==========================================
     window.RouteLogic = {
@@ -933,8 +963,12 @@ function clearRoutes() {
         routePointsData: [null, null], 
         routeColorsData: [null, null], 
         routeDistances: [null, null], 
-        routeTimesData: [null, null], // <-- NEU: Speichert die Reisezeit in Sekunden
+        routeTimesData: [null, null], 
+        routeCumulativeDistances: [null, null],
         activeIndex: 0,
+        // --- NEU: HIER SPEICHERN WIR DIE ABBIEGEBEFEHLE ---
+        currentInstructions: [],
+        currentInstructionIndex: 0,
 
         selectRouteOpt: function(index) {
             if (!this.routeGeoJSONs[index]) return; 
@@ -946,24 +980,19 @@ function clearRoutes() {
             this.updateMapLayers();
             
             if (this.routePointsData[index]) {
-                // NEU: Zeit als 4. Parameter übergeben!
                 window.loadElevationData(this.routePointsData[index], this.routeColorsData[index], this.routeDistances[index], this.routeTimesData[index]);
             }
         },
-        // Zeichnet die Linien auf der Karte neu (Aktiv = Bunt/Blau, Inaktiv = Grau)
+
         updateMapLayers: function() {
             for (let i = 0; i < 2; i++) {
                 if (!this.routeGeoJSONs[i]) continue;
-                
                 const isAct = (i === this.activeIndex);
                 const layerId = `route-layer-${i}`;
                 const sourceId = `route-source-${i}`;
-
-                // Kopie der Originaldaten für den grauen Modus erstellen
                 let displayFeatures = JSON.parse(JSON.stringify(this.routeGeoJSONs[i]));
                 
                 if (!isAct) {
-                    // Wenn inaktiv, überschreiben wir alle Farben hart mit Grau
                     displayFeatures.forEach(f => { f.properties.color = '#555555'; });
                 }
 
@@ -972,27 +1001,22 @@ function clearRoutes() {
                 }
 
                 if (libreMap.getLayer(layerId)) {
-                    // Aktive Route dicker machen und nach vorne holen (Opazität)
                     libreMap.setPaintProperty(layerId, 'line-width', isAct ? 6 : 4);
                     libreMap.setPaintProperty(layerId, 'line-opacity', isAct ? 1 : 0.4);
                 }
             }
         },
 
-  
-
-        // Extrahiert die Autobahn (z.B. "A3") aus den TomTom Instruktionen
         extractHighway: function(instructions) {
             if (!instructions) return "Schnellste Route";
             for (let i = 0; i < instructions.length; i++) {
                 let inst = instructions[i];
                 if (inst.roadNumbers && inst.roadNumbers.length > 0) {
                     let road = inst.roadNumbers[0];
-                    // Wir akzeptieren nur A-Straßen (Autobahnen in DE)
                     if (road.startsWith('A')) return `über ${road}`; 
                 }
             }
-            return "Lokale Route"; // Wenn keine Autobahn gefunden wurde
+            return "Lokale Route";
         }
     };
 // ==========================================
@@ -1295,29 +1319,26 @@ function clearRoutes() {
         }
     }
 
-   // ==========================================
+ // ==========================================
     // === PHASE 1: GO BUTTON & 3D LAUNCH ===
     // ==========================================
     const btnStartRoute = document.getElementById('btn-start-nav'); 
     
     if (btnStartRoute) {
         btnStartRoute.addEventListener('click', async () => {
-            // 1. Visueller Abgang der Route-Card
+            window.lastRouteIdx = 0; // Setzt die Straßenposition auf Start
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) routeUI.classList.add('fade-out');
 
-            // 2. Navigations-Pille hochfahren lassen
             const navHud = document.getElementById('navigation-hud-pill');
             if (navHud) navHud.classList.remove('hidden');
 
-            // 3. UI-Daten für die Pille aus RouteLogic übernehmen
             const activeRouteIndex = RouteLogic.activeIndex;
             const distanceText = document.getElementById(`opt-dist-${activeRouteIndex}`).textContent;
             document.getElementById('hud-remaining-dist').textContent = distanceText;
             const etaText = document.getElementById(`opt-eta-${activeRouteIndex}`).textContent;
             document.getElementById('hud-arrival-time').textContent = etaText;
             
-            // 4. MAPLIBRE: TOTALE FREIHEIT & CITY-ZOOM (2D)
             if (libreMap && currentCoords) {
                 libreMap.setPadding({ left: 0, right: 0, top: 0, bottom: 0 });
                 libreMap.dragPan.enable();
@@ -1337,14 +1358,30 @@ function clearRoutes() {
                 });
             }
 
-            // 5. SICHERHEIT: Zuerst das X einblenden!
+            // 5. X-BUTTON UND TOP-CARD EINBLENDEN
             const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
             if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
+            
+            const topCard = document.getElementById('nav-top-card');
+            if(topCard) topCard.classList.remove('hidden');
 
-            // 6. STIMME AUSLÖSEN
+            // 6. INITIAL-STIMME AUSLÖSEN
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
             triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
+
+            // 6b. DIE 5-SEKUNDEN REGEL: Erster Abbiegebefehl
+            setTimeout(() => {
+                if (RouteLogic.currentInstructions && RouteLogic.currentInstructions.length > 0) {
+                    let firstInst = RouteLogic.currentInstructions[0];
+                    // TomTom sagt oft zuerst "Fahren Sie los". Das überspringen wir zum echten ersten Manöver.
+                    if (firstInst.maneuver === 'DEPART' && RouteLogic.currentInstructions.length > 1) {
+                        firstInst = RouteLogic.currentInstructions[1];
+                        RouteLogic.currentInstructionIndex = 1; // Tracker auf den aktuellen Befehl setzen
+                    }
+                    triggerGoogleVoice(firstInst.message);
+                }
+            }, 5000);
 
             // 7. LIVE GPS MOTOR STARTEN
             if (navigator.geolocation) {
@@ -1353,104 +1390,168 @@ function clearRoutes() {
                 navWatchId = navigator.geolocation.watchPosition((position) => {
                     const lng = position.coords.longitude;
                     const lat = position.coords.latitude;
-                    const heading = position.coords.heading; // 0 bis 360 Grad
-                    const speed = position.coords.speed; // Meter pro Sekunde
+                    const heading = position.coords.heading; 
+                    const speed = position.coords.speed; 
 
                     currentCoords = [lng, lat];
 
-                    // 7a. HUD Speed updaten (m/s in km/h)
+                    // Speed Updaten
                     const speedKmh = speed ? Math.round(speed * 3.6) : 0;
                     const speedDisplay = document.getElementById('hud-current-speed');
                     if (speedDisplay) speedDisplay.textContent = speedKmh;
 
-                    // 7b. Blauen Punkt bewegen
+                    // Marker bewegen
                     if (window.userLocationMarker) {
                         window.userLocationMarker.setLngLat(currentCoords);
                     }
 
-                    // 7c. Kamera weich mitziehen und rotieren
+                    // Kamera zentrieren
                     if (libreMap) {
-                        const cameraOpts = {
-                            center: currentCoords,
-                            duration: 1000, // 1 Sekunde für weiche Überblendungen
-                            easing: (t) => t // Lineare Bewegung ohne Ruckeln
-                        };
-
-                        // Anti-Zitter-Logik: Wir drehen die Karte nur, wenn wir schneller als ~3 km/h fahren.
-                        if (heading !== null && speed !== null && speed > 0.8) {
-                            cameraOpts.bearing = heading;
-                        }
-
+                        const cameraOpts = { center: currentCoords, duration: 1000, easing: (t) => t };
+                        if (heading !== null && speed !== null && speed > 0.8) cameraOpts.bearing = heading;
                         libreMap.easeTo(cameraOpts);
                     }
 
-                }, (error) => {
-                    console.warn("GPS Signal verloren:", error);
-                }, {
-                    enableHighAccuracy: true,
-                    maximumAge: 0,
-                    timeout: 5000
-                });
-            }
-        });
-    }
+                    // ==============================================
+                    // 7d. TOP-CARD UPDATE & ECHTE STRAßEN-MATHEMATIK
+                    // ==============================================
+                    const activeRoutePts = RouteLogic.routePointsData[RouteLogic.activeIndex];
+                    const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
+
+                    if (activeRoutePts && cumulativeDists && RouteLogic.currentInstructions && RouteLogic.currentInstructions.length > 0) {
+                        
+                        if (typeof window.lastRouteIdx === 'undefined') window.lastRouteIdx = 0;
+                        
+                        // A: Wo auf der Straße (blauen Linie) ist das Auto gerade?
+                        let closestIdx = window.lastRouteIdx;
+                        let minDist = Infinity;
+                        // Aus Performance-Gründen schauen wir immer nur 50 Punkte voraus
+                        const limit = Math.min(activeRoutePts.length, closestIdx + 50); 
+                        
+                        for (let i = closestIdx; i < limit; i++) {
+                            const d = calculateDistance(lat, lng, activeRoutePts[i][1], activeRoutePts[i][0]);
+                            if (d < minDist) {
+                                minDist = d;
+                                closestIdx = i;
+                            }
+                        }
+                        window.lastRouteIdx = closestIdx; // Speichern für den nächsten GPS-Ping
+
+                        // B: Befehl verarbeiten
+                        let currIdx = RouteLogic.currentInstructionIndex;
+                        const instructions = RouteLogic.currentInstructions;
+
+                        if (currIdx < instructions.length) {
+                            let currentManeuver = instructions[currIdx];
+                            
+                            // C: DIE MAGIE - Echte Straßenkilometer! 
+                            // (Meter vom Start bis zur Ampel) MINUS (Meter vom Start bis zum Auto)
+                            let distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
+
+                            // Falls wir leicht drübergerollt sind
+                            if (distMeters < 0) distMeters = 0;
+
+                            // D: Nächster Befehl? (Wenn wir näher als 35 Straßenmeter an der Kreuzung sind)
+                            if (distMeters <= 35) {
+                                RouteLogic.currentInstructionIndex++;
+                                currIdx = RouteLogic.currentInstructionIndex;
+                                
+                                if (currIdx < instructions.length) {
+                                    currentManeuver = instructions[currIdx];
+                                    // Distanz für das neue Manöver sofort frisch berechnen
+                                    distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
+                                    if (distMeters < 0) distMeters = 0;
+                                    triggerGoogleVoice(currentManeuver.message);
+                                }
+                            }
+
+                            // E: Das Glas-HUD Updaten
+                            if (currIdx < instructions.length) {
+                                const textEl = document.getElementById('nav-top-instruction');
+                                if (textEl) textEl.textContent = currentManeuver.message;
+
+                                const distEl = document.getElementById('nav-top-distance');
+                                if (distEl) {
+                                    if (distMeters >= 1000) {
+                                        distEl.textContent = `in ${(distMeters / 1000).toFixed(1)} km`;
+                                    } else {
+                                        // Runden auf volle Meter für saubere Optik
+                                        distEl.textContent = `in ${Math.round(distMeters)} m`;
+                                    }
+                                }
+
+                                const iconEl = document.getElementById('nav-top-icon');
+                                if (iconEl) {
+                                    let iconClass = 'fa-arrow-up'; 
+                                    const man = currentManeuver.maneuver || '';
+                                    
+                                    if (man.includes('LEFT')) iconClass = 'fa-arrow-left';
+                                    if (man.includes('RIGHT')) iconClass = 'fa-arrow-right';
+                                    if (man.includes('KEEP_LEFT')) iconClass = 'fa-arrow-up-left';
+                                    if (man.includes('KEEP_RIGHT')) iconClass = 'fa-arrow-up-right';
+                                    if (man.includes('U_TURN')) iconClass = 'fa-arrow-rotate-left';
+                                    if (man.includes('ROUNDABOUT')) iconClass = 'fa-arrows-spin';
+                                    if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
+                                    
+                                    iconEl.className = `fa-solid ${iconClass}`;
+                                }
+                            }
+                        }
+                    }
 
     // ==========================================
     // === NOT-AUS: DER NUKLEAR-ABBRUCH ===
     // ==========================================
     const btnCancelActiveNav = document.getElementById('btn-cancel-active-nav');
-    
     if (btnCancelActiveNav) {
         btnCancelActiveNav.onclick = (e) => {
             e.stopPropagation();
 
-            // 1. Renn-Modus UI sofort killen
+            if (navWatchId !== null) {
+                navigator.geolocation.clearWatch(navWatchId);
+                navWatchId = null;
+            }
+            
+            const speedDisplay = document.getElementById('hud-current-speed');
+            if (speedDisplay) speedDisplay.textContent = '0';
+
             document.getElementById('navigation-hud-pill').classList.add('hidden');
             btnCancelActiveNav.classList.add('hidden');
             
-            // 2. Route Card hart verstecken
+            // NEU: Top-Card beim Abbruch ebenfalls sprengen
+            const topCard = document.getElementById('nav-top-card');
+            if (topCard) topCard.classList.add('hidden');
+            
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) {
                 routeUI.classList.remove('fade-out'); 
                 routeUI.classList.add('hidden');
             }
 
-            // 3. Ziel aus der Suche gnadenlos löschen
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) {
                 searchInput.value = '';
                 searchInput.blur();
             }
 
-            // 4. Standard UI wieder hochfahren
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.style.display = 'flex';
             
             const pillV = document.querySelector('.map-controls-pill-v');
             if (pillV) pillV.style.display = 'flex';
             
-          // NEU:
-const shrinkBtnMap = document.getElementById('btn-shrink-map');
-if (shrinkBtnMap) {
-    shrinkBtnMap.style.opacity = ''; 
-    shrinkBtnMap.style.pointerEvents = '';
-}
+            const shrinkBtnMap = document.getElementById('btn-shrink-map');
+            if (shrinkBtnMap) {
+                shrinkBtnMap.style.opacity = ''; 
+                shrinkBtnMap.style.pointerEvents = '';
+            }
 
-            // 5. Alle Linien von der Karte reißen
             clearRoutes();
 
-            // 6. Kamera zurücksetzen
             if (libreMap && currentCoords) {
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
-                libreMap.flyTo({ 
-                    center: currentCoords, 
-                    zoom: 14, 
-                    pitch: 0, 
-                    bearing: 0, 
-                    padding: { right: 0, bottom: 0 }, 
-                    duration: 1500 
-                });
+                libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, padding: { right: 0, bottom: 0 }, duration: 1500 });
             }
         };
     }
@@ -1460,17 +1561,11 @@ if (shrinkBtnMap) {
     // ==========================================
     async function triggerGoogleVoice(text) {
         try {
-            // Firebase V8 Compat Syntax!
             const docRef = db.collection("config").doc("api_keys");
             const docSnap = await docRef.get();
-            
-            if (!docSnap.exists) {
-                console.error("Kein API Key in Firestore gefunden!");
-                return;
-            }
+            if (!docSnap.exists) { console.error("Kein API Key in Firestore gefunden!"); return; }
             
             const apiKey = docSnap.data().google_tts;
-
             const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1482,7 +1577,6 @@ if (shrinkBtnMap) {
             });
 
             if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
-
             const data = await response.json();
             const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
             audio.play();
@@ -1493,5 +1587,3 @@ if (shrinkBtnMap) {
     }
 
 }); // <-- Das ist und bleibt deine allerletzte Klammer in der map.js!
-
-
