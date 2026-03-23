@@ -1429,17 +1429,15 @@ function clearRoutes() {
                 return `nutzen Sie die ${dirArray.join(" oder ")} Spur`;
             };
 
-          
-       // ==============================================
-            // 6. DIE PERFEKTE START-ANSAGE (Peters State-Machine Weg)
+            // ==============================================
+            // 6. DIE PERFEKTE START-ANSAGE (Bulletproof Version)
             // ==============================================
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
             
-            // 6a. "Route wird gestartet" kommt SOFORT
-            triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
+            let welcomeSpeech = `Route nach ${destName} wird gestartet.`;
             
-            // 6b. Finde das erste echte Manöver (DEPART überspringen)
+            // Finde das erste echte Manöver (DEPART überspringen)
             const instructions = RouteLogic.currentInstructions || [];
             let startIdx = 0;
             while (startIdx < instructions.length && instructions[startIdx].maneuver === 'DEPART') {
@@ -1447,36 +1445,55 @@ function clearRoutes() {
             }
             RouteLogic.currentInstructionIndex = startIdx;
 
-           // 6c. State Machine initialisieren
+            // Erste Ansage sofort auslesen und an den Startsatz kleben
             const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
             if (startIdx < instructions.length && cumulativeDists) {
                 const firstMan = instructions[startIdx];
                 let distMeters = cumulativeDists[firstMan.pointIndex] - cumulativeDists[0];
                 if (distMeters < 0) distMeters = 0;
 
+                const shortInfo = getShortInstruction(firstMan);
+                const laneText = getLaneText(firstMan);
+                const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
+                
+                // Spur-Info nur anhängen, wenn wir unter 600m sind
+                const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
+
+                let firstInstructionText = "";
+                if (distMeters > 5000) {
+                    firstInstructionText = `Folgen Sie der Route für ${Math.round(distMeters/1000)} Kilometer.`;
+                } else if (distMeters < 70) {
+                    firstInstructionText = actionStr; // Sehr nah: Direkt den Befehl ohne Distanz
+                } else {
+                    firstInstructionText = `In ${formatDist(distMeters)} ${actionStr}.`;
+                }
+
+                // Texte zusammenfügen für einen sauberen TTS-Aufruf
+                welcomeSpeech += " " + firstInstructionText;
+
+                // DIE STATE-MACHINE FÜR DAS ERSTE MANÖVER AUF "ERLEDIGT" SETZEN
                 RouteLogic.voiceState = {
                     idx: startIdx,
                     segmentTotalDist: distMeters,
-                    spokenInit: false, 
+                    spokenInit: true, // <--- WICHTIG: Die Engine weiß jetzt, dass die Start-Ansage durch ist!
                     spoken5km: false,
-                    spoken2km: false,
-                    spoken500m: false,
-                    spoken100m: false,
-                    spoken50m: false,
-                    spokenNow: false
+                    spoken2km: distMeters <= 2000,
+                    spoken500m: distMeters <= 500,
+                    spoken100m: distMeters <= 100,
+                    spoken50m: distMeters <= 50,
+                    spokenNow: distMeters <= 15
                 };
 
-                // PETERS PRO-FIX: Force Flag nach 3.5 Sekunden!
-                RouteLogic.forceFirstInstruction = false;
-                if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
-                window.startVoiceTimeout = setTimeout(() => {
-                    RouteLogic.forceFirstInstruction = true;
-                }, 3500);
-
+                // Motor für die Dauer dieses langen Startsatzes blockieren (8 Sekunden Ruhe)
+                window.voiceBlockUntil = Date.now() + 8000;
             } else {
                 RouteLogic.voiceState = { idx: -1 };
             }
-          
+            
+            // EINE einzige, garantierte Sprachausgabe feuern!
+            triggerGoogleVoice(welcomeSpeech);
+
+        
             // ==============================================
             // 7. LIVE GPS MOTOR STARTEN
             // ==============================================
@@ -1616,21 +1633,23 @@ function clearRoutes() {
                                 return `${Math.round(m/10)*10} Metern`; 
                             };
 
-                            // REGEL 1: DIE IMMER-ANSAGE (Getriggert durch Peters Force-Flag ODER Extreme Nähe)
-                            if (!vs.spokenInit && (RouteLogic.forceFirstInstruction || distMeters < 70)) {
-                                if (distMeters < 70) {
-                                    textToSpeak = actionStr; // Zu nah: Direkt ansagen!
-                                } else if (vs.segmentTotalDist > 5000) {
-                                    textToSpeak = `Folgen Sie der Route für ${Math.round(vs.segmentTotalDist/1000)} Kilometer.`;
-                                } else {
-                                    textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
+                  // DIE STIMME DARF NUR REDEN, WENN DIE SPERRE ABGELAUFEN IST!
+                            if (Date.now() > window.voiceBlockUntil) {
+                                
+                                // REGEL 1: DIE IMMER-ANSAGE (Ganz normale Logik für die Folge-Straßen)
+                                if (!vs.spokenInit) {
+                                    if (distMeters < 70) {
+                                        textToSpeak = actionStr; // Zu nah: Direkt ansagen!
+                                    } else if (vs.segmentTotalDist > 5000) {
+                                        textToSpeak = `Folgen Sie der Route für ${Math.round(vs.segmentTotalDist/1000)} Kilometer.`;
+                                    } else {
+                                        textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
+                                    }
+                                    vs.spokenInit = true;
                                 }
-                                vs.spokenInit = true;
-                                RouteLogic.forceFirstInstruction = false; // Flag resetten!
-                            }
-                            
-                            // REGEL 2: DIE ZUSÄTZLICHEN ANSAGEN
-                            else if (vs.spokenInit) {
+                                
+                                // REGEL 2: DIE ZUSÄTZLICHEN ANSAGEN
+                                else {
                                 // KAT 5: Über 10 km
                                 if (vs.segmentTotalDist > 10000) {
                                     if (distMeters <= 5000 && distMeters > 2000 && !vs.spoken5km) { textToSpeak = `In 5 Kilometern ${actionStr}.`; vs.spoken5km = true; }
