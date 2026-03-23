@@ -797,11 +797,16 @@ function clearRoutes() {
         destMarker = null;
     }
 
-    // Ampel-Schalter deaktivieren & Ampeln restlos von der Karte fegen
+// Ampel-Schalter deaktivieren & Ampeln restlos von der Karte fegen
     window.isRouteOverviewActive = false;
     if (libreMap && libreMap.getSource('traffic-lights-source')) {
         libreMap.getSource('traffic-lights-source').setData({ type: 'FeatureCollection', features: [] });
     }
+    // WICHTIG: Sichtbarkeit wieder einschalten, falls wir vorher navigiert haben!
+    if (libreMap && libreMap.getLayer('traffic-lights-layer')) {
+        libreMap.setLayoutProperty('traffic-lights-layer', 'visibility', 'visible');
+    }
+
     // 4. Den Multi-Route Zwischenspeicher leeren
     if (window.RouteLogic) {
         window.RouteLogic.routeGeoJSONs = [null, null];
@@ -1405,6 +1410,12 @@ function clearRoutes() {
         btnStartRoute.addEventListener('click', async () => {
             window.lastRouteIdx = 0; 
             window.navStartTime = Date.now();
+
+            // Ampeln für die aktive Fahrt hart ausblenden
+            window.isRouteOverviewActive = false;
+            if (libreMap && libreMap.getLayer('traffic-lights-layer')) {
+                libreMap.setLayoutProperty('traffic-lights-layer', 'visibility', 'none');
+            }
             
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) routeUI.classList.add('fade-out');
