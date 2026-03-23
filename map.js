@@ -1369,7 +1369,7 @@ function clearRoutes() {
             const topCard = document.getElementById('nav-top-card');
             if(topCard) topCard.classList.remove('hidden');
 
-  // HILFSFUNKTIONEN FÜR SPRACHE UND TEXT (Inkl. Richtung/Signpost Logik von Peter)
+  // HILFSFUNKTIONEN FÜR SPRACHE UND TEXT
             const getShortInstruction = (maneuverObj) => {
                 const man = maneuverObj.maneuver || '';
                 let actionText = "Geradeaus";
@@ -1387,20 +1387,13 @@ function clearRoutes() {
                     streetText = maneuverObj.roadNumbers[0];
                 }
 
-                // NEU: Richtungsauswertung (TomTom nutzt meist signpostText)
                 let directionText = maneuverObj.signpostText || maneuverObj.destination || "";
 
-                // Grammatikalisch sauberes Zusammenbauen
                 if (directionText) {
-                    if (streetText) {
-                        streetText = "auf " + streetText + " Richtung " + directionText;
-                    } else {
-                        streetText = "in Richtung " + directionText;
-                    }
+                    if (streetText) streetText = "auf " + streetText + " Richtung " + directionText;
+                    else streetText = "in Richtung " + directionText;
                 } else {
-                    if (streetText) {
-                        streetText = "auf " + streetText;
-                    }
+                    if (streetText) streetText = "auf " + streetText;
                 }
                 
                 return { action: actionText, street: streetText };
@@ -1411,6 +1404,32 @@ function clearRoutes() {
                 return `${Math.round(m/10)*10} Metern`; 
             };
 
+            // PETERS SPUR-LOGIK (Lane Guidance) MIT DEUTSCHER GRAMMATIK
+            const getLaneText = (maneuverObj) => {
+                if (!maneuverObj.lanes || !Array.isArray(maneuverObj.lanes)) return "";
+                
+                const validLanes = maneuverObj.lanes.filter(l => l.valid === true);
+                if (validLanes.length === 0) return "";
+
+                let directions = new Set();
+                validLanes.forEach(l => {
+                    if (l.indication) {
+                        l.indication.forEach(ind => {
+                            const i = ind.toLowerCase();
+                            if (i.includes('left')) directions.add('linken');
+                            else if (i.includes('right')) directions.add('rechten');
+                            else if (i.includes('straight') || i.includes('center')) directions.add('mittleren');
+                        });
+                    }
+                });
+
+                const dirArray = Array.from(directions);
+                if (dirArray.length === 0) return "";
+                if (dirArray.length === 1) return `halten Sie sich auf der ${dirArray[0]} Spur`;
+                return `nutzen Sie die ${dirArray.join(" oder ")} Spur`;
+            };
+
+          
        // ==============================================
             // 6. DIE PERFEKTE START-ANSAGE (Peters State-Machine Weg)
             // ==============================================
@@ -1552,13 +1571,17 @@ function clearRoutes() {
                                 }
                             }
 
-                            // ==============================================
-                            // --- DIE NEUE SMART VOICE ENGINE (Automotive Level) ---
+                           // ==============================================
+                            // --- DIE NEUE SMART VOICE ENGINE (Automotive Level + Lanes) ---
                             // ==============================================
                             const shortInfo = getShortInstruction(currentManeuver);
-                            const actionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
+                            const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
+                            const laneText = getLaneText(currentManeuver);
+                            
+                            // PETERS TIPP: Die Spuransage wird nur an den Text gehängt, wenn wir unter 600m an der Kreuzung sind!
+                            const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
 
-                            // Robuste Schutzregel mit elapsedSinceStart
+                            // PETERS FIX 2: Robuste Schutzregel mit elapsedSinceStart
                             if (RouteLogic.voiceState.idx !== currIdx && elapsedSinceStart > 4000) {
                                 let trueSegDist = distMeters; 
                                 if (currIdx > 0) {
