@@ -1397,7 +1397,7 @@ function clearRoutes() {
             };
 
        // ==============================================
-            // 6. DIE PERFEKTE START-ANSAGE (Kombinierte Logik)
+            // 6. DIE PERFEKTE START-ANSAGE (Peters State-Machine Weg)
             // ==============================================
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
@@ -1413,48 +1413,32 @@ function clearRoutes() {
             }
             RouteLogic.currentInstructionIndex = startIdx;
 
-            // 6c. Erste Ansage isolieren und vorbereiten
+            // 6c. State Machine initialisieren (Wird erst nach 5 Sek vom Motor abgefeuert!)
             const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
             if (startIdx < instructions.length && cumulativeDists) {
                 const firstMan = instructions[startIdx];
                 let distMeters = cumulativeDists[firstMan.pointIndex] - cumulativeDists[0];
                 if (distMeters < 0) distMeters = 0;
 
-                const shortInfo = getShortInstruction(firstMan);
-                const actionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
-
-                let firstInstructionText = "";
-                if (distMeters > 5000) {
-                    firstInstructionText = `Folgen Sie der Route für ${Math.round(distMeters/1000)} Kilometer.`;
-                } else {
-                    firstInstructionText = `In ${formatDist(distMeters)} ${actionStr}.`;
-                }
-
-                // 6d. DEINE REGEL: Exakt 5 Sekunden warten, DANN die erste Ansage feuern
-                if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
-                window.startVoiceTimeout = setTimeout(() => {
-                    triggerGoogleVoice(firstInstructionText);
-                }, 5000);
-
-            // 6e. PETERS FIX: Dem Live-Motor sagen, dass die erste Ansage schon "gebucht" ist!
+                // PETERS FIX 1: spokenInit auf FALSE! Die Engine macht die Arbeit selbst.
                 RouteLogic.voiceState = {
                     idx: startIdx,
                     segmentTotalDist: distMeters,
-                    spokenInit: true, // <--- Bleibt true für den Start!
+                    spokenInit: false, // <--- DAS WAR DER HAUPTBUG!
                     spoken5km: false,
-                    spoken2km: false, // <-- FIX: Alles strikt auf false!
+                    spoken2km: false,
                     spoken500m: false,
                     spoken100m: false,
                     spoken50m: false,
                     spokenNow: false
                 };
 
-                // Motor für insgesamt 8 Sekunden blockieren (3 Sek "Route startet" + 5 Sek Pause für Timeout)
-                window.voiceBlockUntil = Date.now() + 8000;
+                // Motor für exakt 5 Sekunden blockieren
+                window.voiceBlockUntil = Date.now() + 5000;
             } else {
                 RouteLogic.voiceState = { idx: -1 };
             }
-            
+          
             // ==============================================
             // 7. LIVE GPS MOTOR STARTEN
             // ==============================================
@@ -1524,8 +1508,9 @@ function clearRoutes() {
                             }
                             if (distMeters < 0) distMeters = 0;
 
-                            // NÄCHSTER BEFEHL (Umschalten bei 10 Metern)
-                            if (distMeters <= 10) {
+                       // NÄCHSTER BEFEHL (Anti-GPS-Snap Fix von Peter)
+                            // Wir schalten erst um, wenn wir wirklich fast auf dem Punkt sind (<= 8m)
+                            if (distMeters <= 8) {
                                 RouteLogic.currentInstructionIndex++;
                                 currIdx = RouteLogic.currentInstructionIndex;
                                 
@@ -1545,12 +1530,13 @@ function clearRoutes() {
                             }
 
                             // ==============================================
-                            // --- DIE NEUE SMART VOICE ENGINE ---
+                            // --- DIE NEUE SMART VOICE ENGINE (Automotive Level) ---
                             // ==============================================
                             const shortInfo = getShortInstruction(currentManeuver);
                             const actionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
 
-                      if (RouteLogic.voiceState.idx !== currIdx) {
+                            // PETERS FIX 2: Robuste Schutzregel mit elapsedSinceStart
+                            if (RouteLogic.voiceState.idx !== currIdx && elapsedSinceStart > 4000) {
                                 // Echte Segment-Länge berechnen (von Abzweigung zu Abzweigung)
                                 let trueSegDist = distMeters; 
                                 if (currIdx > 0) {
@@ -1568,17 +1554,22 @@ function clearRoutes() {
                                 RouteLogic.voiceState = {
                                     idx: currIdx,
                                     segmentTotalDist: trueSegDist,
-                                    spokenInit: false, // Hier bei einer NEUEN Straße wieder false!
+                                    spokenInit: false, 
                                     spoken5km: false,
-                                    spoken2km: false,  // <-- FIX: Alles strikt auf false!
+                                    spoken2km: false,  
                                     spoken500m: false,
                                     spoken100m: false,
                                     spoken50m: false,
                                     spokenNow: false
                                 };
                             }
+                            
                             let vs = RouteLogic.voiceState;
                             let textToSpeak = null;
+                            
+                            // ... (Ab hier läuft der Code ganz normal weiter mit "const formatDist = ...")
+                            // ... (Ab hier läuft der Code ganz normal weiter mit "const formatDist = ...")
+                          
 
                             // DIE STIMME DARF NUR REDEN, WENN DIE 5-SEKUNDEN SPERRE ABGELAUFEN IST!
                             if (Date.now() > window.voiceBlockUntil) {
