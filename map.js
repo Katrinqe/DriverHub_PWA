@@ -1473,6 +1473,12 @@ function clearRoutes() {
                 };
 
                 window.voiceBlockUntil = Date.now() + 8000;
+                // PETERS SAFETY HACK: Fallback, falls das GPS beim Start hängt
+                RouteLogic.forceFirstInstruction = false;
+                if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
+                window.startVoiceTimeout = setTimeout(() => {
+                    RouteLogic.forceFirstInstruction = true;
+                }, 3500);
             } else {
                 RouteLogic.voiceState = { idx: -1 };
             }
@@ -1557,6 +1563,12 @@ function clearRoutes() {
                                     if (distMeters < 0) distMeters = 0;
                                     
                                     window.voiceBlockUntil = Date.now() + 5000;
+                                    // PETERS SAFETY HACK: Fallback nach dem Abbiegen
+                                    RouteLogic.forceFirstInstruction = false;
+                                    if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
+                                    window.startVoiceTimeout = setTimeout(() => {
+                                        RouteLogic.forceFirstInstruction = true;
+                                    }, 3500);
                                 }
                             }
 
@@ -1594,9 +1606,11 @@ function clearRoutes() {
                             let vs = RouteLogic.voiceState;
                             let textToSpeak = null;
                             
-                            if (Date.now() > window.voiceBlockUntil) {
+                           // DIE STIMME DARF REDEN, WENN DIE SPERRE WEG IST (Oder beim Force-Notfall!)
+                            if (Date.now() > window.voiceBlockUntil || RouteLogic.forceFirstInstruction) {
                                 
                                 if (!vs.spokenInit) {
+                                    RouteLogic.forceFirstInstruction = false; // Flag sofort wieder löschen
                                     if (distMeters < 70) {
                                         textToSpeak = actionStr; 
                                     } else if (vs.segmentTotalDist > 5000) {
