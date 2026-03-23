@@ -1396,7 +1396,7 @@ function clearRoutes() {
 
             // 6b. WURDE GELÖSCHT: Die Start-Ansage wird jetzt komplett vom intelligenten Motor unten übernommen!
 
-            // 7. LIVE GPS MOTOR STARTEN
+   // 7. LIVE GPS MOTOR STARTEN
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
 
@@ -1409,6 +1409,7 @@ function clearRoutes() {
 
                     currentCoords = [lng, lat];
 
+                    // Speed Updaten
                     const speedKmh = speed ? Math.round(speed * 3.6) : 0;
                     const speedDisplay = document.getElementById('hud-current-speed');
                     if (speedDisplay) speedDisplay.textContent = speedKmh;
@@ -1449,20 +1450,34 @@ function clearRoutes() {
                         let currIdx = RouteLogic.currentInstructionIndex;
                         const instructions = RouteLogic.currentInstructions;
 
+                        // --- FIX: TOMTOM "DEPART" ÜBERSPRINGEN ---
+                        // Wir wollen kein "Route folgen in 20m". Wir springen sofort zum ersten echten Manöver!
+                        while (currIdx < instructions.length && instructions[currIdx].maneuver === 'DEPART') {
+                            RouteLogic.currentInstructionIndex++;
+                            currIdx = RouteLogic.currentInstructionIndex;
+                        }
+
                         if (currIdx < instructions.length) {
                             let currentManeuver = instructions[currIdx];
                             
+                            // Distanz berechnen (Hybrid)
                             let distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
                             if (distMeters < 1500) {
                                 distMeters = calculateDistance(lat, lng, currentManeuver.point.latitude, currentManeuver.point.longitude);
                             }
                             if (distMeters < 0) distMeters = 0;
 
-                            // NÄCHSTER BEFEHL: Erst bei 10 Metern umschalten, damit die 15m-Sprachansage noch zünden kann!
+                            // NÄCHSTER BEFEHL: Umschalten bei 10m (gibt der finalen Ansage Zeit)
                             if (distMeters <= 10) {
                                 RouteLogic.currentInstructionIndex++;
                                 currIdx = RouteLogic.currentInstructionIndex;
                                 
+                                // Auch hier: Falls das nächste Manöver wieder "DEPART" ist (passiert manchmal), überspringen!
+                                while (currIdx < instructions.length && instructions[currIdx].maneuver === 'DEPART') {
+                                    RouteLogic.currentInstructionIndex++;
+                                    currIdx = RouteLogic.currentInstructionIndex;
+                                }
+
                                 if (currIdx < instructions.length) {
                                     currentManeuver = instructions[currIdx];
                                     distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
@@ -1470,78 +1485,86 @@ function clearRoutes() {
                                 }
                             }
 
-                            // --- DIE SMART VOICE ENGINE (Dein Logik-Baum) ---
+                            // ==============================================
+                            // --- DIE SMART VOICE ENGINE (Deine strikte Logik) ---
+                            // ==============================================
                             if (currIdx < instructions.length) {
-                                // Zustandstracker für das AKTUELLE Manöver erstellen
+                                
+                                // Tracker für das aktuelle Manöver zurücksetzen, falls es ein neues ist
                                 if (typeof window.voiceTracker === 'undefined' || window.voiceTracker.idx !== currIdx) {
                                     window.voiceTracker = {
                                         idx: currIdx,
-                                        initialDist: distMeters,
-                                        announcedStart: false,
-                                        // Wenn wir näher dran starten, als der Trigger verlangt, blockieren wir ihn sofort, damit er nicht nachträglich feuert
-                                        announced2k: distMeters <= 2000,
-                                        announced500: distMeters <= 500,
-                                        announced100: distMeters <= 100,
-                                        announced50: distMeters <= 50,
-                                        announcedNow: distMeters <= 15
+                                        startDist: distMeters,
+                                        spokenInit: false,
+                                        spoken2km: false,
+                                        spoken500m: false,
+                                        spoken100m: false,
+                                        spoken50m: false,
+                                        spokenNow: false
                                     };
                                 }
 
+                                let vt = window.voiceTracker;
                                 let textToSpeak = null;
+                                
                                 const shortInfo = getShortInstruction(currentManeuver);
                                 const actionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
                                 
-                                // Hilfsfunktion für schöne Sprachausgabe (z.B. 2,5 Kilometern)
+                                // Helfer für natürliche Ansage der Distanz
                                 const formatDist = (m) => {
                                     if (m >= 1000) return `${(m/1000).toFixed(1).replace('.', ',')} Kilometern`;
-                                    return `${Math.round(m/10)*10} Metern`; // Stimme auf 10m runden für natürlichen Fluss
+                                    return `${Math.round(m/10)*10} Metern`; 
                                 };
 
-                                // Ansagen nur zulassen, wenn das System 8 Sekunden hochgefahren ist (verhindert Überschneidung mit "Route wird gestartet")
+                                // Nur sprechen, wenn das System sauber hochgefahren ist (8 Sek)
                                 if (elapsedSinceStart > 8000) {
                                     
-                                    // 1. Initialer Fund des Manövers (Die Start-Ansage)
-                                    if (!window.voiceTracker.announcedStart) {
-                                        if (distMeters >= 5000) {
-                                            textToSpeak = `Folgen Sie der Route für ${formatDist(distMeters)}`;
+                                    // 0. INITIALE ANSAGE (Wird exakt einmal pro neuem Befehl gesagt)
+                                    if (!vt.spokenInit) {
+                                        if (vt.startDist > 5000) {
+                                            textToSpeak = `Folgen Sie der Route für ${Math.round(vt.startDist/1000)} Kilometer.`;
                                         } else {
-                                            textToSpeak = `In ${formatDist(distMeters)} ${actionStr}`;
+                                            textToSpeak = `In ${formatDist(vt.startDist)} ${actionStr}.`;
                                         }
-                                        window.voiceTracker.announcedStart = true;
+                                        vt.spokenInit = true;
                                     }
-                                    // 2. Größer als 5km Distanz -> Trigger bei 2km
-                                    else if (window.voiceTracker.initialDist >= 5000 && distMeters <= 2000 && !window.voiceTracker.announced2k) {
-                                        textToSpeak = `In 2 Kilometern ${actionStr}`;
-                                        window.voiceTracker.announced2k = true;
+                                    // 1. SZENARIO: > 5 km Distanz
+                                    else if (vt.startDist > 5000) {
+                                        if (distMeters <= 2000 && distMeters > 500 && !vt.spoken2km) {
+                                            textToSpeak = `In 2 Kilometern ${actionStr}.`; vt.spoken2km = true;
+                                        } else if (distMeters <= 500 && distMeters > 100 && !vt.spoken500m) {
+                                            textToSpeak = `In 500 Metern ${actionStr}.`; vt.spoken500m = true;
+                                        } else if (distMeters <= 100 && distMeters > 15 && !vt.spoken100m) {
+                                            textToSpeak = `In 100 Metern ${actionStr}.`; vt.spoken100m = true;
+                                        } else if (distMeters <= 15 && !vt.spokenNow) {
+                                            textToSpeak = actionStr; vt.spokenNow = true;
+                                        }
                                     }
-                                    // 3. Größer als 200m Distanz -> Trigger bei 500m und 100m
-                                    else if (window.voiceTracker.initialDist > 200 && distMeters <= 500 && !window.voiceTracker.announced500) {
-                                        textToSpeak = `In 500 Metern ${actionStr}`;
-                                        window.voiceTracker.announced500 = true;
+                                    // 2. SZENARIO: 200m bis 5 km Distanz
+                                    else if (vt.startDist > 200 && vt.startDist <= 5000) {
+                                        if (vt.startDist > 500 && distMeters <= 500 && distMeters > 100 && !vt.spoken500m) {
+                                            textToSpeak = `In 500 Metern ${actionStr}.`; vt.spoken500m = true;
+                                        } else if (distMeters <= 100 && distMeters > 15 && !vt.spoken100m) {
+                                            textToSpeak = `In 100 Metern ${actionStr}.`; vt.spoken100m = true;
+                                        } else if (distMeters <= 15 && !vt.spokenNow) {
+                                            textToSpeak = actionStr; vt.spokenNow = true;
+                                        }
                                     }
-                                    else if (window.voiceTracker.initialDist > 200 && distMeters <= 100 && !window.voiceTracker.announced100) {
-                                        textToSpeak = `In 100 Metern ${actionStr}`;
-                                        window.voiceTracker.announced100 = true;
-                                    }
-                                    // 4. Unter 200m Distanz -> Trigger bei 50m
-                                    else if (window.voiceTracker.initialDist <= 200 && distMeters <= 50 && !window.voiceTracker.announced50) {
-                                        textToSpeak = `In 50 Metern ${actionStr}`;
-                                        window.voiceTracker.announced50 = true;
-                                    }
-                                    // 5. IMMER: Trigger bei 15m (Ohne Distanz-Angabe!)
-                                    else if (distMeters <= 15 && !window.voiceTracker.announcedNow) {
-                                        textToSpeak = actionStr; 
-                                        window.voiceTracker.announcedNow = true;
+                                    // 3. SZENARIO: Unter 200m Distanz
+                                    else if (vt.startDist <= 200) {
+                                        if (distMeters <= 50 && distMeters > 15 && !vt.spoken50m) {
+                                            textToSpeak = `In 50 Metern ${actionStr}.`; vt.spoken50m = true;
+                                        } else if (distMeters <= 15 && !vt.spokenNow) {
+                                            textToSpeak = actionStr; vt.spokenNow = true;
+                                        }
                                     }
 
                                     if (textToSpeak) triggerGoogleVoice(textToSpeak);
                                 }
-                            }
 
-                            // --- UI UPDATE (GLAS-HUD) ---
-                            if (currIdx < instructions.length) {
-                                const shortInfo = getShortInstruction(currentManeuver);
-                                
+                                // ==============================================
+                                // --- UI UPDATE (GLAS-HUD) ---
+                                // ==============================================
                                 const actionEl = document.getElementById('nav-top-action');
                                 if (actionEl) actionEl.textContent = shortInfo.action;
 
@@ -1555,7 +1578,7 @@ function clearRoutes() {
                                     }
                                 }
 
-                                // UI RUNDUNG: Auf exakt 20m Schritte runden (ruhiges Auge)
+                                // Auf 20m Schritte runden für ruhiges HUD
                                 let displayDist = Math.max(0, Math.round(distMeters / 20) * 20);
                                 const distEl = document.getElementById('nav-top-distance');
                                 if (distEl) {
