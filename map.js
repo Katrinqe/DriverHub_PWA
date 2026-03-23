@@ -1396,12 +1396,68 @@ function clearRoutes() {
                 return `${Math.round(m/10)*10} Metern`; 
             };
 
-            // 6. START-ANSAGE ("Route wird gestartet")
+       // ==============================================
+            // 6. DIE PERFEKTE START-ANSAGE (Kombinierte Logik)
+            // ==============================================
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
+            
+            // 6a. "Route wird gestartet" kommt SOFORT
             triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
             
+            // 6b. Finde das erste echte Manöver (DEPART überspringen)
+            const instructions = RouteLogic.currentInstructions || [];
+            let startIdx = 0;
+            while (startIdx < instructions.length && instructions[startIdx].maneuver === 'DEPART') {
+                startIdx++;
+            }
+            RouteLogic.currentInstructionIndex = startIdx;
+
+            // 6c. Erste Ansage isolieren und vorbereiten
+            const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
+            if (startIdx < instructions.length && cumulativeDists) {
+                const firstMan = instructions[startIdx];
+                let distMeters = cumulativeDists[firstMan.pointIndex] - cumulativeDists[0];
+                if (distMeters < 0) distMeters = 0;
+
+                const shortInfo = getShortInstruction(firstMan);
+                const actionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
+
+                let firstInstructionText = "";
+                if (distMeters > 5000) {
+                    firstInstructionText = `Folgen Sie der Route für ${Math.round(distMeters/1000)} Kilometer.`;
+                } else {
+                    firstInstructionText = `In ${formatDist(distMeters)} ${actionStr}.`;
+                }
+
+                // 6d. DEINE REGEL: Exakt 5 Sekunden warten, DANN die erste Ansage feuern
+                if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
+                window.startVoiceTimeout = setTimeout(() => {
+                    triggerGoogleVoice(firstInstructionText);
+                }, 5000);
+
+                // 6e. PETERS FIX: Dem Live-Motor sagen, dass die erste Ansage schon "gebucht" ist!
+                RouteLogic.voiceState = {
+                    idx: startIdx,
+                    segmentTotalDist: distMeters,
+                    spokenInit: true, // <--- DAS IST DER MAGISCHE SCHALTER!
+                    spoken5km: false,
+                    spoken2km: distMeters <= 2000,
+                    spoken500m: distMeters <= 500,
+                    spoken100m: distMeters <= 100,
+                    spoken50m: distMeters <= 50,
+                    spokenNow: distMeters <= 15
+                };
+
+                // Motor für insgesamt 8 Sekunden blockieren (3 Sek "Route startet" + 5 Sek Pause für Timeout)
+                window.voiceBlockUntil = Date.now() + 8000;
+            } else {
+                RouteLogic.voiceState = { idx: -1 };
+            }
+            
+            // ==============================================
             // 7. LIVE GPS MOTOR STARTEN
+            // ==============================================
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
 
