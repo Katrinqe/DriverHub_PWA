@@ -1319,14 +1319,16 @@ function clearRoutes() {
         }
     }
 
- // ==========================================
+// ==========================================
     // === PHASE 1: GO BUTTON & 3D LAUNCH ===
     // ==========================================
     const btnStartRoute = document.getElementById('btn-start-nav'); 
     
     if (btnStartRoute) {
         btnStartRoute.addEventListener('click', async () => {
-            window.lastRouteIdx = 0; // Setzt die Straßenposition auf Start
+            window.lastRouteIdx = 0; 
+            window.navStartTime = Date.now(); // Startzeit für den Zoom-Schutz!
+
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) routeUI.classList.add('fade-out');
 
@@ -1347,6 +1349,7 @@ function clearRoutes() {
                 libreMap.doubleClickZoom.disable();
                 if (libreMap.dragRotate) libreMap.dragRotate.disable();
 
+                // Dieser Zoom darf nicht mehr vom GPS-Motor abgewürgt werden!
                 libreMap.flyTo({
                     center: currentCoords, 
                     zoom: 16.5, 
@@ -1358,28 +1361,49 @@ function clearRoutes() {
                 });
             }
 
-            // 5. X-BUTTON UND TOP-CARD EINBLENDEN
             const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
             if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
             
             const topCard = document.getElementById('nav-top-card');
             if(topCard) topCard.classList.remove('hidden');
 
+            // --- HILFSFUNKTION FÜR KURZE TEXTE ("Rechts abbiegen auf A3") ---
+            const getShortInstruction = (maneuverObj) => {
+                const man = maneuverObj.maneuver || '';
+                let actionText = "Geradeaus";
+                if (man.includes('TURN_LEFT')) actionText = "Links abbiegen";
+                else if (man.includes('TURN_RIGHT')) actionText = "Rechts abbiegen";
+                else if (man.includes('KEEP_LEFT')) actionText = "Links halten";
+                else if (man.includes('KEEP_RIGHT')) actionText = "Rechts halten";
+                else if (man.includes('U_TURN')) actionText = "Wenden";
+                else if (man.includes('ROUNDABOUT')) actionText = "Kreisverkehr";
+                else if (man.includes('ARRIVE') || man.includes('FINISH')) actionText = "Ziel erreicht";
+                else if (man.includes('DEPART')) actionText = "Route folgen";
+
+                let streetText = maneuverObj.street || "";
+                if (!streetText && maneuverObj.roadNumbers && maneuverObj.roadNumbers.length > 0) {
+                    streetText = maneuverObj.roadNumbers[0];
+                }
+                if (streetText) streetText = "auf " + streetText;
+                
+                return { action: actionText, street: streetText };
+            };
+
             // 6. INITIAL-STIMME AUSLÖSEN
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
             triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
 
-            // 6b. DIE 5-SEKUNDEN REGEL: Erster Abbiegebefehl
+            // 6b. DIE 5-SEKUNDEN REGEL: Erster kurzer Abbiegebefehl
             setTimeout(() => {
                 if (RouteLogic.currentInstructions && RouteLogic.currentInstructions.length > 0) {
                     let firstInst = RouteLogic.currentInstructions[0];
-                    // TomTom sagt oft zuerst "Fahren Sie los". Das überspringen wir zum echten ersten Manöver.
                     if (firstInst.maneuver === 'DEPART' && RouteLogic.currentInstructions.length > 1) {
                         firstInst = RouteLogic.currentInstructions[1];
-                        RouteLogic.currentInstructionIndex = 1; // Tracker auf den aktuellen Befehl setzen
+                        RouteLogic.currentInstructionIndex = 1; 
                     }
-                    triggerGoogleVoice(firstInst.message);
+                    const short = getShortInstruction(firstInst);
+                    triggerGoogleVoice(`${short.action} ${short.street}`);
                 }
             }, 5000);
 
@@ -1388,6 +1412,7 @@ function clearRoutes() {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
 
                 navWatchId = navigator.geolocation.watchPosition((position) => {
+                    const elapsedSinceStart = Date.now() - window.navStartTime;
                     const lng = position.coords.longitude;
                     const lat = position.coords.latitude;
                     const heading = position.coords.heading; 
@@ -1395,37 +1420,32 @@ function clearRoutes() {
 
                     currentCoords = [lng, lat];
 
-                    // Speed Updaten
                     const speedKmh = speed ? Math.round(speed * 3.6) : 0;
                     const speedDisplay = document.getElementById('hud-current-speed');
                     if (speedDisplay) speedDisplay.textContent = speedKmh;
 
-                    // Marker bewegen
                     if (window.userLocationMarker) {
                         window.userLocationMarker.setLngLat(currentCoords);
                     }
 
-                    // Kamera zentrieren
-                    if (libreMap) {
+                    // ZOOM-SCHUTZ: Kamera erst nach 2,5 Sekunden lenken!
+                    if (libreMap && elapsedSinceStart > 2500) {
                         const cameraOpts = { center: currentCoords, duration: 1000, easing: (t) => t };
                         if (heading !== null && speed !== null && speed > 0.8) cameraOpts.bearing = heading;
                         libreMap.easeTo(cameraOpts);
                     }
 
                     // ==============================================
-                    // 7d. TOP-CARD UPDATE & ECHTE STRAßEN-MATHEMATIK
+                    // 7d. TOP-CARD UPDATE & HYBRID-MATHEMATIK
                     // ==============================================
                     const activeRoutePts = RouteLogic.routePointsData[RouteLogic.activeIndex];
                     const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
 
                     if (activeRoutePts && cumulativeDists && RouteLogic.currentInstructions && RouteLogic.currentInstructions.length > 0) {
-                        
                         if (typeof window.lastRouteIdx === 'undefined') window.lastRouteIdx = 0;
                         
-                        // A: Wo auf der Straße (blauen Linie) ist das Auto gerade?
                         let closestIdx = window.lastRouteIdx;
                         let minDist = Infinity;
-                        // Aus Performance-Gründen schauen wir immer nur 50 Punkte voraus
                         const limit = Math.min(activeRoutePts.length, closestIdx + 50); 
                         
                         for (let i = closestIdx; i < limit; i++) {
@@ -1435,86 +1455,74 @@ function clearRoutes() {
                                 closestIdx = i;
                             }
                         }
-                        window.lastRouteIdx = closestIdx; // Speichern für den nächsten GPS-Ping
+                        window.lastRouteIdx = closestIdx;
 
-                        // B: Befehl verarbeiten
                         let currIdx = RouteLogic.currentInstructionIndex;
                         const instructions = RouteLogic.currentInstructions;
 
                         if (currIdx < instructions.length) {
                             let currentManeuver = instructions[currIdx];
                             
-                            // C: DIE MAGIE - Echte Straßenkilometer! 
-                            // (Meter vom Start bis zur Ampel) MINUS (Meter vom Start bis zum Auto)
+                            // HYBRID-DISTANZ: 
+                            // Wenn über 1,5 km entfernt, nutze Linien-Distanz. 
+                            // Wenn unter 1,5 km, nutze perfekte Laser-Distanz zur Kreuzung (gegen das Stottern)!
                             let distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
-
-                            // Falls wir leicht drübergerollt sind
+                            if (distMeters < 1500) {
+                                distMeters = calculateDistance(lat, lng, currentManeuver.point.latitude, currentManeuver.point.longitude);
+                            }
                             if (distMeters < 0) distMeters = 0;
 
-                            // D: Nächster Befehl? (Wenn wir näher als 35 Straßenmeter an der Kreuzung sind)
+                            // NÄCHSTER BEFEHL: Zwingend umschalten, wenn näher als 35m
                             if (distMeters <= 35) {
                                 RouteLogic.currentInstructionIndex++;
                                 currIdx = RouteLogic.currentInstructionIndex;
                                 
                                 if (currIdx < instructions.length) {
                                     currentManeuver = instructions[currIdx];
-                                    // Distanz für das neue Manöver sofort frisch berechnen
                                     distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
                                     if (distMeters < 0) distMeters = 0;
-                                    triggerGoogleVoice(currentManeuver.message);
+                                    
+                                    // Stimme abfeuern (Aber nur, wenn die ersten 8 Sek. des Starts vorbei sind, wegen Überschneidung!)
+                                    if (elapsedSinceStart > 8000) {
+                                        const short = getShortInstruction(currentManeuver);
+                                        triggerGoogleVoice(`${short.action} ${short.street}`);
+                                    }
                                 }
                             }
 
-             // ==============================================
-                            // E: Das Glas-HUD Updaten (NEU: 3-Zeilen Layout)
-                            // ==============================================
+                            // E: Das Glas-HUD Updaten
                             if (currIdx < instructions.length) {
-                                const man = currentManeuver.maneuver || '';
+                                const shortInfo = getShortInstruction(currentManeuver);
                                 
-                                // 1. Befehl radikal auf das Wesentliche kürzen
-                                let actionText = "Geradeaus";
-                                if (man.includes('TURN_LEFT')) actionText = "Links abbiegen";
-                                else if (man.includes('TURN_RIGHT')) actionText = "Rechts abbiegen";
-                                else if (man.includes('KEEP_LEFT')) actionText = "Links halten";
-                                else if (man.includes('KEEP_RIGHT')) actionText = "Rechts halten";
-                                else if (man.includes('U_TURN')) actionText = "Wenden";
-                                else if (man.includes('ROUNDABOUT')) actionText = "Kreisverkehr";
-                                else if (man.includes('ARRIVE') || man.includes('FINISH')) actionText = "Ziel erreicht";
-                                else if (man.includes('DEPART')) actionText = "Route folgen";
-
-                                // 2. Straße sicher auslesen (TomTom liefert sie getrennt mit!)
-                                let streetText = currentManeuver.street || "";
-                                if (!streetText && currentManeuver.roadNumbers && currentManeuver.roadNumbers.length > 0) {
-                                    streetText = currentManeuver.roadNumbers[0];
-                                }
-                                if (streetText) streetText = "auf " + streetText;
-
-                                // 3. UI Elemente befüllen
                                 const actionEl = document.getElementById('nav-top-action');
-                                if (actionEl) actionEl.textContent = actionText;
+                                if (actionEl) actionEl.textContent = shortInfo.action;
 
                                 const streetEl = document.getElementById('nav-top-street');
                                 if (streetEl) {
-                                    if (streetText) {
-                                        streetEl.textContent = streetText;
-                                        streetEl.style.display = 'block'; // Zeigen, wenn eine Straße da ist
+                                    if (shortInfo.street) {
+                                        streetEl.textContent = shortInfo.street;
+                                        streetEl.style.display = 'block';
                                     } else {
-                                        streetEl.style.display = 'none'; // Verstecken, wenn keine da ist (spart Platz)
+                                        streetEl.style.display = 'none';
                                     }
                                 }
 
+                                // DIE RUNDUNG: Auf exakt 20m Schritte runden
+                                let displayDist = Math.max(0, Math.round(distMeters / 20) * 20);
+                                
                                 const distEl = document.getElementById('nav-top-distance');
                                 if (distEl) {
-                                    if (distMeters >= 1000) {
-                                        distEl.textContent = `in ${(distMeters / 1000).toFixed(1)} km`;
+                                    if (displayDist >= 1000) {
+                                        distEl.textContent = `in ${(displayDist / 1000).toFixed(1)} km`;
                                     } else {
-                                        distEl.textContent = `in ${Math.round(distMeters)} m`;
+                                        distEl.textContent = `in ${displayDist} m`;
                                     }
                                 }
 
                                 const iconEl = document.getElementById('nav-top-icon');
                                 if (iconEl) {
                                     let iconClass = 'fa-arrow-up'; 
+                                    const man = currentManeuver.maneuver || '';
                                     if (man.includes('LEFT')) iconClass = 'fa-arrow-left';
                                     if (man.includes('RIGHT')) iconClass = 'fa-arrow-right';
                                     if (man.includes('KEEP_LEFT')) iconClass = 'fa-arrow-up-left';
@@ -1522,21 +1530,18 @@ function clearRoutes() {
                                     if (man.includes('U_TURN')) iconClass = 'fa-arrow-rotate-left';
                                     if (man.includes('ROUNDABOUT')) iconClass = 'fa-arrows-spin';
                                     if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
-                                    
                                     iconEl.className = `fa-solid ${iconClass}`;
                                 }
                             }
                         }
                     }
 
-                // === HIER HABEN DIE KLAMMERN GEFEHLT ===
                 }, (error) => {
                     console.warn("GPS Signal verloren:", error);
                 }, { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
             }
         });
     }
-    // ===================================================
 
     // ==========================================
     // === NOT-AUS: DER NUKLEAR-ABBRUCH ===
