@@ -158,131 +158,91 @@ libreMap.addLayer({
         'fill-extrusion-opacity': 0.8
     }
 }, labelLayerId);
-// --- NEUE AMPEL-LOGIK (Nur für Routen-Übersicht) ---
-        window.isRouteOverviewActive = false; // Der Master-Schalter!
 
-        libreMap.addSource('traffic-lights-source', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-        });
 
-        libreMap.addLayer({
-            id: 'traffic-lights-layer',
-            type: 'symbol',
-            source: 'traffic-lights-source',
-            minzoom: 18, // Erst anzeigen, wenn man wirklich nah in die Straße zoomt
-            layout: {
-                'text-field': '🚦',
-                'text-size': 22,
-                'text-allow-overlap': true,
-                'icon-allow-overlap': true, // Zwingt MapLibre, das Emoji IMMER zu zeichnen!
-                'text-ignore-placement': true
-            }
-        });
+  // --- NEUE AMPEL-LOGIK (Nur für Routen-Übersicht) ---
+        window.isRouteOverviewActive = false;
 
-   // --- NEUE AMPEL-LOGIK (Nur für Routen-Übersicht) ---
-        window.isRouteOverviewActive = false; // Der Master-Schalter!
+        // Peters Tipp: Prüfen ob Source schon da ist
+        if (!libreMap.getSource('traffic-lights-source')) {
+            libreMap.addSource('traffic-lights-source', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: [] }
+            });
 
-        libreMap.addSource('traffic-lights-source', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-        });
+            libreMap.addLayer({
+                id: 'traffic-lights-layer',
+                type: 'symbol',
+                source: 'traffic-lights-source',
+                minzoom: 15, // Zoom-Grenze deutlich gesenkt!
+                layout: {
+                    'text-field': '🚦',
+                    'text-size': 22,
+                    'text-allow-overlap': true,
+                    'icon-allow-overlap': true,
+                    'text-ignore-placement': true
+                }
+            });
+        }
 
-        libreMap.addLayer({
-            id: 'traffic-lights-layer',
-            type: 'symbol',
-            source: 'traffic-lights-source',
-            minzoom: 18, 
-            layout: {
-                'text-field': '🚦',
-                'text-size': 22,
-                'text-allow-overlap': true,
-                'icon-allow-overlap': true, 
-                'text-ignore-placement': true
-            }
-        });
-
-  let overpassTimer;
+        let overpassTimer;
 
         window.fetchTrafficLights = async function() {
-            console.log("🚦 Ampel-Check gestartet...");
-            
-            if (!libreMap) { console.log("Abbruch: Keine Map"); return; }
-            if (!window.isRouteOverviewActive) { console.log("Abbruch: Routen-Übersicht nicht aktiv"); return; }
+            if (!libreMap || !window.isRouteOverviewActive) return;
             
             const currentZoom = libreMap.getZoom();
-            console.log("Aktueller Zoom:", currentZoom.toFixed(2));
-            
-            // Toleranz gesenkt auf 16.5, damit es leichter triggert!
-            if (currentZoom < 16.5) { console.log("Abbruch: Zoom zu weit weg (< 16.5)"); return; }
+            if (currentZoom < 15) { 
+                console.log("Zoom < 15, lade keine Ampeln."); 
+                return; 
+            }
 
+            console.log("🚦 Ampel-Check gestartet...");
             const bounds = libreMap.getBounds();
             const query = `[out:json][timeout:10];node["highway"="traffic_signals"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out;`;
             const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
             try {
-                console.log("Lade Ampeln von Overpass...");
                 const response = await fetch(overpassUrl);
-                
                 if (!response.ok) {
-                    console.warn("Overpass API Fehler:", response.status);
-                    return; 
+                    console.warn("Overpass API Fehler oder Limit erreicht:", response.status);
+                    return;
                 }
 
                 const data = await response.json();
-                console.log(`Gefundene Ampeln im Kartenausschnitt: ${data.elements ? data.elements.length : 0}`);
-                
                 const activeRoutePts = window.RouteLogic.routePointsData[window.RouteLogic.activeIndex];
                 const features = [];
 
                 if (data.elements && activeRoutePts) {
-                    let matchedCount = 0;
                     data.elements.forEach(node => {
                         let isOnRoute = false;
                         for (let i = 0; i < activeRoutePts.length; i++) {
                             const d = calculateDistance(node.lat, node.lon, activeRoutePts[i][1], activeRoutePts[i][0]);
-                            // Toleranz erhöht auf 50 Meter (Bürgersteig / große Kreuzung)!
                             if (d <= 50) { 
                                 isOnRoute = true;
                                 break;
                             }
                         }
-
                         if (isOnRoute) {
-                            matchedCount++;
                             features.push({
                                 type: 'Feature',
                                 geometry: { type: 'Point', coordinates: [node.lon, node.lat] }
                             });
                         }
                     });
-                    console.log(`Ampeln AUF der Route (Filter <= 50m): ${matchedCount}`);
+                    console.log(`Gefilterte Ampeln auf Route: ${features.length}`);
                 }
-
-                const source = libreMap.getSource('traffic-lights-source');
-                if (source) source.setData({ type: 'FeatureCollection', features: features });
+                libreMap.getSource('traffic-lights-source').setData({ type: 'FeatureCollection', features: features });
             } catch (error) {
-                console.error("Ampel-Abfrage fehlgeschlagen:", error);
+                console.error("Ampel-Abfrage Fehler:", error);
             }
         };
 
+        // PETERS FIX: Erst alle alten, wilden Listener löschen, dann EINEN sauberen Debounce setzen!
+        libreMap.off('moveend', window.fetchTrafficLights); 
+        
         libreMap.on('moveend', () => {
             clearTimeout(overpassTimer);
-            overpassTimer = setTimeout(window.fetchTrafficLights, 800);
-        });
-                }
-
-                const source = libreMap.getSource('traffic-lights-source');
-                if (source) source.setData({ type: 'FeatureCollection', features: features });
-            } catch (error) {
-                console.error("Ampel-Abfrage fehlgeschlagen:", error);
-            }
-        };
-
-        // NEU: Debouncing! Die Abfrage startet erst 800 Millisekunden NACHDEM du die Karte losgelassen hast.
-        libreMap.on('moveend', () => {
-            clearTimeout(overpassTimer);
-            overpassTimer = setTimeout(window.fetchTrafficLights, 800);
+            overpassTimer = setTimeout(window.fetchTrafficLights, 1000); // 1 Sekunde Warten gegen API-Spam
         });
         // -------------------------------------
 
