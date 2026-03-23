@@ -159,7 +159,53 @@ libreMap.addLayer({
     }
 }, labelLayerId);
 // ------------------------
+// --- NEUE AMPEL-LOGIK (Nur für Routen-Übersicht) ---
+        window.isRouteOverviewActive = false; // Der Master-Schalter!
 
+        libreMap.addSource('traffic-lights-source', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+        });
+
+        libreMap.addLayer({
+            id: 'traffic-lights-layer',
+            type: 'symbol',
+            source: 'traffic-lights-source',
+            minzoom: 18.5, // Zeigt Ampeln erst ab starkem Zoom (Max ist ~22)
+            layout: {
+                'text-field': '🚦',
+                'text-size': 20,
+                'text-allow-overlap': true
+            }
+        });
+
+        window.fetchTrafficLights = async function() {
+            // NUR laden, wenn die Routen-Übersicht aktiv ist UND wir nah genug dran sind!
+            if (!libreMap || !window.isRouteOverviewActive || libreMap.getZoom() < 18.5) return;
+
+            const bounds = libreMap.getBounds();
+            const query = `[out:json];node["highway"="traffic_signals"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out;`;
+            const url = `https://api.openstreetmap.org/api/0.6/map?bbox=${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
+            // (Hinweis: Für schnelle Bounding-Box Abfragen nutzen wir hier direkt einen Overpass-Interpreter)
+            const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+            try {
+                const response = await fetch(overpassUrl);
+                const data = await response.json();
+                const features = data.elements.map(node => ({
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [node.lon, node.lat] }
+                }));
+
+                const source = libreMap.getSource('traffic-lights-source');
+                if (source) source.setData({ type: 'FeatureCollection', features: features });
+            } catch (error) {
+                console.error("Ampel-Abfrage fehlgeschlagen:", error);
+            }
+        };
+
+        libreMap.on('moveend', window.fetchTrafficLights); // Checkt nach jedem Wischen/Zoomen
+        // -------------------------------------
  libreMap.dragPan.disable();
         libreMap.scrollZoom.disable();
         libreMap.touchZoomRotate.disable();
@@ -696,6 +742,10 @@ allPoints.forEach(coord => bounds.extend(coord));
                 RouteLogic.routeTimesData[0] // <-- NEU: Zeit übergeben
             ); 
         }
+
+        // Schalter umlegen: Wir sind jetzt in der Routen-Übersicht!
+            window.isRouteOverviewActive = true;
+
             
         });
 
@@ -725,6 +775,11 @@ function clearRoutes() {
         destMarker = null;
     }
 
+    // Ampel-Schalter deaktivieren & Ampeln restlos von der Karte fegen
+    window.isRouteOverviewActive = false;
+    if (libreMap && libreMap.getSource('traffic-lights-source')) {
+        libreMap.getSource('traffic-lights-source').setData({ type: 'FeatureCollection', features: [] });
+    }
     // 4. Den Multi-Route Zwischenspeicher leeren
     if (window.RouteLogic) {
         window.RouteLogic.routeGeoJSONs = [null, null];
