@@ -180,18 +180,47 @@ libreMap.addLayer({
             }
         });
 
-      window.fetchTrafficLights = async function() {
+   // --- NEUE AMPEL-LOGIK (Nur für Routen-Übersicht) ---
+        window.isRouteOverviewActive = false; // Der Master-Schalter!
+
+        libreMap.addSource('traffic-lights-source', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+        });
+
+        libreMap.addLayer({
+            id: 'traffic-lights-layer',
+            type: 'symbol',
+            source: 'traffic-lights-source',
+            minzoom: 18, 
+            layout: {
+                'text-field': '🚦',
+                'text-size': 22,
+                'text-allow-overlap': true,
+                'icon-allow-overlap': true, 
+                'text-ignore-placement': true
+            }
+        });
+
+        let overpassTimer; // NEU: Der Anti-Spam Timer
+
+        window.fetchTrafficLights = async function() {
             // NUR laden, wenn die Routen-Übersicht aktiv ist UND wir nah genug dran sind!
             if (!libreMap || !window.isRouteOverviewActive || libreMap.getZoom() < 18) return;
 
             const bounds = libreMap.getBounds();
-            // Die korrekte Overpass-Abfrage, die GARANTIERT JSON zurückgibt (inkl. 10s Timeout-Schutz)
             const query = `[out:json][timeout:10];node["highway"="traffic_signals"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out;`;
             const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
             try {
-                // Wir fetchen NUR die saubere overpassUrl
                 const response = await fetch(overpassUrl);
+                
+                // NEU: Notbremse! Wenn der Server uns blockt (429), brechen wir sofort ab, bevor es crasht.
+                if (!response.ok) {
+                    if (response.status === 429) console.warn("Overpass API Limit erreicht. Kurze Pause...");
+                    return; 
+                }
+
                 const data = await response.json();
                 
                 const activeRoutePts = window.RouteLogic.routePointsData[window.RouteLogic.activeIndex];
@@ -200,7 +229,6 @@ libreMap.addLayer({
                 if (data.elements && activeRoutePts) {
                     data.elements.forEach(node => {
                         let isOnRoute = false;
-                        // Prüfen, ob die Ampel maximal 25 Meter von unserer blauen Linie entfernt ist
                         for (let i = 0; i < activeRoutePts.length; i++) {
                             const d = calculateDistance(node.lat, node.lon, activeRoutePts[i][1], activeRoutePts[i][0]);
                             if (d <= 25) { 
@@ -224,6 +252,13 @@ libreMap.addLayer({
                 console.error("Ampel-Abfrage fehlgeschlagen:", error);
             }
         };
+
+        // NEU: Debouncing! Die Abfrage startet erst 800 Millisekunden NACHDEM du die Karte losgelassen hast.
+        libreMap.on('moveend', () => {
+            clearTimeout(overpassTimer);
+            overpassTimer = setTimeout(window.fetchTrafficLights, 800);
+        });
+        // -------------------------------------
 
         libreMap.on('moveend', window.fetchTrafficLights); // Lädt Ampeln dynamisch nach, wenn man wischt
         // -------------------------------------
