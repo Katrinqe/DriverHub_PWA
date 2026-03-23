@@ -1436,17 +1436,17 @@ function clearRoutes() {
                     triggerGoogleVoice(firstInstructionText);
                 }, 5000);
 
-                // 6e. PETERS FIX: Dem Live-Motor sagen, dass die erste Ansage schon "gebucht" ist!
+            // 6e. PETERS FIX: Dem Live-Motor sagen, dass die erste Ansage schon "gebucht" ist!
                 RouteLogic.voiceState = {
                     idx: startIdx,
                     segmentTotalDist: distMeters,
-                    spokenInit: true, // <--- DAS IST DER MAGISCHE SCHALTER!
+                    spokenInit: true, // <--- Bleibt true für den Start!
                     spoken5km: false,
-                    spoken2km: distMeters <= 2000,
-                    spoken500m: distMeters <= 500,
-                    spoken100m: distMeters <= 100,
-                    spoken50m: distMeters <= 50,
-                    spokenNow: distMeters <= 15
+                    spoken2km: false, // <-- FIX: Alles strikt auf false!
+                    spoken500m: false,
+                    spoken100m: false,
+                    spoken50m: false,
+                    spokenNow: false
                 };
 
                 // Motor für insgesamt 8 Sekunden blockieren (3 Sek "Route startet" + 5 Sek Pause für Timeout)
@@ -1461,7 +1461,7 @@ function clearRoutes() {
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
 
-                RouteLogic.voiceState = { idx: -1 };
+             
 
                 navWatchId = navigator.geolocation.watchPosition((position) => {
                     const elapsedSinceStart = Date.now() - window.navStartTime;
@@ -1550,7 +1550,7 @@ function clearRoutes() {
                             const shortInfo = getShortInstruction(currentManeuver);
                             const actionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
 
-                            if (RouteLogic.voiceState.idx !== currIdx) {
+                      if (RouteLogic.voiceState.idx !== currIdx) {
                                 // Echte Segment-Länge berechnen (von Abzweigung zu Abzweigung)
                                 let trueSegDist = distMeters; 
                                 if (currIdx > 0) {
@@ -1568,16 +1568,15 @@ function clearRoutes() {
                                 RouteLogic.voiceState = {
                                     idx: currIdx,
                                     segmentTotalDist: trueSegDist,
-                                    spokenInit: false,
+                                    spokenInit: false, // Hier bei einer NEUEN Straße wieder false!
                                     spoken5km: false,
-                                    spoken2km: false,
+                                    spoken2km: false,  // <-- FIX: Alles strikt auf false!
                                     spoken500m: false,
                                     spoken100m: false,
                                     spoken50m: false,
                                     spokenNow: false
                                 };
                             }
-
                             let vs = RouteLogic.voiceState;
                             let textToSpeak = null;
 
