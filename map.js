@@ -1369,7 +1369,7 @@ function clearRoutes() {
             const topCard = document.getElementById('nav-top-card');
             if(topCard) topCard.classList.remove('hidden');
 
-            // HILFSFUNKTIONEN FÜR SPRACHE UND TEXT
+  // HILFSFUNKTIONEN FÜR SPRACHE UND TEXT (Inkl. Richtung/Signpost Logik von Peter)
             const getShortInstruction = (maneuverObj) => {
                 const man = maneuverObj.maneuver || '';
                 let actionText = "Geradeaus";
@@ -1386,7 +1386,22 @@ function clearRoutes() {
                 if (!streetText && maneuverObj.roadNumbers && maneuverObj.roadNumbers.length > 0) {
                     streetText = maneuverObj.roadNumbers[0];
                 }
-                if (streetText) streetText = "auf " + streetText;
+
+                // NEU: Richtungsauswertung (TomTom nutzt meist signpostText)
+                let directionText = maneuverObj.signpostText || maneuverObj.destination || "";
+
+                // Grammatikalisch sauberes Zusammenbauen
+                if (directionText) {
+                    if (streetText) {
+                        streetText = "auf " + streetText + " Richtung " + directionText;
+                    } else {
+                        streetText = "in Richtung " + directionText;
+                    }
+                } else {
+                    if (streetText) {
+                        streetText = "auf " + streetText;
+                    }
+                }
                 
                 return { action: actionText, street: streetText };
             };
