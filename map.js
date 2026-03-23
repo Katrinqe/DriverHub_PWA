@@ -1574,19 +1574,15 @@ function clearRoutes() {
                                     currIdx = RouteLogic.currentInstructionIndex;
                                 }
 
+                      // NEU:
                                 if (currIdx < instructions.length) {
                                     currentManeuver = instructions[currIdx];
                                     distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
                                     if (distMeters < 0) distMeters = 0;
                                     
-                                    // PETERS PRO-FIX: Auch beim Abbiegen zwingen wir die nächste Ansage nach 3.5 Sekunden!
-                                    RouteLogic.forceFirstInstruction = false;
-                                    if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
-                                    window.startVoiceTimeout = setTimeout(() => {
-                                        RouteLogic.forceFirstInstruction = true;
-                                    }, 3500);
+                                    // SPRACH-SPERRE: Blockiert die Stimme nach dem Abbiegen für exakt 5 Sekunden!
+                                    window.voiceBlockUntil = Date.now() + 5000;
                                 }
-                            }
 
                            // ==============================================
                             // --- DIE NEUE SMART VOICE ENGINE (Automotive Level + Lanes) ---
@@ -1677,15 +1673,19 @@ function clearRoutes() {
                                     if (distMeters <= 50 && distMeters > 15 && !vs.spoken50m) { textToSpeak = `In 50 Metern ${actionStr}.`; vs.spoken50m = true; }
                                 }
 
+                             // NEU:
                                 // REGEL 3: IMMER KURZ VOR DEM ABBIEGEN (15m)
                                 if (distMeters <= 15 && !vs.spokenNow) {
                                     textToSpeak = actionStr; 
                                     vs.spokenNow = true;
                                 }
-                            }
+                            } // <-- Diese Klammer schließt das 'else'
 
                             if (textToSpeak) triggerGoogleVoice(textToSpeak);
+                            
+                        } // <--- HIER IST DIE FEHLENDE KLAMMER! (Schließt die 5-Sekunden-Sperre)
 
+                        
                             // ==============================================
                             // --- UI UPDATE (GLAS-HUD) ---
                             // ==============================================
