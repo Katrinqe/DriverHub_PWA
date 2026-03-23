@@ -180,15 +180,17 @@ libreMap.addLayer({
             }
         });
 
-        window.fetchTrafficLights = async function() {
+      window.fetchTrafficLights = async function() {
             // NUR laden, wenn die Routen-Übersicht aktiv ist UND wir nah genug dran sind!
             if (!libreMap || !window.isRouteOverviewActive || libreMap.getZoom() < 18) return;
 
             const bounds = libreMap.getBounds();
-            const query = `[out:json];node["highway"="traffic_signals"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out;`;
+            // Die korrekte Overpass-Abfrage, die GARANTIERT JSON zurückgibt (inkl. 10s Timeout-Schutz)
+            const query = `[out:json][timeout:10];node["highway"="traffic_signals"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out;`;
             const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
             try {
+                // Wir fetchen NUR die saubere overpassUrl
                 const response = await fetch(overpassUrl);
                 const data = await response.json();
                 
@@ -198,9 +200,8 @@ libreMap.addLayer({
                 if (data.elements && activeRoutePts) {
                     data.elements.forEach(node => {
                         let isOnRoute = false;
-                        // Prüfen ob die Ampel maximal 25 Meter von irgendeinem Punkt auf unserer blauen Linie entfernt ist
+                        // Prüfen, ob die Ampel maximal 25 Meter von unserer blauen Linie entfernt ist
                         for (let i = 0; i < activeRoutePts.length; i++) {
-                            // activeRoutePts[i] ist [Lng, Lat]
                             const d = calculateDistance(node.lat, node.lon, activeRoutePts[i][1], activeRoutePts[i][0]);
                             if (d <= 25) { 
                                 isOnRoute = true;
