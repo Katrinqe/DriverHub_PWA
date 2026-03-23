@@ -158,7 +158,6 @@ libreMap.addLayer({
         'fill-extrusion-opacity': 0.8
     }
 }, labelLayerId);
-// ------------------------
 // --- NEUE AMPEL-LOGIK (Nur für Routen-Übersicht) ---
         window.isRouteOverviewActive = false; // Der Master-Schalter!
 
@@ -171,31 +170,52 @@ libreMap.addLayer({
             id: 'traffic-lights-layer',
             type: 'symbol',
             source: 'traffic-lights-source',
-            minzoom: 18.5, // Zeigt Ampeln erst ab starkem Zoom (Max ist ~22)
+            minzoom: 18, // Erst anzeigen, wenn man wirklich nah in die Straße zoomt
             layout: {
                 'text-field': '🚦',
-                'text-size': 20,
-                'text-allow-overlap': true
+                'text-size': 22,
+                'text-allow-overlap': true,
+                'icon-allow-overlap': true, // Zwingt MapLibre, das Emoji IMMER zu zeichnen!
+                'text-ignore-placement': true
             }
         });
 
         window.fetchTrafficLights = async function() {
             // NUR laden, wenn die Routen-Übersicht aktiv ist UND wir nah genug dran sind!
-            if (!libreMap || !window.isRouteOverviewActive || libreMap.getZoom() < 18.5) return;
+            if (!libreMap || !window.isRouteOverviewActive || libreMap.getZoom() < 18) return;
 
             const bounds = libreMap.getBounds();
             const query = `[out:json];node["highway"="traffic_signals"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out;`;
-            const url = `https://api.openstreetmap.org/api/0.6/map?bbox=${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
-            // (Hinweis: Für schnelle Bounding-Box Abfragen nutzen wir hier direkt einen Overpass-Interpreter)
             const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
             try {
                 const response = await fetch(overpassUrl);
                 const data = await response.json();
-                const features = data.elements.map(node => ({
-                    type: 'Feature',
-                    geometry: { type: 'Point', coordinates: [node.lon, node.lat] }
-                }));
+                
+                const activeRoutePts = window.RouteLogic.routePointsData[window.RouteLogic.activeIndex];
+                const features = [];
+
+                if (data.elements && activeRoutePts) {
+                    data.elements.forEach(node => {
+                        let isOnRoute = false;
+                        // Prüfen ob die Ampel maximal 25 Meter von irgendeinem Punkt auf unserer blauen Linie entfernt ist
+                        for (let i = 0; i < activeRoutePts.length; i++) {
+                            // activeRoutePts[i] ist [Lng, Lat]
+                            const d = calculateDistance(node.lat, node.lon, activeRoutePts[i][1], activeRoutePts[i][0]);
+                            if (d <= 25) { 
+                                isOnRoute = true;
+                                break;
+                            }
+                        }
+
+                        if (isOnRoute) {
+                            features.push({
+                                type: 'Feature',
+                                geometry: { type: 'Point', coordinates: [node.lon, node.lat] }
+                            });
+                        }
+                    });
+                }
 
                 const source = libreMap.getSource('traffic-lights-source');
                 if (source) source.setData({ type: 'FeatureCollection', features: features });
@@ -204,7 +224,7 @@ libreMap.addLayer({
             }
         };
 
-        libreMap.on('moveend', window.fetchTrafficLights); // Checkt nach jedem Wischen/Zoomen
+        libreMap.on('moveend', window.fetchTrafficLights); // Lädt Ampeln dynamisch nach, wenn man wischt
         // -------------------------------------
  libreMap.dragPan.disable();
         libreMap.scrollZoom.disable();
@@ -739,13 +759,15 @@ allPoints.forEach(coord => bounds.extend(coord));
                 RouteLogic.routePointsData[0], 
                 RouteLogic.routeColorsData[0], 
                 RouteLogic.routeDistances[0], 
-                RouteLogic.routeTimesData[0] // <-- NEU: Zeit übergeben
+                RouteLogic.routeTimesData[0] 
             ); 
         }
 
         // Schalter umlegen: Wir sind jetzt in der Routen-Übersicht!
-            window.isRouteOverviewActive = true;
-
+        window.isRouteOverviewActive = true;
+        
+        // Zwinge die Karte, sofort nach Ampeln zu suchen, falls wir schon nah genug reingezoomt sind!
+        if (window.fetchTrafficLights) window.fetchTrafficLights();
             
         });
 
