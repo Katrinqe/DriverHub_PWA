@@ -1329,8 +1329,8 @@ function clearRoutes() {
             window.lastRouteIdx = 0; 
             window.navStartTime = Date.now();
             
-            // DIE GLOBALE SPRACH-SPERRE FÜR DEN START
-            window.voiceReady = false; 
+            // DIE GLOBALE SPRACH-SPERRE: Blockiert das Navi hart für exakt 5 Sekunden!
+            window.voiceBlockUntil = Date.now() + 5000;
 
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) routeUI.classList.add('fade-out');
@@ -1396,26 +1396,15 @@ function clearRoutes() {
                 return `${Math.round(m/10)*10} Metern`; 
             };
 
-            // ==============================================
-            // 6. INITIAL-STIMME AUSLÖSEN & SPRACHSPERRE
-            // ==============================================
+            // 6. START-ANSAGE ("Route wird gestartet")
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
-            
-            // Ansage: "Route wird gestartet" (Danach 5 Sekunden harte Pause)
             triggerGoogleVoice(`Route nach ${destName} wird gestartet.`);
             
-            setTimeout(() => {
-                window.voiceReady = true; // Sperre fällt: Der GPS-Motor darf ab jetzt reden!
-            }, 5000);
-
-            // ==============================================
             // 7. LIVE GPS MOTOR STARTEN
-            // ==============================================
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
 
-                // Initialisieren der Voice State Machine
                 RouteLogic.voiceState = { idx: -1 };
 
                 navWatchId = navigator.geolocation.watchPosition((position) => {
@@ -1494,21 +1483,19 @@ function clearRoutes() {
                                     distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
                                     if (distMeters < 0) distMeters = 0;
                                     
-                                    // SPRACH-SPERRE: Die Stimme für 5 Sekunden stumm schalten!
-                                    window.voiceReady = false;
-                                    setTimeout(() => { window.voiceReady = true; }, 5000);
+                                    // SPRACH-SPERRE: Blockiert die Stimme nach dem Abbiegen für exakt 5 Sekunden!
+                                    window.voiceBlockUntil = Date.now() + 5000;
                                 }
                             }
 
                             // ==============================================
-                          // ==============================================
-                            // --- DIE NEUE SMART VOICE ENGINE (Automotive Level) ---
+                            // --- DIE NEUE SMART VOICE ENGINE ---
                             // ==============================================
                             const shortInfo = getShortInstruction(currentManeuver);
                             const actionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
 
                             if (RouteLogic.voiceState.idx !== currIdx) {
-                                // FIX 1: Echte Segment-Länge berechnen (Von Abzweigung zu Abzweigung, nicht ab aktuellem Auto-Standort!)
+                                // Echte Segment-Länge berechnen (von Abzweigung zu Abzweigung)
                                 let trueSegDist = distMeters; 
                                 if (currIdx > 0) {
                                     let prevIdx = currIdx - 1;
@@ -1519,12 +1506,12 @@ function clearRoutes() {
                                 } else {
                                     trueSegDist = cumulativeDists[currentManeuver.pointIndex];
                                 }
-                                // Fallback, falls wir die Straße bereits befahren
+                                // Fallback
                                 if (trueSegDist < distMeters || isNaN(trueSegDist)) trueSegDist = distMeters;
 
                                 RouteLogic.voiceState = {
                                     idx: currIdx,
-                                    segmentTotalDist: trueSegDist, // KORREKT: Konstante Länge für die Kategorie-Wahl!
+                                    segmentTotalDist: trueSegDist,
                                     spokenInit: false,
                                     spoken5km: false,
                                     spoken2km: false,
@@ -1538,22 +1525,12 @@ function clearRoutes() {
                             let vs = RouteLogic.voiceState;
                             let textToSpeak = null;
 
-                            const formatDist = (m) => {
-                                if (m >= 1000) return `${(m/1000).toFixed(1).replace('.', ',')} Kilometern`;
-                                return `${Math.round(m/10)*10} Metern`; 
-                            };
-
-                            // FIX 2: EMERGENCY OVERRIDE (< 70m) überschreibt die 5-Sekunden Sperre
-                            const emergencyOverride = (!vs.spokenInit && distMeters < 70);
-
-                            // DIE STIMME DARF NUR REDEN, WENN SPERRE WEG IST (Oder bei Notfall)
-                            if (window.voiceReady || emergencyOverride) {
+                            // DIE STIMME DARF NUR REDEN, WENN DIE 5-SEKUNDEN SPERRE ABGELAUFEN IST!
+                            if (Date.now() > window.voiceBlockUntil) {
                                 
                                 // REGEL 1: DIE IMMER-ANSAGE
                                 if (!vs.spokenInit) {
-                                    if (distMeters < 70) {
-                                        textToSpeak = actionStr; // Zu nah: Direkt ansagen, Distanz weglassen!
-                                    } else if (vs.segmentTotalDist > 5000) {
+                                    if (vs.segmentTotalDist > 5000) {
                                         textToSpeak = `Folgen Sie der Route für ${Math.round(vs.segmentTotalDist/1000)} Kilometer.`;
                                     } else {
                                         textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
@@ -1576,12 +1553,12 @@ function clearRoutes() {
                                         else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
                                         else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
                                     }
-                                    // FIX 3: KAT 3 (800m - 5km)
+                                    // KAT 3: 800m - 5km
                                     else if (vs.segmentTotalDist > 800 && vs.segmentTotalDist <= 5000) {
                                         if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
                                         else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
                                     }
-                                    // FIX 4: KAT 2 (200m - 800m)
+                                    // KAT 2: 200m - 800m
                                     else if (vs.segmentTotalDist >= 200 && vs.segmentTotalDist <= 800) {
                                         if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
                                     }
