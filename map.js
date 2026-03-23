@@ -1399,7 +1399,7 @@ function clearRoutes() {
                 window.voiceReady = true; // JETZT darf der Live-Motor anfangen zu reden!
             }, 5000);
 
-            // 7. LIVE GPS MOTOR STARTEN
+           // 7. LIVE GPS MOTOR STARTEN
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
 
@@ -1407,6 +1407,7 @@ function clearRoutes() {
                 RouteLogic.voiceState = { idx: -1 };
 
                 navWatchId = navigator.geolocation.watchPosition((position) => {
+                    const elapsedSinceStart = Date.now() - window.navStartTime;
                     const lng = position.coords.longitude;
                     const lat = position.coords.latitude;
                     const heading = position.coords.heading; 
@@ -1414,6 +1415,7 @@ function clearRoutes() {
 
                     currentCoords = [lng, lat];
 
+                    // Speed Updaten
                     const speedKmh = speed ? Math.round(speed * 3.6) : 0;
                     const speedDisplay = document.getElementById('hud-current-speed');
                     if (speedDisplay) speedDisplay.textContent = speedKmh;
@@ -1422,14 +1424,15 @@ function clearRoutes() {
                         window.userLocationMarker.setLngLat(currentCoords);
                     }
 
-                    if (libreMap) {
+                    // ZOOM-SCHUTZ: Kamera erst nach 2,5 Sekunden lenken
+                    if (libreMap && elapsedSinceStart > 2500) {
                         const cameraOpts = { center: currentCoords, duration: 1000, easing: (t) => t };
                         if (heading !== null && speed !== null && speed > 0.8) cameraOpts.bearing = heading;
                         libreMap.easeTo(cameraOpts);
                     }
 
                     // ==============================================
-                    // 7d. TOP-CARD UPDATE, HYBRID-MATHEMATIK & SMART VOICE
+                    // 7d. TOP-CARD UPDATE, HYBRID-MATHEMATIK & DEINE SMART VOICE
                     // ==============================================
                     const activeRoutePts = RouteLogic.routePointsData[RouteLogic.activeIndex];
                     const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
@@ -1453,7 +1456,7 @@ function clearRoutes() {
                         let currIdx = RouteLogic.currentInstructionIndex;
                         const instructions = RouteLogic.currentInstructions;
 
-                        // FIX: TOMTOM "DEPART" (Route folgen in 20m) GNADENLOS ÜBERSPRINGEN
+                        // FIX: TOMTOM "DEPART" ÜBERSPRINGEN
                         while (currIdx < instructions.length && instructions[currIdx].maneuver === 'DEPART') {
                             RouteLogic.currentInstructionIndex++;
                             currIdx = RouteLogic.currentInstructionIndex;
@@ -1483,31 +1486,28 @@ function clearRoutes() {
                                     currentManeuver = instructions[currIdx];
                                     distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
                                     if (distMeters < 0) distMeters = 0;
-                                    
-                                    // SPERRE: Die neue Straße darf erst nach 4 Sekunden "Hallo" sagen, 
-                                    // damit die alte ("Jetzt abbiegen") nicht übertönt wird!
-                                    window.voiceReady = false;
-                                    setTimeout(() => { window.voiceReady = true; }, 4000);
                                 }
                             }
 
                             // ==============================================
-                            // --- DIE NEUE SMART VOICE ENGINE (Deine Logik!) ---
+                            // --- DIE NEUE SMART VOICE ENGINE (EXAKT DEINE LOGIK) ---
                             // ==============================================
                             const shortInfo = getShortInstruction(currentManeuver);
                             const actionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
 
+                            // WICHTIG: Wurde ein NEUES Manöver geladen?
                             if (RouteLogic.voiceState.idx !== currIdx) {
-                                // Zustandstracker für die NEUE Straße initialisieren
                                 RouteLogic.voiceState = {
                                     idx: currIdx,
-                                    initialDist: distMeters,
-                                    announcedStart: false,
-                                    announced2km: distMeters <= 2000,
-                                    announced500m: distMeters <= 500,
-                                    announced100m: distMeters <= 100,
-                                    announced50m: distMeters <= 50,
-                                    announcedNow: distMeters <= 15
+                                    segmentTotalDist: distMeters, // Die GESAMTSTRECKE dieses Abschnitts!
+                                    firstAnnounceTime: Date.now() + 5000, // IMMER exakt 5 Sekunden warten!
+                                    spokenInit: false,
+                                    spoken5km: false,
+                                    spoken2km: false,
+                                    spoken500m: false,
+                                    spoken100m: false,
+                                    spoken50m: false,
+                                    spokenNow: false
                                 };
                             }
 
@@ -1519,50 +1519,54 @@ function clearRoutes() {
                                 return `${Math.round(m/10)*10} Metern`; 
                             };
 
-                            // NUR REDEN, WENN DIE SPERRE AUFGEHOBEN IST
-                            if (window.voiceReady) {
-                                // 1. Erste Ansage für diese Straße
-                                if (!vs.announcedStart) {
-                                    if (vs.initialDist > 5000) {
-                                        textToSpeak = `Folgen Sie der Route für ${Math.round(distMeters/1000)} Kilometer.`;
-                                    } else {
-                                        textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
-                                    }
-                                    vs.announcedStart = true;
+                            // --- REGEL 1: DIE "IMMER" ANSAGE (5 Sek nach Beginn des Manövers) ---
+                            if (!vs.spokenInit && Date.now() >= vs.firstAnnounceTime) {
+                                if (vs.segmentTotalDist >= 5000) {
+                                    textToSpeak = `Folgen Sie der Route für ${Math.round(vs.segmentTotalDist/1000)} Kilometer.`;
+                                } else {
+                                    textToSpeak = `In ${formatDist(vs.segmentTotalDist)} ${actionStr}.`;
                                 }
-                                // 2. Über 5 km Szenario
-                                else if (vs.initialDist > 5000) {
-                                    if (distMeters <= 2000 && distMeters > 500 && !vs.announced2km) {
-                                        textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.announced2km = true;
-                                    } else if (distMeters <= 500 && distMeters > 100 && !vs.announced500m) {
-                                        textToSpeak = `In 500 Metern ${actionStr}.`; vs.announced500m = true;
-                                    } else if (distMeters <= 100 && distMeters > 15 && !vs.announced100m) {
-                                        textToSpeak = `In 100 Metern ${actionStr}.`; vs.announced100m = true;
-                                    } else if (distMeters <= 15 && !vs.announcedNow) {
-                                        textToSpeak = actionStr; vs.announcedNow = true;
-                                    }
+                                vs.spokenInit = true;
+                            }
+                            
+                            // --- REGEL 2: DIE ZUSÄTZLICHEN ANSAGEN (Nur wenn Init durch ist) ---
+                            else if (vs.spokenInit) {
+                                
+                                // KAT 5: Über 10 km (Zusätzlich bei 5km, 2km, 500m, 100m)
+                                if (vs.segmentTotalDist > 10000) {
+                                    if (distMeters <= 5000 && distMeters > 2000 && !vs.spoken5km) { textToSpeak = `In 5 Kilometern ${actionStr}.`; vs.spoken5km = true; }
+                                    else if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
+                                    else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
+                                    else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
                                 }
-                                // 3. Über 200m Szenario
-                                else if (vs.initialDist > 200 && vs.initialDist <= 5000) {
-                                    if (distMeters <= 500 && distMeters > 100 && !vs.announced500m) {
-                                        textToSpeak = `In 500 Metern ${actionStr}.`; vs.announced500m = true;
-                                    } else if (distMeters <= 100 && distMeters > 15 && !vs.announced100m) {
-                                        textToSpeak = `In 100 Metern ${actionStr}.`; vs.announced100m = true;
-                                    } else if (distMeters <= 15 && !vs.announcedNow) {
-                                        textToSpeak = actionStr; vs.announcedNow = true;
-                                    }
+                                // KAT 4: 5km - 10km (Zusätzlich bei 2km, 500m, 100m)
+                                else if (vs.segmentTotalDist > 5000 && vs.segmentTotalDist <= 10000) {
+                                    if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
+                                    else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
+                                    else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
                                 }
-                                // 4. Unter 200m Szenario
-                                else if (vs.initialDist <= 200) {
-                                    if (distMeters <= 50 && distMeters > 15 && !vs.announced50m) {
-                                        textToSpeak = `In 50 Metern ${actionStr}.`; vs.announced50m = true;
-                                    } else if (distMeters <= 15 && !vs.announcedNow) {
-                                        textToSpeak = actionStr; vs.announcedNow = true;
-                                    }
+                                // KAT 3: 500m - 5km (Zusätzlich bei 500m, 100m)
+                                else if (vs.segmentTotalDist > 500 && vs.segmentTotalDist <= 5000) {
+                                    if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
+                                    else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                }
+                                // KAT 2: 200m - 500m (Zusätzlich bei 100m)
+                                else if (vs.segmentTotalDist >= 200 && vs.segmentTotalDist <= 500) {
+                                    if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                }
+                                // KAT 1: Unter 200m (Zusätzlich bei 50m)
+                                else if (vs.segmentTotalDist < 200) {
+                                    if (distMeters <= 50 && distMeters > 15 && !vs.spoken50m) { textToSpeak = `In 50 Metern ${actionStr}.`; vs.spoken50m = true; }
                                 }
 
-                                if (textToSpeak) triggerGoogleVoice(textToSpeak);
+                                // --- REGEL 3: DIE "IMMER" ANSAGE VOR DEM ABBIEGEN (15m) ---
+                                if (distMeters <= 15 && !vs.spokenNow) {
+                                    textToSpeak = actionStr; 
+                                    vs.spokenNow = true;
+                                }
                             }
+
+                            if (textToSpeak) triggerGoogleVoice(textToSpeak);
 
                             // ==============================================
                             // --- UI UPDATE (GLAS-HUD) ---
@@ -1580,7 +1584,7 @@ function clearRoutes() {
                                 }
                             }
 
-                            // Deine UI-Rundung in 20m Schritten (Beruhigt das Auge massiv)
+                            // HUD Rundung auf 20m Schritte
                             let displayDist = Math.max(0, Math.round(distMeters / 20) * 20);
                             const distEl = document.getElementById('nav-top-distance');
                             if (distEl) {
@@ -1613,7 +1617,6 @@ function clearRoutes() {
             }
         });
     }
-
     // ==========================================
     // === NOT-AUS: DER NUKLEAR-ABBRUCH ===
     // ==========================================
