@@ -797,7 +797,97 @@ function clearRoutes() {
             }
         });
     }
+// ==========================================
+    // === MAP THEME SWITCHER (DARK / GREY / AUTO) ===
+    // ==========================================
+    window.currentMapTheme = 'dark'; // Standard
 
+    window.changeMapTheme = function(theme) {
+        if (!libreMap) return;
+        
+        let targetTheme = theme;
+        if (theme === 'auto') {
+            // Liest aus, ob das System des Users auf Dark Mode steht
+            targetTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'grey';
+        }
+
+        // Nichts tun, wenn das Theme schon aktiv ist
+        if (window.currentMapTheme === targetTheme && theme !== 'auto') return; 
+        window.currentMapTheme = targetTheme;
+
+        // 1. Die perfekten Styles laden (Voyager für Grey, Dark Matter für Dark)
+        const styleUrl = targetTheme === 'grey' 
+            ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' 
+            : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+            
+        // Gebäude im Grey-Mode hellgrau machen, im Dark-Mode bleiben sie dunkel
+        const buildingColor = targetTheme === 'grey' ? '#cccccc' : '#2a2a2a';
+
+        // 2. Den Style hart umstellen (Löscht temporär alle Custom-Layer)
+        libreMap.setStyle(styleUrl);
+
+        // 3. WARTEN bis der Style geladen ist, dann unsere Layer sofort wieder aufbauen!
+        libreMap.once('styledata', () => {
+            // --- A) 3D-Gebäude retten ---
+            const layers = libreMap.getStyle().layers;
+            let labelLayerId;
+            for (let i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
+                    labelLayerId = layers[i].id;
+                    break;
+                }
+            }
+
+            if (!libreMap.getLayer('3d-buildings')) {
+                libreMap.addLayer({
+                    'id': '3d-buildings',
+                    'source': 'carto',
+                    'source-layer': 'building',
+                    'type': 'fill-extrusion',
+                    'minzoom': 15,
+                    'paint': {
+                        'fill-extrusion-color': buildingColor,
+                        'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_height']],
+                        'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
+                        'fill-extrusion-opacity': 0.8
+                    }
+                }, labelLayerId);
+            }
+
+            // --- B) Aktive Routen und Stau-Linien retten ---
+            if (window.RouteLogic && window.RouteLogic.routeGeoJSONs) {
+                window.RouteLogic.routeGeoJSONs.forEach((features, index) => {
+                    if (!features) return;
+                    
+                    const sourceId = `route-source-${index}`;
+                    const layerId = `route-layer-${index}`;
+
+                    if (!libreMap.getSource(sourceId)) {
+                        libreMap.addSource(sourceId, {
+                            type: 'geojson',
+                            data: { type: 'FeatureCollection', features: features }
+                        });
+                    }
+
+                    if (!libreMap.getLayer(layerId)) {
+                        libreMap.addLayer({
+                            id: layerId,
+                            type: 'line',
+                            source: sourceId,
+                            layout: { 'line-join': 'round', 'line-cap': 'round' },
+                            paint: { 
+                                'line-color': ['get', 'color'], 
+                                'line-width': ['case', ['==', ['get', 'isTraffic'], true], 7, 6] 
+                            }
+                        });
+                    }
+                });
+                
+                // Graue Alternativ-Route wieder in den Hintergrund schieben
+                window.RouteLogic.updateMapLayers();
+            }
+        });
+    };
     // ==========================================
     // === MAP SETTINGS MENÜ (3 STRICHE & BLUR) ===
     // ==========================================
@@ -821,7 +911,9 @@ function clearRoutes() {
                 // Klasse dem geklickten Element geben
                 option.classList.add('active');
                 
-                // Später kommt hier die Logik rein, die die Karte umfärbt!
+                // Den Data-Theme Wert aus dem HTML auslesen und umschalten!
+                const selectedTheme = option.getAttribute('data-theme');
+                window.changeMapTheme(selectedTheme);
             });
         });
     }
