@@ -123,15 +123,20 @@ libreMap = new maplibregl.Map({
         libreMap.setPadding({ right: 150, bottom: 20 });
 
         // --- 3D-GEBÄUDE LOGIK ---
-// 1. Wir suchen den ersten Symbol-Layer (Straßennamen), um die Gebäude darunter zu schieben
-const layers = libreMap.getStyle().layers;
-let labelLayerId;
-for (let i = 0; i < layers.length; i++) {
-    if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-        labelLayerId = layers[i].id;
-        break;
-    }
-}
+        // Wir fügen die Gebäude ganz OBEN ein, damit keine Straßen durch sie hindurchscheinen!
+        libreMap.addLayer({
+            'id': '3d-buildings',
+            'source': 'carto',
+            'source-layer': 'building',
+            'type': 'fill-extrusion',
+            'minzoom': 15,
+            'paint': {
+                'fill-extrusion-color': '#2a2a2a',
+                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_height']],
+                'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
+                'fill-extrusion-opacity': 0.8
+            }
+        });
 
 // 2. Den 3D-Extrusion Layer hinzufügen
 libreMap.addLayer({
@@ -807,38 +812,25 @@ function clearRoutes() {
         
         let targetTheme = theme;
         if (theme === 'auto') {
-            // Liest aus, ob das System des Users auf Dark Mode steht
             targetTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'grey';
         }
 
-        // Nichts tun, wenn das Theme schon aktiv ist
         if (window.currentMapTheme === targetTheme && theme !== 'auto') return; 
         window.currentMapTheme = targetTheme;
 
-      // 1. Die perfekten Styles laden (Wir nutzen jetzt POSITRON für echtes, mattes Grau!)
+        // 1. Wir nutzen VOYAGER: Blaues Wasser, grüne Parks, sanfte graue Straßen!
         const styleUrl = targetTheme === 'grey' 
-            ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json' 
+            ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' 
             : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
             
-        // 2. Gebäude im Grey-Mode grau (#999999) und 100 % BLICKDICHT (opacity: 1.0)
-        const buildingColor = targetTheme === 'grey' ? '#999999' : '#2a2a2a';
+        // 2. Gebäude im Grey-Mode mittleres Grau (#a0a0a0) und 100 % BLICKDICHT (opacity: 1.0)
+        const buildingColor = targetTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
         const buildingOpacity = targetTheme === 'grey' ? 1.0 : 0.8;
 
-        // 2. Den Style hart umstellen (Löscht temporär alle Custom-Layer)
         libreMap.setStyle(styleUrl);
 
-        // 3. WARTEN bis der Style geladen ist, dann unsere Layer sofort wieder aufbauen!
         libreMap.once('styledata', () => {
-            // --- A) 3D-Gebäude retten ---
-            const layers = libreMap.getStyle().layers;
-            let labelLayerId;
-            for (let i = 0; i < layers.length; i++) {
-                if (layers[i].type === 'symbol' && layers[i].layout['text-field']) {
-                    labelLayerId = layers[i].id;
-                    break;
-                }
-            }
-
+            // --- A) 3D-Gebäude retten (ohne Layer-Suche, damit sie massiv bleiben!) ---
             if (!libreMap.getLayer('3d-buildings')) {
                 libreMap.addLayer({
                     'id': '3d-buildings',
@@ -852,7 +844,7 @@ function clearRoutes() {
                         'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
                         'fill-extrusion-opacity': buildingOpacity
                     }
-                }, labelLayerId);
+                });
             }
 
             // --- B) Aktive Routen und Stau-Linien retten ---
@@ -884,7 +876,6 @@ function clearRoutes() {
                     }
                 });
                 
-                // Graue Alternativ-Route wieder in den Hintergrund schieben
                 window.RouteLogic.updateMapLayers();
             }
         });
