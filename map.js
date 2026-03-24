@@ -815,14 +815,14 @@ function clearRoutes() {
         if (window.currentMapTheme === targetTheme && theme !== 'auto') return; 
         window.currentMapTheme = targetTheme;
 
-        // 1. Die perfekten Styles laden (Voyager für Grey, Dark Matter für Dark)
+      // 1. Die perfekten Styles laden (Wir nutzen jetzt POSITRON für echtes, mattes Grau!)
         const styleUrl = targetTheme === 'grey' 
-            ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' 
+            ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json' 
             : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
             
-// Gebäude im Grey-Mode deutlich dunkler (#7a7a7a) und transparent (0.45)
-        const buildingColor = targetTheme === 'grey' ? '#7a7a7a' : '#2a2a2a';
-        const buildingOpacity = targetTheme === 'grey' ? 0.45 : 0.8;
+        // 2. Gebäude im Grey-Mode grau (#999999) und 100 % BLICKDICHT (opacity: 1.0)
+        const buildingColor = targetTheme === 'grey' ? '#999999' : '#2a2a2a';
+        const buildingOpacity = targetTheme === 'grey' ? 1.0 : 0.8;
 
         // 2. Den Style hart umstellen (Löscht temporär alle Custom-Layer)
         libreMap.setStyle(styleUrl);
