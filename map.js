@@ -171,9 +171,29 @@ libreMap.addLayer({
         libreMap.touchZoomRotate.disable();
         libreMap.doubleClickZoom.disable();
         
-        if (libreMap.dragRotate) libreMap.dragRotate.disable();
+       if (libreMap.dragRotate) libreMap.dragRotate.disable();
     });
-    setTimeout(() => { if (libreMap) libreMap.resize(); }, 300);
+    
+    // --- NEU: GESPEICHERTES THEME LADEN ---
+    setTimeout(() => { 
+        if (libreMap) libreMap.resize(); 
+        
+        // 1. Hole den Speicher (Standard ist immer 'dark')
+        const savedTheme = localStorage.getItem('mapTheme') || 'dark';
+        
+        // 2. Das Menü visuell umschalten (Die grüne Pille auf die richtige Option schieben)
+        const themeOptions = document.querySelectorAll('.theme-option');
+        if (themeOptions.length > 0) {
+            themeOptions.forEach(opt => opt.classList.remove('active'));
+            const activeOpt = document.querySelector(`.theme-option[data-theme="${savedTheme}"]`);
+            if (activeOpt) activeOpt.classList.add('active');
+        }
+
+        // 3. Das Theme anwenden (Falls es nicht eh schon Dark ist, laden wir um)
+        if (savedTheme !== 'dark') {
+            window.changeMapTheme(savedTheme);
+        }
+    }, 350);
 }
  // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
@@ -807,30 +827,53 @@ function clearRoutes() {
     // ==========================================
     window.currentMapTheme = 'dark'; // Standard
 
-    window.changeMapTheme = function(theme) {
+    window.changeMapTheme = async function(theme) { // NEU: Async für die Sonnen-Abfrage
         if (!libreMap) return;
         
+        // 1. Auswahl im Handy-Browser dauerhaft speichern!
+        localStorage.setItem('mapTheme', theme);
+
         let targetTheme = theme;
+        
         if (theme === 'auto') {
-            targetTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'grey';
+            // 2. LIVE-WETTER ABFRAGE: Ist die Sonne gerade auf oder untergegangen?
+            try {
+                // Falls Koordinaten da sind, nehmen wir sie, sonst Fallback auf die Mitte Deutschlands
+                const lat = currentCoords ? currentCoords[1] : 51.16;
+                const lon = currentCoords ? currentCoords[0] : 10.45;
+                
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=is_day`);
+                if (res.ok) {
+                    const data = await res.json();
+                    // is_day: 1 = Tag (Grey), 0 = Nacht (Dark)
+                    targetTheme = data.current.is_day ? 'grey' : 'dark';
+                } else {
+                    throw new Error("Wetter API antwortet nicht");
+                }
+            } catch (e) {
+                // Fallback-Logik, falls du offline bist: Zwischen 7:00 und 19:00 Uhr ist es hell.
+                const hour = new Date().getHours();
+                targetTheme = (hour >= 7 && hour < 19) ? 'grey' : 'dark';
+            }
         }
 
+        // Nichts tun, wenn das Theme schon aktiv ist (Verhindert Flackern)
         if (window.currentMapTheme === targetTheme && theme !== 'auto') return; 
         window.currentMapTheme = targetTheme;
 
-        // 1. Wir nutzen VOYAGER: Blaues Wasser, grüne Parks, sanfte graue Straßen!
+        // 3. Wir nutzen VOYAGER: Blaues Wasser, grüne Parks, sanfte graue Straßen!
         const styleUrl = targetTheme === 'grey' 
             ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' 
             : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
             
-        // 2. Gebäude im Grey-Mode mittleres Grau (#a0a0a0) und 100 % BLICKDICHT (opacity: 1.0)
+        // 4. Gebäude im Grey-Mode mittleres Grau (#a0a0a0) und 100 % BLICKDICHT (opacity: 1.0)
         const buildingColor = targetTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
         const buildingOpacity = targetTheme === 'grey' ? 1.0 : 0.8;
 
         libreMap.setStyle(styleUrl);
 
         libreMap.once('styledata', () => {
-            // --- A) 3D-Gebäude retten (ohne Layer-Suche, damit sie massiv bleiben!) ---
+            // --- A) 3D-Gebäude retten (massiv!) ---
             if (!libreMap.getLayer('3d-buildings')) {
                 libreMap.addLayer({
                     'id': '3d-buildings',
