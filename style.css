@@ -3262,3 +3262,89 @@ body.ghost-active #ghost-chat-overlay {
     color: #30d158; /* DriverHub Grün */
     margin-top: 6px;
 }
+
+
+/* === MAP SETTINGS BUTTON === */
+#map-settings-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px; /* Gegenüber vom Pfeil */
+    width: 40px;
+    height: 40px;
+    background: rgba(20, 20, 20, 0.8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+    z-index: 1000; /* Hoch genug, damit er klickbar ist */
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: opacity 0.3s ease;
+}
+
+/* === MAP SETTINGS OVERLAY === */
+#map-settings-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4); /* Leichte Abdunkelung */
+    backdrop-filter: blur(12px); /* Der Blur-Effekt */
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 999; /* Direkt UNTER dem Button, damit man ihn nochmal klicken kann */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+#map-settings-overlay.hidden {
+    opacity: 0;
+    pointer-events: none; /* Klicks blockieren, wenn unsichtbar */
+}
+
+/* === INHALT DES MENÜS === */
+.map-settings-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.map-settings-title {
+    color: #fff;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* === DIE PILLE (SEGMENTED CONTROL) === */
+.theme-toggle-pill {
+    display: flex;
+    background: rgba(30, 30, 30, 0.8);
+    border-radius: 30px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-option {
+    padding: 8px 20px;
+    border-radius: 26px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.theme-option.active {
+    background: #30d158; /* Dein markantes Grün */
+    color: #fff;
+    box-shadow: 0 0 10px rgba(48, 209, 88, 0.4);
+}
