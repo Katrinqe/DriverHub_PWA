@@ -1371,7 +1371,7 @@ function clearRoutes() {
             window.lastRouteIdx = 0; 
             window.navStartTime = Date.now();
 
-           }
+           
             
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) routeUI.classList.add('fade-out');
