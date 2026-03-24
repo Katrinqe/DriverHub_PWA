@@ -1505,11 +1505,13 @@ function clearRoutes() {
     const btnStartRoute = document.getElementById('btn-start-nav'); 
     
     if (btnStartRoute) {
-        btnStartRoute.addEventListener('click', async () => {
+      btnStartRoute.addEventListener('click', async () => {
             window.lastRouteIdx = 0; 
             window.navStartTime = Date.now();
 
-           
+            // NEU: Audio-Türsteher von Apple/Google sofort beim Klick dauerhaft knacken!
+            const silentAudio = new Audio("data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//OEwAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
+            silentAudio.play().catch(() => {});
             
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) routeUI.classList.add('fade-out');
@@ -1721,16 +1723,22 @@ function clearRoutes() {
                             currIdx = RouteLogic.currentInstructionIndex;
                         }
 
-                        if (currIdx < instructions.length) {
+                     if (currIdx < instructions.length) {
                             let currentManeuver = instructions[currIdx];
                             
+                            // NEU: Intelligente Pass-by-Logik! Wir checken, ob unser Index auf der Route den Abbiegepunkt bereits überschritten hat.
+                            let isPassed = closestIdx >= currentManeuver.pointIndex; 
+                            
                             let distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
-                            if (distMeters < 1500) {
+                            
+                            // Nur noch echte Luftlinie berechnen, wenn wir noch nicht vorbei sind
+                            if (!isPassed && distMeters < 1500) {
                                 distMeters = calculateDistance(lat, lng, currentManeuver.point.latitude, currentManeuver.point.longitude);
                             }
                             if (distMeters < 0) distMeters = 0;
 
-                            if (distMeters <= 8) {
+                            // WIR SCHALTEN UM, WENN: Wir den Punkt passiert haben ODER wir auf 35m dran sind!
+                            if (isPassed || distMeters <= 35) {
                                 RouteLogic.currentInstructionIndex++;
                                 currIdx = RouteLogic.currentInstructionIndex;
                                 
@@ -1939,17 +1947,22 @@ function clearRoutes() {
         };
     }
 
-    // ==========================================
+  // ==========================================
     // === GOOGLE TEXT-TO-SPEECH ENGINE ===
     // ==========================================
+    window.cachedGoogleTtsKey = null; // NEU: Der Turbo-Cache für den Key!
+
     async function triggerGoogleVoice(text) {
         try {
-            const docRef = db.collection("config").doc("api_keys");
-            const docSnap = await docRef.get();
-            if (!docSnap.exists) { console.error("Kein API Key in Firestore gefunden!"); return; }
+            // NEU: Nur aus der Datenbank laden, wenn wir ihn noch nicht im Cache haben
+            if (!window.cachedGoogleTtsKey) {
+                const docRef = db.collection("config").doc("api_keys");
+                const docSnap = await docRef.get();
+                if (!docSnap.exists) { console.error("Kein API Key in Firestore gefunden!"); return; }
+                window.cachedGoogleTtsKey = docSnap.data().google_tts;
+            }
             
-            const apiKey = docSnap.data().google_tts;
-            const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
+            const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${window.cachedGoogleTtsKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -1961,12 +1974,13 @@ function clearRoutes() {
 
             if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
             const data = await response.json();
+            
+            // Mit .catch fangen wir Browser-Fehler leise ab, falls das Audio doch mal klemmt
             const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
-            audio.play();
+            audio.play().catch(e => console.warn("Audio durch Browser blockiert:", e));
 
         } catch (error) {
             console.error("Sprachausgabe fehlgeschlagen:", error);
         }
     }
-
 }); // <-- Das ist und bleibt deine allerletzte Klammer in der map.js!
