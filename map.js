@@ -820,8 +820,9 @@ function clearRoutes() {
             ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' 
             : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
             
-        // Gebäude im Grey-Mode hellgrau machen, im Dark-Mode bleiben sie dunkel
-        const buildingColor = targetTheme === 'grey' ? '#cccccc' : '#2a2a2a';
+// Gebäude im Grey-Mode deutlich dunkler (#7a7a7a) und transparent (0.45)
+        const buildingColor = targetTheme === 'grey' ? '#7a7a7a' : '#2a2a2a';
+        const buildingOpacity = targetTheme === 'grey' ? 0.45 : 0.8;
 
         // 2. Den Style hart umstellen (Löscht temporär alle Custom-Layer)
         libreMap.setStyle(styleUrl);
@@ -845,11 +846,11 @@ function clearRoutes() {
                     'source-layer': 'building',
                     'type': 'fill-extrusion',
                     'minzoom': 15,
-                    'paint': {
+                'paint': {
                         'fill-extrusion-color': buildingColor,
                         'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_height']],
                         'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
-                        'fill-extrusion-opacity': 0.8
+                        'fill-extrusion-opacity': buildingOpacity
                     }
                 }, labelLayerId);
             }
