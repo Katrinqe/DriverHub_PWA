@@ -827,7 +827,7 @@ function clearRoutes() {
     // ==========================================
     window.currentMapTheme = 'dark'; // Standard
 
-    window.changeMapTheme = async function(theme) { // NEU: Async für die Sonnen-Abfrage
+    window.changeMapTheme = async function(theme) {
         if (!libreMap) return;
         
         // 1. Auswahl im Handy-Browser dauerhaft speichern!
@@ -838,7 +838,6 @@ function clearRoutes() {
         if (theme === 'auto') {
             // 2. LIVE-WETTER ABFRAGE: Ist die Sonne gerade auf oder untergegangen?
             try {
-                // Falls Koordinaten da sind, nehmen wir sie, sonst Fallback auf die Mitte Deutschlands
                 const lat = currentCoords ? currentCoords[1] : 51.16;
                 const lon = currentCoords ? currentCoords[0] : 10.45;
                 
@@ -851,14 +850,16 @@ function clearRoutes() {
                     throw new Error("Wetter API antwortet nicht");
                 }
             } catch (e) {
-                // Fallback-Logik, falls du offline bist: Zwischen 7:00 und 19:00 Uhr ist es hell.
+                // Fallback-Logik, falls offline
                 const hour = new Date().getHours();
                 targetTheme = (hour >= 7 && hour < 19) ? 'grey' : 'dark';
             }
         }
 
-        // Nichts tun, wenn das Theme schon aktiv ist (Verhindert Flackern)
-        if (window.currentMapTheme === targetTheme && theme !== 'auto') return; 
+        // NEU: Flacker-Schutz! Wenn das berechnete finale Theme schon aktiv ist, brechen wir hier ab.
+        // Das verhindert, dass die Karte alle 15 Minuten neu lädt, wenn sich der Sonnenstand nicht geändert hat!
+        if (window.currentMapTheme === targetTheme) return; 
+        
         window.currentMapTheme = targetTheme;
 
         // 3. Wir nutzen VOYAGER: Blaues Wasser, grüne Parks, sanfte graue Straßen!
@@ -866,14 +867,14 @@ function clearRoutes() {
             ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' 
             : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
             
-        // 4. Gebäude im Grey-Mode mittleres Grau (#a0a0a0) und 100 % BLICKDICHT (opacity: 1.0)
+        // 4. Gebäude im Grey-Mode mittleres Grau (#a0a0a0) und 100 % BLICKDICHT
         const buildingColor = targetTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
         const buildingOpacity = targetTheme === 'grey' ? 1.0 : 0.8;
 
         libreMap.setStyle(styleUrl);
 
         libreMap.once('styledata', () => {
-            // --- A) 3D-Gebäude retten (massiv!) ---
+            // --- A) 3D-Gebäude retten ---
             if (!libreMap.getLayer('3d-buildings')) {
                 libreMap.addLayer({
                     'id': '3d-buildings',
@@ -881,7 +882,7 @@ function clearRoutes() {
                     'source-layer': 'building',
                     'type': 'fill-extrusion',
                     'minzoom': 15,
-                'paint': {
+                    'paint': {
                         'fill-extrusion-color': buildingColor,
                         'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_height']],
                         'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
@@ -923,6 +924,16 @@ function clearRoutes() {
             }
         });
     };
+
+    // --- NEU: DER 15-MINUTEN PULS FÜR DEN AUTO-MODUS ---
+    setInterval(() => {
+        const savedTheme = localStorage.getItem('mapTheme');
+        // Nur prüfen, wenn der Nutzer explizit 'auto' gewählt hat
+        if (savedTheme === 'auto') {
+            console.log("Auto-Theme: 15-Minuten-Check des Sonnenstands...");
+            window.changeMapTheme('auto');
+        }
+    }, 15 * 60 * 1000); // 15 Minuten
     // ==========================================
     // === MAP SETTINGS MENÜ (3 STRICHE & BLUR) ===
     // ==========================================
