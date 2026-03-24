@@ -3265,24 +3265,23 @@ body.ghost-active #ghost-chat-overlay {
 
 
 /* === MAP SETTINGS BUTTON === */
+/* === MAP SETTINGS BUTTON === */
 #map-settings-btn {
     position: absolute;
-    top: 15px;
-    right: 15px; /* Gegenüber vom Pfeil */
+    top: 20px;
+    right: 20px;
     width: 40px;
     height: 40px;
-    background: rgba(20, 20, 20, 0.8);
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
-    font-size: 18px;
-    z-index: 1000; /* Hoch genug, damit er klickbar ist */
+    font-size: 26px; /* Größer, da der Kreis weg ist */
+    z-index: 1000;
     cursor: pointer;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
     transition: opacity 0.3s ease;
+    /* WICHTIG: Harter Schatten, damit man die weißen Striche auf der hellen Karte sieht! */
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8); 
 }
 
 /* === MAP SETTINGS OVERLAY === */
@@ -3292,30 +3291,31 @@ body.ghost-active #ghost-chat-overlay {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.4); /* Leichte Abdunkelung */
-    backdrop-filter: blur(12px); /* Der Blur-Effekt */
+    background: rgba(0, 0, 0, 0.4); 
+    backdrop-filter: blur(12px); 
     -webkit-backdrop-filter: blur(12px);
-    z-index: 999; /* Direkt UNTER dem Button, damit man ihn nochmal klicken kann */
+    z-index: 999; 
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-start; /* Zieht das Menü nach OBEN */
+    justify-content: flex-end; /* Zieht das Menü nach RECHTS */
+    padding-top: 80px; /* Sorgt dafür, dass es genau unter dem 3-Striche-Button anfängt */
+    padding-right: 20px; /* Lässt etwas Luft zum rechten Rand */
     opacity: 1;
     transition: opacity 0.3s ease;
 }
 
 #map-settings-overlay.hidden {
     opacity: 0;
-    pointer-events: none; /* Klicks blockieren, wenn unsichtbar */
+    pointer-events: none; 
 }
 
 /* === INHALT DES MENÜS === */
 .map-settings-content {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 20px;
+    align-items: flex-end; /* Richtet Text und Pille sauber rechtsbündig aus */
+    gap: 15px;
 }
-
 .map-settings-title {
     color: #fff;
     font-size: 20px;
