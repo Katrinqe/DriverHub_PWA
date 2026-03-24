@@ -181,6 +181,7 @@ libreMap.addLayer({
         
         // 1. Karte groß machen (Fullscreen)
         expandTrigger.addEventListener('click', () => {
+            if (mapSettingsBtn) mapSettingsBtn.classList.remove('hidden');
             mapCard.classList.add('map-expanded');
             expandTrigger.style.display = 'none'; // Klickscheibe wegnehmen
 
@@ -204,10 +205,14 @@ libreMap.addLayer({
             }
         });
 
-        // 2. Karte wieder klein machen ODER Route abbrechen (EINZIGER LISTENER!)
+       // 2. Karte wieder klein machen ODER Route abbrechen (EINZIGER LISTENER!)
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
+            if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
+            if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
+
+            // --- NORMALER SHRINK CODE (Nur wenn keine Route offen ist) ---
             // --- NORMALER SHRINK CODE (Nur wenn keine Route offen ist) ---
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
@@ -389,7 +394,8 @@ async function drawTomTomRoute(destLat, destLng) {
     
     const navBar = document.querySelector('.bottom-nav');
     if (navBar) navBar.style.display = 'none';
-    
+    if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
+    if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
     if (bottomSheet) {
         bottomSheet.classList.remove('expanded');
         bottomSheet.style.display = 'none';
@@ -793,6 +799,34 @@ function clearRoutes() {
     }
 
     // ==========================================
+    // === MAP SETTINGS MENÜ (3 STRICHE & BLUR) ===
+    // ==========================================
+    const mapSettingsBtn = document.getElementById('map-settings-btn');
+    const mapSettingsOverlay = document.getElementById('map-settings-overlay');
+    const themeOptions = document.querySelectorAll('.theme-option');
+
+    if (mapSettingsBtn && mapSettingsOverlay) {
+        // Klick auf die 3 Striche (Menü öffnen/schließen)
+        mapSettingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            mapSettingsOverlay.classList.toggle('hidden');
+        });
+
+        // Klick auf die Optionen in der Pille (Dark / Grey / Auto)
+        themeOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Aktive Klasse von allen entfernen
+                themeOptions.forEach(opt => opt.classList.remove('active'));
+                // Klasse dem geklickten Element geben
+                option.classList.add('active');
+                
+                // Später kommt hier die Logik rein, die die Karte umfärbt!
+            });
+        });
+    }
+
+    // ==========================================
     // === SHRINK BUTTON LOGIC (PFEIL OBEN LINKS) ===
     // ==========================================
     if (shrinkBtn && mapCard && expandTrigger) {
@@ -861,6 +895,9 @@ function clearRoutes() {
         // .onclick überschreibt alle fehlerhaften Alt-Befehle hart!
         btnCancelRouteNew.onclick = (e) => {
             e.stopPropagation();
+
+            if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
+            if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
 
             // 0. GPS MOTOR ABWÜRGEN
             if (navWatchId !== null) {
@@ -1711,6 +1748,9 @@ function clearRoutes() {
     if (btnCancelActiveNav) {
         btnCancelActiveNav.onclick = (e) => {
             e.stopPropagation();
+
+            if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
+            if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
 
             if (navWatchId !== null) {
                 navigator.geolocation.clearWatch(navWatchId);
