@@ -160,94 +160,7 @@ libreMap.addLayer({
 }, labelLayerId);
 
 
-  // --- NEUE AMPEL-LOGIK (Nur für Routen-Übersicht) ---
-        window.isRouteOverviewActive = false;
 
-        // Peters Tipp: Prüfen ob Source schon da ist
-        if (!libreMap.getSource('traffic-lights-source')) {
-            libreMap.addSource('traffic-lights-source', {
-                type: 'geojson',
-                data: { type: 'FeatureCollection', features: [] }
-            });
-
-            libreMap.addLayer({
-                id: 'traffic-lights-layer',
-                type: 'symbol',
-                source: 'traffic-lights-source',
-                minzoom: 15, // Zoom-Grenze deutlich gesenkt!
-                layout: {
-                    'text-field': '🚦',
-                    'text-size': 22,
-                    'text-allow-overlap': true,
-                    'icon-allow-overlap': true,
-                    'text-ignore-placement': true
-                }
-            });
-        }
-
-        let overpassTimer;
-
-        window.fetchTrafficLights = async function() {
-            if (!libreMap || !window.isRouteOverviewActive) return;
-            
-            const currentZoom = libreMap.getZoom();
-            if (currentZoom < 15) { 
-                console.log("Zoom < 15, lade keine Ampeln."); 
-                return; 
-            }
-
-            console.log("🚦 Ampel-Check gestartet...");
-            const bounds = libreMap.getBounds();
-            const query = `[out:json][timeout:10];node["highway"="traffic_signals"](${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()});out;`;
-            const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-
-            try {
-                const response = await fetch(overpassUrl);
-                if (!response.ok) {
-                    console.warn("Overpass API Fehler oder Limit erreicht:", response.status);
-                    return;
-                }
-
-                const data = await response.json();
-                const activeRoutePts = window.RouteLogic.routePointsData[window.RouteLogic.activeIndex];
-                const features = [];
-
-                if (data.elements && activeRoutePts) {
-                    data.elements.forEach(node => {
-                        let isOnRoute = false;
-                        for (let i = 0; i < activeRoutePts.length; i++) {
-                            const d = calculateDistance(node.lat, node.lon, activeRoutePts[i][1], activeRoutePts[i][0]);
-                            if (d <= 50) { 
-                                isOnRoute = true;
-                                break;
-                            }
-                        }
-                        if (isOnRoute) {
-                            features.push({
-                                type: 'Feature',
-                                geometry: { type: 'Point', coordinates: [node.lon, node.lat] }
-                            });
-                        }
-                    });
-                    console.log(`Gefilterte Ampeln auf Route: ${features.length}`);
-                }
-                libreMap.getSource('traffic-lights-source').setData({ type: 'FeatureCollection', features: features });
-            } catch (error) {
-                console.error("Ampel-Abfrage Fehler:", error);
-            }
-        };
-
-        // PETERS FIX: Erst alle alten, wilden Listener löschen, dann EINEN sauberen Debounce setzen!
-        libreMap.off('moveend', window.fetchTrafficLights); 
-        
-        libreMap.on('moveend', () => {
-            clearTimeout(overpassTimer);
-            overpassTimer = setTimeout(window.fetchTrafficLights, 1000); // 1 Sekunde Warten gegen API-Spam
-        });
-        // -------------------------------------
-
-        libreMap.on('moveend', window.fetchTrafficLights); // Lädt Ampeln dynamisch nach, wenn man wischt
-        // -------------------------------------
  libreMap.dragPan.disable();
         libreMap.scrollZoom.disable();
         libreMap.touchZoomRotate.disable();
@@ -785,11 +698,7 @@ allPoints.forEach(coord => bounds.extend(coord));
             ); 
         }
 
-        // Schalter umlegen: Wir sind jetzt in der Routen-Übersicht!
-        window.isRouteOverviewActive = true;
         
-        // Zwinge die Karte, sofort nach Ampeln zu suchen, falls wir schon nah genug reingezoomt sind!
-        if (window.fetchTrafficLights) window.fetchTrafficLights();
             
         });
 
@@ -819,15 +728,7 @@ function clearRoutes() {
         destMarker = null;
     }
 
-// Ampel-Schalter deaktivieren & Ampeln restlos von der Karte fegen
-    window.isRouteOverviewActive = false;
-    if (libreMap && libreMap.getSource('traffic-lights-source')) {
-        libreMap.getSource('traffic-lights-source').setData({ type: 'FeatureCollection', features: [] });
-    }
-    // WICHTIG: Sichtbarkeit wieder einschalten, falls wir vorher navigiert haben!
-    if (libreMap && libreMap.getLayer('traffic-lights-layer')) {
-        libreMap.setLayoutProperty('traffic-lights-layer', 'visibility', 'visible');
-    }
+
 
     // 4. Den Multi-Route Zwischenspeicher leeren
     if (window.RouteLogic) {
@@ -1433,11 +1334,7 @@ function clearRoutes() {
             window.lastRouteIdx = 0; 
             window.navStartTime = Date.now();
 
-            // Ampeln für die aktive Fahrt hart ausblenden
-            window.isRouteOverviewActive = false;
-            if (libreMap && libreMap.getLayer('traffic-lights-layer')) {
-                libreMap.setLayoutProperty('traffic-lights-layer', 'visibility', 'none');
-            }
+           }
             
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) routeUI.classList.add('fade-out');
