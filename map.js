@@ -117,14 +117,6 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
             }
             return { url };
         }
-    });.Map({
-        container: mapContainerId,
-        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-        center: coords,
-        zoom: 14,
-        interactive: true,
-        dragRotate: true, // FIX: Von Anfang an aktiv für Desktop-Stabilität
-        attributionControl: false 
     });
    // --- BLAUER PUNKT (Zwingend zeichnen, Original-Klassen nutzen!) ---
     const customMarkerElement = document.createElement('div');
