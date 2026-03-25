@@ -177,14 +177,12 @@ libreMap.addLayer({
        if (libreMap.dragRotate) libreMap.dragRotate.disable();
     });
     
-    // --- NEU: GESPEICHERTES THEME LADEN ---
+   // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
     setTimeout(() => { 
         if (libreMap) libreMap.resize(); 
         
-        // 1. Hole den Speicher (Standard ist immer 'dark')
+        // 1. Theme laden
         const savedTheme = localStorage.getItem('mapTheme') || 'dark';
-        
-        // 2. Das Menü visuell umschalten (Die grüne Pille auf die richtige Option schieben)
         const themeOptions = document.querySelectorAll('.theme-option');
         if (themeOptions.length > 0) {
             themeOptions.forEach(opt => opt.classList.remove('active'));
@@ -192,11 +190,26 @@ libreMap.addLayer({
             if (activeOpt) activeOpt.classList.add('active');
         }
 
-        // 3. Das Theme anwenden (Falls es nicht eh schon Dark ist, laden wir um)
+        // 2. POI Modus laden (UI aktualisieren)
+        const savedPoi = localStorage.getItem('mapPoiMode') || 'clean';
+        const poiOptions = document.querySelectorAll('.poi-option');
+        if (poiOptions.length > 0) {
+            poiOptions.forEach(opt => opt.classList.remove('active'));
+            const activePoiOpt = document.querySelector(`.poi-option[data-poi="${savedPoi}"]`);
+            if (activePoiOpt) activePoiOpt.classList.add('active');
+        }
+
+        // 3. Einstellungen hart auf die Karte anwenden
         if (savedTheme !== 'dark') {
+            // changeMapTheme ruft applyPoiMode() automatisch ab, sobald der Style geladen ist!
             window.changeMapTheme(savedTheme);
+        } else {
+            // Wenn das Theme Dark bleibt (Standard), müssen wir die POIs manuell triggern
+            window.applyPoiMode();
         }
     }, 350);
+
+    
 }
  // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
@@ -825,6 +838,24 @@ function clearRoutes() {
             }
         });
     }
+
+    // ==========================================
+    // === POI VISIBILITY LOGIC (CLEAN / EXPLORE) ===
+    // ==========================================
+    window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean'; // Standard ist Clean
+
+    window.applyPoiMode = function() {
+        if (!libreMap || !libreMap.getStyle()) return;
+        const visibility = window.currentPoiMode === 'explore' ? 'visible' : 'none';
+        
+        const layers = libreMap.getStyle().layers;
+        layers.forEach(layer => {
+            // Carto-Basemaps nutzen "poi" in den Layer-IDs für alle Geschäfte und Icons
+            if (layer.id.includes('poi')) {
+                libreMap.setLayoutProperty(layer.id, 'visibility', visibility);
+            }
+        });
+    };
 // ==========================================
     // === MAP THEME SWITCHER (DARK / GREY / AUTO) ===
     // ==========================================
@@ -923,11 +954,14 @@ function clearRoutes() {
                     }
                 });
                 
+        // ... bestehender Code ...
                 window.RouteLogic.updateMapLayers();
             }
+
+            // --- C) POI-Sichtbarkeit wiederherstellen ---
+            window.applyPoiMode();
         });
     };
-
     // --- NEU: DER 15-MINUTEN PULS FÜR DEN AUTO-MODUS ---
     setInterval(() => {
         const savedTheme = localStorage.getItem('mapTheme');
@@ -965,6 +999,24 @@ function clearRoutes() {
                 window.changeMapTheme(selectedTheme);
             });
         });
+
+        // --- NEU: Klick-Logik für POI Details (Clean / Explore) ---
+        const poiOptions = document.querySelectorAll('.poi-option');
+        if (poiOptions.length > 0) {
+            poiOptions.forEach(option => {
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Aktive Klasse umschalten
+                    poiOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+                    
+                    // Auslesen, speichern und sofort anwenden!
+                    window.currentPoiMode = option.getAttribute('data-poi');
+                    localStorage.setItem('mapPoiMode', window.currentPoiMode);
+                    window.applyPoiMode();
+                });
+            });
+        }
     }
 
     // ==========================================
