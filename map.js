@@ -206,7 +206,7 @@ libreMap = new maplibregl.Map({
         window.updateMapAppearance();
     }, 350);
 
-    }
+    });
  // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
     // ==========================================
