@@ -110,9 +110,9 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         interactive: true,
         dragRotate: true,
         attributionControl: false,
-        // --- DER BOSS-FIX: Der Interceptor hängt den API-Key an jedes TomTom-Icon! ---
+   // --- DER BOSS-FIX: Der Interceptor hängt den API-Key an jedes TomTom-Icon! ---
         transformRequest: (url, resourceType) => {
-            if (url.includes('api.tomtom.com')) {
+            if (url.includes('api.tomtom.com') && !url.includes('key=')) {
                 return { url: url + (url.includes('?') ? '&' : '?') + 'key=' + TOMTOM_API_KEY };
             }
             return { url };
@@ -879,8 +879,7 @@ function clearRoutes() {
     window.currentMapTheme = localStorage.getItem('mapTheme') || 'dark'; 
     window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean';
     window.loadedStyleUrl = null;
-
-    window.updateMapAppearance = async function() {
+window.updateMapAppearance = async function() {
         if (!libreMap) return;
 
         let activeTheme = window.currentMapTheme;
@@ -903,7 +902,8 @@ function clearRoutes() {
         if (window.currentPoiMode === 'explore') {
             // EXPLORE: Das reine, native TomTom Design
             const ttStyle = activeTheme === 'grey' ? 'basic_main' : 'basic_night';
-            styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json?key=qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM`;
+            // FIX: Kein manuelles ?key= mehr! Der Türsteher erledigt das.
+            styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json`;
         } else {
             // CLEAN: Deine sterilen Carto-Karten (Voyager & Dark Matter)
             styleUrl = activeTheme === 'grey' 
@@ -911,16 +911,41 @@ function clearRoutes() {
                 : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
         }
 
-        if (window.loadedStyleUrl === styleUrl) return;
+        if (window.loadedStyleUrl === styleUrl) {
+            // Wenn wir nur den POI-Modus wechseln, blenden wir die Layer direkt aus/ein
+            applyPoiVisibility();
+            return;
+        }
+        
         window.loadedStyleUrl = styleUrl;
-
         libreMap.setStyle(styleUrl);
 
         libreMap.once('style.load', () => {
             restore3DBuildings(activeTheme);
             restoreRoutes();
+            applyPoiVisibility(); // FIX: Zwingt Carto im Clean Mode die Icons zu verstecken
         });
     };
+
+    // --- NEU: Zwingt Carto dazu, im Clean-Modus steril zu bleiben ---
+    function applyPoiVisibility() {
+        if (window.currentPoiMode === 'explore') return; // TomTom verwaltet sich selbst
+        
+        const layers = libreMap.getStyle().layers;
+        if (!layers) return;
+
+        layers.forEach(layer => {
+            if (layer.type === 'symbol') {
+                const id = layer.id.toLowerCase();
+                const sourceLayer = layer['source-layer'] ? layer['source-layer'].toLowerCase() : '';
+                const isPoi = id.includes('poi') || id.includes('amenity') || id.includes('shop') || id.includes('tourism') || sourceLayer.includes('poi');
+                
+                if (isPoi && libreMap.getLayer(layer.id)) {
+                    libreMap.setLayoutProperty(layer.id, 'visibility', 'none');
+                }
+            }
+        });
+    }
 
     function restore3DBuildings(activeTheme) {
         if (window.currentPoiMode === 'explore') return; // TomTom hat eigene Gebäude
