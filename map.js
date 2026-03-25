@@ -199,6 +199,8 @@ libreMap.addLayer({
         // 2. Engine starten (lädt das perfekte Design)
         window.updateMapAppearance();
     }, 350);
+
+    }
  // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
     // ==========================================
@@ -970,6 +972,9 @@ function clearRoutes() {
                 });
             });
         }
+
+        }
+        
 
     // ==========================================
     // === SHRINK BUTTON LOGIC (PFEIL OBEN LINKS) ===
