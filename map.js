@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let destMarker = null; // Nur einmal definieren!
     let currentCoords = null; 
     let navWatchId = null; // <-- NEU: Hier speichern wir den Motor
+
+    let ttsAudioPlayer = new Audio();
     
     if (btnNewExplore && newExploreScreen) {
         // ... restlicher Code
@@ -1510,9 +1512,8 @@ function clearRoutes() {
             window.lastRouteIdx = 0; 
             window.navStartTime = Date.now();
 
-            // NEU: Audio-Türsteher von Apple/Google sofort beim Klick dauerhaft knacken!
-            const silentAudio = new Audio("data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//OEwAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq");
-            silentAudio.play().catch(() => {});
+          ttsAudioPlayer.src = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//OEwAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+            ttsAudioPlayer.play().catch(() => {});
             
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) routeUI.classList.add('fade-out');
@@ -1976,9 +1977,8 @@ function clearRoutes() {
             if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
             const data = await response.json();
             
-            // Mit .catch fangen wir Browser-Fehler leise ab, falls das Audio doch mal klemmt
-            const audio = new Audio("data:audio/mp3;base64," + data.audioContent);
-            audio.play().catch(e => console.warn("Audio durch Browser blockiert:", e));
+     ttsAudioPlayer.src = "data:audio/mp3;base64," + data.audioContent;
+            ttsAudioPlayer.play().catch(e => console.warn("Audio durch Browser blockiert:", e));
 
         } catch (error) {
             console.error("Sprachausgabe fehlgeschlagen:", error);
