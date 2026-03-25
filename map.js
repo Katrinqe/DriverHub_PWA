@@ -228,21 +228,18 @@ libreMap = new maplibregl.Map({
 
     // --- Mauszeiger-Logik (Optional, aber Premium) ---
     // Zeigt eine Hand, wenn man im Explore-Modus mit der Maus über ein Geschäft fährt
-    libreMap.on('mousemove', (e) => {
-        if (window.currentPoiMode !== 'explore') {
-            libreMap.getCanvas().style.cursor = '';
-            return;
-        }
-        const features = libreMap.queryRenderedFeatures(e.point);
-        const hoveredPoi = features.find(f => f.layer.type === 'symbol' && f.properties && f.properties.name);
-        libreMap.getCanvas().style.cursor = hoveredPoi ? 'pointer' : '';
+// --- NEU: POI-RADAR BEIM BEWEGEN DER KARTE ---
+    libreMap.on("moveend", () => {
+        if (window.poiCooldown) clearTimeout(window.poiCooldown);
+        window.poiCooldown = setTimeout(() => {
+            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
+        }, 300);
     });
     
     // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
     setTimeout(() => { 
         if (libreMap) libreMap.resize(); 
         
-        // 1. UI Pillen richtig setzen
         const themeOptions = document.querySelectorAll('.theme-option');
         if (themeOptions.length > 0) {
             themeOptions.forEach(opt => opt.classList.remove('active'));
@@ -257,11 +254,10 @@ libreMap = new maplibregl.Map({
             if (activePoiOpt) activePoiOpt.classList.add('active');
         }
 
-        // 2. Engine starten (lädt das perfekte Design)
         window.updateMapAppearance();
     }, 350);
 
-} // <--- DAS IST DAS SAUBERE ENDE DEINER loadMap FUNKTION!
+} // <--- DAS SAUBERE ENDE VON loadMap!
  // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
     // ==========================================
@@ -916,41 +912,35 @@ function clearRoutes() {
             }
         }
 
-        // 2. DIE KARTEN-DESIGNS (Der TomTom Joker)
+        // 2. DIE KARTEN-DESIGNS (Wieder Carto, weil wir die POIs jetzt selbst zeichnen!)
         let styleUrl = '';
-        
         if (window.currentPoiMode === 'explore') {
-            // EXPLORE MODE: Die echte, native TomTom Karte (mit perfekten Icons!)
-            const TOMTOM_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
-            const ttStyle = activeTheme === 'grey' ? 'basic_main' : 'basic_night';
-            styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json?key=${TOMTOM_KEY}`;
-   } else {
-            // CLEAN MODE: Deine sterilen Carto-Karten
             styleUrl = activeTheme === 'grey' 
-                ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' // <-- Zurück zur gediegenen Version!
+                ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
+                : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+        } else {
+            styleUrl = activeTheme === 'grey' 
+                ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
                 : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
         }
 
-        // 3. Flackerschutz & State-Check
-        if (window.loadedStyleUrl === styleUrl) return;
-        window.loadedStyleUrl = styleUrl;
+        // 3. Flackerschutz
+        if (window.loadedStyleUrl !== styleUrl) {
+            window.loadedStyleUrl = styleUrl;
+            libreMap.setStyle(styleUrl);
+        } else {
+            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
+        }
 
-        // 4. Style austauschen
-        libreMap.setStyle(styleUrl);
-
-        // 5. Peters Fix: Warten bis der Style WIRKLICH geladen ist, dann erst Layer retten
         libreMap.once('style.load', () => {
             restore3DBuildings(activeTheme);
             restoreRoutes();
+            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
         });
     };
 
-    // --- HILFSFUNKTIONEN FÜR SAUBEREN CODE (Peters Empfehlung) ---
     function restore3DBuildings(activeTheme) {
-        // Bei TomTom (Explore) zeichnen wir keine eigenen Gebäude, TomTom hat eigene!
-        if (window.currentPoiMode === 'explore') return;
         if (libreMap.getLayer('3d-buildings')) return;
-
         const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
         const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
         
@@ -971,7 +961,6 @@ function clearRoutes() {
 
     function restoreRoutes() {
         if (!window.RouteLogic || !window.RouteLogic.routeGeoJSONs) return;
-
         window.RouteLogic.routeGeoJSONs.forEach((features, index) => {
             if (!features) return;
             const sourceId = `route-source-${index}`;
@@ -984,94 +973,87 @@ function clearRoutes() {
                 libreMap.addLayer({
                     id: layerId, type: 'line', source: sourceId,
                     layout: { 'line-join': 'round', 'line-cap': 'round' },
-                    paint: { 
-                        'line-color': ['get', 'color'], 
-                        'line-width': ['case', ['==', ['get', 'isTraffic'], true], 7, 6] 
-                    }
+                    paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['==', ['get', 'isTraffic'], true], 7, 6] }
                 });
             }
         });
         window.RouteLogic.updateMapLayers();
     }
 
-    // Der 15-Minuten Puls
     setInterval(() => {
         if (window.currentMapTheme === 'auto') window.updateMapAppearance();
     }, 15 * 60 * 1000);
 
     // ==========================================
-    // === DYNAMIC TOMTOM POI ENGINE ===
+    // === DYNAMIC CUSTOM POI ENGINE (KAUFLAND-GARANTIE) ===
     // ==========================================
-    let poiSourceId = "tomtom-pois";
-    let poiLayerId = "tomtom-pois-layer";
-    let poiCooldown;
+    let poiSourceId = "custom-tomtom-pois";
+    let poiLayerId = "custom-tomtom-pois-layer";
+    window.poiCooldown = null;
 
-window.loadTomTomPOIs = async function() {
+    window.loadTomTomPOIs = async function() {
         if (!libreMap || !libreMap.isStyleLoaded()) return;
 
-        // Wenn Clean Mode aktiv ist -> Layer verstecken und Abfrage abbrechen
+        // Wenn Clean Mode, alles verstecken!
         if (window.currentPoiMode !== "explore") {
             if (libreMap.getLayer(poiLayerId)) libreMap.setLayoutProperty(poiLayerId, "visibility", "none");
             if (libreMap.getLayer(poiLayerId + '-dot')) libreMap.setLayoutProperty(poiLayerId + '-dot', "visibility", "none");
             return;
         }
 
-        // Performance: Erst ab Zoom 14 laden, sonst brennt die API ab
-        if (libreMap.getZoom() < 14) {
+        // Wir zwingen die POIs schon ab Zoom 13 auf den Bildschirm!
+        if (libreMap.getZoom() < 13) {
             if (libreMap.getLayer(poiLayerId)) libreMap.setLayoutProperty(poiLayerId, "visibility", "none");
             if (libreMap.getLayer(poiLayerId + '-dot')) libreMap.setLayoutProperty(poiLayerId + '-dot', "visibility", "none");
             return;
         }
 
         const center = libreMap.getCenter();
-        const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${center.lat}&lon=${center.lng}&radius=2000&limit=50`;
+        // categorySet: 7332 (Supermärkte/Kaufland), 7311 (Tankstellen), 7315 (Restaurants), 7374 (Einkaufszentren/Baumärkte)
+        const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${center.lat}&lon=${center.lng}&radius=3000&limit=100&categorySet=7332,7311,7315,7374`;
 
         try {
             const res = await fetch(url);
             if (!res.ok) return;
             const data = await res.json();
 
-            // Daten für MapLibre übersetzen
             const features = data.results.map(poi => ({
                 type: "Feature",
                 geometry: { type: "Point", coordinates: [poi.position.lon, poi.position.lat] },
-                properties: { name: poi.poi.name, category: poi.poi.categories?.[0] || "poi" }
+                properties: { name: poi.poi.name }
             }));
 
             const geojson = { type: "FeatureCollection", features };
 
-            // 1. Source anlegen oder updaten
             if (!libreMap.getSource(poiSourceId)) {
                 libreMap.addSource(poiSourceId, { type: "geojson", data: geojson });
             } else {
                 libreMap.getSource(poiSourceId).setData(geojson);
             }
 
-            // 2. Dynamische Farben je nach aktuellem Theme
             const isGrey = window.currentMapTheme === 'grey';
             const textColor = isGrey ? '#1c1c1e' : '#ffffff';
             const haloColor = isGrey ? '#ffffff' : '#1c1c1e';
-            const dotBorder = isGrey ? '#ffffff' : '#1c1c1e'; // Rand des Punktes passt sich dem Theme an
 
-            // --- A) DER ANKER-PUNKT (CIRCLE LAYER) ---
+            // 1. Der leuchtende grüne Anker-Punkt
             if (!libreMap.getLayer(poiLayerId + '-dot')) {
                 libreMap.addLayer({
                     id: poiLayerId + '-dot',
                     type: "circle",
                     source: poiSourceId,
                     paint: {
-                        "circle-radius": 5, // Knackige Größe
-                        "circle-color": "#30d158", // Dein DriverHub Grün!
+                        "circle-radius": 4,
+                        "circle-color": "#30d158",
                         "circle-stroke-width": 2,
-                        "circle-stroke-color": dotBorder
+                        "circle-stroke-color": haloColor
                     }
                 });
             } else {
                 libreMap.setLayoutProperty(poiLayerId + '-dot', "visibility", "visible");
-                libreMap.setPaintProperty(poiLayerId + '-dot', "circle-stroke-color", dotBorder);
+                libreMap.setPaintProperty(poiLayerId + '-dot', "circle-stroke-color", haloColor);
             }
 
-            // --- B) DER TEXT (SAUBER UNTER DEM PUNKT) ---
+            // 2. Der saubere Text darunter
             if (!libreMap.getLayer(poiLayerId)) {
                 libreMap.addLayer({
                     id: poiLayerId,
@@ -1079,15 +1061,16 @@ window.loadTomTomPOIs = async function() {
                     source: poiSourceId,
                     layout: {
                         "text-field": ["get", "name"],
-                        "text-size": 11, // Etwas dezenter
+                        "text-size": 12,
                         "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-                        "text-anchor": "top", // Hängt den Text direkt an die Oberkante
-                        "text-offset": [0, 0.6] // Schiebt ihn perfekt unter den grünen Punkt
+                        "text-anchor": "top",
+                        "text-offset": [0, 0.5],
+                        "text-allow-overlap": false // Verhindert reinen Textmatsch
                     },
                     paint: {
                         "text-color": textColor,
                         "text-halo-color": haloColor,
-                        "text-halo-width": 1.5 // Nicht zu fetter Halo
+                        "text-halo-width": 2
                     }
                 });
             } else {
@@ -1096,7 +1079,7 @@ window.loadTomTomPOIs = async function() {
                 libreMap.setPaintProperty(poiLayerId, "text-halo-color", haloColor);
             }
         } catch (err) {
-            console.warn("TomTom POI Fetch Fehler:", err);
+            console.warn("TomTom Custom POI Fetch Fehler:", err);
         }
     };
     // ==========================================
