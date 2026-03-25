@@ -90,7 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const defaultCoords = [11.0767, 49.4521]; // Nürnberg Altstadt
                 loadMap(defaultCoords, false); // Geladen mit Default-Position
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 } // Hohe Präzision anfordern
+           // FIX: High Accuracy beim App-Start aus, damit Laptops (WLAN-Ortung) keinen Timeout werfen!
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
         );
     }
 function loadMap(coords, hasLocation) {
