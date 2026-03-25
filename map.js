@@ -984,7 +984,7 @@ function restore3DBuildings(activeTheme) {
             'source': sourceName,
             'source-layer': 'building',
             'type': 'fill-extrusion',
-            'minzoom': 14, // FIX: Von 15 auf 14 gesenkt. Gebäude sind jetzt sofort beim Start sichtbar!
+            'minzoom': 13, // FIX: Von 15 auf 14 gesenkt. Gebäude sind jetzt sofort beim Start sichtbar!
             'paint': {
                 'fill-extrusion-color': buildingColor,
                 'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_height']],
