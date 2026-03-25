@@ -949,36 +949,37 @@ window.updateMapAppearance = async function() {
 
 // Ersetze deine bestehende Funktion komplett hiermit:
 
-    function restore3DBuildings(activeTheme) {
-        if (window.currentPoiMode === 'explore') return; // TomTom hat eigene Gebäude
-        if (libreMap.getLayer('3d-buildings')) return;
+function restore3DBuildings(activeTheme) {
+    if (window.currentPoiMode === 'explore') return;
+    if (libreMap.getLayer('3d-buildings')) return;
 
-        // Warten, bis die Carto-Source wirklich geladen und greifbar ist
-        if (!libreMap.getSource('carto')) {
-            setTimeout(() => restore3DBuildings(activeTheme), 100);
-            return;
+    const sources = libreMap.getStyle().sources;
+    const sourceName = sources.carto ? 'carto' :
+                       sources.openmaptiles ? 'openmaptiles' :
+                       Object.keys(sources)[0];
+
+    if (!sourceName) return;
+
+    const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
+
+    const labelLayer = libreMap.getStyle().layers.find(
+        layer => layer.type === 'symbol'
+    );
+
+    libreMap.addLayer({
+        id: '3d-buildings',
+        source: sourceName,
+        'source-layer': 'building',
+        type: 'fill-extrusion',
+        minzoom: 15,
+        paint: {
+            'fill-extrusion-color': buildingColor,
+            'fill-extrusion-height': ['get', 'render_height'],
+            'fill-extrusion-base': ['get', 'render_min_height'],
+            'fill-extrusion-opacity': 0.85
         }
-
-        // Originale, cleane Farben aus deinem Code
-        const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
-        const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
-        
-        // Wie in deiner alten Version: Ganz OBEN einfügen (ohne beforeId) und minzoom auf 15,
-        // da Carto die render_height Daten erst ab Zoom 15 in die Vector Tiles packt!
-        libreMap.addLayer({
-            'id': '3d-buildings',
-            'source': 'carto',
-            'source-layer': 'building',
-            'type': 'fill-extrusion',
-            'minzoom': 15,
-            'paint': {
-                'fill-extrusion-color': buildingColor,
-                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_height']],
-                'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
-                'fill-extrusion-opacity': buildingOpacity
-            }
-        });
-    }
+    }, labelLayer?.id);
+}
 
     function restoreRoutes() {
         if (!window.RouteLogic || !window.RouteLogic.routeGeoJSONs) return;
