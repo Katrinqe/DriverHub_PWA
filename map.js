@@ -838,32 +838,35 @@ function clearRoutes() {
             }
         });
     }
-
-    // ==========================================
+// ==========================================
     // === POI VISIBILITY LOGIC (CLEAN / EXPLORE) ===
     // ==========================================
-    window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean'; // Standard ist Clean
+    window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean';
 
-window.applyPoiMode = function() {
+    window.applyPoiMode = function() {
         if (!libreMap || !libreMap.getStyle()) return;
         const isExplore = window.currentPoiMode === 'explore';
         const visibility = isExplore ? 'visible' : 'none';
         
         const layers = libreMap.getStyle().layers;
         layers.forEach(layer => {
-            const layerId = layer.id.toLowerCase();
-            const sourceLayer = layer['source-layer'] ? layer['source-layer'].toLowerCase() : '';
-            
-            // Wir suchen alles, was ein POI (Point of Interest) ist
-            if (layerId.includes('poi') || sourceLayer.includes('poi')) {
+            // Wir suchen brutal nach ALLEN Layern, die Icons oder Texte sind (type: 'symbol')
+            if (layer.type === 'symbol') {
+                const id = layer.id.toLowerCase();
                 
-                // 1. Wir schalten es hart auf sichtbar / unsichtbar
-                libreMap.setLayoutProperty(layer.id, 'visibility', visibility);
-                
-                // 2. DER GEWALT-ZOOM: Wir überschreiben die Sperre der Designer!
-                // Wenn Explore aktiv ist, zwingen wir die Icons schon ab Zoom 13 (statt 15.5) auf die Karte.
-                if (isExplore) {
-                    libreMap.setLayerZoomRange(layer.id, 13, 24);
+                // Wir filtern nur Straßennamen und Länder heraus (die sollen ja in 'Clean' bleiben)
+                if (!id.includes('road') && !id.includes('highway') && !id.includes('street') && 
+                    !id.includes('water') && !id.includes('country') && !id.includes('state')) {
+                    
+                    // 1. Hart auf sichtbar oder unsichtbar schalten
+                    libreMap.setLayoutProperty(layer.id, 'visibility', visibility);
+                    
+                    // 2. GEWALT-ZOOM: Wir zwingen die Icons schon ab Zoom 13 auf den Bildschirm!
+                    if (isExplore) {
+                        try {
+                            libreMap.setLayerZoomRange(layer.id, 13, 24);
+                        } catch(e) {} // Falls ein Layer zickt, einfach leise ignorieren
+                    }
                 }
             }
         });
