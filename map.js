@@ -845,29 +845,31 @@ function clearRoutes() {
 
     window.applyPoiMode = function() {
         if (!libreMap || !libreMap.getStyle()) return;
+
         const isExplore = window.currentPoiMode === 'explore';
         const visibility = isExplore ? 'visible' : 'none';
-        
+
         const layers = libreMap.getStyle().layers;
+        if (!layers) return;
+
         layers.forEach(layer => {
-            // Wir suchen brutal nach ALLEN Layern, die Icons oder Texte sind (type: 'symbol')
-            if (layer.type === 'symbol') {
-                const id = layer.id.toLowerCase();
-                
-                // Wir filtern nur Straßennamen und Länder heraus (die sollen ja in 'Clean' bleiben)
-                if (!id.includes('road') && !id.includes('highway') && !id.includes('street') && 
-                    !id.includes('water') && !id.includes('country') && !id.includes('state')) {
-                    
-                    // 1. Hart auf sichtbar oder unsichtbar schalten
-                    libreMap.setLayoutProperty(layer.id, 'visibility', visibility);
-                    
-                    // 2. GEWALT-ZOOM: Wir zwingen die Icons schon ab Zoom 13 auf den Bildschirm!
-                    if (isExplore) {
-                        try {
-                            libreMap.setLayerZoomRange(layer.id, 13, 24);
-                        } catch(e) {} // Falls ein Layer zickt, einfach leise ignorieren
-                    }
-                }
+            // Nur Symbol-Layer (Texte und Icons) anfassen
+            if (layer.type !== 'symbol') return;
+
+            const id = layer.id.toLowerCase();
+            const sourceLayer = layer['source-layer'] ? layer['source-layer'].toLowerCase() : '';
+
+            // Peters saubere Filter-Logik für POIs
+            const isPoi =
+                id.includes('poi') ||
+                id.includes('amenity') ||
+                id.includes('shop') ||
+                id.includes('tourism') ||
+                sourceLayer.includes('poi');
+
+            if (isPoi) {
+                // Hier zwingen wir keinen Zoom auf, sondern schalten nur die Sichtbarkeit!
+                libreMap.setLayoutProperty(layer.id, 'visibility', visibility);
             }
         });
     };
