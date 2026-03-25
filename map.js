@@ -855,19 +855,17 @@ function clearRoutes() {
             }
         }
 
-        // 2. DIE 4 MAGISCHEN KARTEN-DESIGNS (Die Matrix)
+        // 2. DIE 3 KARTEN-DESIGNS (Der Boss-Move)
         let styleUrl = '';
         
-        if (window.currentPoiMode === 'clean') {
-            // CLEAN MODE: Steril, perfekt für die Fahrt
-            styleUrl = activeTheme === 'grey' 
-                ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'     // Positron = Extrem cleanes, helles Grau
-                : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'; // Dark Matter = Tiefschwarz
+        if (window.currentPoiMode === 'explore') {
+            // EXPLORE MODE: Scheiß auf Dark/Grey. Wir laden die GARANTIERTE POI-MAP (Voyager)
+            styleUrl = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
         } else {
-            // EXPLORE MODE: Volle Informationsflut
-            styleUrl = activeTheme === 'grey'
-                ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'      // Voyager = Bunt, massiv viele POIs
-                : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'; // Fallback für Dark Explore
+            // CLEAN MODE: Wir laden deine sterilen, ablenkungsfreien Designs
+            styleUrl = activeTheme === 'grey' 
+                ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'     // Positron = hell, steril
+                : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'; // Dark Matter = schwarz, steril
         }
 
         // 3. Flackerschutz: Nur neu laden, wenn sich die URL wirklich ändert
@@ -880,8 +878,10 @@ function clearRoutes() {
         libreMap.once('styledata', () => {
             // --- A) 3D-Gebäude retten ---
             if (!libreMap.getLayer('3d-buildings')) {
-                const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
-                const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
+                // In Explore (Voyager) oder Grey (Positron) machen wir die Gebäude hellgrau, sonst dunkel
+                const isLight = window.currentPoiMode === 'explore' || activeTheme === 'grey';
+                const buildingColor = isLight ? '#a0a0a0' : '#2a2a2a';
+                const buildingOpacity = isLight ? 1.0 : 0.8;
                 
                 libreMap.addLayer({
                     'id': '3d-buildings',
@@ -920,6 +920,25 @@ function clearRoutes() {
                     }
                 });
                 window.RouteLogic.updateMapLayers();
+            }
+
+            // --- C) EXPLORE GARANTIE: Icons sofort erzwingen ---
+            if (window.currentPoiMode === 'explore') {
+                const layers = libreMap.getStyle().layers;
+                if(layers) {
+                    layers.forEach(layer => {
+                        if (layer.type === 'symbol') {
+                            const id = layer.id.toLowerCase();
+                            const sourceL = layer['source-layer'] ? layer['source-layer'].toLowerCase() : '';
+                            const isPoi = id.includes('poi') || id.includes('amenity') || id.includes('shop') || id.includes('tourism') || sourceL.includes('poi');
+                            
+                            // Wir überschreiben die Sperre der Designer: Icons ab Zoom 13!
+                            if (isPoi) {
+                                try { libreMap.setLayerZoomRange(layer.id, 13, 24); } catch(e) {}
+                            }
+                        }
+                    });
+                }
             }
         });
     };
