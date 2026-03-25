@@ -132,20 +132,38 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         .setLngLat(coords)
         .addTo(libreMap);
 
-   // 4. Restliche Einstellungen laden
-    libreMap.on('load', () => {
-        libreMap.setPadding({ right: 150, bottom: 20 });
+// 4. Restliche Einstellungen laden
+   libreMap.on('load', () => {
+       libreMap.setPadding({ right: 150, bottom: 20 });
 
+       // --- 3D-GEBÄUDE LOGIK (ZURÜCK AN IHREM ALTEN, STABILEN PLATZ!) ---
+       if (window.currentPoiMode !== 'explore') {
+           const initialTheme = window.currentMapTheme || 'dark';
+           const buildingColor = initialTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
+           const buildingOpacity = initialTheme === 'grey' ? 1.0 : 0.8;
 
-        libreMap.dragPan.disable();
-        libreMap.scrollZoom.disable();
-        libreMap.touchZoomRotate.disable();
-        libreMap.doubleClickZoom.disable();
-        
-        if (libreMap.dragRotate) libreMap.dragRotate.disable();
+           libreMap.addLayer({
+               'id': '3d-buildings',
+               'source': 'carto',
+               'source-layer': 'building',
+               'type': 'fill-extrusion',
+               'minzoom': 14, // Auf 14 gesetzt, damit sie sofort beim Start sichtbar sind!
+               'paint': {
+                   'fill-extrusion-color': buildingColor,
+                   'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_height']],
+                   'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_min_height']],
+                   'fill-extrusion-opacity': buildingOpacity
+               }
+           });
+       }
 
-      
-    }); // <--- HIER IST DIE LEBENSWICHTIGE KLAMMER, DIE GEFEHLT HAT!
+       libreMap.dragPan.disable();
+       libreMap.scrollZoom.disable();
+       libreMap.touchZoomRotate.disable();
+       libreMap.doubleClickZoom.disable();
+       
+       if (libreMap.dragRotate) libreMap.dragRotate.disable();
+   });
 
 // ==========================================
     // === POI CLICK & INFO LOGIC (NUR EXPLORE MODE!) ===
