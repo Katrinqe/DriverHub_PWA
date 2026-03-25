@@ -950,36 +950,44 @@ window.updateMapAppearance = async function() {
 // Ersetze deine bestehende Funktion komplett hiermit:
 
 function restore3DBuildings(activeTheme) {
-    if (window.currentPoiMode === 'explore') return;
-    if (libreMap.getLayer('3d-buildings')) return;
+        if (window.currentPoiMode === 'explore') return; // TomTom hat eigene Gebäude
+        if (libreMap.getLayer('3d-buildings')) return;
 
-    const sources = libreMap.getStyle().sources;
-    const sourceName = sources.carto ? 'carto' :
-                       sources.openmaptiles ? 'openmaptiles' :
-                       Object.keys(sources)[0];
-
-    if (!sourceName) return;
-
-    const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
-
-    const labelLayer = libreMap.getStyle().layers.find(
-        layer => layer.type === 'symbol'
-    );
-
-    libreMap.addLayer({
-        id: '3d-buildings',
-        source: sourceName,
-        'source-layer': 'building',
-        type: 'fill-extrusion',
-        minzoom: 15,
-        paint: {
-            'fill-extrusion-color': buildingColor,
-            'fill-extrusion-height': ['get', 'render_height'],
-            'fill-extrusion-base': ['get', 'render_min_height'],
-            'fill-extrusion-opacity': 0.85
+        // 1. Sicherheits-Check: Ist die Straßenkarte schon WIRKLICH geladen?
+        const sources = libreMap.getStyle().sources;
+        if (!sources || (!sources.carto && !sources.openmaptiles)) {
+            // Wenn nicht, geben wir der Karte 100ms Zeit und versuchen es nochmal!
+            setTimeout(() => restore3DBuildings(activeTheme), 100);
+            return;
         }
-    }, labelLayer?.id);
-}
+
+        const sourceName = sources.carto ? 'carto' : 'openmaptiles';
+        const buildingColor = activeTheme === 'grey' ? '#d9d9d9' : '#2a2a2a';
+
+        // 2. Ersten Text-Layer finden, damit die Häuser nicht die Straßennamen überdecken
+        let labelLayerId = null;
+        const layers = libreMap.getStyle().layers;
+        if (layers) {
+            const firstSymbol = layers.find(layer => layer.type === 'symbol');
+            if (firstSymbol) labelLayerId = firstSymbol.id;
+        }
+
+        // 3. Gebäude zeichnen
+        libreMap.addLayer({
+            id: '3d-buildings',
+            source: sourceName,
+            'source-layer': 'building',
+            type: 'fill-extrusion',
+            minzoom: 14, // <-- BOSS-FIX: Auf 14 gesenkt. Jetzt sind sie sofort da!
+            paint: {
+                'fill-extrusion-color': buildingColor,
+                // Die Gebäude "wachsen" zwischen Zoom 14 und 14.5 sanft aus dem Boden
+                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_height']],
+                'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_min_height']],
+                'fill-extrusion-opacity': 0.85
+            }
+        }, labelLayerId);
+    }
 
     function restoreRoutes() {
         if (!window.RouteLogic || !window.RouteLogic.routeGeoJSONs) return;
