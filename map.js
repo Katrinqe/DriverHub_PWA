@@ -134,21 +134,6 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
     libreMap.on('load', () => {
         libreMap.setPadding({ right: 150, bottom: 20 });
 
-        // --- 3D-GEBÄUDE LOGIK ---
-        // Wir fügen die Gebäude ganz OBEN ein, damit keine Straßen durch sie hindurchscheinen!
-        libreMap.addLayer({
-            'id': '3d-buildings',
-            'source': 'carto',
-            'source-layer': 'building',
-            'type': 'fill-extrusion',
-            'minzoom': 15,
-            'paint': {
-                'fill-extrusion-color': '#2a2a2a',
-                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_height']],
-                'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
-                'fill-extrusion-opacity': 0.8
-            }
-        });
 
         libreMap.dragPan.disable();
         libreMap.scrollZoom.disable();
@@ -1034,7 +1019,7 @@ function clearRoutes() {
             });
         }
 
-        }
+        
         
 
     // ==========================================
