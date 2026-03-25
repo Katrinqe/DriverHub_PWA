@@ -886,9 +886,10 @@ function clearRoutes() {
     window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean';
     window.loadedStyleUrl = null;
 
-    window.updateMapAppearance = async function() {
+window.updateMapAppearance = async function() {
         if (!libreMap) return;
 
+        // 1. Auto-Theme Logik (Sonnenstand)
         let activeTheme = window.currentMapTheme;
         if (activeTheme === 'auto') {
             try {
@@ -905,42 +906,54 @@ function clearRoutes() {
             }
         }
 
+        // 2. DIE KARTEN-DESIGNS
         let styleUrl = '';
+        const TOMTOM_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
+        let isTomTom = false;
+
         if (window.currentPoiMode === 'explore') {
-            // EXPLORE: Das wunderschöne, echte TomTom Design
-            const TOMTOM_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
             const ttStyle = activeTheme === 'grey' ? 'basic_main' : 'basic_night';
             styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json?key=${TOMTOM_KEY}`;
+            isTomTom = true;
         } else {
-            // CLEAN: Deine sterilen Carto-Karten (Grey = Voyager, Dark = Dark Matter)
             styleUrl = activeTheme === 'grey' 
                 ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
                 : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
         }
 
+        // 3. Flackerschutz
         if (window.loadedStyleUrl === styleUrl) return;
         window.loadedStyleUrl = styleUrl;
 
-        libreMap.setStyle(styleUrl);
+        // 4. DER BOSS-FIX: Wir fangen den TomTom-Style ab und reparieren die fehlenden Icons!
+        if (isTomTom) {
+            try {
+                const response = await fetch(styleUrl);
+                const styleJson = await response.json();
+                
+                // Wir zwingen deinen API-Key in die Icon-Downloads (Sprites)
+                if (styleJson.sprite && styleJson.sprite.includes('api.tomtom.com')) {
+                    styleJson.sprite = `${styleJson.sprite}?key=${TOMTOM_KEY}`;
+                }
+                // Wir zwingen deinen API-Key in die Schriften (Glyphs)
+                if (styleJson.glyphs && styleJson.glyphs.includes('api.tomtom.com')) {
+                    styleJson.glyphs = `${styleJson.glyphs}?key=${TOMTOM_KEY}`;
+                }
+                
+                // Jetzt übergeben wir den reparierten Code an MapLibre
+                libreMap.setStyle(styleJson);
+            } catch (e) {
+                console.error("TomTom Style Hack fehlgeschlagen:", e);
+                return;
+            }
+        } else {
+            libreMap.setStyle(styleUrl);
+        }
 
+        // 5. Layer retten, wenn alles steht
         libreMap.once('style.load', () => {
             restore3DBuildings(activeTheme);
             restoreRoutes();
-
-            // --- C) TOMTOM HACK: Interne Zoom-Sperren aufbrechen ---
-            if (window.currentPoiMode === 'explore') {
-                const layers = libreMap.getStyle().layers;
-                layers.forEach(layer => {
-                    const id = layer.id.toLowerCase();
-                    // Wir suchen nach den internen TomTom Layern für POIs und Tankstellen
-                    if (id.includes('poi') || id.includes('gas') || id.includes('station')) {
-                        try {
-                            // Wir zwingen TomTom, diese Layer schon ab Zoom 13 zu zeichnen (statt 15)
-                            libreMap.setLayerZoomRange(layer.id, 13, 24);
-                        } catch(e) {}
-                    }
-                });
-            }
         });
     };
 
