@@ -947,26 +947,51 @@ window.updateMapAppearance = async function() {
         });
     }
 
-    function restore3DBuildings(activeTheme) {
+function restore3DBuildings(activeTheme) {
         if (window.currentPoiMode === 'explore') return; // TomTom hat eigene Gebäude
         if (libreMap.getLayer('3d-buildings')) return;
 
-        const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
-        const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
+        // 1. Smarter Source-Check: Warten, bis die Kartendaten wirklich geladen sind
+        let sourceName = 'carto';
+        if (!libreMap.getSource(sourceName)) {
+            if (libreMap.getSource('openmaptiles')) {
+                sourceName = 'openmaptiles';
+            } else {
+                // Daten sind noch nicht bereit -> 100ms warten und neuer Versuch (verhindert unsichtbare Gebäude!)
+                setTimeout(() => restore3DBuildings(activeTheme), 100);
+                return;
+            }
+        }
+
+        // 2. Den ersten Text-Layer finden (Damit Gebäude nicht die Straßennamen überdecken)
+        let firstSymbolId = null;
+        const layers = libreMap.getStyle().layers;
+        if (layers) {
+            for (let i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol') {
+                    firstSymbolId = layers[i].id;
+                    break;
+                }
+            }
+        }
+
+        // Im Grey-Modus ein etwas weicheres, helleres Grau für Premium-Optik
+        const buildingColor = activeTheme === 'grey' ? '#d9d9d9' : '#2a2a2a';
+        const buildingOpacity = activeTheme === 'grey' ? 0.85 : 0.8;
         
         libreMap.addLayer({
             'id': '3d-buildings',
-            'source': 'carto',
+            'source': sourceName,
             'source-layer': 'building',
             'type': 'fill-extrusion',
-            'minzoom': 15,
+            'minzoom': 14, // FIX: Von 15 auf 14 gesenkt. Gebäude sind jetzt sofort beim Start sichtbar!
             'paint': {
                 'fill-extrusion-color': buildingColor,
-                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_height']],
-                'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
+                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_height']],
+                'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_min_height']],
                 'fill-extrusion-opacity': buildingOpacity
             }
-        });
+        }, firstSymbolId);
     }
 
     function restoreRoutes() {
