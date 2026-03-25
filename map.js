@@ -149,7 +149,7 @@ libreMap = new maplibregl.Map({
         if (libreMap.dragRotate) libreMap.dragRotate.disable();
     }); // <--- HIER IST DIE LEBENSWICHTIGE KLAMMER, DIE GEFEHLT HAT!
 
-    // --- NEU: POIs BEIM BEWEGEN DER KARTE NACHLADEN ---
+ // --- NEU: POIs BEIM BEWEGEN DER KARTE NACHLADEN ---
     libreMap.on("moveend", () => {
         if (typeof poiCooldown !== 'undefined') clearTimeout(poiCooldown);
         // 350ms Cooldown, damit er beim schnellen Wischen nicht 20x bei TomTom anfragt
@@ -182,31 +182,6 @@ libreMap = new maplibregl.Map({
     }, 350);
 
 } // <--- DAS IST DAS SAUBERE ENDE DEINER loadMap FUNKTION!
-    
-  // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
-    setTimeout(() => { 
-        if (libreMap) libreMap.resize(); 
-        
-        // 1. UI Pillen richtig setzen
-        const themeOptions = document.querySelectorAll('.theme-option');
-        if (themeOptions.length > 0) {
-            themeOptions.forEach(opt => opt.classList.remove('active'));
-            const activeOpt = document.querySelector(`.theme-option[data-theme="${window.currentMapTheme}"]`);
-            if (activeOpt) activeOpt.classList.add('active');
-        }
-
-        const poiOptions = document.querySelectorAll('.poi-option');
-        if (poiOptions.length > 0) {
-            poiOptions.forEach(opt => opt.classList.remove('active'));
-            const activePoiOpt = document.querySelector(`.poi-option[data-poi="${window.currentPoiMode}"]`);
-            if (activePoiOpt) activePoiOpt.classList.add('active');
-        }
-
-        // 2. Engine starten (lädt das perfekte Design)
-        window.updateMapAppearance();
-    }, 350);
-
-    });
  // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
     // ==========================================
