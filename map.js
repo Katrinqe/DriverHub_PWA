@@ -177,40 +177,28 @@ libreMap.addLayer({
        if (libreMap.dragRotate) libreMap.dragRotate.disable();
     });
     
-   // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
+  // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
     setTimeout(() => { 
         if (libreMap) libreMap.resize(); 
         
-        // 1. Theme laden
-        const savedTheme = localStorage.getItem('mapTheme') || 'dark';
+        // 1. UI Pillen richtig setzen
         const themeOptions = document.querySelectorAll('.theme-option');
         if (themeOptions.length > 0) {
             themeOptions.forEach(opt => opt.classList.remove('active'));
-            const activeOpt = document.querySelector(`.theme-option[data-theme="${savedTheme}"]`);
+            const activeOpt = document.querySelector(`.theme-option[data-theme="${window.currentMapTheme}"]`);
             if (activeOpt) activeOpt.classList.add('active');
         }
 
-        // 2. POI Modus laden (UI aktualisieren)
-        const savedPoi = localStorage.getItem('mapPoiMode') || 'clean';
         const poiOptions = document.querySelectorAll('.poi-option');
         if (poiOptions.length > 0) {
             poiOptions.forEach(opt => opt.classList.remove('active'));
-            const activePoiOpt = document.querySelector(`.poi-option[data-poi="${savedPoi}"]`);
+            const activePoiOpt = document.querySelector(`.poi-option[data-poi="${window.currentPoiMode}"]`);
             if (activePoiOpt) activePoiOpt.classList.add('active');
         }
 
-        // 3. Einstellungen hart auf die Karte anwenden
-        if (savedTheme !== 'dark') {
-            // changeMapTheme ruft applyPoiMode() automatisch ab, sobald der Style geladen ist!
-            window.changeMapTheme(savedTheme);
-        } else {
-            // Wenn das Theme Dark bleibt (Standard), müssen wir die POIs manuell triggern
-            window.applyPoiMode();
-        }
+        // 2. Engine starten (lädt das perfekte Design)
+        window.updateMapAppearance();
     }, 350);
-
-    
-}
  // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
     // ==========================================
@@ -839,94 +827,60 @@ function clearRoutes() {
         });
     }
 // ==========================================
-    // === POI VISIBILITY LOGIC (CLEAN / EXPLORE) ===
+    // === CENTRAL MAP STYLE ENGINE (THEME + POI) ===
     // ==========================================
+    window.currentMapTheme = localStorage.getItem('mapTheme') || 'dark'; 
     window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean';
+    window.loadedStyleUrl = null; // Flackerschutz
 
-    window.applyPoiMode = function() {
-        if (!libreMap || !libreMap.getStyle()) return;
-
-        const isExplore = window.currentPoiMode === 'explore';
-        const visibility = isExplore ? 'visible' : 'none';
-
-        const layers = libreMap.getStyle().layers;
-        if (!layers) return;
-
-        layers.forEach(layer => {
-            // Nur Symbol-Layer (Texte und Icons) anfassen
-            if (layer.type !== 'symbol') return;
-
-            const id = layer.id.toLowerCase();
-            const sourceLayer = layer['source-layer'] ? layer['source-layer'].toLowerCase() : '';
-
-            // Peters saubere Filter-Logik für POIs
-            const isPoi =
-                id.includes('poi') ||
-                id.includes('amenity') ||
-                id.includes('shop') ||
-                id.includes('tourism') ||
-                sourceLayer.includes('poi');
-
-            if (isPoi) {
-                // Hier zwingen wir keinen Zoom auf, sondern schalten nur die Sichtbarkeit!
-                libreMap.setLayoutProperty(layer.id, 'visibility', visibility);
-            }
-        });
-    };
-// ==========================================
-    // === MAP THEME SWITCHER (DARK / GREY / AUTO) ===
-    // ==========================================
-    window.currentMapTheme = 'dark'; // Standard
-
-    window.changeMapTheme = async function(theme) {
+    window.updateMapAppearance = async function() {
         if (!libreMap) return;
-        
-        // 1. Auswahl im Handy-Browser dauerhaft speichern!
-        localStorage.setItem('mapTheme', theme);
 
-        let targetTheme = theme;
-        
-        if (theme === 'auto') {
-            // 2. LIVE-WETTER ABFRAGE: Ist die Sonne gerade auf oder untergegangen?
+        // 1. Auto-Theme Logik (Sonnenstand)
+        let activeTheme = window.currentMapTheme;
+        if (activeTheme === 'auto') {
             try {
                 const lat = currentCoords ? currentCoords[1] : 51.16;
                 const lon = currentCoords ? currentCoords[0] : 10.45;
-                
                 const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=is_day`);
                 if (res.ok) {
                     const data = await res.json();
-                    // is_day: 1 = Tag (Grey), 0 = Nacht (Dark)
-                    targetTheme = data.current.is_day ? 'grey' : 'dark';
-                } else {
-                    throw new Error("Wetter API antwortet nicht");
-                }
+                    activeTheme = data.current.is_day ? 'grey' : 'dark';
+                } else throw new Error("API fail");
             } catch (e) {
-                // Fallback-Logik, falls offline
                 const hour = new Date().getHours();
-                targetTheme = (hour >= 7 && hour < 19) ? 'grey' : 'dark';
+                activeTheme = (hour >= 7 && hour < 19) ? 'grey' : 'dark';
             }
         }
 
-        // NEU: Flacker-Schutz! Wenn das berechnete finale Theme schon aktiv ist, brechen wir hier ab.
-        // Das verhindert, dass die Karte alle 15 Minuten neu lädt, wenn sich der Sonnenstand nicht geändert hat!
-        if (window.currentMapTheme === targetTheme) return; 
+        // 2. DIE 4 MAGISCHEN KARTEN-DESIGNS (Die Matrix)
+        let styleUrl = '';
         
-        window.currentMapTheme = targetTheme;
+        if (window.currentPoiMode === 'clean') {
+            // CLEAN MODE: Steril, perfekt für die Fahrt
+            styleUrl = activeTheme === 'grey' 
+                ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'     // Positron = Extrem cleanes, helles Grau
+                : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'; // Dark Matter = Tiefschwarz
+        } else {
+            // EXPLORE MODE: Volle Informationsflut
+            styleUrl = activeTheme === 'grey'
+                ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'      // Voyager = Bunt, massiv viele POIs
+                : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'; // Fallback für Dark Explore
+        }
 
-        // 3. Wir nutzen VOYAGER: Blaues Wasser, grüne Parks, sanfte graue Straßen!
-        const styleUrl = targetTheme === 'grey' 
-            ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' 
-            : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
-            
-        // 4. Gebäude im Grey-Mode mittleres Grau (#a0a0a0) und 100 % BLICKDICHT
-        const buildingColor = targetTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
-        const buildingOpacity = targetTheme === 'grey' ? 1.0 : 0.8;
+        // 3. Flackerschutz: Nur neu laden, wenn sich die URL wirklich ändert
+        if (window.loadedStyleUrl === styleUrl) return;
+        window.loadedStyleUrl = styleUrl;
 
+        // 4. Style knallhart austauschen
         libreMap.setStyle(styleUrl);
 
         libreMap.once('styledata', () => {
             // --- A) 3D-Gebäude retten ---
             if (!libreMap.getLayer('3d-buildings')) {
+                const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
+                const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
+                
                 libreMap.addLayer({
                     'id': '3d-buildings',
                     'source': 'carto',
@@ -942,26 +896,19 @@ function clearRoutes() {
                 });
             }
 
-            // --- B) Aktive Routen und Stau-Linien retten ---
+            // --- B) Aktive Routen retten ---
             if (window.RouteLogic && window.RouteLogic.routeGeoJSONs) {
                 window.RouteLogic.routeGeoJSONs.forEach((features, index) => {
                     if (!features) return;
-                    
                     const sourceId = `route-source-${index}`;
                     const layerId = `route-layer-${index}`;
 
                     if (!libreMap.getSource(sourceId)) {
-                        libreMap.addSource(sourceId, {
-                            type: 'geojson',
-                            data: { type: 'FeatureCollection', features: features }
-                        });
+                        libreMap.addSource(sourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: features } });
                     }
-
                     if (!libreMap.getLayer(layerId)) {
                         libreMap.addLayer({
-                            id: layerId,
-                            type: 'line',
-                            source: sourceId,
+                            id: layerId, type: 'line', source: sourceId,
                             layout: { 'line-join': 'round', 'line-cap': 'round' },
                             paint: { 
                                 'line-color': ['get', 'color'], 
@@ -970,24 +917,17 @@ function clearRoutes() {
                         });
                     }
                 });
-                
-        // ... bestehender Code ...
                 window.RouteLogic.updateMapLayers();
             }
-
-            // --- C) POI-Sichtbarkeit wiederherstellen ---
-            window.applyPoiMode();
         });
     };
-    // --- NEU: DER 15-MINUTEN PULS FÜR DEN AUTO-MODUS ---
+
+    // Der 15-Minuten Puls ruft jetzt unsere neue Haupt-Engine auf
     setInterval(() => {
-        const savedTheme = localStorage.getItem('mapTheme');
-        // Nur prüfen, wenn der Nutzer explizit 'auto' gewählt hat
-        if (savedTheme === 'auto') {
-            console.log("Auto-Theme: 15-Minuten-Check des Sonnenstands...");
-            window.changeMapTheme('auto');
+        if (window.currentMapTheme === 'auto') {
+            window.updateMapAppearance();
         }
-    }, 15 * 60 * 1000); // 15 Minuten
+    }, 15 * 60 * 1000);
     // ==========================================
     // === MAP SETTINGS MENÜ (3 STRICHE & BLUR) ===
     // ==========================================
@@ -1002,39 +942,34 @@ function clearRoutes() {
             mapSettingsOverlay.classList.toggle('hidden');
         });
 
-        // Klick auf die Optionen in der Pille (Dark / Grey / Auto)
+// Klick auf Theme (Dark / Grey / Auto)
         themeOptions.forEach(option => {
             option.addEventListener('click', (e) => {
                 e.stopPropagation();
-                // Aktive Klasse von allen entfernen
                 themeOptions.forEach(opt => opt.classList.remove('active'));
-                // Klasse dem geklickten Element geben
                 option.classList.add('active');
                 
-                // Den Data-Theme Wert aus dem HTML auslesen und umschalten!
-                const selectedTheme = option.getAttribute('data-theme');
-                window.changeMapTheme(selectedTheme);
+                window.currentMapTheme = option.getAttribute('data-theme');
+                localStorage.setItem('mapTheme', window.currentMapTheme);
+                window.updateMapAppearance(); // <-- Engine triggern!
             });
         });
 
-        // --- NEU: Klick-Logik für POI Details (Clean / Explore) ---
+        // Klick auf POI Details (Clean / Explore)
         const poiOptions = document.querySelectorAll('.poi-option');
         if (poiOptions.length > 0) {
             poiOptions.forEach(option => {
                 option.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    // Aktive Klasse umschalten
                     poiOptions.forEach(opt => opt.classList.remove('active'));
                     option.classList.add('active');
                     
-                    // Auslesen, speichern und sofort anwenden!
                     window.currentPoiMode = option.getAttribute('data-poi');
                     localStorage.setItem('mapPoiMode', window.currentPoiMode);
-                    window.applyPoiMode();
+                    window.updateMapAppearance(); // <-- Engine triggern!
                 });
             });
         }
-    }
 
     // ==========================================
     // === SHRINK BUTTON LOGIC (PFEIL OBEN LINKS) ===
