@@ -927,6 +927,8 @@ function clearRoutes() {
             restoreRoutes();
         });
 
+    };
+
     function applyPoiVisibility() {
         if (window.currentPoiMode === 'explore') return; 
         
