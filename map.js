@@ -879,7 +879,8 @@ function clearRoutes() {
     window.currentMapTheme = localStorage.getItem('mapTheme') || 'dark'; 
     window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean';
     window.loadedStyleUrl = null;
-window.updateMapAppearance = async function() {
+
+    window.updateMapAppearance = async function() {
         if (!libreMap) return;
 
         let activeTheme = window.currentMapTheme;
@@ -900,19 +901,15 @@ window.updateMapAppearance = async function() {
 
         let styleUrl = '';
         if (window.currentPoiMode === 'explore') {
-            // EXPLORE: Das reine, native TomTom Design
             const ttStyle = activeTheme === 'grey' ? 'basic_main' : 'basic_night';
-            // FIX: Kein manuelles ?key= mehr! Der Türsteher erledigt das.
             styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json`;
         } else {
-            // CLEAN: Deine sterilen Carto-Karten (Voyager & Dark Matter)
             styleUrl = activeTheme === 'grey' 
                 ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
                 : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
         }
 
         if (window.loadedStyleUrl === styleUrl) {
-            // Wenn wir nur den POI-Modus wechseln, blenden wir die Layer direkt aus/ein
             applyPoiVisibility();
             return;
         }
@@ -923,13 +920,12 @@ window.updateMapAppearance = async function() {
         libreMap.once('style.load', () => {
             restore3DBuildings(activeTheme);
             restoreRoutes();
-            applyPoiVisibility(); // FIX: Zwingt Carto im Clean Mode die Icons zu verstecken
+            applyPoiVisibility(); 
         });
     };
 
-    // --- NEU: Zwingt Carto dazu, im Clean-Modus steril zu bleiben ---
     function applyPoiVisibility() {
-        if (window.currentPoiMode === 'explore') return; // TomTom verwaltet sich selbst
+        if (window.currentPoiMode === 'explore') return; 
         
         const layers = libreMap.getStyle().layers;
         if (!layers) return;
@@ -947,44 +943,37 @@ window.updateMapAppearance = async function() {
         });
     }
 
-// Ersetze deine bestehende Funktion komplett hiermit:
-
-function restore3DBuildings(activeTheme) {
-        if (window.currentPoiMode === 'explore') return; // TomTom hat eigene Gebäude
+    function restore3DBuildings(activeTheme) {
+        if (window.currentPoiMode === 'explore') return; 
         if (libreMap.getLayer('3d-buildings')) return;
 
-        // 1. Sicherheits-Check: Ist die Straßenkarte schon WIRKLICH geladen?
         const sources = libreMap.getStyle().sources;
-        if (!sources || (!sources.carto && !sources.openmaptiles)) {
-            // Wenn nicht, geben wir der Karte 100ms Zeit und versuchen es nochmal!
+        if (!sources || !sources.carto) {
             setTimeout(() => restore3DBuildings(activeTheme), 100);
             return;
         }
 
-        const sourceName = sources.carto ? 'carto' : 'openmaptiles';
         const buildingColor = activeTheme === 'grey' ? '#d9d9d9' : '#2a2a2a';
+        const buildingOpacity = activeTheme === 'grey' ? 0.85 : 0.8;
 
-        // 2. Ersten Text-Layer finden, damit die Häuser nicht die Straßennamen überdecken
         let labelLayerId = null;
         const layers = libreMap.getStyle().layers;
         if (layers) {
             const firstSymbol = layers.find(layer => layer.type === 'symbol');
             if (firstSymbol) labelLayerId = firstSymbol.id;
         }
-
-        // 3. Gebäude zeichnen
+        
         libreMap.addLayer({
-            id: '3d-buildings',
-            source: sourceName,
+            'id': '3d-buildings',
+            'source': 'carto',
             'source-layer': 'building',
-            type: 'fill-extrusion',
-            minzoom: 14, // <-- BOSS-FIX: Auf 14 gesenkt. Jetzt sind sie sofort da!
-            paint: {
+            'type': 'fill-extrusion',
+            'minzoom': 14, 
+            'paint': {
                 'fill-extrusion-color': buildingColor,
-                // Die Gebäude "wachsen" zwischen Zoom 14 und 14.5 sanft aus dem Boden
                 'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_height']],
                 'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_min_height']],
-                'fill-extrusion-opacity': 0.85
+                'fill-extrusion-opacity': buildingOpacity
             }
         }, labelLayerId);
     }
