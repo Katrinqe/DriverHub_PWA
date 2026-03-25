@@ -149,14 +149,7 @@ libreMap = new maplibregl.Map({
         if (libreMap.dragRotate) libreMap.dragRotate.disable();
     }); // <--- HIER IST DIE LEBENSWICHTIGE KLAMMER, DIE GEFEHLT HAT!
 
- // --- NEU: POIs BEIM BEWEGEN DER KARTE NACHLADEN ---
-    libreMap.on("moveend", () => {
-        if (typeof poiCooldown !== 'undefined') clearTimeout(poiCooldown);
-        // 350ms Cooldown, damit er beim schnellen Wischen nicht 20x bei TomTom anfragt
-        window.poiCooldown = setTimeout(() => {
-            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
-        }, 350);
-    });
+
     
     // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
     setTimeout(() => { 
@@ -836,70 +829,85 @@ function clearRoutes() {
             }
         }
 
-        // 2. Deine cleanen Basis-Karten (Wir ergänzen nur noch, wir tauschen nicht mehr den Style auf Voyager!)
-        let styleUrl = activeTheme === 'grey' 
-            ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
-            : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
-
-        // 3. Flackerschutz
-        if (window.loadedStyleUrl !== styleUrl) {
-            window.loadedStyleUrl = styleUrl;
-            libreMap.setStyle(styleUrl);
+        // 2. DIE KARTEN-DESIGNS (Der TomTom Joker)
+        let styleUrl = '';
+        
+        if (window.currentPoiMode === 'explore') {
+            // EXPLORE MODE: Die echte, native TomTom Karte (mit perfekten Icons!)
+            const TOMTOM_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
+            const ttStyle = activeTheme === 'grey' ? 'basic_main' : 'basic_night';
+            styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json?key=${TOMTOM_KEY}`;
         } else {
-            // Wenn der Style gleich bleibt, aber der User "Explore/Clean" klickt, updaten wir nur die POIs
-            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
+            // CLEAN MODE: Deine sterilen Carto-Karten
+            styleUrl = activeTheme === 'grey' 
+                ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+                : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
         }
 
-        libreMap.once('styledata', () => {
-            // --- A) 3D-Gebäude retten ---
-            if (!libreMap.getLayer('3d-buildings')) {
-                const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
-                const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
-                
-                libreMap.addLayer({
-                    'id': '3d-buildings',
-                    'source': 'carto',
-                    'source-layer': 'building',
-                    'type': 'fill-extrusion',
-                    'minzoom': 15,
-                    'paint': {
-                        'fill-extrusion-color': buildingColor,
-                        'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_height']],
-                        'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
-                        'fill-extrusion-opacity': buildingOpacity
-                    }
-                });
-            }
+        // 3. Flackerschutz & State-Check
+        if (window.loadedStyleUrl === styleUrl) return;
+        window.loadedStyleUrl = styleUrl;
 
-            // --- B) Aktive Routen retten ---
-            if (window.RouteLogic && window.RouteLogic.routeGeoJSONs) {
-                window.RouteLogic.routeGeoJSONs.forEach((features, index) => {
-                    if (!features) return;
-                    const sourceId = `route-source-${index}`;
-                    const layerId = `route-layer-${index}`;
+        // 4. Style austauschen
+        libreMap.setStyle(styleUrl);
 
-                    if (!libreMap.getSource(sourceId)) {
-                        libreMap.addSource(sourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: features } });
-                    }
-                    if (!libreMap.getLayer(layerId)) {
-                        libreMap.addLayer({
-                            id: layerId, type: 'line', source: sourceId,
-                            layout: { 'line-join': 'round', 'line-cap': 'round' },
-                            paint: { 
-                                'line-color': ['get', 'color'], 
-                                'line-width': ['case', ['==', ['get', 'isTraffic'], true], 7, 6] 
-                            }
-                        });
-                    }
-                });
-                window.RouteLogic.updateMapLayers();
-            }
-
-            // --- C) POIs nach Style-Load neu laden ---
-            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
+        // 5. Peters Fix: Warten bis der Style WIRKLICH geladen ist, dann erst Layer retten
+        libreMap.once('style.load', () => {
+            restore3DBuildings(activeTheme);
+            restoreRoutes();
         });
     };
 
+    // --- HILFSFUNKTIONEN FÜR SAUBEREN CODE (Peters Empfehlung) ---
+    function restore3DBuildings(activeTheme) {
+        // Bei TomTom (Explore) zeichnen wir keine eigenen Gebäude, TomTom hat eigene!
+        if (window.currentPoiMode === 'explore') return;
+        if (libreMap.getLayer('3d-buildings')) return;
+
+        const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
+        const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
+        
+        libreMap.addLayer({
+            'id': '3d-buildings',
+            'source': 'carto',
+            'source-layer': 'building',
+            'type': 'fill-extrusion',
+            'minzoom': 15,
+            'paint': {
+                'fill-extrusion-color': buildingColor,
+                'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_height']],
+                'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'render_min_height']],
+                'fill-extrusion-opacity': buildingOpacity
+            }
+        });
+    }
+
+    function restoreRoutes() {
+        if (!window.RouteLogic || !window.RouteLogic.routeGeoJSONs) return;
+
+        window.RouteLogic.routeGeoJSONs.forEach((features, index) => {
+            if (!features) return;
+            const sourceId = `route-source-${index}`;
+            const layerId = `route-layer-${index}`;
+
+            if (!libreMap.getSource(sourceId)) {
+                libreMap.addSource(sourceId, { type: 'geojson', data: { type: 'FeatureCollection', features: features } });
+            }
+            if (!libreMap.getLayer(layerId)) {
+                libreMap.addLayer({
+                    id: layerId, type: 'line', source: sourceId,
+                    layout: { 'line-join': 'round', 'line-cap': 'round' },
+                    paint: { 
+                        'line-color': ['get', 'color'], 
+                        'line-width': ['case', ['==', ['get', 'isTraffic'], true], 7, 6] 
+                    }
+                });
+            }
+        });
+        window.RouteLogic.updateMapLayers();
+    }
+
+    // Der 15-Minuten Puls
     setInterval(() => {
         if (window.currentMapTheme === 'auto') window.updateMapAppearance();
     }, 15 * 60 * 1000);
