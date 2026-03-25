@@ -144,31 +144,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         
         if (libreMap.dragRotate) libreMap.dragRotate.disable();
 
-        // 2. Den 3D-Extrusion Layer hinzufügen
-libreMap.addLayer({
-    'id': '3d-buildings',
-    'source': 'carto',
-    'source-layer': 'building',
-    'type': 'fill-extrusion',
-    'minzoom': 15,
-    'paint': {
-        // Farbe dezent an das Dark Design angepasst
-        'fill-extrusion-color': '#2a2a2a',
-        
-        // Nutzt die echten Höhendaten aus den OpenStreetMap-Daten
-        'fill-extrusion-height': [
-            'interpolate', ['linear'], ['zoom'],
-            15, 0,
-            15.05, ['get', 'render_height']
-        ],
-        'fill-extrusion-base': [
-            'interpolate', ['linear'], ['zoom'],
-            15, 0,
-            15.05, ['get', 'render_min_height']
-        ],
-        'fill-extrusion-opacity': 0.8
-    }
-}, labelLayerId);
+      
     }); // <--- HIER IST DIE LEBENSWICHTIGE KLAMMER, DIE GEFEHLT HAT!
 
 // ==========================================
