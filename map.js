@@ -175,7 +175,14 @@ libreMap.addLayer({
         libreMap.doubleClickZoom.disable();
         
        if (libreMap.dragRotate) libreMap.dragRotate.disable();
-    });
+  // --- NEU: POIs BEIM BEWEGEN DER KARTE NACHLADEN ---
+        libreMap.on("moveend", () => {
+            clearTimeout(poiCooldown);
+            // 350ms Cooldown, damit er beim schnellen Wischen nicht 20x bei TomTom anfragt
+            poiCooldown = setTimeout(() => {
+                if (window.loadTomTomPOIs) window.loadTomTomPOIs();
+            }, 350);
+        });
     
   // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
     setTimeout(() => { 
@@ -833,7 +840,7 @@ function clearRoutes() {
     // ==========================================
     window.currentMapTheme = localStorage.getItem('mapTheme') || 'dark'; 
     window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean';
-    window.loadedStyleUrl = null; // Flackerschutz
+    window.loadedStyleUrl = null;
 
     window.updateMapAppearance = async function() {
         if (!libreMap) return;
@@ -855,33 +862,25 @@ function clearRoutes() {
             }
         }
 
-        // 2. DIE 3 KARTEN-DESIGNS (Der Boss-Move)
-        let styleUrl = '';
-        
-        if (window.currentPoiMode === 'explore') {
-            // EXPLORE MODE: Scheiß auf Dark/Grey. Wir laden die GARANTIERTE POI-MAP (Voyager)
-            styleUrl = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+        // 2. Deine cleanen Basis-Karten (Wir ergänzen nur noch, wir tauschen nicht mehr den Style auf Voyager!)
+        let styleUrl = activeTheme === 'grey' 
+            ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+            : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+
+        // 3. Flackerschutz
+        if (window.loadedStyleUrl !== styleUrl) {
+            window.loadedStyleUrl = styleUrl;
+            libreMap.setStyle(styleUrl);
         } else {
-            // CLEAN MODE: Wir laden deine sterilen, ablenkungsfreien Designs
-            styleUrl = activeTheme === 'grey' 
-                ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'     // Positron = hell, steril
-                : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'; // Dark Matter = schwarz, steril
+            // Wenn der Style gleich bleibt, aber der User "Explore/Clean" klickt, updaten wir nur die POIs
+            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
         }
-
-        // 3. Flackerschutz: Nur neu laden, wenn sich die URL wirklich ändert
-        if (window.loadedStyleUrl === styleUrl) return;
-        window.loadedStyleUrl = styleUrl;
-
-        // 4. Style knallhart austauschen
-        libreMap.setStyle(styleUrl);
 
         libreMap.once('styledata', () => {
             // --- A) 3D-Gebäude retten ---
             if (!libreMap.getLayer('3d-buildings')) {
-                // In Explore (Voyager) oder Grey (Positron) machen wir die Gebäude hellgrau, sonst dunkel
-                const isLight = window.currentPoiMode === 'explore' || activeTheme === 'grey';
-                const buildingColor = isLight ? '#a0a0a0' : '#2a2a2a';
-                const buildingOpacity = isLight ? 1.0 : 0.8;
+                const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
+                const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
                 
                 libreMap.addLayer({
                     'id': '3d-buildings',
@@ -922,33 +921,94 @@ function clearRoutes() {
                 window.RouteLogic.updateMapLayers();
             }
 
-            // --- C) EXPLORE GARANTIE: Icons sofort erzwingen ---
-            if (window.currentPoiMode === 'explore') {
-                const layers = libreMap.getStyle().layers;
-                if(layers) {
-                    layers.forEach(layer => {
-                        if (layer.type === 'symbol') {
-                            const id = layer.id.toLowerCase();
-                            const sourceL = layer['source-layer'] ? layer['source-layer'].toLowerCase() : '';
-                            const isPoi = id.includes('poi') || id.includes('amenity') || id.includes('shop') || id.includes('tourism') || sourceL.includes('poi');
-                            
-                            // Wir überschreiben die Sperre der Designer: Icons ab Zoom 13!
-                            if (isPoi) {
-                                try { libreMap.setLayerZoomRange(layer.id, 13, 24); } catch(e) {}
-                            }
-                        }
-                    });
-                }
-            }
+            // --- C) POIs nach Style-Load neu laden ---
+            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
         });
     };
 
-    // Der 15-Minuten Puls ruft jetzt unsere neue Haupt-Engine auf
     setInterval(() => {
-        if (window.currentMapTheme === 'auto') {
-            window.updateMapAppearance();
-        }
+        if (window.currentMapTheme === 'auto') window.updateMapAppearance();
     }, 15 * 60 * 1000);
+
+    // ==========================================
+    // === DYNAMIC TOMTOM POI ENGINE ===
+    // ==========================================
+    let poiSourceId = "tomtom-pois";
+    let poiLayerId = "tomtom-pois-layer";
+    let poiCooldown;
+
+    window.loadTomTomPOIs = async function() {
+        if (!libreMap || !libreMap.isStyleLoaded()) return;
+
+        // Wenn Clean Mode aktiv ist -> Layer verstecken und Abfrage abbrechen
+        if (window.currentPoiMode !== "explore") {
+            if (libreMap.getLayer(poiLayerId)) {
+                libreMap.setLayoutProperty(poiLayerId, "visibility", "none");
+            }
+            return;
+        }
+
+        // Performance: Erst ab Zoom 14 laden, sonst brennt die API ab
+        if (libreMap.getZoom() < 14) {
+            if (libreMap.getLayer(poiLayerId)) libreMap.setLayoutProperty(poiLayerId, "visibility", "none");
+            return;
+        }
+
+        const center = libreMap.getCenter();
+        const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${center.lat}&lon=${center.lng}&radius=2000&limit=50`;
+
+        try {
+            const res = await fetch(url);
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // Daten für MapLibre übersetzen
+            const features = data.results.map(poi => ({
+                type: "Feature",
+                geometry: { type: "Point", coordinates: [poi.position.lon, poi.position.lat] },
+                properties: { name: poi.poi.name, category: poi.poi.categories?.[0] || "poi" }
+            }));
+
+            const geojson = { type: "FeatureCollection", features };
+
+            // 1. Source anlegen oder updaten
+            if (!libreMap.getSource(poiSourceId)) {
+                libreMap.addSource(poiSourceId, { type: "geojson", data: geojson });
+            } else {
+                libreMap.getSource(poiSourceId).setData(geojson);
+            }
+
+            // 2. Dynamische Farben je nach aktuellem Theme
+            const textColor = window.currentMapTheme === 'grey' ? '#1c1c1e' : '#ffffff';
+            const haloColor = window.currentMapTheme === 'grey' ? '#ffffff' : '#1c1c1e';
+
+            // 3. Layer anlegen oder updaten
+            if (!libreMap.getLayer(poiLayerId)) {
+                libreMap.addLayer({
+                    id: poiLayerId,
+                    type: "symbol",
+                    source: poiSourceId,
+                    layout: {
+                        "text-field": ["get", "name"],
+                        "text-size": 13,
+                        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"], // Saubere Schriftart
+                        "text-anchor": "center"
+                    },
+                    paint: {
+                        "text-color": textColor,
+                        "text-halo-color": haloColor,
+                        "text-halo-width": 2
+                    }
+                });
+            } else {
+                libreMap.setLayoutProperty(poiLayerId, "visibility", "visible");
+                libreMap.setPaintProperty(poiLayerId, "text-color", textColor);
+                libreMap.setPaintProperty(poiLayerId, "text-halo-color", haloColor);
+            }
+        } catch (err) {
+            console.warn("TomTom POI Fetch Fehler:", err);
+        }
+    };
     // ==========================================
     // === MAP SETTINGS MENÜ (3 STRICHE & BLUR) ===
     // ==========================================
