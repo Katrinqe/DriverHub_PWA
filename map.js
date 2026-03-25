@@ -149,7 +149,94 @@ libreMap = new maplibregl.Map({
         if (libreMap.dragRotate) libreMap.dragRotate.disable();
     }); // <--- HIER IST DIE LEBENSWICHTIGE KLAMMER, DIE GEFEHLT HAT!
 
+// ==========================================
+    // === POI CLICK & INFO LOGIC (NUR EXPLORE MODE!) ===
+    // ==========================================
+    libreMap.on('click', async (e) => {
+        // BOSS-REGEL: Absolutes Verbot im Clean Mode!
+        if (window.currentPoiMode !== 'explore') return;
 
+        // Prüfen, ob wir auf einen Text/Icon (POI) geklickt haben
+        const features = libreMap.queryRenderedFeatures(e.point);
+        const clickedPoi = features.find(f => f.layer.type === 'symbol' && f.properties && f.properties.name);
+
+        if (!clickedPoi) return; // Wenn man daneben klickt, passiert nichts.
+
+        const poiName = clickedPoi.properties.name;
+        const coords = e.lngLat;
+
+        // 1. Schickes Lade-Popup erstellen
+        if (!window.poiPopup) {
+            window.poiPopup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 15, maxWidth: '280px' });
+        }
+        
+        window.poiPopup.setLngLat(coords)
+            .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 5px;">
+                        <strong style="font-size: 15px;">${poiName}</strong><br>
+                        <span style="font-size: 12px; color: #666;">Lade Live-Daten...</span>
+                      </div>`)
+            .addTo(libreMap);
+
+        // 2. Blitz-Call an die TomTom API für exakte Details an dieser Koordinate
+        try {
+            const url = `https://api.tomtom.com/search/2/poiSearch/${encodeURIComponent(poiName)}.json?key=${TOMTOM_API_KEY}&lat=${coords.lat}&lon=${coords.lng}&radius=50`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            let infoHtml = `<div style="font-family: sans-serif; color: #1c1c1e; padding: 5px;">
+                                <strong style="font-size: 15px;">${poiName}</strong>`;
+
+            if (data.results && data.results.length > 0) {
+                const bestResult = data.results[0];
+                
+                // Adresse
+                if (bestResult.address && bestResult.address.freeformAddress) {
+                    infoHtml += `<div style="font-size: 12px; color: #555; margin-top: 4px; margin-bottom: 6px;">${bestResult.address.freeformAddress}</div>`;
+                }
+
+                // TomTom Kategorie (z.B. "SUPERMARKET" oder "PETROL STATION")
+                if (bestResult.poi && bestResult.poi.categories && bestResult.poi.categories.length > 0) {
+                    infoHtml += `<div style="font-size: 10px; font-weight: 700; color: #30d158; text-transform: uppercase; letter-spacing: 0.5px;">${bestResult.poi.categories[0]}</div>`;
+                }
+
+                // Telefonnummer (falls vorhanden)
+                if (bestResult.poi && bestResult.poi.phone) {
+                    infoHtml += `<div style="font-size: 13px; color: #1c1c1e; margin-top: 6px;">📞 ${bestResult.poi.phone}</div>`;
+                }
+                
+                // URL (falls vorhanden)
+                if (bestResult.poi && bestResult.poi.url) {
+                    infoHtml += `<div style="font-size: 13px; margin-top: 4px;"><a href="http://${bestResult.poi.url}" target="_blank" style="color: #007aff; text-decoration: none;">🌐 Webseite besuchen</a></div>`;
+                }
+            } else {
+                infoHtml += `<div style="font-size: 12px; color: #888; margin-top: 4px;">Keine weiteren Live-Details verfügbar.</div>`;
+            }
+
+            infoHtml += `</div>`;
+            
+            // Popup mit echten Daten füllen
+            window.poiPopup.setHTML(infoHtml);
+
+        } catch (error) {
+            console.error("POI Fetch Error:", error);
+            window.poiPopup.setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 5px;">
+                                        <strong style="font-size: 15px;">${poiName}</strong><br>
+                                        <span style="font-size: 12px; color: #ff3b30;">Keine Internetverbindung</span>
+                                     </div>`);
+        }
+    });
+
+    // --- Mauszeiger-Logik (Optional, aber Premium) ---
+    // Zeigt eine Hand, wenn man im Explore-Modus mit der Maus über ein Geschäft fährt
+    libreMap.on('mousemove', (e) => {
+        if (window.currentPoiMode !== 'explore') {
+            libreMap.getCanvas().style.cursor = '';
+            return;
+        }
+        const features = libreMap.queryRenderedFeatures(e.point);
+        const hoveredPoi = features.find(f => f.layer.type === 'symbol' && f.properties && f.properties.name);
+        libreMap.getCanvas().style.cursor = hoveredPoi ? 'pointer' : '';
+    });
     
     // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
     setTimeout(() => { 
