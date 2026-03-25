@@ -119,7 +119,32 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         }
     });
 
-    // 2. Den 3D-Extrusion Layer hinzufügen
+ 
+   // --- BLAUER PUNKT (Zwingend zeichnen, Original-Klassen nutzen!) ---
+    const customMarkerElement = document.createElement('div');
+    customMarkerElement.className = 'user-marker-wrap';
+    customMarkerElement.innerHTML = `
+        <div class="user-pulse"></div>
+        <div class="user-dot"></div>
+    `;
+ // NEU:
+    window.userLocationMarker = new maplibregl.Marker({ element: customMarkerElement })
+        .setLngLat(coords)
+        .addTo(libreMap);
+
+   // 4. Restliche Einstellungen laden
+    libreMap.on('load', () => {
+        libreMap.setPadding({ right: 150, bottom: 20 });
+
+
+        libreMap.dragPan.disable();
+        libreMap.scrollZoom.disable();
+        libreMap.touchZoomRotate.disable();
+        libreMap.doubleClickZoom.disable();
+        
+        if (libreMap.dragRotate) libreMap.dragRotate.disable();
+
+        // 2. Den 3D-Extrusion Layer hinzufügen
 libreMap.addLayer({
     'id': '3d-buildings',
     'source': 'carto',
@@ -144,29 +169,6 @@ libreMap.addLayer({
         'fill-extrusion-opacity': 0.8
     }
 }, labelLayerId);
-   // --- BLAUER PUNKT (Zwingend zeichnen, Original-Klassen nutzen!) ---
-    const customMarkerElement = document.createElement('div');
-    customMarkerElement.className = 'user-marker-wrap';
-    customMarkerElement.innerHTML = `
-        <div class="user-pulse"></div>
-        <div class="user-dot"></div>
-    `;
- // NEU:
-    window.userLocationMarker = new maplibregl.Marker({ element: customMarkerElement })
-        .setLngLat(coords)
-        .addTo(libreMap);
-
-   // 4. Restliche Einstellungen laden
-    libreMap.on('load', () => {
-        libreMap.setPadding({ right: 150, bottom: 20 });
-
-
-        libreMap.dragPan.disable();
-        libreMap.scrollZoom.disable();
-        libreMap.touchZoomRotate.disable();
-        libreMap.doubleClickZoom.disable();
-        
-        if (libreMap.dragRotate) libreMap.dragRotate.disable();
     }); // <--- HIER IST DIE LEBENSWICHTIGE KLAMMER, DIE GEFEHLT HAT!
 
 // ==========================================
