@@ -911,20 +911,20 @@ function clearRoutes() {
     let poiLayerId = "tomtom-pois-layer";
     let poiCooldown;
 
-    window.loadTomTomPOIs = async function() {
+window.loadTomTomPOIs = async function() {
         if (!libreMap || !libreMap.isStyleLoaded()) return;
 
         // Wenn Clean Mode aktiv ist -> Layer verstecken und Abfrage abbrechen
         if (window.currentPoiMode !== "explore") {
-            if (libreMap.getLayer(poiLayerId)) {
-                libreMap.setLayoutProperty(poiLayerId, "visibility", "none");
-            }
+            if (libreMap.getLayer(poiLayerId)) libreMap.setLayoutProperty(poiLayerId, "visibility", "none");
+            if (libreMap.getLayer(poiLayerId + '-dot')) libreMap.setLayoutProperty(poiLayerId + '-dot', "visibility", "none");
             return;
         }
 
         // Performance: Erst ab Zoom 14 laden, sonst brennt die API ab
         if (libreMap.getZoom() < 14) {
             if (libreMap.getLayer(poiLayerId)) libreMap.setLayoutProperty(poiLayerId, "visibility", "none");
+            if (libreMap.getLayer(poiLayerId + '-dot')) libreMap.setLayoutProperty(poiLayerId + '-dot', "visibility", "none");
             return;
         }
 
@@ -953,10 +953,30 @@ function clearRoutes() {
             }
 
             // 2. Dynamische Farben je nach aktuellem Theme
-            const textColor = window.currentMapTheme === 'grey' ? '#1c1c1e' : '#ffffff';
-            const haloColor = window.currentMapTheme === 'grey' ? '#ffffff' : '#1c1c1e';
+            const isGrey = window.currentMapTheme === 'grey';
+            const textColor = isGrey ? '#1c1c1e' : '#ffffff';
+            const haloColor = isGrey ? '#ffffff' : '#1c1c1e';
+            const dotBorder = isGrey ? '#ffffff' : '#1c1c1e'; // Rand des Punktes passt sich dem Theme an
 
-            // 3. Layer anlegen oder updaten
+            // --- A) DER ANKER-PUNKT (CIRCLE LAYER) ---
+            if (!libreMap.getLayer(poiLayerId + '-dot')) {
+                libreMap.addLayer({
+                    id: poiLayerId + '-dot',
+                    type: "circle",
+                    source: poiSourceId,
+                    paint: {
+                        "circle-radius": 5, // Knackige Größe
+                        "circle-color": "#30d158", // Dein DriverHub Grün!
+                        "circle-stroke-width": 2,
+                        "circle-stroke-color": dotBorder
+                    }
+                });
+            } else {
+                libreMap.setLayoutProperty(poiLayerId + '-dot', "visibility", "visible");
+                libreMap.setPaintProperty(poiLayerId + '-dot', "circle-stroke-color", dotBorder);
+            }
+
+            // --- B) DER TEXT (SAUBER UNTER DEM PUNKT) ---
             if (!libreMap.getLayer(poiLayerId)) {
                 libreMap.addLayer({
                     id: poiLayerId,
@@ -964,14 +984,15 @@ function clearRoutes() {
                     source: poiSourceId,
                     layout: {
                         "text-field": ["get", "name"],
-                        "text-size": 13,
-                        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"], // Saubere Schriftart
-                        "text-anchor": "center"
+                        "text-size": 11, // Etwas dezenter
+                        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+                        "text-anchor": "top", // Hängt den Text direkt an die Oberkante
+                        "text-offset": [0, 0.6] // Schiebt ihn perfekt unter den grünen Punkt
                     },
                     paint: {
                         "text-color": textColor,
                         "text-halo-color": haloColor,
-                        "text-halo-width": 2
+                        "text-halo-width": 1.5 // Nicht zu fetter Halo
                     }
                 });
             } else {
