@@ -921,12 +921,11 @@ function clearRoutes() {
         window.loadedStyleUrl = styleUrl;
         libreMap.setStyle(styleUrl);
 
-        libreMap.once('style.load', () => {
+
+    libreMap.once('styledata', () => {
             restore3DBuildings(activeTheme);
             restoreRoutes();
-            applyPoiVisibility(); 
         });
-    };
 
     function applyPoiVisibility() {
         if (window.currentPoiMode === 'explore') return; 
@@ -947,39 +946,28 @@ function clearRoutes() {
         });
     }
 
-    function restore3DBuildings(activeTheme) {
-        if (window.currentPoiMode === 'explore') return; 
+function restore3DBuildings(activeTheme) {
+        if (window.currentPoiMode === 'explore') return; // TomTom hat eigene Gebäude
         if (libreMap.getLayer('3d-buildings')) return;
 
-        const sources = libreMap.getStyle().sources;
-        if (!sources || !sources.carto) {
-            setTimeout(() => restore3DBuildings(activeTheme), 100);
-            return;
-        }
-
-        const buildingColor = activeTheme === 'grey' ? '#d9d9d9' : '#2a2a2a';
-        const buildingOpacity = activeTheme === 'grey' ? 0.85 : 0.8;
-
-        let labelLayerId = null;
-        const layers = libreMap.getStyle().layers;
-        if (layers) {
-            const firstSymbol = layers.find(layer => layer.type === 'symbol');
-            if (firstSymbol) labelLayerId = firstSymbol.id;
-        }
+        // Dein altes, funktionierendes Design (mit sanftem Interpolate)
+        const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
+        const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
         
+        // Wir jagen den Layer direkt in die Karte, so wie in deiner alten Version
         libreMap.addLayer({
             'id': '3d-buildings',
             'source': 'carto',
             'source-layer': 'building',
             'type': 'fill-extrusion',
-            'minzoom': 14, 
+            'minzoom': 14, // Ab Zoom 14 sichtbar
             'paint': {
                 'fill-extrusion-color': buildingColor,
                 'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_height']],
                 'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 14, 0, 14.5, ['get', 'render_min_height']],
                 'fill-extrusion-opacity': buildingOpacity
             }
-        }, labelLayerId);
+        });
     }
 
     function restoreRoutes() {
