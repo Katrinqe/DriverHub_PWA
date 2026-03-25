@@ -3348,3 +3348,23 @@ body.ghost-active #ghost-chat-overlay {
     color: #fff;
     box-shadow: 0 0 10px rgba(48, 209, 88, 0.4);
 }
+
+/* === MAP DETAILS PILL (CLEAN / EXPLORE) === */
+.poi-option {
+    flex: 1;
+    text-align: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.poi-option.active {
+    background: #30d158; /* Dein DriverHub Grün */
+    color: #1c1c1e;
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(48, 209, 88, 0.4);
+}
