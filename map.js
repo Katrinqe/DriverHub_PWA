@@ -100,7 +100,24 @@ function loadMap(coords, hasLocation) {
     // 1. Standort sichern
     currentCoords = coords; 
 
-libreMap = new maplibregl.Map({
+const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
+
+    libreMap = new maplibregl.Map({
+        container: mapContainerId,
+        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        center: coords,
+        zoom: 14,
+        interactive: true,
+        dragRotate: true,
+        attributionControl: false,
+        // --- DER BOSS-FIX: Der Interceptor hängt den API-Key an jedes TomTom-Icon! ---
+        transformRequest: (url, resourceType) => {
+            if (url.includes('api.tomtom.com')) {
+                return { url: url + (url.includes('?') ? '&' : '?') + 'key=' + TOMTOM_API_KEY };
+            }
+            return { url };
+        }
+    });.Map({
         container: mapContainerId,
         style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         center: coords,
@@ -886,10 +903,9 @@ function clearRoutes() {
     window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean';
     window.loadedStyleUrl = null;
 
-window.updateMapAppearance = async function() {
+    window.updateMapAppearance = async function() {
         if (!libreMap) return;
 
-        // 1. Auto-Theme Logik (Sonnenstand)
         let activeTheme = window.currentMapTheme;
         if (activeTheme === 'auto') {
             try {
@@ -906,51 +922,23 @@ window.updateMapAppearance = async function() {
             }
         }
 
-        // 2. DIE KARTEN-DESIGNS
         let styleUrl = '';
-        const TOMTOM_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
-        let isTomTom = false;
-
         if (window.currentPoiMode === 'explore') {
+            // EXPLORE: Das reine, native TomTom Design
             const ttStyle = activeTheme === 'grey' ? 'basic_main' : 'basic_night';
-            styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json?key=${TOMTOM_KEY}`;
-            isTomTom = true;
+            styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json?key=qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM`;
         } else {
+            // CLEAN: Deine sterilen Carto-Karten (Voyager & Dark Matter)
             styleUrl = activeTheme === 'grey' 
                 ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
                 : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
         }
 
-        // 3. Flackerschutz
         if (window.loadedStyleUrl === styleUrl) return;
         window.loadedStyleUrl = styleUrl;
 
-        // 4. DER BOSS-FIX: Wir fangen den TomTom-Style ab und reparieren die fehlenden Icons!
-        if (isTomTom) {
-            try {
-                const response = await fetch(styleUrl);
-                const styleJson = await response.json();
-                
-                // Wir zwingen deinen API-Key in die Icon-Downloads (Sprites)
-                if (styleJson.sprite && styleJson.sprite.includes('api.tomtom.com')) {
-                    styleJson.sprite = `${styleJson.sprite}?key=${TOMTOM_KEY}`;
-                }
-                // Wir zwingen deinen API-Key in die Schriften (Glyphs)
-                if (styleJson.glyphs && styleJson.glyphs.includes('api.tomtom.com')) {
-                    styleJson.glyphs = `${styleJson.glyphs}?key=${TOMTOM_KEY}`;
-                }
-                
-                // Jetzt übergeben wir den reparierten Code an MapLibre
-                libreMap.setStyle(styleJson);
-            } catch (e) {
-                console.error("TomTom Style Hack fehlgeschlagen:", e);
-                return;
-            }
-        } else {
-            libreMap.setStyle(styleUrl);
-        }
+        libreMap.setStyle(styleUrl);
 
-        // 5. Layer retten, wenn alles steht
         libreMap.once('style.load', () => {
             restore3DBuildings(activeTheme);
             restoreRoutes();
@@ -958,7 +946,7 @@ window.updateMapAppearance = async function() {
     };
 
     function restore3DBuildings(activeTheme) {
-        if (window.currentPoiMode === 'explore') return; // TomTom hat eigene 3D Gebäude
+        if (window.currentPoiMode === 'explore') return; // TomTom hat eigene Gebäude
         if (libreMap.getLayer('3d-buildings')) return;
 
         const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
