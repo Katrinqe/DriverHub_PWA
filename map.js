@@ -229,13 +229,7 @@ libreMap = new maplibregl.Map({
     // --- Mauszeiger-Logik (Optional, aber Premium) ---
     // Zeigt eine Hand, wenn man im Explore-Modus mit der Maus über ein Geschäft fährt
 // --- NEU: POI-RADAR BEIM BEWEGEN DER KARTE ---
-    libreMap.on("moveend", () => {
-        if (window.poiCooldown) clearTimeout(window.poiCooldown);
-        window.poiCooldown = setTimeout(() => {
-            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
-        }, 300);
-    });
-    
+
     // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
     setTimeout(() => { 
         if (libreMap) libreMap.resize(); 
@@ -895,7 +889,6 @@ function clearRoutes() {
     window.updateMapAppearance = async function() {
         if (!libreMap) return;
 
-        // 1. Auto-Theme Logik (Sonnenstand)
         let activeTheme = window.currentMapTheme;
         if (activeTheme === 'auto') {
             try {
@@ -912,35 +905,49 @@ function clearRoutes() {
             }
         }
 
-        // 2. DIE KARTEN-DESIGNS (Wieder Carto, weil wir die POIs jetzt selbst zeichnen!)
         let styleUrl = '';
         if (window.currentPoiMode === 'explore') {
+            // EXPLORE: Das wunderschöne, echte TomTom Design
+            const TOMTOM_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
+            const ttStyle = activeTheme === 'grey' ? 'basic_main' : 'basic_night';
+            styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json?key=${TOMTOM_KEY}`;
+        } else {
+            // CLEAN: Deine sterilen Carto-Karten (Grey = Voyager, Dark = Dark Matter)
             styleUrl = activeTheme === 'grey' 
                 ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
                 : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
-        } else {
-            styleUrl = activeTheme === 'grey' 
-                ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
-                : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
         }
 
-        // 3. Flackerschutz
-        if (window.loadedStyleUrl !== styleUrl) {
-            window.loadedStyleUrl = styleUrl;
-            libreMap.setStyle(styleUrl);
-        } else {
-            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
-        }
+        if (window.loadedStyleUrl === styleUrl) return;
+        window.loadedStyleUrl = styleUrl;
+
+        libreMap.setStyle(styleUrl);
 
         libreMap.once('style.load', () => {
             restore3DBuildings(activeTheme);
             restoreRoutes();
-            if (window.loadTomTomPOIs) window.loadTomTomPOIs();
+
+            // --- C) TOMTOM HACK: Interne Zoom-Sperren aufbrechen ---
+            if (window.currentPoiMode === 'explore') {
+                const layers = libreMap.getStyle().layers;
+                layers.forEach(layer => {
+                    const id = layer.id.toLowerCase();
+                    // Wir suchen nach den internen TomTom Layern für POIs und Tankstellen
+                    if (id.includes('poi') || id.includes('gas') || id.includes('station')) {
+                        try {
+                            // Wir zwingen TomTom, diese Layer schon ab Zoom 13 zu zeichnen (statt 15)
+                            libreMap.setLayerZoomRange(layer.id, 13, 24);
+                        } catch(e) {}
+                    }
+                });
+            }
         });
     };
 
     function restore3DBuildings(activeTheme) {
+        if (window.currentPoiMode === 'explore') return; // TomTom hat eigene 3D Gebäude
         if (libreMap.getLayer('3d-buildings')) return;
+
         const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
         const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
         
@@ -983,7 +990,6 @@ function clearRoutes() {
     setInterval(() => {
         if (window.currentMapTheme === 'auto') window.updateMapAppearance();
     }, 15 * 60 * 1000);
-
     // ==========================================
     // === DYNAMIC CUSTOM POI ENGINE (KAUFLAND-GARANTIE) ===
     // ==========================================
@@ -991,97 +997,7 @@ function clearRoutes() {
     let poiLayerId = "custom-tomtom-pois-layer";
     window.poiCooldown = null;
 
-    window.loadTomTomPOIs = async function() {
-        if (!libreMap || !libreMap.isStyleLoaded()) return;
 
-        // Wenn Clean Mode, alles verstecken!
-        if (window.currentPoiMode !== "explore") {
-            if (libreMap.getLayer(poiLayerId)) libreMap.setLayoutProperty(poiLayerId, "visibility", "none");
-            if (libreMap.getLayer(poiLayerId + '-dot')) libreMap.setLayoutProperty(poiLayerId + '-dot', "visibility", "none");
-            return;
-        }
-
-        // Wir zwingen die POIs schon ab Zoom 13 auf den Bildschirm!
-        if (libreMap.getZoom() < 13) {
-            if (libreMap.getLayer(poiLayerId)) libreMap.setLayoutProperty(poiLayerId, "visibility", "none");
-            if (libreMap.getLayer(poiLayerId + '-dot')) libreMap.setLayoutProperty(poiLayerId + '-dot', "visibility", "none");
-            return;
-        }
-
-        const center = libreMap.getCenter();
-        // categorySet: 7332 (Supermärkte/Kaufland), 7311 (Tankstellen), 7315 (Restaurants), 7374 (Einkaufszentren/Baumärkte)
-        const url = `https://api.tomtom.com/search/2/nearbySearch/.json?key=${TOMTOM_API_KEY}&lat=${center.lat}&lon=${center.lng}&radius=3000&limit=100&categorySet=7332,7311,7315,7374`;
-
-        try {
-            const res = await fetch(url);
-            if (!res.ok) return;
-            const data = await res.json();
-
-            const features = data.results.map(poi => ({
-                type: "Feature",
-                geometry: { type: "Point", coordinates: [poi.position.lon, poi.position.lat] },
-                properties: { name: poi.poi.name }
-            }));
-
-            const geojson = { type: "FeatureCollection", features };
-
-            if (!libreMap.getSource(poiSourceId)) {
-                libreMap.addSource(poiSourceId, { type: "geojson", data: geojson });
-            } else {
-                libreMap.getSource(poiSourceId).setData(geojson);
-            }
-
-            const isGrey = window.currentMapTheme === 'grey';
-            const textColor = isGrey ? '#1c1c1e' : '#ffffff';
-            const haloColor = isGrey ? '#ffffff' : '#1c1c1e';
-
-            // 1. Der leuchtende grüne Anker-Punkt
-            if (!libreMap.getLayer(poiLayerId + '-dot')) {
-                libreMap.addLayer({
-                    id: poiLayerId + '-dot',
-                    type: "circle",
-                    source: poiSourceId,
-                    paint: {
-                        "circle-radius": 4,
-                        "circle-color": "#30d158",
-                        "circle-stroke-width": 2,
-                        "circle-stroke-color": haloColor
-                    }
-                });
-            } else {
-                libreMap.setLayoutProperty(poiLayerId + '-dot', "visibility", "visible");
-                libreMap.setPaintProperty(poiLayerId + '-dot', "circle-stroke-color", haloColor);
-            }
-
-            // 2. Der saubere Text darunter
-            if (!libreMap.getLayer(poiLayerId)) {
-                libreMap.addLayer({
-                    id: poiLayerId,
-                    type: "symbol",
-                    source: poiSourceId,
-                    layout: {
-                        "text-field": ["get", "name"],
-                        "text-size": 12,
-                        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-                        "text-anchor": "top",
-                        "text-offset": [0, 0.5],
-                        "text-allow-overlap": false // Verhindert reinen Textmatsch
-                    },
-                    paint: {
-                        "text-color": textColor,
-                        "text-halo-color": haloColor,
-                        "text-halo-width": 2
-                    }
-                });
-            } else {
-                libreMap.setLayoutProperty(poiLayerId, "visibility", "visible");
-                libreMap.setPaintProperty(poiLayerId, "text-color", textColor);
-                libreMap.setPaintProperty(poiLayerId, "text-halo-color", haloColor);
-            }
-        } catch (err) {
-            console.warn("TomTom Custom POI Fetch Fehler:", err);
-        }
-    };
     // ==========================================
     // === MAP SETTINGS MENÜ (3 STRICHE & BLUR) ===
     // ==========================================
