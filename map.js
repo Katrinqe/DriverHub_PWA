@@ -837,10 +837,10 @@ function clearRoutes() {
             const TOMTOM_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
             const ttStyle = activeTheme === 'grey' ? 'basic_main' : 'basic_night';
             styleUrl = `https://api.tomtom.com/map/1/style/22.2.1-9/${ttStyle}.json?key=${TOMTOM_KEY}`;
-        } else {
+   } else {
             // CLEAN MODE: Deine sterilen Carto-Karten
             styleUrl = activeTheme === 'grey' 
-                ? 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+                ? 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json' // <-- Zurück zur gediegenen Version!
                 : 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
         }
 
