@@ -844,15 +844,27 @@ function clearRoutes() {
     // ==========================================
     window.currentPoiMode = localStorage.getItem('mapPoiMode') || 'clean'; // Standard ist Clean
 
-    window.applyPoiMode = function() {
+window.applyPoiMode = function() {
         if (!libreMap || !libreMap.getStyle()) return;
-        const visibility = window.currentPoiMode === 'explore' ? 'visible' : 'none';
+        const isExplore = window.currentPoiMode === 'explore';
+        const visibility = isExplore ? 'visible' : 'none';
         
         const layers = libreMap.getStyle().layers;
         layers.forEach(layer => {
-            // Carto-Basemaps nutzen "poi" in den Layer-IDs für alle Geschäfte und Icons
-            if (layer.id.includes('poi')) {
+            const layerId = layer.id.toLowerCase();
+            const sourceLayer = layer['source-layer'] ? layer['source-layer'].toLowerCase() : '';
+            
+            // Wir suchen alles, was ein POI (Point of Interest) ist
+            if (layerId.includes('poi') || sourceLayer.includes('poi')) {
+                
+                // 1. Wir schalten es hart auf sichtbar / unsichtbar
                 libreMap.setLayoutProperty(layer.id, 'visibility', visibility);
+                
+                // 2. DER GEWALT-ZOOM: Wir überschreiben die Sperre der Designer!
+                // Wenn Explore aktiv ist, zwingen wir die Icons schon ab Zoom 13 (statt 15.5) auf die Karte.
+                if (isExplore) {
+                    libreMap.setLayerZoomRange(layer.id, 13, 24);
+                }
             }
         });
     };
