@@ -1280,15 +1280,15 @@ function restore3DBuildings(activeTheme) {
                     if (bottomSheet) bottomSheet.classList.remove('expanded');
                     if (searchInput) searchInput.blur();
 
-                    this.isActive = !this.isActive;
+             this.isActive = !this.isActive;
                     if (this.isActive) {
-                        btnGas.style.background = 'rgba(48, 209, 88, 0.2)';
-                        btnGas.style.borderColor = 'rgba(48, 209, 88, 0.5)';
+                        // BOSS-FIX: Wir schalten nur noch eine saubere CSS-Klasse!
+                        btnGas.classList.add('active-orange');
                         this.fetchData();
                     } else {
-                        btnGas.style.background = 'rgba(255,255,255,0.08)';
-                        btnGas.style.borderColor = 'rgba(255,255,255,0.1)';
+                        btnGas.classList.remove('active-orange');
                         this.clearMarkers();
+                        this.closeTotem();
                     }
                 });
             }
