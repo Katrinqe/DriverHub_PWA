@@ -1169,12 +1169,7 @@ function restore3DBuildings(activeTheme) {
             const routeOverviewUI = document.getElementById('route-overview-ui');
             if (routeOverviewUI) routeOverviewUI.classList.add('hidden');
             
-            // 3. UI wiederherstellen (Suchfeld & Map-Controls)
-            const bottomSheet = document.getElementById('map-bottom-sheet');
-            if (bottomSheet) bottomSheet.style.display = 'flex';
-            
-            const pillV = document.querySelector('.map-controls-pill-v');
-            if (pillV) pillV.style.display = 'flex';
+     
 
             // 3. UI wiederherstellen (Suchfeld & Map-Controls)
             const bottomSheet = document.getElementById('map-bottom-sheet');
