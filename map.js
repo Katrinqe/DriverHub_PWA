@@ -1234,7 +1234,7 @@ function restore3DBuildings(activeTheme) {
         apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
         mlMarkers: [],
         cachedStations: [],
-        currentFuelType: 'e10',
+       currentFuelType: localStorage.getItem('preferredFuelType') || 'e10',
         isActive: false,
 
 init: function() {
@@ -1477,12 +1477,14 @@ init: function() {
             this.updateTotemSelectionUI();
         },
 
-        selectFuel: function(type) {
+    selectFuel: function(type) {
             this.currentFuelType = type;
+            // BOSS-FIX: Speichert deine Spritsorte für die Zukunft!
+            localStorage.setItem('preferredFuelType', type); 
+            
             this.updateTotemSelectionUI();
             this.redrawMarkers(); 
         },
-
         updateTotemSelectionUI: function() {
             document.querySelectorAll('.price-row').forEach(r => r.classList.remove('selected'));
             const activeRow = document.getElementById('row-' + this.currentFuelType);
