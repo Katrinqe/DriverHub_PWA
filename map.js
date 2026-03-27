@@ -269,7 +269,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
     }, 350);
 
 } // <--- DAS SAUBERE ENDE VON loadMap!
- // ==========================================
+// ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
     // ==========================================
     const expandTrigger = document.getElementById('map-expand-trigger');
@@ -288,33 +288,34 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) bottomNav.style.display = 'none';
 
+            // BOSS-FIX: Suchleiste Oben nur im Fullscreen einblenden!
+            const topSearch = document.getElementById('top-search-container');
+            if (topSearch) topSearch.style.display = 'flex';
+
             if (libreMap) {
-                // Interaktion freischalten
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
                 libreMap.touchZoomRotate.enable();
                 libreMap.doubleClickZoom.enable();
                 if (libreMap.dragRotate) libreMap.dragRotate.enable(); 
-
-                // Optischen Mittelpunkt zentrieren
                 libreMap.setPadding({ right: 0, bottom: 0 });
-
-                // Map an Fullscreen anpassen
                 setTimeout(() => libreMap.resize(), 400); 
             }
         });
 
-       // 2. Karte wieder klein machen ODER Route abbrechen (EINZIGER LISTENER!)
+        // 2. Karte wieder klein machen
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
             
             if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
             if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
 
-            // --- NORMALER SHRINK CODE (Nur wenn keine Route offen ist) ---
-            // --- NORMALER SHRINK CODE (Nur wenn keine Route offen ist) ---
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
+
+            // BOSS-FIX: Suchleiste wieder ausblenden
+            const topSearch = document.getElementById('top-search-container');
+            if (topSearch) topSearch.style.display = 'none';
 
             const bottomNav = document.querySelector('.bottom-nav');
             if (bottomNav) bottomNav.style.display = 'flex';
@@ -483,6 +484,9 @@ async function drawTomTomRoute(destLat, destLng) {
     const pillV = document.querySelector('.map-controls-pill-v');
     const shrinkBtn = document.getElementById('btn-shrink-map');
     
+    // BOSS-FIX: Referenz zur Suchleiste
+    const topSearch = document.getElementById('top-search-container');
+    
     if (shrinkBtn) {
         shrinkBtn.style.opacity = '0'; 
         shrinkBtn.style.pointerEvents = 'none';
@@ -495,6 +499,10 @@ async function drawTomTomRoute(destLat, destLng) {
     if (navBar) navBar.style.display = 'none';
     if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
     if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
+    
+    // BOSS-FIX: Suchleiste oben wegschießen, wenn Route angezeigt wird!
+    if (topSearch) topSearch.style.display = 'none';
+    
     if (bottomSheet) {
         bottomSheet.classList.remove('expanded');
         bottomSheet.style.display = 'none';
@@ -509,6 +517,7 @@ async function drawTomTomRoute(destLat, destLng) {
     libreMap.setPadding({ right: 0, bottom: 0 });
 
     try {
+        // ... (Dein restlicher Code ab hier bleibt unberührt!)
         // NEU: maxAlternatives=1 liefert uns bis zu 2 Routen. instructionsType liefert Straßennamen.
         const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=text&language=de-DE`;
         
@@ -1166,6 +1175,17 @@ function restore3DBuildings(activeTheme) {
             
             const pillV = document.querySelector('.map-controls-pill-v');
             if (pillV) pillV.style.display = 'flex';
+
+            // 3. UI wiederherstellen (Suchfeld & Map-Controls)
+            const bottomSheet = document.getElementById('map-bottom-sheet');
+            if (bottomSheet) bottomSheet.style.display = 'flex';
+            
+            const pillV = document.querySelector('.map-controls-pill-v');
+            if (pillV) pillV.style.display = 'flex';
+
+            // BOSS-FIX: Suchleiste wieder anzeigen!
+            const topSearch = document.getElementById('top-search-container');
+            if (topSearch) topSearch.style.display = 'flex';
             
             // 4. Suchfeld leeren und Tastatur schließen
             const searchInput = document.getElementById('tomtom-search-input');
@@ -2307,11 +2327,15 @@ function restore3DBuildings(activeTheme) {
                 searchInput.blur();
             }
 
-            const bottomSheet = document.getElementById('map-bottom-sheet');
+         const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.style.display = 'flex';
             
             const pillV = document.querySelector('.map-controls-pill-v');
             if (pillV) pillV.style.display = 'flex';
+
+            // BOSS-FIX: Hier holen wir die Suchleiste nach dem Abbruch wieder zurück!
+            const topSearch = document.getElementById('top-search-container');
+            if (topSearch) topSearch.style.display = 'flex';
             
             const shrinkBtnMap = document.getElementById('btn-shrink-map');
             if (shrinkBtnMap) {
