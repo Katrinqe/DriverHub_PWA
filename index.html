@@ -915,6 +915,57 @@
     <div class="nav-item" id="nav-garage"><i class="fa-solid fa-warehouse"></i><span>Garage</span></div>
 </div>
 
+         <div id="gas-totem-overlay" class="hidden interactive-element">
+
+            <div class="gas-totem-card">
+
+                <div class="totem-header" id="totem-brand-header">
+
+                    <h2 id="totem-brand">BRAND</h2>
+
+                    <button class="totem-close" onclick="ExploreLogic.closeTotem()"><i class="fa-solid fa-xmark"></i></button>
+
+                </div>
+
+                <div class="totem-body">
+
+                    <div class="price-row" id="row-diesel" onclick="ExploreLogic.selectFuel('diesel')">
+
+                        <span class="fuel-type">DIESEL</span>
+
+                        <div class="led-price-box"><span id="price-diesel">0.00</span><small>9</small></div>
+
+                    </div>
+
+                    <div class="price-row selected" id="row-e10" onclick="ExploreLogic.selectFuel('e10')">
+
+                        <span class="fuel-type">SUPER E10</span>
+
+                        <div class="led-price-box"><span id="price-e10">0.00</span><small>9</small></div>
+
+                    </div>
+
+                    <div class="price-row" id="row-e5" onclick="ExploreLogic.selectFuel('e5')">
+
+                        <span class="fuel-type">SUPER E5</span>
+
+                        <div class="led-price-box"><span id="price-e5">0.00</span><small>9</small></div>
+
+                    </div>
+
+                </div>
+
+                <div class="totem-footer">
+
+                    <span id="totem-status"><i class="fa-solid fa-circle-check"></i> OPEN 24/7</span>
+
+                    <button class="btn-navigate">GO</button>
+
+                </div>
+
+            </div>
+
+        </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
