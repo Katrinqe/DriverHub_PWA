@@ -1245,21 +1245,29 @@ function restore3DBuildings(activeTheme) {
         currentFuelType: savedFuel,
         isActive: false,
 
-        init: function() {
-            // Hole das Menü nach vorne, falls nötig
+    init: function() {
+            // Menüs aus dem unsichtbaren Screen befreien
             const totemOverlay = document.getElementById('gas-totem-overlay');
-            if (totemOverlay && totemOverlay.parentElement.id !== 'body') {
-                document.body.appendChild(totemOverlay);
-            }
+            if (totemOverlay) document.body.appendChild(totemOverlay);
 
             const filterModal = document.getElementById('gas-filter-modal');
-            if (filterModal && filterModal.parentElement.id !== 'body') {
-                document.body.appendChild(filterModal);
-            }
+            if (filterModal) document.body.appendChild(filterModal);
+
+            // --- BOSS-FIX: Wir reißen die Klicks an uns, damit die alte explore.js ignoriert wird! ---
+            const rowDiesel = document.getElementById('row-diesel');
+            const rowE10 = document.getElementById('row-e10');
+            const rowE5 = document.getElementById('row-e5');
+            const closeBtn = document.querySelector('.totem-close');
+            
+            if (rowDiesel) rowDiesel.onclick = (e) => { e.stopPropagation(); this.selectFuel('diesel'); };
+            if (rowE10) rowE10.onclick = (e) => { e.stopPropagation(); this.selectFuel('e10'); };
+            if (rowE5) rowE5.onclick = (e) => { e.stopPropagation(); this.selectFuel('e5'); };
+            if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); this.closeTotem(); };
+            // -----------------------------------------------------------------------------------------
 
             const btnGas = document.getElementById('btn-sheet-gas');
             if (btnGas) {
-                btnGas.onclick = (e) => {
+                btnGas.addEventListener('click', (e) => {
                     e.stopPropagation();
                     
                     const bottomSheet = document.getElementById('map-bottom-sheet');
@@ -1276,9 +1284,8 @@ function restore3DBuildings(activeTheme) {
                         btnGas.style.background = 'rgba(255,255,255,0.08)';
                         btnGas.style.borderColor = 'rgba(255,255,255,0.1)';
                         this.clearMarkers();
-                        this.closeTotem(); // Wenn man es ausschaltet, geht auch das Menü zu!
                     }
-                };
+                });
             }
         },
 
