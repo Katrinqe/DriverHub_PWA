@@ -1230,36 +1230,36 @@ function restore3DBuildings(activeTheme) {
 // ==========================================
     // === PREMIUM GAS STATION ENGINE (TANKERKÖNIG) ===
     // ==========================================
+    
+    // Wir initialisieren den Sprit-Typ sicher (falls im LocalStorage Müll steht)
+    let savedFuel = localStorage.getItem('preferredFuelType');
+    if (savedFuel !== 'e10' && savedFuel !== 'e5' && savedFuel !== 'diesel') {
+        savedFuel = 'e10'; // Fallback
+    }
+
+    // BOSS-FIX: Wir definieren das Objekt global und überschreiben die alte explore.js komplett!
     window.ExploreLogic = {
         apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
         mlMarkers: [],
         cachedStations: [],
-       currentFuelType: localStorage.getItem('preferredFuelType') || 'e10',
+        currentFuelType: savedFuel,
         isActive: false,
 
-init: function() {
-            // Menüs aus dem unsichtbaren Screen befreien
+        init: function() {
+            // Hole das Menü nach vorne, falls nötig
             const totemOverlay = document.getElementById('gas-totem-overlay');
-            if (totemOverlay) document.body.appendChild(totemOverlay);
+            if (totemOverlay && totemOverlay.parentElement.id !== 'body') {
+                document.body.appendChild(totemOverlay);
+            }
 
             const filterModal = document.getElementById('gas-filter-modal');
-            if (filterModal) document.body.appendChild(filterModal);
-
-            // --- BOSS-FIX: Wir reißen die Klicks an uns, damit die alte explore.js ignoriert wird! ---
-            const rowDiesel = document.getElementById('row-diesel');
-            const rowE10 = document.getElementById('row-e10');
-            const rowE5 = document.getElementById('row-e5');
-            const closeBtn = document.querySelector('.totem-close');
-            
-            if (rowDiesel) rowDiesel.onclick = (e) => { e.stopPropagation(); this.selectFuel('diesel'); };
-            if (rowE10) rowE10.onclick = (e) => { e.stopPropagation(); this.selectFuel('e10'); };
-            if (rowE5) rowE5.onclick = (e) => { e.stopPropagation(); this.selectFuel('e5'); };
-            if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); this.closeTotem(); };
-            // -----------------------------------------------------------------------------------------
+            if (filterModal && filterModal.parentElement.id !== 'body') {
+                document.body.appendChild(filterModal);
+            }
 
             const btnGas = document.getElementById('btn-sheet-gas');
             if (btnGas) {
-                btnGas.addEventListener('click', (e) => {
+                btnGas.onclick = (e) => {
                     e.stopPropagation();
                     
                     const bottomSheet = document.getElementById('map-bottom-sheet');
@@ -1276,8 +1276,9 @@ init: function() {
                         btnGas.style.background = 'rgba(255,255,255,0.08)';
                         btnGas.style.borderColor = 'rgba(255,255,255,0.1)';
                         this.clearMarkers();
+                        this.closeTotem(); // Wenn man es ausschaltet, geht auch das Menü zu!
                     }
-                });
+                };
             }
         },
 
@@ -1310,7 +1311,6 @@ init: function() {
                             lat: st.lat,
                             lon: st.lng,
                             center: { lat: st.lat, lon: st.lng },
-                            // Hier ist der sichere Name für das Rendering!
                             name: st.brand ? st.brand + " " + st.name : st.name, 
                             realData: st,
                             simPrices: {
@@ -1356,11 +1356,11 @@ init: function() {
                 if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
                 if (displayName === "") displayName = "TANK";
 
-                // Absicherung für dummy Daten, falls fetch spinnt
                 if (!el.simPrices) {
                     el.simPrices = { e10: "-.--", diesel: "-.--", e5: "-.--", isOpen: true };
                 }
 
+                // Hier nutzen wir immer die sichere, intern gespeicherte Sprit-Art
                 let displayPrice = el.simPrices[this.currentFuelType] || "-.--";
                 const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
 
@@ -1388,7 +1388,6 @@ init: function() {
                         essential: true
                     });
                     
-                    // BOSS-FIX: Hier übergeben wir exakt die 4 Parameter, die openTotem erwartet!
                     this.openTotem(el.name, el.lat, el.lon, el);
                 });
 
@@ -1418,7 +1417,6 @@ init: function() {
                 if (goBtn) {
                     goBtn.onclick = () => {
                         this.closeTotem();
-                        // Routing aufrufen, Parameter sind hier Lat, Lon
                         if (typeof drawTomTomRoute === 'function') drawTomTomRoute(lat, lng);
                     };
                 }
@@ -1477,18 +1475,18 @@ init: function() {
             this.updateTotemSelectionUI();
         },
 
-    selectFuel: function(type) {
+        selectFuel: function(type) {
             this.currentFuelType = type;
-            // BOSS-FIX: Speichert deine Spritsorte für die Zukunft!
             localStorage.setItem('preferredFuelType', type); 
             
             this.updateTotemSelectionUI();
             this.redrawMarkers(); 
         },
+
         updateTotemSelectionUI: function() {
             document.querySelectorAll('.price-row').forEach(r => r.classList.remove('selected'));
-            const activeRow = document.getElementById('row-' + this.currentFuelType);
-            if (activeRow) activeRow.classList.add('selected');
+            const row = document.getElementById('row-' + this.currentFuelType);
+            if (row) row.classList.add('selected');
         },
 
         closeTotem: function() {
