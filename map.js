@@ -1312,13 +1312,20 @@ function restore3DBuildings(activeTheme) {
                 const data = await response.json();
                 if(loader) loader.classList.remove('visible');
 
-                if (data.ok && data.stations) {
+        if (data.ok && data.stations) {
                     this.cachedStations = data.stations.map(st => {
+                        
+                        // BOSS-FIX: Intelligente Namens-Bereinigung gegen doppelte "Esso Esso" Einträge
+                        let safeName = st.name ? st.name.trim() : "Tankstelle";
+                        if (st.brand && !safeName.toLowerCase().includes(st.brand.toLowerCase())) {
+                            safeName = st.brand + " " + safeName;
+                        }
+
                         return {
                             lat: st.lat,
                             lon: st.lng,
                             center: { lat: st.lat, lon: st.lng },
-                            name: st.brand ? st.brand + " " + st.name : st.name, 
+                            name: safeName, 
                             realData: st,
                             simPrices: {
                                 e10: (typeof st.e10 === 'number') ? (Math.floor(st.e10 * 100) / 100).toFixed(2) : "-.--",
@@ -1331,7 +1338,7 @@ function restore3DBuildings(activeTheme) {
                     this.redrawMarkers();
                 } else {
                     console.error("Tankerkönig API Fehler:", data.message);
-                }
+                } 
             } catch (err) {
                 if (loader) loader.classList.remove('visible');
                 console.error("Tankerkönig Fetch Error:", err);
