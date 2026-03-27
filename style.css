@@ -3759,13 +3759,30 @@ body.ghost-active #ghost-chat-overlay {
 
 .v2-totem-overlay .fuel-type { color: #888; font-weight: 700; }
 
+/* Die originale, massive LED-Preis-Box */
 .v2-totem-overlay .led-price-box {
     background: #000000 !important; 
     border: 1px solid #333333 !important;
-    padding: 6px 12px !important;
-    border-radius: 8px !important;
-    color: #ff3b30; /* Rote Preise bleiben */
-    font-family: monospace; font-weight: 700; font-size: 1.1rem;
+    padding: 5px 10px !important;
+    border-radius: 5px !important;
+    color: #ff3b30 !important;
+    font-family: monospace !important;
+    
+    /* BOSS-FIX: Originale Größe und Glow sind zurück! */
+    font-size: 1.6rem !important; 
+    font-weight: 700 !important;
+    letter-spacing: 1px !important;
+    text-shadow: 0 0 10px rgba(255, 59, 48, 0.6) !important;
+    
+    display: flex !important; 
+    align-items: baseline !important;
+}
+
+/* Das kleine hochgestellte Neuntel am Ende des Preises */
+.v2-totem-overlay .led-price-box small {
+    font-size: 0.8rem !important; 
+    margin-left: 2px !important; 
+    opacity: 0.8 !important;
 }
 
 /* 4. Der Footer: Massiv */
