@@ -1388,10 +1388,13 @@ function restore3DBuildings(activeTheme) {
                 let displayPrice = el.simPrices[this.currentFuelType] || "-.--";
                 const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
 
-                const elDiv = document.createElement('div');
-                elDiv.className = 'custom-div-icon';
+     const elDiv = document.createElement('div');
+                // BOSS-FIX: 'map-v2-icon' für den äußeren Container hinzugefügt
+                elDiv.className = 'custom-div-icon map-v2-icon'; 
+                
+                // BOSS-FIX: 'map-v2-marker' zum inneren Wrap hinzugefügt!
                 elDiv.innerHTML = `
-                    <div class="price-marker-wrap ${closedClass}" style="cursor: pointer; transition: transform 0.1s;">
+                    <div class="price-marker-wrap map-v2-marker ${closedClass}" style="cursor: pointer; transition: transform 0.1s;">
                         <div class="pm-brand-bar ${brandClass}">${displayName}</div>
                         <div class="pm-content">
                             <div class="pm-price">${displayPrice}</div>
