@@ -1237,9 +1237,25 @@ function restore3DBuildings(activeTheme) {
         currentFuelType: 'e10',
         isActive: false,
 
-        init: function() {
+init: function() {
+            // Menüs aus dem unsichtbaren Screen befreien
             const totemOverlay = document.getElementById('gas-totem-overlay');
             if (totemOverlay) document.body.appendChild(totemOverlay);
+
+            const filterModal = document.getElementById('gas-filter-modal');
+            if (filterModal) document.body.appendChild(filterModal);
+
+            // --- BOSS-FIX: Wir reißen die Klicks an uns, damit die alte explore.js ignoriert wird! ---
+            const rowDiesel = document.getElementById('row-diesel');
+            const rowE10 = document.getElementById('row-e10');
+            const rowE5 = document.getElementById('row-e5');
+            const closeBtn = document.querySelector('.totem-close');
+            
+            if (rowDiesel) rowDiesel.onclick = (e) => { e.stopPropagation(); this.selectFuel('diesel'); };
+            if (rowE10) rowE10.onclick = (e) => { e.stopPropagation(); this.selectFuel('e10'); };
+            if (rowE5) rowE5.onclick = (e) => { e.stopPropagation(); this.selectFuel('e5'); };
+            if (closeBtn) closeBtn.onclick = (e) => { e.stopPropagation(); this.closeTotem(); };
+            // -----------------------------------------------------------------------------------------
 
             const btnGas = document.getElementById('btn-sheet-gas');
             if (btnGas) {
