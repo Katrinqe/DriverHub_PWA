@@ -1430,18 +1430,20 @@ openTotem: function(name, lat, lng, elementRef) {
             const overlay = document.getElementById('gas-totem-overlay');
             const brandHeader = document.getElementById('totem-brand-header');
             
-            // 1. Den Roh-Namen holen
-            let fullName = (elementRef && elementRef.realData && elementRef.realData.name) 
-                             ? elementRef.realData.name 
-                             : (name || 'Tankstelle');
-
-            // === BOSS-FIX: ADRESS-FILTER (Schneidet Straßen & Orte ab) ===
-            // Wir suchen nach typischen Straßen-Endungen und löschen alles danach
-            const addressRegex = /\s+(str\.|straße|strasse|weg|allee|platz|damm|chaussee|pfad).*/i;
-            fullName = fullName.replace(addressRegex, "").trim();
+            // === BOSS-FIX: NUTZE BRAND STATT NAME FÜR MAXIMALE SAUBERKEIT ===
+            // Wir priorisieren 'brand', weil dort keine Adresse drinsteht.
+            let fullName = "Tankstelle";
             
-            // Optional: Falls nach dem Namen oft die Stadt steht (z.B. "JET NUERNBERG")
-            // kannst du hier entscheiden, ob das bleiben soll. Aktuell bleibt es.
+            if (elementRef && elementRef.realData) {
+                // Wenn die Marke existiert, nehmen wir sie. Wenn nicht, den Namen.
+                fullName = elementRef.realData.brand || elementRef.realData.name || "Tankstelle";
+            } else {
+                fullName = name || "Tankstelle";
+            }
+
+            // Falls doch mal jemand "ARAL - Nuernberg" in die Marke schreibt, 
+            // putzen wir nur kurz den Bindestrich weg:
+            fullName = fullName.split(' - ')[0].trim();
             // ============================================================
 
             if (brandHeader) {
@@ -1453,20 +1455,12 @@ openTotem: function(name, lat, lng, elementRef) {
             if (brandTitle) {
                 brandTitle.innerText = fullName; 
                 
-                // Dynamische Skalierung (nutzt jetzt den gesäuberten Namen)
+                // Dynamische Skalierung bleibt zur Sicherheit
                 const len = fullName.length;
-                if (len > 20) {
-                    brandTitle.style.fontSize = '1.0rem';
-                } else if (len > 14) {
-                    brandTitle.style.fontSize = '1.2rem';
-                } else if (len > 10) {
-                    brandTitle.style.fontSize = '1.4rem';
-                } else {
-                    brandTitle.style.fontSize = '1.8rem';
-                }
-                
-                brandTitle.style.whiteSpace = 'normal';
-                brandTitle.style.overflow = 'visible';
+                if (len > 20) brandTitle.style.fontSize = '1.0rem';
+                else if (len > 14) brandTitle.style.fontSize = '1.2rem';
+                else if (len > 10) brandTitle.style.fontSize = '1.4rem';
+                else brandTitle.style.fontSize = '1.8rem';
             }
             
             const statusEl = document.getElementById('totem-status');
