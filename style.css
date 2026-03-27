@@ -2636,26 +2636,30 @@ body.ghost-active #ghost-chat-overlay {
 
 
 /* ==========================================
-   BOTTOM SHEET (FLOATING PILL STYLE)
+   BOTTOM SHEET (PREMIUM GLASS PILL STYLE)
    ========================================== */
 .map-bottom-sheet {
     position: absolute;
     bottom: 20px; 
-    left: 10px; /* Nur noch 10px Abstand nach links */
-    width: calc(100% - 20px); /* 100% Breite minus 10px links und 10px rechts */
+    left: 10px;
+    width: calc(100% - 20px);
     
-    /* FIX 1: Feste Start-Höhe statt 'auto' oder 'max-height'. Das ist die Pille! */
-    height: 88px; 
+    /* Etwas Platz für die Kreise */
+    height: 95px; 
     
-    background: rgba(25, 25, 30, 0.85);
-    backdrop-filter: blur(25px) saturate(150%);
-    -webkit-backdrop-filter: blur(25px) saturate(150%);
+    /* Das extrem tiefe Frost-Glas */
+    background: linear-gradient(145deg, rgba(40, 40, 45, 0.65), rgba(15, 15, 20, 0.85));
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
     
-    border-radius: 32px; 
-    border: 1px solid rgba(255,255,255,0.15);
-    box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+    /* Die perfekten Lichtkanten */
+    border-radius: 36px; 
+    border: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid rgba(255,255,255,0.22);
+    border-left: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.1);
+    
     z-index: 120;
-    
     display: flex;
     flex-direction: column;
     overflow: hidden; 
@@ -2665,7 +2669,6 @@ body.ghost-active #ghost-chat-overlay {
     pointer-events: none;
     visibility: hidden;
     
-    /* FIX 2: Wir animieren jetzt knallhart die 'height' */
     transition: height 0.4s cubic-bezier(0.2, 1, 0.3, 1), opacity 0.4s ease, visibility 0s linear 0.4s;
 }
 
@@ -3477,4 +3480,59 @@ body.ghost-active #ghost-chat-overlay {
     border-top: 1px solid rgba(255,255,255,0.08); 
     max-height: 40vh; 
     overflow-y: auto;
+}
+
+/* ========================================== */
+/* === QUICK ACTIONS (DIE GLAS KREISE) === */
+/* ========================================== */
+
+.quick-actions-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* Abstand zwischen den Kreisen */
+    padding: 0 0 15px 0;
+    width: 100%;
+}
+
+.quick-action-circle {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    
+    /* Inaktiver Zustand: Graues, gefrästes Glas */
+    background: rgba(30, 30, 35, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05);
+    
+    color: #666; /* Dezentes Grau */
+    font-size: 1.3rem;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Der mechanische Klick */
+.quick-action-circle:active {
+    transform: scale(0.85);
+}
+
+/* === DER MAGISCHE ORANGE-GLOW (Aktiv) === */
+.quick-action-circle.active-orange {
+    /* Die LED leuchtet radial von der Mitte durch das Glas */
+    background: radial-gradient(circle at center, rgba(255, 149, 0, 0.3) 0%, rgba(255, 149, 0, 0.05) 100%);
+    border-color: rgba(255, 149, 0, 0.4);
+    color: #ff9500;
+    
+    /* Kombinierter Glow nach innen und außen */
+    box-shadow: 
+        0 8px 20px rgba(0,0,0,0.5), 
+        0 0 20px rgba(255, 149, 0, 0.25), 
+        inset 0 0 12px rgba(255, 149, 0, 0.2);
 }
