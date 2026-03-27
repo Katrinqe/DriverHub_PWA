@@ -3539,17 +3539,19 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================== */
-/* === V5 PURE PREMIUM GLASS + TOP FADE ===== */
+/* === V6 PURE PREMIUM GLASS + SHORT FADE === */
 /* ========================================== */
 
 /* 1. Basis: Echter Glasmorphismus */
 .map-v2-marker {
-    background: linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important;
+    background-color: transparent !important;
+    background-image: linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important;
     backdrop-filter: blur(25px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
 
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.3) !important; /* Harte Lichtkante oben */
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.3) !important; 
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important; /* Blockiert harte Kanten unten */
     border-radius: 12px !important;
     width: 60px !important;
     height: auto !important;
@@ -3557,20 +3559,19 @@ body.ghost-active #ghost-chat-overlay {
     display: flex !important;
     flex-direction: column !important;
 
-    box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2) !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.1) !important;
     transition: transform 0.2s cubic-bezier(0.2, 1, 0.3, 1) !important;
 }
 
-/* 2. Der weiche Top-Fade: Die Farbe startet oben bei 100% und fadet bei 50% sanft ins Glas aus */
-/* Wir legen den farbigen Verlauf (linear-gradient) einfach ÜBER den dunklen Glas-Hintergrund */
-.map-v2-marker:has(.aral)  { background: linear-gradient(to bottom, rgba(0, 94, 184, 0.8) 0%, transparent 50%), linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
-.map-v2-marker:has(.shell) { background: linear-gradient(to bottom, rgba(251, 206, 7, 0.7) 0%, transparent 50%),   linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
-.map-v2-marker:has(.esso)  { background: linear-gradient(to bottom, rgba(226, 29, 56, 0.8) 0%, transparent 50%),  linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
-.map-v2-marker:has(.total) { background: linear-gradient(to bottom, rgba(237, 0, 0, 0.8) 0%, transparent 50%),    linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
-.map-v2-marker:has(.jet)   { background: linear-gradient(to bottom, rgba(255, 204, 0, 0.7) 0%, transparent 50%),   linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
-.map-v2-marker:has(.hem)   { background: linear-gradient(to bottom, rgba(0, 150, 64, 0.8) 0%, transparent 50%),   linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+/* 2. Der kürzere Top-Fade (Stoppt jetzt sanft bei 30% statt 50%) */
+.map-v2-marker:has(.aral)  { background-image: linear-gradient(to bottom, rgba(0, 94, 184, 0.8) 0%, transparent 30%), linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.shell) { background-image: linear-gradient(to bottom, rgba(251, 206, 7, 0.7) 0%, transparent 30%),   linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.esso)  { background-image: linear-gradient(to bottom, rgba(226, 29, 56, 0.8) 0%, transparent 30%),  linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.total) { background-image: linear-gradient(to bottom, rgba(237, 0, 0, 0.8) 0%, transparent 30%),    linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.jet)   { background-image: linear-gradient(to bottom, rgba(255, 204, 0, 0.7) 0%, transparent 30%),   linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.hem)   { background-image: linear-gradient(to bottom, rgba(0, 150, 64, 0.8) 0%, transparent 30%),   linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
 
-/* 3. Brand Bar: Der Name der Tankstelle */
+/* 3. Brand Bar: Namen-Header */
 .map-v2-marker .pm-brand-bar {
     background: transparent !important;
     color: #fff !important;
@@ -3582,31 +3583,36 @@ body.ghost-active #ghost-chat-overlay {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    /* BOSS-FIX: Harter Strich entfernt, der Fade übernimmt die optische Trennung! */
-    border-bottom: none !important; 
+    border: none !important; /* TÖTET DEN ALTEN FARBIGEN STRICH GANZ UNTEN/OBEN */
     text-shadow: 0 1px 3px rgba(0,0,0,0.8) !important;
 }
 
-/* Shell & Jet brauchen etwas mehr harten schwarzen Schatten, weil Gelb sehr hell ist */
+/* NUKLEAR-FIX: Zwingt alte Basis-Klassen in die Knie, damit kein Farb-Strich unten durchblutet */
+.map-v2-marker .pm-brand-bar.aral, .map-v2-marker .pm-brand-bar.shell, .map-v2-marker .pm-brand-bar.esso,
+.map-v2-marker .pm-brand-bar.total, .map-v2-marker .pm-brand-bar.jet, .map-v2-marker .pm-brand-bar.hem, .map-v2-marker .pm-brand-bar.avanti {
+    background: transparent !important;
+}
+
 .map-v2-marker:has(.shell) .pm-brand-bar,
 .map-v2-marker:has(.jet) .pm-brand-bar {
     text-shadow: 0 1px 5px rgba(0,0,0,0.9) !important; 
 }
 
-/* 4. Der Preisbereich (Klassisch Monospace) */
+/* 4. Der Preisbereich */
 .map-v2-marker .pm-content {
     background: transparent !important;
     padding: 4px 0 8px 0 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
+    border: none !important;
 }
 
 .map-v2-marker .pm-price {
     font-family: monospace !important;
     font-size: 1.05rem !important;
     font-weight: 700 !important;
-    color: #fff !important;
+    color: #ff3b30 !important; /* BOSS-FIX: Preise sind jetzt knallrot! */
     text-shadow: 0 1px 3px rgba(0,0,0,0.8) !important; 
     background: none !important;
     -webkit-background-clip: initial !important;
@@ -3632,7 +3638,8 @@ body.ghost-active #ghost-chat-overlay {
 /* Geschlossen-Status */
 .map-v2-marker.closed {
     filter: grayscale(100%) opacity(0.6) !important;
-    background: rgba(10, 10, 10, 0.5) !important;
+    background-image: none !important;
+    background-color: rgba(10, 10, 10, 0.5) !important;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
 }
 .map-v2-marker.closed .pm-price {
