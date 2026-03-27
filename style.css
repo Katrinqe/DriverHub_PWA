@@ -3578,13 +3578,28 @@ body.ghost-active #ghost-chat-overlay {
     text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important;
 }
 
-/* 3. Der Brand Glow: Die GESAMTE Karte leuchtet in der Markenfarbe */
-.map-v2-marker:has(.aral)  { box-shadow: 0 5px 15px rgba(0, 94, 184, 0.4), inset 0 0 10px rgba(0, 94, 184, 0.3) !important; border-color: rgba(0, 94, 184, 0.5) !important; }
-.map-v2-marker:has(.shell) { box-shadow: 0 5px 15px rgba(251, 206, 7, 0.3),  inset 0 0 10px rgba(251, 206, 7, 0.2) !important;  border-color: rgba(251, 206, 7, 0.4) !important; }
-.map-v2-marker:has(.esso)  { box-shadow: 0 5px 15px rgba(226, 29, 56, 0.4),  inset 0 0 10px rgba(226, 29, 56, 0.3) !important;  border-color: rgba(226, 29, 56, 0.5) !important; }
-.map-v2-marker:has(.total) { box-shadow: 0 5px 15px rgba(237, 0, 0, 0.4),    inset 0 0 10px rgba(237, 0, 0, 0.3) !important;    border-color: rgba(237, 0, 0, 0.5) !important; }
-.map-v2-marker:has(.jet)   { box-shadow: 0 5px 15px rgba(255, 204, 0, 0.3),  inset 0 0 10px rgba(255, 204, 0, 0.2) !important;  border-color: rgba(255, 204, 0, 0.4) !important; }
-.map-v2-marker:has(.hem)   { box-shadow: 0 5px 15px rgba(0, 150, 64, 0.4),   inset 0 0 10px rgba(0, 150, 64, 0.3) !important;   border-color: rgba(0, 150, 64, 0.5) !important; }
+/* 3. Der Brand Glow: Die interne LED beleuchtet das Glas von innen heraus */
+/* Wir mischen das tiefe Glas (linear-gradient) mit dem weichen Farbkern (radial-gradient) */
+.map-v2-marker:has(.aral)  { background: radial-gradient(circle at center, rgba(0, 94, 184, 0.35) 0%, transparent 80%), linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
+.map-v2-marker:has(.shell) { background: radial-gradient(circle at center, rgba(251, 206, 7, 0.25) 0%, transparent 80%),  linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
+.map-v2-marker:has(.esso)  { background: radial-gradient(circle at center, rgba(226, 29, 56, 0.35) 0%, transparent 80%),   linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
+.map-v2-marker:has(.total) { background: radial-gradient(circle at center, rgba(237, 0, 0, 0.35) 0%, transparent 80%),     linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
+.map-v2-marker:has(.jet)   { background: radial-gradient(circle at center, rgba(255, 204, 0, 0.25) 0%, transparent 80%),   linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
+.map-v2-marker:has(.hem)   { background: radial-gradient(circle at center, rgba(0, 150, 64, 0.35) 0%, transparent 80%),    linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
+
+/* FIX: Da der Rand-Glow weg ist, stellen wir sicher, dass der Standard-Glass-Schatten und Rahmen unberührt bleiben */
+.map-v2-marker {
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.05) !important;
+}
+
+/* Klick-Feedback behält den cleanen Look */
+.map-v2-marker:active {
+    transform: scale(0.95) !important; /* Leichtes Eindrücken statt Aufplustern ist edler */
+    border-color: rgba(255, 255, 255, 0.4) !important; 
+    z-index: 9999 !important;
+}
 
 /* 4. Der Preisbereich (Original-Look, gestochen scharf) */
 .map-v2-marker .pm-content {
