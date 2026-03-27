@@ -3368,3 +3368,80 @@ body.ghost-active #ghost-chat-overlay {
     font-weight: 600;
     box-shadow: 0 0 10px rgba(48, 209, 88, 0.4);
 }
+
+/* ========================================== */
+/* === PREMIUM SEARCH BAR (GLASSMORPHISM) === */
+/* ========================================== */
+#top-search-container {
+    position: absolute;
+    /* Nutzt den echten iPhone-Notch-Abstand + etwas Puffer */
+    top: calc(env(safe-area-inset-top, 40px) + 15px); 
+    left: 65px; /* Lässt exakt genug Platz für den Zurück-Pfeil */
+    right: 20px;
+    z-index: 1000;
+    
+    /* Das absolute Premium Glas */
+    background: linear-gradient(145deg, rgba(40, 40, 45, 0.45), rgba(15, 15, 20, 0.65));
+    backdrop-filter: blur(40px) saturate(200%);
+    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    
+    /* 3D Kanten-Reflexion (Licht kommt von oben links) */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.22);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 22px;
+    
+    /* Tiefer Schatten + ganz leichter weißer Glow nach innen */
+    box-shadow: 
+        0 15px 35px rgba(0, 0, 0, 0.6), 
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        
+    display: none; /* JS schaltet es auf 'flex' wenn benötigt */
+    flex-direction: column;
+    overflow: hidden;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Das Innere der Suchleiste */
+.top-search-input-wrapper {
+    display: flex; 
+    align-items: center; 
+    padding: 14px 18px;
+}
+
+.top-search-input-wrapper i {
+    color: #fff; 
+    margin-right: 12px; 
+    font-size: 1.1rem;
+    opacity: 0.6;
+}
+
+/* Zwingt den Input, sich anzupassen */
+#tomtom-search-input {
+    background: transparent !important; 
+    border: none !important; 
+    color: #fff !important; 
+    width: 100%; 
+    outline: none; 
+    font-size: 1.05rem; 
+    font-weight: 600;
+    font-family: 'Inter', sans-serif; 
+    padding: 0;
+    box-shadow: none !important; 
+}
+
+#tomtom-search-input::placeholder {
+    color: rgba(255,255,255,0.4);
+    font-weight: 500;
+}
+
+/* Die Dropdown Ergebnisse passen sich dem Glas an */
+#top-search-container .sheet-suggestions-box {
+    background: transparent; 
+    border: none; 
+    box-shadow: none; 
+    padding: 0 15px 15px 15px; 
+    border-top: 1px solid rgba(255,255,255,0.08); 
+    max-height: 40vh; 
+    overflow-y: auto;
+}
