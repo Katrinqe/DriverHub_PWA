@@ -1432,7 +1432,20 @@ function restore3DBuildings(activeTheme) {
             const brandTitle = document.getElementById('totem-brand');
             
             if (brandHeader) brandHeader.className = 'totem-header ' + this.getBrandClass(name);
-            if (brandTitle) brandTitle.innerText = name || 'Tankstelle';
+            // === BOSS-FIX: INTELLIGENTES AUTO-SCALING FÜR LANGE NAMEN ===
+            if (brandTitle) {
+                const safeName = name || 'Tankstelle';
+                brandTitle.innerText = safeName; // Den vollen Namen einsetzen!
+                
+                // Die Matrix für die dynamische Schriftgröße
+                if (safeName.length > 18) {
+                    brandTitle.style.fontSize = '1.0rem';
+                } else if (safeName.length > 11) {
+                    brandTitle.style.fontSize = '1.3rem';
+                } else {
+                    brandTitle.style.fontSize = ''; // Setzt es auf den CSS-Standard zurück (groß)
+                }
+            }
             
             const statusEl = document.getElementById('totem-status');
             if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
