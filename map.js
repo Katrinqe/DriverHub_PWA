@@ -1275,16 +1275,15 @@ init: function() {
             this.mlMarkers = [];
         },
 
-        fetchData: async function() {
+fetchData: async function() {
             if (!libreMap || !currentCoords) return;
             const loader = document.getElementById('map-loading');
             if (loader) loader.classList.add('visible');
 
             try {
-                // MapLibre coords: [0] = Lon, [1] = Lat
                 const lat = currentCoords[1];
                 const lng = currentCoords[0];
-                let tkRadius = 15; // 15km für MapLibre
+                let tkRadius = 15;
 
                 const tkUrl = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=${tkRadius}&sort=dist&type=all&apikey=${this.apiKey}`;
                 
@@ -1308,7 +1307,7 @@ init: function() {
                             }
                         };
                     });
-                    this.redrawGasMarkers();
+                    this.redrawMarkers(); // BOSS-FIX: Hier auf den neuen Namen hören!
                 } else {
                     console.error("Tankerkönig API Fehler:", data.message);
                 }
@@ -1401,7 +1400,7 @@ init: function() {
                 }
             }
 
-            if (this.apiKey && this.apiKey.length > 10) {
+    if (this.apiKey && this.apiKey.length > 10) {
                 const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${this.apiKey}`;
                 fetch(url).then(r => r.json()).then(data => {
                     if (data.ok && data.stations && data.stations.length > 0) {
@@ -1414,7 +1413,7 @@ init: function() {
                             if(station.e5) elementRef.simPrices.e5 = (Math.floor(station.e5 * 100) / 100).toFixed(2);
                         }
                         this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
-                        this.redrawGasMarkers(); 
+                        this.redrawMarkers(); // BOSS-FIX: Hier auf den neuen Namen hören!
                     } else { 
                         this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5); 
                     }
@@ -1422,7 +1421,7 @@ init: function() {
                     console.log("Tankerkoenig Error", e);
                     this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
                 });
-            } else {
+            }  else {
                 setTimeout(() => {
                     this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
                 }, 300);
