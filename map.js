@@ -1187,27 +1187,12 @@ function restore3DBuildings(activeTheme) {
             }
         };
     }
-    // ==========================================
-    // === BOTTOM SHEET TOUCH & FOCUS LOGIC ===
+  // ==========================================
+    // === BOTTOM SHEET TOUCH LOGIC ===
     // ==========================================
     const bottomSheetElement = document.getElementById('map-bottom-sheet');
-    const tomtomInputElement = document.getElementById('tomtom-search-input');
 
-    if (bottomSheetElement && tomtomInputElement) {
-        
-        tomtomInputElement.addEventListener('focus', () => {
-            bottomSheetElement.classList.add('expanded');
-
-            const preventScroll = () => {
-                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-                document.body.scrollTop = 0;
-            };
-
-            setTimeout(preventScroll, 10);
-            setTimeout(preventScroll, 150);
-            setTimeout(preventScroll, 300);
-        });
-
+    if (bottomSheetElement) {
         let startY = 0;
 
         bottomSheetElement.addEventListener('touchstart', (e) => {
@@ -1219,11 +1204,16 @@ function restore3DBuildings(activeTheme) {
             let diff = startY - endY;
 
             if (diff > 30) {
+                // Wisch nach oben -> Pille ausfahren
                 bottomSheetElement.classList.add('expanded');
             } 
             else if (diff < -30) {
+                // Wisch nach unten -> Pille einklappen
                 bottomSheetElement.classList.remove('expanded');
-                tomtomInputElement.blur(); 
+                
+                // Falls man unten wischt, auch die Tastatur oben schließen
+                const topSearch = document.getElementById('tomtom-search-input');
+                if (topSearch) topSearch.blur(); 
             }
         });
     }
