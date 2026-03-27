@@ -3659,84 +3659,122 @@ body.ghost-active #ghost-chat-overlay {
 
 
 /* ========================================== */
-/* === PREMIUM GLASS TOTEM (V2 ISOLIERT) ==== */
+/* === PREMIUM SOLID TOTEM (V2 ISOLIERT) ==== */
 /* ========================================== */
 
-/* 1. Die Hauptkarte: Ein durchgehendes, tiefes Stück Frost-Glas */
+/* 1. Die Hauptkarte: Massiv, blickdicht, tiefschwarz */
 .v2-totem-overlay .gas-totem-card {
     width: 280px;
-    background: linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.7)) !important;
-    backdrop-filter: blur(35px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(35px) saturate(180%) !important;
+    /* BOSS-FIX: Blickdichtes Tiefschwarz statt transparentem Glas */
+    background-color: #111111 !important; 
+    background-image: none !important;
     
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+    /* Kein Blur mehr nötig, da blickdicht */
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    
+    /* Dezente Lichtkante nur oben für die Wertigkeit */
+    border: 1px solid #222222 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
     border-radius: 20px !important;
     overflow: hidden;
     
-    box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.1) !important;
+    /* Tiefer, harter Schatten für maximalen Kontrast zur Map */
+    box-shadow: 0 25px 60px rgba(0,0,0,0.9) !important;
 }
 
-/* 2. Der Header: Fadet die Markenfarbe weich nach unten aus */
+/* 2. Der Header: Fadet die Markenfarbe weich in das Schwarz der Karte aus */
 .v2-totem-overlay .totem-header {
     height: 85px !important; 
     display: flex; align-items: flex-start; justify-content: space-between; 
     padding: 20px 20px 0 20px !important;
-    border-bottom: none !important; /* Kein harter Cut mehr! */
+    border-bottom: none !important; 
+    position: relative;
+    z-index: 1;
 }
 
-/* Die Verläufe: Von 100% oben zu transparent unten */
-.v2-totem-overlay .totem-header.aral   { background: linear-gradient(to bottom, rgba(0, 94, 184, 0.8) 0%, transparent 100%) !important; }
-.v2-totem-overlay .totem-header.shell  { background: linear-gradient(to bottom, rgba(251, 206, 7, 0.7) 0%, transparent 100%) !important; color: #fff !important; }
-.v2-totem-overlay .totem-header.esso   { background: linear-gradient(to bottom, rgba(226, 29, 56, 0.8) 0%, transparent 100%) !important; }
-.v2-totem-overlay .totem-header.total  { background: linear-gradient(to bottom, rgba(237, 0, 0, 0.8) 0%, transparent 100%) !important; }
-.v2-totem-overlay .totem-header.jet    { background: linear-gradient(to bottom, rgba(255, 204, 0, 0.7) 0%, transparent 100%) !important; color: #fff !important; }
-.v2-totem-overlay .totem-header.hem    { background: linear-gradient(to bottom, rgba(0, 150, 64, 0.8) 0%, transparent 100%) !important; }
-.v2-totem-overlay .totem-header.avanti { background: linear-gradient(to bottom, rgba(255, 80, 0, 0.8) 0%, transparent 100%) !important; }
+/* Die Verläufe: Von satten 100% oben zu massivem Schwarz (#111) unten */
+.v2-totem-overlay .totem-header.aral   { background: linear-gradient(to bottom, #005eb8 0%, #111111 100%) !important; }
+.v2-totem-overlay .totem-header.shell  { background: linear-gradient(to bottom, #fbce07 0%, #111111 100%) !important; color: #fff !important; }
+.v2-totem-overlay .totem-header.esso   { background: linear-gradient(to bottom, #e21d38 0%, #111111 100%) !important; }
+.v2-totem-overlay .totem-header.total  { background: linear-gradient(to bottom, #ed0000 0%, #111111 100%) !important; }
+.v2-totem-overlay .totem-header.jet    { background: linear-gradient(to bottom, #ffcc00 0%, #111111 100%) !important; color: #fff !important; }
+.v2-totem-overlay .totem-header.hem    { background: linear-gradient(to bottom, #009640 0%, #111111 100%) !important; }
+.v2-totem-overlay .totem-header.avanti { background: linear-gradient(to bottom, #ff5000 0%, #111111 100%) !important; }
+
+/* Shell & Jet benötigen dunklen Schatten für Lesbarkeit auf Gelb */
+.v2-totem-overlay .totem-header.shell h2,
+.v2-totem-overlay .totem-header.jet h2 {
+    color: #fff !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
+}
 
 .v2-totem-overlay .totem-header h2 {
     margin: 0; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; 
-    text-shadow: 0 2px 6px rgba(0,0,0,0.8) !important;
+    color: #fff;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.5) !important;
 }
 
+/* Schließen-Button: Etwas dunkler auf solidem Grund */
 .v2-totem-overlay .totem-close {
-    background: rgba(0,0,0,0.3) !important; border: 1px solid rgba(255,255,255,0.1) !important;
+    background: rgba(0,0,0,0.5) !important; 
+    border: 1px solid rgba(255,255,255,0.1) !important;
     color: #fff; width: 30px; height: 30px; border-radius: 50%; cursor: pointer;
-    backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+}
+.v2-totem-overlay .totem-close:hover {
+    background: rgba(255,255,255,0.1) !important;
 }
 
-/* 3. Der Body: Komplett transparent, damit das Glas wirkt */
+/* 3. Der Body: Solide */
 .v2-totem-overlay .totem-body {
     padding: 0 20px 20px 20px !important;
-    background: transparent !important; 
+    background-color: #111111 !important; 
     display: flex; flex-direction: column; gap: 12px;
 }
 
+/* Die Preis-Zeilen im massiven Look */
 .v2-totem-overlay .price-row {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: #1a1a1a !important; /* Leicht heller als der Hintergrund */
+    border: 1px solid #2a2a2a !important;
     border-radius: 12px !important;
     padding: 12px !important;
+    transition: all 0.2s ease;
 }
 
+/* === BOSS-FIX: BLAUE AUSWAHL === */
 .v2-totem-overlay .price-row.selected {
-    background: rgba(255, 149, 0, 0.15) !important; 
-    border-color: rgba(255, 149, 0, 0.4) !important;
+    /* Ein sattes Premium-Blau */
+    background: rgba(0, 123, 255, 0.15) !important; 
+    border-color: #007bff !important;
+    box-shadow: 0 0 15px rgba(0, 123, 255, 0.3) !important;
 }
 
-.v2-totem-overlay .price-row.selected .fuel-type { color: #fff !important; }
+.v2-totem-overlay .price-row.selected .fuel-type { 
+    color: #fff !important; 
+}
+/* Preis in der Auswahlzeile etwas hervorheben */
+.v2-totem-overlay .price-row.selected .led-price-box {
+    border-color: rgba(0, 123, 255, 0.5) !important;
+}
+
+.v2-totem-overlay .fuel-type { color: #888; font-weight: 700; }
 
 .v2-totem-overlay .led-price-box {
-    background: rgba(0, 0, 0, 0.4) !important; 
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background: #000000 !important; 
+    border: 1px solid #333333 !important;
     padding: 6px 12px !important;
     border-radius: 8px !important;
+    color: #ff3b30; /* Rote Preise bleiben */
+    font-family: monospace; font-weight: 700; font-size: 1.1rem;
 }
 
-/* 4. Der Footer */
+/* 4. Der Footer: Massiv */
 .v2-totem-overlay .totem-footer {
     padding: 15px 20px; 
-    background: rgba(0, 0, 0, 0.15) !important; 
-    border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+    background-color: #0a0a0a !important; /* Etwas dunklerer Abschluss */
+    border-top: 1px solid #222222 !important;
     display: flex; justify-content: space-between; align-items: center;
+    color: #666; font-size: 0.8rem;
 }
