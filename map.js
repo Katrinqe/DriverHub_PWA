@@ -1330,40 +1330,23 @@ init: function() {
             return ''; 
         },
 
-        redrawGasMarkers: function() {
+   redrawMarkers: function() {
             this.clearMarkers();
-            if (!this.isActive) return; 
-            
-            this.cachedStations.forEach(el => {
-                let lat = el.lat; let lon = el.lon;
-                if (el.center) { lat = el.center.lat; lon = el.center.lon; }
-                if (!lat || !lon) return; 
+            if (!this.isActive) return;
 
-                const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
-                const brandClass = this.getBrandClass(name);
-                
-                let displayName = name.replace(/Tankstelle|Station/gi, "").trim();
+            this.cachedStations.forEach(el => {
+                const brandClass = this.getBrandClass(el.name);
+                let displayName = el.name.replace(/Tankstelle|Station/gi, "").trim();
                 if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
                 if (displayName === "") displayName = "TANK";
 
-                // Deine originale Dummy-Preis-Logik zur Absicherung
-                if (!el.simPrices) {
-                    const baseE10 = 1.70 + (Math.random() * 0.14 - 0.07);
-                    el.simPrices = {
-                        e10: baseE10.toFixed(2),
-                        diesel: (1.60 + (Math.random() * 0.14 - 0.07)).toFixed(2),
-                        e5: (baseE10 + 0.06).toFixed(2),
-                        isOpen: true 
-                    };
-                }
-
-                if (el.realData) el.simPrices.isOpen = el.realData.isOpen;
-
+                // BOSS-FIX: Hier zwingen wir die Engine, den exakten, internen Sprit-Typ zu lesen!
                 let displayPrice = el.simPrices[this.currentFuelType];
                 const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
 
-                // Dein originales HTML für den Marker
-                const html = `
+                const elDiv = document.createElement('div');
+                elDiv.className = 'custom-div-icon';
+                elDiv.innerHTML = `
                     <div class="price-marker-wrap ${closedClass}" style="cursor: pointer; transition: transform 0.1s;">
                         <div class="pm-brand-bar ${brandClass}">${displayName}</div>
                         <div class="pm-content">
@@ -1373,38 +1356,27 @@ init: function() {
                     </div>
                 `;
 
-                // MapLibre Element erstellen
-                const elDiv = document.createElement('div');
-                elDiv.className = 'custom-div-icon';
-                elDiv.innerHTML = html;
-
                 elDiv.addEventListener('mouseenter', () => elDiv.firstChild.style.transform = 'scale(1.05)');
                 elDiv.addEventListener('mouseleave', () => elDiv.firstChild.style.transform = 'scale(1)');
                 
                 elDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    
-                    // FIX 1: Exakt deine alte Funktionssignatur!
-                    this.openTotem(name, lat, lon, el);
-                    
-                    // FIX 2: Koordinaten strikt [Lon, Lat] für MapLibre!
                     libreMap.flyTo({ 
-                        center: [lon, lat], 
+                        center: [el.lon, el.lat], 
                         zoom: 15.5, 
                         speed: 1.2,
                         essential: true
                     });
+                    this.openTotem(el);
                 });
 
-                // MapLibre Marker strikt [Lon, Lat]
                 const marker = new maplibregl.Marker({ element: elDiv, anchor: 'bottom' })
-                    .setLngLat([lon, lat])
+                    .setLngLat([el.lon, el.lat])
                     .addTo(libreMap);
 
-                this.mlMarkers.push(marker);
+                this.markers.push(marker);
             });
         },
-
         openTotem: function(name, lat, lng, elementRef) {
             const overlay = document.getElementById('gas-totem-overlay');
             const brandHeader = document.getElementById('totem-brand-header');
@@ -1480,16 +1452,18 @@ init: function() {
             this.updateTotemSelectionUI();
         },
 
-        selectFuel: function(type) {
+    selectFuel: function(type) {
+            // FIX: Strikt auf diese interne Variable schreiben!
             this.currentFuelType = type;
             this.updateTotemSelectionUI();
-            this.redrawGasMarkers(); 
+            this.redrawMarkers(); 
         },
 
-        updateTotemSelectionUI: function() {
+    updateTotemSelectionUI: function() {
             document.querySelectorAll('.price-row').forEach(r => r.classList.remove('selected'));
-            const row = document.getElementById('row-' + this.currentFuelType);
-            if (row) row.classList.add('selected');
+            // FIX: Strikt auf diese interne Variable zugreifen!
+            const activeRow = document.getElementById('row-' + this.currentFuelType);
+            if (activeRow) activeRow.classList.add('selected');
         },
 
         closeTotem: function() {
