@@ -1320,7 +1320,7 @@ function restore3DBuildings(activeTheme) {
             return ''; 
         },
 
-        redrawMarkers: function() {
+redrawMarkers: function() {
             this.clearMarkers();
             if (!this.isActive) return;
 
@@ -1333,7 +1333,6 @@ function restore3DBuildings(activeTheme) {
                 let displayPrice = el.simPrices[this.currentFuelType];
                 const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
 
-                // Hier nutzen wir exakt dein brillantes CSS
                 const elDiv = document.createElement('div');
                 elDiv.className = 'custom-div-icon';
                 elDiv.innerHTML = `
@@ -1346,7 +1345,6 @@ function restore3DBuildings(activeTheme) {
                     </div>
                 `;
 
-                // Smoother Hover Effekt wie bei Apple Maps
                 elDiv.style.cursor = 'pointer';
                 elDiv.style.transition = 'transform 0.1s';
                 elDiv.addEventListener('mouseenter', () => elDiv.style.transform = 'scale(1.05)');
@@ -1355,10 +1353,16 @@ function restore3DBuildings(activeTheme) {
                 elDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.openTotem(el);
-                    libreMap.flyTo({ center: [el.lon, el.lat], zoom: 15.5, speed: 1.2 });
+                    // FIX: Die Karte fliegt sanft zur Tankstelle, aber mit Padding, 
+                    // damit der Pin rechts und nicht oben links unterm UI landet!
+                    libreMap.flyTo({ 
+                        center: [el.lon, el.lat], 
+                        zoom: 15.5, 
+                        speed: 1.2,
+                        padding: { left: 0, right: 150, top: 0, bottom: 20 }
+                    });
                 });
 
-                // Marker mit [Lon, Lat] auf die Karte setzen
                 const marker = new maplibregl.Marker({ element: elDiv, anchor: 'bottom' })
                     .setLngLat([el.lon, el.lat])
                     .addTo(libreMap);
