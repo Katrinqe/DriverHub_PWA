@@ -1330,7 +1330,7 @@ function restore3DBuildings(activeTheme) {
                         }
 
                         // Letztes Sicherheitsnetz fürs UI-Design (maximal 12 Zeichen)
-                        if (pureBrand.length > 12) pureBrand = pureBrand.substring(0, 10) + "..";
+                        //if (pureBrand.length > 12) pureBrand = pureBrand.substring(0, 10) + "..";//
 
                         return {
                             lat: st.lat,
@@ -1426,28 +1426,45 @@ function restore3DBuildings(activeTheme) {
             });
         },
 
-        openTotem: function(name, lat, lng, elementRef) {
+       openTotem: function(name, lat, lng, elementRef) {
             const overlay = document.getElementById('gas-totem-overlay');
             const brandHeader = document.getElementById('totem-brand-header');
-            const brandTitle = document.getElementById('totem-brand');
             
-            if (brandHeader) brandHeader.className = 'totem-header ' + this.getBrandClass(name);
-            // === BOSS-FIX: INTELLIGENTES AUTO-SCALING FÜR LANGE NAMEN ===
+            // BOSS-FIX: Wir holen uns den Namen direkt aus dem echten Datenobjekt, 
+            // falls "name" oben schon gekürzt übergeben wurde.
+            const fullName = (elementRef && elementRef.realData && elementRef.realData.name) 
+                             ? elementRef.realData.name 
+                             : (name || 'Tankstelle');
+
+            if (brandHeader) {
+                brandHeader.className = 'totem-header ' + this.getBrandClass(fullName);
+            }
+
+            // Wir suchen das h2 direkt im Header, um ID-Fehler zu vermeiden
+            const brandTitle = document.querySelector('.v2-totem-overlay .totem-header h2');
+            
             if (brandTitle) {
-                const safeName = name || 'Tankstelle';
-                brandTitle.innerText = safeName; // Den vollen Namen einsetzen!
+                brandTitle.innerText = fullName; // Vollen Namen setzen
                 
-                // Die Matrix für die dynamische Schriftgröße
-                if (safeName.length > 18) {
-                    brandTitle.style.fontSize = '1.0rem';
-                } else if (safeName.length > 11) {
-                    brandTitle.style.fontSize = '1.3rem';
+                // Dynamische Skalierung
+                const len = fullName.length;
+                if (len > 20) {
+                    brandTitle.style.fontSize = '0.9rem';
+                } else if (len > 14) {
+                    brandTitle.style.fontSize = '1.2rem';
+                } else if (len > 10) {
+                    brandTitle.style.fontSize = '1.4rem';
                 } else {
-                    brandTitle.style.fontSize = ''; // Setzt es auf den CSS-Standard zurück (groß)
+                    brandTitle.style.fontSize = '1.8rem'; // Standard für Kurznamen
                 }
+                
+                // Sicherheitshalber: Textumbruch erlauben
+                brandTitle.style.whiteSpace = 'normal';
+                brandTitle.style.overflow = 'visible';
             }
             
             const statusEl = document.getElementById('totem-status');
+            // ... weiter wie im Original
             if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
             
             if (overlay) overlay.classList.remove('hidden');
