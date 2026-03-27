@@ -3539,89 +3539,112 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================== */
-/* === V2 MAP MARKERS (GLASS & LED DOTS) ==== */
+/* === V3 MAP MARKERS (HARDWARE MATRIX LED) == */
 /* ========================================== */
 
-/* 1. Das Gehäuse: Gebogenes, tiefes Frost-Glas */
+/* 1. Das Gehäuse: Schlank, horizontal, tiefes Premium-Glas */
 .map-v2-marker {
-    background: linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important;
-    backdrop-filter: blur(20px) saturate(150%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
-    border-radius: 14px !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.8), inset 0 2px 5px rgba(255,255,255,0.05) !important;
-    width: 68px !important; 
+    background: linear-gradient(145deg, rgba(20, 20, 24, 0.6), rgba(10, 10, 12, 0.8)) !important;
+    backdrop-filter: blur(25px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.25) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+    
+    /* RADIKALER SCHNITT: Schlanke, horizontale Form */
+    width: 75px !important; 
+    height: 35px !important; /* Nur noch 35px hoch! */
     overflow: hidden;
+    position: relative;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
-/* Klick-Feedback */
+/* Der mechanische Klick-Effekt */
 .map-v2-marker:active {
     transform: scale(0.9) !important;
-    border-color: rgba(255, 149, 0, 0.6) !important; /* Oranger Rahmen beim Antippen */
-    box-shadow: 0 5px 15px rgba(0,0,0,0.9), 0 0 15px rgba(255, 149, 0, 0.2) !important;
+    border-color: rgba(255, 149, 0, 0.7) !important; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.9), 0 0 20px rgba(255, 149, 0, 0.3) !important;
 }
 
-/* 2. Die Marken-Leiste: Cleaner, feiner Glow oben statt plumper Balken */
+/* 2. Marken-Identifikation: Als hauchdünne Kantenreflexion links integriert */
 .map-v2-marker .pm-brand-bar {
-    background: rgba(0, 0, 0, 0.4) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
-    font-size: 0.55rem !important;
-    letter-spacing: 1px !important;
-    padding: 4px 0 !important;
-    height: auto !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important;
+    position: absolute !important;
+    left: 0; top: 0; bottom: 0; width: 4px !important;
+    background: transparent !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100% !important;
+    color: transparent !important; /* Kein Text mehr sichtbar */
+    display: none; /* Erstmal ausblenden, falls wir es später brauchen */
 }
 
-/* Wir wandeln die harten Hintergrundfarben in edle, leuchtende Top-Kanten um */
-.map-v2-marker .pm-brand-bar.aral { box-shadow: inset 0 3px 0 #005eb8 !important; background: transparent !important; }
-.map-v2-marker .pm-brand-bar.shell { box-shadow: inset 0 3px 0 #fbce07 !important; background: transparent !important; color: #fff !important; }
-.map-v2-marker .pm-brand-bar.esso { box-shadow: inset 0 3px 0 #e21d38 !important; background: transparent !important; }
-.map-v2-marker .pm-brand-bar.total { box-shadow: inset 0 3px 0 #ed0000 !important; background: transparent !important; }
-.map-v2-marker .pm-brand-bar.jet { box-shadow: inset 0 3px 0 #ffcc00 !important; background: transparent !important; color: #fff !important; }
-.map-v2-marker .pm-brand-bar.hem { box-shadow: inset 0 3px 0 #009640 !important; background: transparent !important; }
+/* Die leuchtenden Top-Kanten in Wagenfarbe, wenn sie aktiv sind (FetchData) */
+.map-v2-marker .pm-brand-bar.aral  { box-shadow: inset 2px 0 1px #005eb8 !important; display: block; }
+.map-v2-marker .pm-brand-bar.shell { box-shadow: inset 2px 0 1px #fbce07 !important; display: block; }
+.map-v2-marker .pm-brand-bar.esso  { box-shadow: inset 2px 0 1px #e21d38 !important; display: block; }
+.map-v2-marker .pm-brand-bar.total { box-shadow: inset 2px 0 1px #ed0000 !important; display: block; }
+.map-v2-marker .pm-brand-bar.jet   { box-shadow: inset 2px 0 1px #ffcc00 !important; display: block; }
+.map-v2-marker .pm-brand-bar.hem   { box-shadow: inset 2px 0 1px #009640 !important; display: block; }
 
-/* 3. Der Innenraum */
+/* 3. Der Innenraum: Aufgeräumt, keine Labels */
 .map-v2-marker .pm-content {
     background: transparent !important;
-    padding: 8px 0 6px 0 !important;
+    padding: 0 10px !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Sprit-Label komplett entfernen */
+.map-v2-marker .pm-fuel-label {
+    display: none !important;
 }
 
 /* ========================================== */
-/* === 4. DAS MAGISCHE DOT-MATRIX DISPLAY === */
+/* === 4. DAS MAGISCHE PUNKTE-GRID (LED) ==== */
 /* ========================================== */
 .map-v2-marker .pm-price {
-    font-family: 'DotGothic16', monospace !important;
-    font-size: 1.25rem !important;
-    font-weight: 400 !important;
-    
-    /* Der extrem helle Kern der LED */
-    color: #ffffff !important; 
-    letter-spacing: 1px !important;
-    
-    /* Der volumetrische Glow, der ins Glas strahlt (Orange passend zum Button) */
-    text-shadow: 
-        0 0 2px #fff,
-        0 0 5px #ff9500,
-        0 0 10px #ff9500,
-        0 0 15px #ff9500 !important;
-        
+    /* WICHTIG: Wir nutzen jetzt einen BLOCK-Font, damit wir die Punkte reinätzen können */
+    font-family: 'Inter', sans-serif !important;
+    font-size: 1.1rem !important;
+    font-weight: 800 !important; /* Massives Gewicht */
     line-height: 1 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    text-transform: uppercase;
+    
+    /* TRICK: Wir zwingen den Text in das leuchtende Hardware-Bernstein */
+    color: transparent !important; 
+    
+    /* 1. Die LED Matrix Mask: Wir erzeugen ein dichtes Netz aus dunklen Hardware-Punkten
+       durch einen sich wiederholenden Text-Schatten */
+    text-shadow: 
+        1px 1px 0px rgba(0,0,0,0.8), /* Der mechanische Schatten */
+        0px 0px 1px #ffffff,       /* Der strahlend weiße LED-Kern */
+        0 0 4px #ff9500,          /* Weicher Neon-Glow nach außen */
+        0 0 10px rgba(255, 149, 0, 0.4), /* Volumetrischer Glow ins Glas */
+        inset 0 0 3px rgba(0,0,0,0.6) !important; /* Simuliert das "gefräste" LED-Loch im Glas */
+    
+    /* FIX für das Hardware-Raster: Wir nutzen repeating-linear-gradient als Text-Füllung! */
+    background: 
+        repeating-linear-gradient(to right, transparent, transparent 1px, #111 1px, #111 2px),
+        repeating-linear-gradient(to bottom, transparent, transparent 1px, #111 1px, #111 2px) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
 }
 
 /* Wenn die Tankstelle geschlossen ist: Strom aus! */
 .map-v2-marker.closed .pm-price {
-    color: #444 !important; /* LED aus */
+    color: #333 !important; /* LED aus */
     text-shadow: none !important; /* Kein Glow mehr */
-    text-decoration: none !important; /* Kein hässliches Durchstreichen mehr, sieht sonst kaputt aus */
-}
-
-/* Das kleine Sprit-Label (E10, Diesel) */
-.map-v2-marker .pm-fuel-label {
-    color: rgba(255, 255, 255, 0.4) !important;
-    font-family: 'Inter', sans-serif !important;
-    font-weight: 800 !important;
-    letter-spacing: 1.5px !important;
-    font-size: 0.5rem !important;
-    margin-top: 4px !important;
+    background: none !important;
 }
