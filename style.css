@@ -2582,8 +2582,8 @@ body.ghost-active #ghost-chat-overlay {
 /* Der neue "Zurück"-Button (Ganz clean, ohne Kreis) */
 .map-shrink-btn-new {
     position: absolute;
-    top: calc(env(safe-area-inset-top, 40px) + 15px);
-    left: 30px;
+    top: calc(env(safe-area-inset-top, 40px) + 12.5px);
+    left: 25px;
     background: transparent;
     border: none;
     color: white;
