@@ -3539,105 +3539,100 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================== */
-/* === V4 MAP MARKERS (GLASS + BRAND GLOW) == */
+/* === V4.1 PURE PREMIUM GLASS MARKERS ====== */
 /* ========================================== */
 
-/* 1. Das Gehäuse: Glasmorphismus */
+/* 1. Echter Glasmorphismus: Viel transparenter, extremer Blur, harte weiße Lichtkanten */
 .map-v2-marker {
-    background: linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important;
-    backdrop-filter: blur(20px) saturate(150%) !important;
-    -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    border-radius: 8px !important; 
-    width: 60px !important; /* Originale Breite */
+    /* WICHTIG: Transparenz massiv erhöht (0.3), damit die Karte durchscheint und verschwimmt! */
+    background: linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important;
+    backdrop-filter: blur(25px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+
+    /* Die Apple-Lichtkanten: Oben hell, unten dunkel */
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
+
+    border-radius: 12px !important;
+    width: 64px !important;
     height: auto !important;
     overflow: hidden;
     display: flex !important;
     flex-direction: column !important;
-    transition: all 0.2s !important;
+
+    /* Tiefer Schatten nach unten + feiner Glanz im Inneren */
+    box-shadow: 0 12px 25px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2) !important;
+    transition: transform 0.2s cubic-bezier(0.2, 1, 0.3, 1) !important;
 }
 
-/* Klick-Feedback */
-.map-v2-marker:active {
-    transform: scale(1.1) !important;
-    z-index: 9999 !important;
-}
+/* 2. Der subtile Glow: Sitzt jetzt oben in der Mitte und fadet extrem weich nach unten aus */
+.map-v2-marker:has(.aral)  { background: radial-gradient(circle at 50% 0%, rgba(0, 120, 255, 0.25) 0%, transparent 60%), linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
+.map-v2-marker:has(.shell) { background: radial-gradient(circle at 50% 0%, rgba(255, 220, 0, 0.2) 0%, transparent 60%),   linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
+.map-v2-marker:has(.esso)  { background: radial-gradient(circle at 50% 0%, rgba(255, 50, 50, 0.25) 0%, transparent 60%),  linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
+.map-v2-marker:has(.total) { background: radial-gradient(circle at 50% 0%, rgba(255, 0, 0, 0.25) 0%, transparent 60%),    linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
+.map-v2-marker:has(.jet)   { background: radial-gradient(circle at 50% 0%, rgba(255, 200, 0, 0.2) 0%, transparent 60%),   linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
+.map-v2-marker:has(.hem)   { background: radial-gradient(circle at 50% 0%, rgba(0, 200, 80, 0.25) 0%, transparent 60%),   linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
 
-/* 2. Brand Bar: Das Layout bleibt, aber der Hintergrund wird unsichtbar */
+/* 3. Brand Bar: Kein Hintergrund mehr, nur der Markenname, getrennt durch einen haarfeinen Strich */
 .map-v2-marker .pm-brand-bar {
     background: transparent !important;
-    color: #fff !important;
-    font-size: 0.55rem !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-size: 0.5rem !important;
     font-weight: 800 !important;
     text-transform: uppercase !important;
-    height: 16px !important;
+    letter-spacing: 0.5px !important;
+    padding: 5px 0 3px 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    border-bottom: 1px solid rgba(255,255,255,0.08) !important;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
-/* 3. Der Brand Glow: Die interne LED beleuchtet das Glas von innen heraus */
-/* Wir mischen das tiefe Glas (linear-gradient) mit dem weichen Farbkern (radial-gradient) */
-.map-v2-marker:has(.aral)  { background: radial-gradient(circle at center, rgba(0, 94, 184, 0.35) 0%, transparent 80%), linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
-.map-v2-marker:has(.shell) { background: radial-gradient(circle at center, rgba(251, 206, 7, 0.25) 0%, transparent 80%),  linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
-.map-v2-marker:has(.esso)  { background: radial-gradient(circle at center, rgba(226, 29, 56, 0.35) 0%, transparent 80%),   linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
-.map-v2-marker:has(.total) { background: radial-gradient(circle at center, rgba(237, 0, 0, 0.35) 0%, transparent 80%),     linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
-.map-v2-marker:has(.jet)   { background: radial-gradient(circle at center, rgba(255, 204, 0, 0.25) 0%, transparent 80%),   linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
-.map-v2-marker:has(.hem)   { background: radial-gradient(circle at center, rgba(0, 150, 64, 0.35) 0%, transparent 80%),    linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important; }
-
-/* FIX: Da der Rand-Glow weg ist, stellen wir sicher, dass der Standard-Glass-Schatten und Rahmen unberührt bleiben */
-.map-v2-marker {
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.05) !important;
-}
-
-/* Klick-Feedback behält den cleanen Look */
-.map-v2-marker:active {
-    transform: scale(0.95) !important; /* Leichtes Eindrücken statt Aufplustern ist edler */
-    border-color: rgba(255, 255, 255, 0.4) !important; 
-    z-index: 9999 !important;
-}
-
-/* 4. Der Preisbereich (Original-Look, gestochen scharf) */
+/* 4. Der Preisbereich */
 .map-v2-marker .pm-content {
     background: transparent !important;
-    padding: 3px 0 !important;
+    padding: 4px 0 6px 0 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
 }
 
-/* Preis wieder im sauberen Monospace ohne Schnörkel */
 .map-v2-marker .pm-price {
     font-family: monospace !important;
-    font-size: 0.95rem !important;
+    font-size: 1rem !important;
     font-weight: 700 !important;
-    color: #fff !important; /* Strahlend weiß */
-    text-shadow: 0 0 5px rgba(255,255,255,0.3) !important; /* Ganz leichter, edler Schimmer */
+    color: #fff !important;
+    /* Ein leichter dunkler Schatten, damit die weiße Schrift auf hellem Map-Hintergrund lesbar bleibt */
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8) !important; 
     background: none !important;
     -webkit-background-clip: initial !important;
     background-clip: initial !important;
 }
 
-/* Originales Sprit-Label unten */
 .map-v2-marker .pm-fuel-label {
     display: block !important;
-    font-size: 0.5rem !important;
-    color: rgba(255,255,255,0.5) !important;
-    font-weight: 700 !important;
+    font-size: 0.45rem !important;
+    color: rgba(255,255,255,0.4) !important;
+    font-weight: 800 !important;
     text-transform: uppercase !important;
-    margin-top: 1px !important;
+    letter-spacing: 1px !important;
+    margin-top: 2px !important;
 }
 
-/* 5. Wenn geschlossen: Strom aus */
+/* Klick-Feedback */
+.map-v2-marker:active {
+    transform: scale(0.95) !important; 
+    /* Das Glas leuchtet beim Drücken minimal auf */
+    background: linear-gradient(145deg, rgba(60, 60, 65, 0.4), rgba(20, 20, 25, 0.5)) !important; 
+    z-index: 9999 !important;
+}
+
+/* Geschlossen-Status */
 .map-v2-marker.closed {
     filter: grayscale(100%) opacity(0.6) !important;
-    transform: scale(0.9) !important;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.5) !important; /* Glow ausschalten */
-    border-color: rgba(255,255,255,0.1) !important;
+    background: rgba(10, 10, 10, 0.4) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
 }
 .map-v2-marker.closed .pm-price {
     color: #888 !important;
