@@ -3683,8 +3683,10 @@ body.ghost-active #ghost-chat-overlay {
     box-shadow: 0 25px 60px rgba(0,0,0,0.9) !important;
 }
 
-/* 2. Der Header: Fadet die Markenfarbe weich in das Schwarz der Karte aus */
+/* 2. Der Header: Originale Zweifarb-Verläufe + weicher Fade ins Schwarze */
 .v2-totem-overlay .totem-header {
+    /* Standard-Verlauf (falls keine Marke zutrifft) + Fade-Schatten darüber */
+    background: linear-gradient(to bottom, transparent 15%, #111111 100%), linear-gradient(to right, #444, #333) !important;
     height: 85px !important; 
     display: flex; align-items: flex-start; justify-content: space-between; 
     padding: 20px 20px 0 20px !important;
@@ -3693,29 +3695,26 @@ body.ghost-active #ghost-chat-overlay {
     z-index: 1;
 }
 
-/* Die Verläufe: Von satten 100% oben zu massivem Schwarz (#111) unten */
-.v2-totem-overlay .totem-header.aral   { background: linear-gradient(to bottom, #005eb8 0%, #111111 100%) !important; }
-.v2-totem-overlay .totem-header.shell  { background: linear-gradient(to bottom, #fbce07 0%, #111111 100%) !important; color: #fff !important; }
-.v2-totem-overlay .totem-header.esso   { background: linear-gradient(to bottom, #e21d38 0%, #111111 100%) !important; }
-.v2-totem-overlay .totem-header.total  { background: linear-gradient(to bottom, #ed0000 0%, #111111 100%) !important; }
-.v2-totem-overlay .totem-header.jet    { background: linear-gradient(to bottom, #ffcc00 0%, #111111 100%) !important; color: #fff !important; }
-.v2-totem-overlay .totem-header.hem    { background: linear-gradient(to bottom, #009640 0%, #111111 100%) !important; }
-.v2-totem-overlay .totem-header.avanti { background: linear-gradient(to bottom, #ff5000 0%, #111111 100%) !important; }
+/* Die originalen Verläufe (links nach rechts) gedämpft durch den schwarzen Top-Down-Fade */
+.v2-totem-overlay .totem-header.aral   { background: linear-gradient(to bottom, transparent 15%, #111111 100%), linear-gradient(to right, #005eb8, #00a3e0) !important; }
+.v2-totem-overlay .totem-header.shell  { background: linear-gradient(to bottom, transparent 15%, #111111 100%), linear-gradient(to right, #fbce07, #ea0000) !important; color: #000 !important; }
+.v2-totem-overlay .totem-header.esso   { background: linear-gradient(to bottom, transparent 15%, #111111 100%), linear-gradient(to right, #e21d38, #0033a0) !important; }
+.v2-totem-overlay .totem-header.total  { background: linear-gradient(to bottom, transparent 15%, #111111 100%), linear-gradient(to right, #ed0000, #004c99) !important; }
+.v2-totem-overlay .totem-header.jet    { background: linear-gradient(to bottom, transparent 15%, #111111 100%), linear-gradient(to right, #ffcc00, #004c99) !important; color: #000 !important; }
 
-/* Shell & Jet benötigen dunklen Schatten für Lesbarkeit auf Gelb */
-.v2-totem-overlay .totem-header.shell h2,
-.v2-totem-overlay .totem-header.jet h2 {
-    color: #fff !important;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.8) !important;
-}
-
+/* Text & Schließen-Button wie gehabt */
 .v2-totem-overlay .totem-header h2 {
     margin: 0; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; 
     color: #fff;
     text-shadow: 0 2px 6px rgba(0,0,0,0.5) !important;
 }
 
-/* Schließen-Button: Etwas dunkler auf solidem Grund */
+.v2-totem-overlay .totem-header.shell h2,
+.v2-totem-overlay .totem-header.jet h2 {
+    color: #000 !important; /* Original-Lesbarkeit für helle Gelbtöne */
+    text-shadow: none !important;
+}
+
 .v2-totem-overlay .totem-close {
     background: rgba(0,0,0,0.5) !important; 
     border: 1px solid rgba(255,255,255,0.1) !important;
@@ -3726,7 +3725,6 @@ body.ghost-active #ghost-chat-overlay {
 .v2-totem-overlay .totem-close:hover {
     background: rgba(255,255,255,0.1) !important;
 }
-
 /* 3. Der Body: Solide */
 .v2-totem-overlay .totem-body {
     padding: 0 20px 20px 20px !important;
