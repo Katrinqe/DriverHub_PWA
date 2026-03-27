@@ -1313,19 +1313,26 @@ function restore3DBuildings(activeTheme) {
                 if(loader) loader.classList.remove('visible');
 
         if (data.ok && data.stations) {
+        if (data.ok && data.stations) {
                     this.cachedStations = data.stations.map(st => {
                         
-                        // BOSS-FIX: Intelligente Namens-Bereinigung gegen doppelte "Esso Esso" Einträge
-                        let safeName = st.name ? st.name.trim() : "Tankstelle";
-                        if (st.brand && !safeName.toLowerCase().includes(st.brand.toLowerCase())) {
-                            safeName = st.brand + " " + safeName;
+                        // BOSS-FIX: Radikaler Schnitt! Nur die reine Marke, sonst nichts.
+                        let pureBrand = "TANK";
+                        if (st.brand && st.brand.trim() !== "") {
+                            pureBrand = st.brand.trim().toUpperCase();
+                        } else if (st.name) {
+                            // Fallback: Falls die Marke leer ist, nehmen wir knallhart nur das allererste Wort des Namens
+                            pureBrand = st.name.trim().split(' ')[0].toUpperCase();
                         }
+
+                        // Letztes Sicherheitsnetz fürs UI-Design (maximal 12 Zeichen)
+                        if (pureBrand.length > 12) pureBrand = pureBrand.substring(0, 10) + "..";
 
                         return {
                             lat: st.lat,
                             lon: st.lng,
                             center: { lat: st.lat, lon: st.lng },
-                            name: safeName, 
+                            name: pureBrand, 
                             realData: st,
                             simPrices: {
                                 e10: (typeof st.e10 === 'number') ? (Math.floor(st.e10 * 100) / 100).toFixed(2) : "-.--",
@@ -1338,7 +1345,7 @@ function restore3DBuildings(activeTheme) {
                     this.redrawMarkers();
                 } else {
                     console.error("Tankerkönig API Fehler:", data.message);
-                } 
+                }
             } catch (err) {
                 if (loader) loader.classList.remove('visible');
                 console.error("Tankerkönig Fetch Error:", err);
