@@ -3707,6 +3707,11 @@ body.ghost-active #ghost-chat-overlay {
     margin: 0; font-weight: 900; font-style: italic; letter-spacing: -1px; text-transform: uppercase; 
     color: #fff;
     text-shadow: 0 2px 6px rgba(0,0,0,0.5) !important;
+    
+    /* BOSS-FIX: Maximal 80% Breite, damit der Text nicht in den X-Button rutscht */
+    max-width: 80%; 
+    line-height: 1.1;
+    word-wrap: break-word; /* Erlaubt weiche Zeilenumbrüche im Notfall */
 }
 
 .v2-totem-overlay .totem-header.shell h2,
