@@ -1228,7 +1228,7 @@ function restore3DBuildings(activeTheme) {
         });
     }
 
-    // ==========================================
+  // ==========================================
     // === PREMIUM GAS STATION ENGINE (TANKERKÖNIG) ===
     // ==========================================
     window.ExploreLogic = {
@@ -1244,13 +1244,11 @@ function restore3DBuildings(activeTheme) {
                 btnGas.addEventListener('click', (e) => {
                     e.stopPropagation();
                     
-                    // Pille nach unten wischen und Tastatur killen
                     const bottomSheet = document.getElementById('map-bottom-sheet');
                     const searchInput = document.getElementById('tomtom-search-input');
                     if (bottomSheet) bottomSheet.classList.remove('expanded');
                     if (searchInput) searchInput.blur();
 
-                    // Toggle Logik
                     this.isActive = !this.isActive;
                     if (this.isActive) {
                         btnGas.style.background = 'rgba(48, 209, 88, 0.2)';
@@ -1276,7 +1274,6 @@ function restore3DBuildings(activeTheme) {
             if (loader) loader.classList.add('visible');
 
             try {
-                // Bei MapLibre ist coords[0] = Lon, coords[1] = Lat
                 const lat = currentCoords[1];
                 const lng = currentCoords[0];
                 const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=15&sort=dist&type=all&apikey=${this.apiKey}`;
@@ -1320,7 +1317,7 @@ function restore3DBuildings(activeTheme) {
             return ''; 
         },
 
-redrawMarkers: function() {
+        redrawMarkers: function() {
             this.clearMarkers();
             if (!this.isActive) return;
 
@@ -1336,7 +1333,7 @@ redrawMarkers: function() {
                 const elDiv = document.createElement('div');
                 elDiv.className = 'custom-div-icon';
                 elDiv.innerHTML = `
-                    <div class="price-marker-wrap ${closedClass}">
+                    <div class="price-marker-wrap ${closedClass}" style="cursor: pointer; transition: transform 0.1s;">
                         <div class="pm-brand-bar ${brandClass}">${displayName}</div>
                         <div class="pm-content">
                             <div class="pm-price">${displayPrice}</div>
@@ -1345,22 +1342,21 @@ redrawMarkers: function() {
                     </div>
                 `;
 
-                elDiv.style.cursor = 'pointer';
-                elDiv.style.transition = 'transform 0.1s';
-                elDiv.addEventListener('mouseenter', () => elDiv.style.transform = 'scale(1.05)');
-                elDiv.addEventListener('mouseleave', () => elDiv.style.transform = 'scale(1)');
+                elDiv.addEventListener('mouseenter', () => elDiv.firstChild.style.transform = 'scale(1.05)');
+                elDiv.addEventListener('mouseleave', () => elDiv.firstChild.style.transform = 'scale(1)');
                 
                 elDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    this.openTotem(el);
-                    // FIX: Die Karte fliegt sanft zur Tankstelle, aber mit Padding, 
-                    // damit der Pin rechts und nicht oben links unterm UI landet!
+                    
+                    // BOSS-FIX: Pin absolut mittig zentrieren! KEIN Padding!
                     libreMap.flyTo({ 
                         center: [el.lon, el.lat], 
                         zoom: 15.5, 
                         speed: 1.2,
-                        padding: { left: 0, right: 150, top: 0, bottom: 20 }
+                        essential: true
                     });
+                    
+                    this.openTotem(el);
                 });
 
                 const marker = new maplibregl.Marker({ element: elDiv, anchor: 'bottom' })
@@ -1373,15 +1369,19 @@ redrawMarkers: function() {
 
         openTotem: function(station) {
             const overlay = document.getElementById('gas-totem-overlay');
+            if (!overlay) return;
+
             const brandHeader = document.getElementById('totem-brand-header');
             const brandTitle = document.getElementById('totem-brand');
             
-            brandHeader.className = 'totem-header ' + this.getBrandClass(station.name);
-            brandTitle.innerText = station.name;
-            document.getElementById('totem-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
+            if (brandHeader) brandHeader.className = 'totem-header ' + this.getBrandClass(station.name);
+            if (brandTitle) brandTitle.innerText = station.name;
+            
+            const statusEl = document.getElementById('totem-status');
+            if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
+            
             overlay.classList.remove('hidden');
 
-            // Direkt das Ziel für den "GO" Button verkabeln!
             const goBtn = overlay.querySelector('.btn-navigate');
             if (goBtn) {
                 goBtn.onclick = () => {
@@ -1405,17 +1405,24 @@ redrawMarkers: function() {
 
         updateTotemUI: function(isOpen, diesel, e10, e5) {
             const statusEl = document.getElementById('totem-status');
-            if (isOpen) {
-                statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> OPEN';
-                statusEl.style.color = '#30d158';
-            } else {
-                statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
-                statusEl.style.color = '#ff3b30';
+            if (statusEl) {
+                if (isOpen) {
+                    statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> OPEN';
+                    statusEl.style.color = '#30d158';
+                } else {
+                    statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
+                    statusEl.style.color = '#ff3b30';
+                }
             }
             
-            document.getElementById('price-diesel').innerText = diesel ? (Math.floor(Number(diesel) * 100) / 100).toFixed(2) : "-.--";
-            document.getElementById('price-e10').innerText = e10 ? (Math.floor(Number(e10) * 100) / 100).toFixed(2) : "-.--";
-            document.getElementById('price-e5').innerText = e5 ? (Math.floor(Number(e5) * 100) / 100).toFixed(2) : "-.--";
+            const pd = document.getElementById('price-diesel');
+            const pe10 = document.getElementById('price-e10');
+            const pe5 = document.getElementById('price-e5');
+
+            if (pd) pd.innerText = diesel ? (Math.floor(Number(diesel) * 100) / 100).toFixed(2) : "-.--";
+            if (pe10) pe10.innerText = e10 ? (Math.floor(Number(e10) * 100) / 100).toFixed(2) : "-.--";
+            if (pe5) pe5.innerText = e5 ? (Math.floor(Number(e5) * 100) / 100).toFixed(2) : "-.--";
+            
             this.updateTotemSelectionUI();
         },
 
@@ -1432,7 +1439,8 @@ redrawMarkers: function() {
         },
 
         closeTotem: function() {
-            document.getElementById('gas-totem-overlay').classList.add('hidden');
+            const overlay = document.getElementById('gas-totem-overlay');
+            if (overlay) overlay.classList.add('hidden');
         }
     };
 // ==========================================
