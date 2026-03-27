@@ -1426,39 +1426,45 @@ function restore3DBuildings(activeTheme) {
             });
         },
 
-       openTotem: function(name, lat, lng, elementRef) {
+openTotem: function(name, lat, lng, elementRef) {
             const overlay = document.getElementById('gas-totem-overlay');
             const brandHeader = document.getElementById('totem-brand-header');
             
-            // BOSS-FIX: Wir holen uns den Namen direkt aus dem echten Datenobjekt, 
-            // falls "name" oben schon gekürzt übergeben wurde.
-            const fullName = (elementRef && elementRef.realData && elementRef.realData.name) 
+            // 1. Den Roh-Namen holen
+            let fullName = (elementRef && elementRef.realData && elementRef.realData.name) 
                              ? elementRef.realData.name 
                              : (name || 'Tankstelle');
+
+            // === BOSS-FIX: ADRESS-FILTER (Schneidet Straßen & Orte ab) ===
+            // Wir suchen nach typischen Straßen-Endungen und löschen alles danach
+            const addressRegex = /\s+(str\.|straße|strasse|weg|allee|platz|damm|chaussee|pfad).*/i;
+            fullName = fullName.replace(addressRegex, "").trim();
+            
+            // Optional: Falls nach dem Namen oft die Stadt steht (z.B. "JET NUERNBERG")
+            // kannst du hier entscheiden, ob das bleiben soll. Aktuell bleibt es.
+            // ============================================================
 
             if (brandHeader) {
                 brandHeader.className = 'totem-header ' + this.getBrandClass(fullName);
             }
 
-            // Wir suchen das h2 direkt im Header, um ID-Fehler zu vermeiden
             const brandTitle = document.querySelector('.v2-totem-overlay .totem-header h2');
             
             if (brandTitle) {
-                brandTitle.innerText = fullName; // Vollen Namen setzen
+                brandTitle.innerText = fullName; 
                 
-                // Dynamische Skalierung
+                // Dynamische Skalierung (nutzt jetzt den gesäuberten Namen)
                 const len = fullName.length;
                 if (len > 20) {
-                    brandTitle.style.fontSize = '0.9rem';
+                    brandTitle.style.fontSize = '1.0rem';
                 } else if (len > 14) {
                     brandTitle.style.fontSize = '1.2rem';
                 } else if (len > 10) {
                     brandTitle.style.fontSize = '1.4rem';
                 } else {
-                    brandTitle.style.fontSize = '1.8rem'; // Standard für Kurznamen
+                    brandTitle.style.fontSize = '1.8rem';
                 }
                 
-                // Sicherheitshalber: Textumbruch erlauben
                 brandTitle.style.whiteSpace = 'normal';
                 brandTitle.style.overflow = 'visible';
             }
