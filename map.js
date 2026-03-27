@@ -1237,7 +1237,15 @@ function restore3DBuildings(activeTheme) {
         currentFuelType: 'e10',
         isActive: false,
 
-        init: function() {
+init: function() {
+            // --- BOSS-FIX: Wir befreien das Menü per Code aus dem unsichtbaren HTML-Screen! ---
+            const totemOverlay = document.getElementById('gas-totem-overlay');
+            if (totemOverlay) document.body.appendChild(totemOverlay);
+
+            const filterModal = document.getElementById('gas-filter-modal');
+            if (filterModal) document.body.appendChild(filterModal);
+            // ---------------------------------------------------------------------------------
+
             const btnGas = document.getElementById('btn-sheet-gas');
             if (btnGas) {
                 btnGas.addEventListener('click', (e) => {
