@@ -46,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 5. MAPLIBRE INITIALISIERUNG STARTEN
             initMapLibreSnippet();
+            if (window.ExploreLogic) window.ExploreLogic.init();
         });
     }
 
@@ -1226,6 +1227,210 @@ function restore3DBuildings(activeTheme) {
             }
         });
     }
+
+    // ==========================================
+    // === PREMIUM GAS STATION ENGINE (TANKERKÖNIG) ===
+    // ==========================================
+    window.ExploreLogic = {
+        apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
+        markers: [],
+        cachedStations: [],
+        currentFuelType: 'e10',
+        isActive: false,
+
+        init: function() {
+            const btnGas = document.getElementById('btn-sheet-gas');
+            if (btnGas) {
+                btnGas.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    
+                    // Pille nach unten wischen und Tastatur killen
+                    const bottomSheet = document.getElementById('map-bottom-sheet');
+                    const searchInput = document.getElementById('tomtom-search-input');
+                    if (bottomSheet) bottomSheet.classList.remove('expanded');
+                    if (searchInput) searchInput.blur();
+
+                    // Toggle Logik
+                    this.isActive = !this.isActive;
+                    if (this.isActive) {
+                        btnGas.style.background = 'rgba(48, 209, 88, 0.2)';
+                        btnGas.style.borderColor = 'rgba(48, 209, 88, 0.5)';
+                        this.fetchData();
+                    } else {
+                        btnGas.style.background = 'rgba(255,255,255,0.08)';
+                        btnGas.style.borderColor = 'rgba(255,255,255,0.1)';
+                        this.clearMarkers();
+                    }
+                });
+            }
+        },
+
+        clearMarkers: function() {
+            this.markers.forEach(m => m.remove());
+            this.markers = [];
+        },
+
+        fetchData: async function() {
+            if (!libreMap || !currentCoords) return;
+            const loader = document.getElementById('map-loading');
+            if (loader) loader.classList.add('visible');
+
+            try {
+                // Bei MapLibre ist coords[0] = Lon, coords[1] = Lat
+                const lat = currentCoords[1];
+                const lng = currentCoords[0];
+                const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=15&sort=dist&type=all&apikey=${this.apiKey}`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                if (loader) loader.classList.remove('visible');
+
+                if (data.ok && data.stations) {
+                    this.cachedStations = data.stations.map(st => {
+                        return {
+                            lat: st.lat,
+                            lon: st.lng,
+                            name: st.brand ? st.brand + " " + st.name : st.name,
+                            realData: st,
+                            simPrices: {
+                                e10: (typeof st.e10 === 'number') ? (Math.floor(st.e10 * 100) / 100).toFixed(2) : "-.--",
+                                e5: (typeof st.e5 === 'number') ? (Math.floor(st.e5 * 100) / 100).toFixed(2) : "-.--",
+                                diesel: (typeof st.diesel === 'number') ? (Math.floor(st.diesel * 100) / 100).toFixed(2) : "-.--",
+                                isOpen: st.isOpen
+                            }
+                        };
+                    });
+                    this.redrawMarkers();
+                }
+            } catch (err) {
+                if (loader) loader.classList.remove('visible');
+                console.error("Tankerkönig Error:", err);
+            }
+        },
+
+        getBrandClass: function(name) {
+            const n = name.toLowerCase();
+            if(n.includes('aral')) return 'aral';
+            if(n.includes('shell')) return 'shell';
+            if(n.includes('esso')) return 'esso';
+            if(n.includes('total')) return 'total';
+            if(n.includes('jet')) return 'jet';
+            if(n.includes('hem')) return 'hem';
+            if(n.includes('avanti')) return 'avanti';
+            return ''; 
+        },
+
+        redrawMarkers: function() {
+            this.clearMarkers();
+            if (!this.isActive) return;
+
+            this.cachedStations.forEach(el => {
+                const brandClass = this.getBrandClass(el.name);
+                let displayName = el.name.replace(/Tankstelle|Station/gi, "").trim();
+                if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
+                if (displayName === "") displayName = "TANK";
+
+                let displayPrice = el.simPrices[this.currentFuelType];
+                const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
+
+                // Hier nutzen wir exakt dein brillantes CSS
+                const elDiv = document.createElement('div');
+                elDiv.className = 'custom-div-icon';
+                elDiv.innerHTML = `
+                    <div class="price-marker-wrap ${closedClass}">
+                        <div class="pm-brand-bar ${brandClass}">${displayName}</div>
+                        <div class="pm-content">
+                            <div class="pm-price">${displayPrice}</div>
+                            <div class="pm-fuel-label">${this.currentFuelType.toUpperCase()}</div>
+                        </div>
+                    </div>
+                `;
+
+                // Smoother Hover Effekt wie bei Apple Maps
+                elDiv.style.cursor = 'pointer';
+                elDiv.style.transition = 'transform 0.1s';
+                elDiv.addEventListener('mouseenter', () => elDiv.style.transform = 'scale(1.05)');
+                elDiv.addEventListener('mouseleave', () => elDiv.style.transform = 'scale(1)');
+                
+                elDiv.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.openTotem(el);
+                    libreMap.flyTo({ center: [el.lon, el.lat], zoom: 15.5, speed: 1.2 });
+                });
+
+                // Marker mit [Lon, Lat] auf die Karte setzen
+                const marker = new maplibregl.Marker({ element: elDiv, anchor: 'bottom' })
+                    .setLngLat([el.lon, el.lat])
+                    .addTo(libreMap);
+
+                this.markers.push(marker);
+            });
+        },
+
+        openTotem: function(station) {
+            const overlay = document.getElementById('gas-totem-overlay');
+            const brandHeader = document.getElementById('totem-brand-header');
+            const brandTitle = document.getElementById('totem-brand');
+            
+            brandHeader.className = 'totem-header ' + this.getBrandClass(station.name);
+            brandTitle.innerText = station.name;
+            document.getElementById('totem-status').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
+            overlay.classList.remove('hidden');
+
+            // Direkt das Ziel für den "GO" Button verkabeln!
+            const goBtn = overlay.querySelector('.btn-navigate');
+            if (goBtn) {
+                goBtn.onclick = () => {
+                    this.closeTotem();
+                    if (typeof drawTomTomRoute === 'function') drawTomTomRoute(station.lat, station.lon);
+                };
+            }
+
+            const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${station.lat}&lng=${station.lon}&rad=1.0&sort=dist&type=all&apikey=${this.apiKey}`;
+            fetch(url).then(r => r.json()).then(data => {
+                if (data.ok && data.stations && data.stations.length > 0) {
+                    const live = data.stations[0];
+                    this.updateTotemUI(live.isOpen, live.diesel, live.e10, live.e5);
+                } else { 
+                    this.updateTotemUI(station.simPrices.isOpen, station.simPrices.diesel, station.simPrices.e10, station.simPrices.e5); 
+                }
+            }).catch(e => {
+                this.updateTotemUI(station.simPrices.isOpen, station.simPrices.diesel, station.simPrices.e10, station.simPrices.e5);
+            });
+        },
+
+        updateTotemUI: function(isOpen, diesel, e10, e5) {
+            const statusEl = document.getElementById('totem-status');
+            if (isOpen) {
+                statusEl.innerHTML = '<i class="fa-solid fa-circle-check"></i> OPEN';
+                statusEl.style.color = '#30d158';
+            } else {
+                statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> CLOSED';
+                statusEl.style.color = '#ff3b30';
+            }
+            
+            document.getElementById('price-diesel').innerText = diesel ? (Math.floor(Number(diesel) * 100) / 100).toFixed(2) : "-.--";
+            document.getElementById('price-e10').innerText = e10 ? (Math.floor(Number(e10) * 100) / 100).toFixed(2) : "-.--";
+            document.getElementById('price-e5').innerText = e5 ? (Math.floor(Number(e5) * 100) / 100).toFixed(2) : "-.--";
+            this.updateTotemSelectionUI();
+        },
+
+        selectFuel: function(type) {
+            this.currentFuelType = type;
+            this.updateTotemSelectionUI();
+            this.redrawMarkers(); 
+        },
+
+        updateTotemSelectionUI: function() {
+            document.querySelectorAll('.price-row').forEach(r => r.classList.remove('selected'));
+            const activeRow = document.getElementById('row-' + this.currentFuelType);
+            if (activeRow) activeRow.classList.add('selected');
+        },
+
+        closeTotem: function() {
+            document.getElementById('gas-totem-overlay').classList.add('hidden');
+        }
+    };
 // ==========================================
     // === MATH: ECHTE LUFTLINIEN-DISTANZ IN METER ===
     // ==========================================
