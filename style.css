@@ -3539,60 +3539,64 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================== */
-/* === V4.1 PURE PREMIUM GLASS MARKERS ====== */
+/* === V5 PURE PREMIUM GLASS + TOP FADE ===== */
 /* ========================================== */
 
-/* 1. Echter Glasmorphismus: Viel transparenter, extremer Blur, harte weiße Lichtkanten */
+/* 1. Basis: Echter Glasmorphismus */
 .map-v2-marker {
-    /* WICHTIG: Transparenz massiv erhöht (0.3), damit die Karte durchscheint und verschwimmt! */
-    background: linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important;
+    background: linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important;
     backdrop-filter: blur(25px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
 
-    /* Die Apple-Lichtkanten: Oben hell, unten dunkel */
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
-    border-left: 1px solid rgba(255, 255, 255, 0.15) !important;
-
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.3) !important; /* Harte Lichtkante oben */
     border-radius: 12px !important;
-    width: 64px !important;
+    width: 60px !important;
     height: auto !important;
     overflow: hidden;
     display: flex !important;
     flex-direction: column !important;
 
-    /* Tiefer Schatten nach unten + feiner Glanz im Inneren */
-    box-shadow: 0 12px 25px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2) !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2) !important;
     transition: transform 0.2s cubic-bezier(0.2, 1, 0.3, 1) !important;
 }
 
-/* 2. Der subtile Glow: Sitzt jetzt oben in der Mitte und fadet extrem weich nach unten aus */
-.map-v2-marker:has(.aral)  { background: radial-gradient(circle at 50% 0%, rgba(0, 120, 255, 0.25) 0%, transparent 60%), linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
-.map-v2-marker:has(.shell) { background: radial-gradient(circle at 50% 0%, rgba(255, 220, 0, 0.2) 0%, transparent 60%),   linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
-.map-v2-marker:has(.esso)  { background: radial-gradient(circle at 50% 0%, rgba(255, 50, 50, 0.25) 0%, transparent 60%),  linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
-.map-v2-marker:has(.total) { background: radial-gradient(circle at 50% 0%, rgba(255, 0, 0, 0.25) 0%, transparent 60%),    linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
-.map-v2-marker:has(.jet)   { background: radial-gradient(circle at 50% 0%, rgba(255, 200, 0, 0.2) 0%, transparent 60%),   linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
-.map-v2-marker:has(.hem)   { background: radial-gradient(circle at 50% 0%, rgba(0, 200, 80, 0.25) 0%, transparent 60%),   linear-gradient(145deg, rgba(30, 30, 35, 0.3), rgba(10, 10, 15, 0.4)) !important; }
+/* 2. Der weiche Top-Fade: Die Farbe startet oben bei 100% und fadet bei 50% sanft ins Glas aus */
+/* Wir legen den farbigen Verlauf (linear-gradient) einfach ÜBER den dunklen Glas-Hintergrund */
+.map-v2-marker:has(.aral)  { background: linear-gradient(to bottom, rgba(0, 94, 184, 0.8) 0%, transparent 50%), linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.shell) { background: linear-gradient(to bottom, rgba(251, 206, 7, 0.7) 0%, transparent 50%),   linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.esso)  { background: linear-gradient(to bottom, rgba(226, 29, 56, 0.8) 0%, transparent 50%),  linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.total) { background: linear-gradient(to bottom, rgba(237, 0, 0, 0.8) 0%, transparent 50%),    linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.jet)   { background: linear-gradient(to bottom, rgba(255, 204, 0, 0.7) 0%, transparent 50%),   linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
+.map-v2-marker:has(.hem)   { background: linear-gradient(to bottom, rgba(0, 150, 64, 0.8) 0%, transparent 50%),   linear-gradient(145deg, rgba(30, 30, 35, 0.4), rgba(10, 10, 15, 0.6)) !important; }
 
-/* 3. Brand Bar: Kein Hintergrund mehr, nur der Markenname, getrennt durch einen haarfeinen Strich */
+/* 3. Brand Bar: Der Name der Tankstelle */
 .map-v2-marker .pm-brand-bar {
     background: transparent !important;
-    color: rgba(255, 255, 255, 0.7) !important;
-    font-size: 0.5rem !important;
+    color: #fff !important;
+    font-size: 0.55rem !important;
     font-weight: 800 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    padding: 5px 0 3px 0 !important;
+    padding: 6px 0 2px 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    /* BOSS-FIX: Harter Strich entfernt, der Fade übernimmt die optische Trennung! */
+    border-bottom: none !important; 
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8) !important;
 }
 
-/* 4. Der Preisbereich */
+/* Shell & Jet brauchen etwas mehr harten schwarzen Schatten, weil Gelb sehr hell ist */
+.map-v2-marker:has(.shell) .pm-brand-bar,
+.map-v2-marker:has(.jet) .pm-brand-bar {
+    text-shadow: 0 1px 5px rgba(0,0,0,0.9) !important; 
+}
+
+/* 4. Der Preisbereich (Klassisch Monospace) */
 .map-v2-marker .pm-content {
     background: transparent !important;
-    padding: 4px 0 6px 0 !important;
+    padding: 4px 0 8px 0 !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
@@ -3600,10 +3604,9 @@ body.ghost-active #ghost-chat-overlay {
 
 .map-v2-marker .pm-price {
     font-family: monospace !important;
-    font-size: 1rem !important;
+    font-size: 1.05rem !important;
     font-weight: 700 !important;
     color: #fff !important;
-    /* Ein leichter dunkler Schatten, damit die weiße Schrift auf hellem Map-Hintergrund lesbar bleibt */
     text-shadow: 0 1px 3px rgba(0,0,0,0.8) !important; 
     background: none !important;
     -webkit-background-clip: initial !important;
@@ -3613,25 +3616,23 @@ body.ghost-active #ghost-chat-overlay {
 .map-v2-marker .pm-fuel-label {
     display: block !important;
     font-size: 0.45rem !important;
-    color: rgba(255,255,255,0.4) !important;
+    color: rgba(255,255,255,0.5) !important;
     font-weight: 800 !important;
     text-transform: uppercase !important;
     letter-spacing: 1px !important;
     margin-top: 2px !important;
 }
 
-/* Klick-Feedback */
+/* 5. Klick-Feedback */
 .map-v2-marker:active {
     transform: scale(0.95) !important; 
-    /* Das Glas leuchtet beim Drücken minimal auf */
-    background: linear-gradient(145deg, rgba(60, 60, 65, 0.4), rgba(20, 20, 25, 0.5)) !important; 
     z-index: 9999 !important;
 }
 
 /* Geschlossen-Status */
 .map-v2-marker.closed {
     filter: grayscale(100%) opacity(0.6) !important;
-    background: rgba(10, 10, 10, 0.4) !important;
+    background: rgba(10, 10, 10, 0.5) !important;
     box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
 }
 .map-v2-marker.closed .pm-price {
