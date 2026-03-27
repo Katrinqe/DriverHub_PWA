@@ -1227,13 +1227,12 @@ function restore3DBuildings(activeTheme) {
             }
         });
     }
-
-  // ==========================================
+// ==========================================
     // === PREMIUM GAS STATION ENGINE (TANKERKÖNIG) ===
     // ==========================================
     window.ExploreLogic = {
         apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
-        markers: [],
+        mlMarkers: [], // Speichert die MapLibre Marker
         cachedStations: [],
         currentFuelType: 'e10',
         isActive: false,
@@ -1264,8 +1263,8 @@ function restore3DBuildings(activeTheme) {
         },
 
         clearMarkers: function() {
-            this.markers.forEach(m => m.remove());
-            this.markers = [];
+            this.mlMarkers.forEach(m => m.remove());
+            this.mlMarkers = [];
         },
 
         fetchData: async function() {
@@ -1274,20 +1273,24 @@ function restore3DBuildings(activeTheme) {
             if (loader) loader.classList.add('visible');
 
             try {
+                // MapLibre coords: [0] = Lon, [1] = Lat
                 const lat = currentCoords[1];
                 const lng = currentCoords[0];
-                const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=15&sort=dist&type=all&apikey=${this.apiKey}`;
+                let tkRadius = 15; // 15km für MapLibre
+
+                const tkUrl = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=${tkRadius}&sort=dist&type=all&apikey=${this.apiKey}`;
                 
-                const response = await fetch(url);
+                const response = await fetch(tkUrl);
                 const data = await response.json();
-                if (loader) loader.classList.remove('visible');
+                if(loader) loader.classList.remove('visible');
 
                 if (data.ok && data.stations) {
                     this.cachedStations = data.stations.map(st => {
                         return {
                             lat: st.lat,
                             lon: st.lng,
-                            name: st.brand ? st.brand + " " + st.name : st.name,
+                            center: { lat: st.lat, lon: st.lng },
+                            tags: { name: (st.brand ? st.brand + " " : "") + st.name },
                             realData: st,
                             simPrices: {
                                 e10: (typeof st.e10 === 'number') ? (Math.floor(st.e10 * 100) / 100).toFixed(2) : "-.--",
@@ -1297,11 +1300,13 @@ function restore3DBuildings(activeTheme) {
                             }
                         };
                     });
-                    this.redrawMarkers();
+                    this.redrawGasMarkers();
+                } else {
+                    console.error("Tankerkönig API Fehler:", data.message);
                 }
             } catch (err) {
                 if (loader) loader.classList.remove('visible');
-                console.error("Tankerkönig Error:", err);
+                console.error("Tankerkönig Fetch Error:", err);
             }
         },
 
@@ -1317,22 +1322,40 @@ function restore3DBuildings(activeTheme) {
             return ''; 
         },
 
-        redrawMarkers: function() {
+        redrawGasMarkers: function() {
             this.clearMarkers();
-            if (!this.isActive) return;
-
+            if (!this.isActive) return; 
+            
             this.cachedStations.forEach(el => {
-                const brandClass = this.getBrandClass(el.name);
-                let displayName = el.name.replace(/Tankstelle|Station/gi, "").trim();
+                let lat = el.lat; let lon = el.lon;
+                if (el.center) { lat = el.center.lat; lon = el.center.lon; }
+                if (!lat || !lon) return; 
+
+                const name = (el.tags && el.tags.name) ? el.tags.name : "Tankstelle";
+                const brandClass = this.getBrandClass(name);
+                
+                let displayName = name.replace(/Tankstelle|Station/gi, "").trim();
                 if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
                 if (displayName === "") displayName = "TANK";
+
+                // Deine originale Dummy-Preis-Logik zur Absicherung
+                if (!el.simPrices) {
+                    const baseE10 = 1.70 + (Math.random() * 0.14 - 0.07);
+                    el.simPrices = {
+                        e10: baseE10.toFixed(2),
+                        diesel: (1.60 + (Math.random() * 0.14 - 0.07)).toFixed(2),
+                        e5: (baseE10 + 0.06).toFixed(2),
+                        isOpen: true 
+                    };
+                }
+
+                if (el.realData) el.simPrices.isOpen = el.realData.isOpen;
 
                 let displayPrice = el.simPrices[this.currentFuelType];
                 const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
 
-                const elDiv = document.createElement('div');
-                elDiv.className = 'custom-div-icon';
-                elDiv.innerHTML = `
+                // Dein originales HTML für den Marker
+                const html = `
                     <div class="price-marker-wrap ${closedClass}" style="cursor: pointer; transition: transform 0.1s;">
                         <div class="pm-brand-bar ${brandClass}">${displayName}</div>
                         <div class="pm-content">
@@ -1342,65 +1365,88 @@ function restore3DBuildings(activeTheme) {
                     </div>
                 `;
 
+                // MapLibre Element erstellen
+                const elDiv = document.createElement('div');
+                elDiv.className = 'custom-div-icon';
+                elDiv.innerHTML = html;
+
                 elDiv.addEventListener('mouseenter', () => elDiv.firstChild.style.transform = 'scale(1.05)');
                 elDiv.addEventListener('mouseleave', () => elDiv.firstChild.style.transform = 'scale(1)');
                 
                 elDiv.addEventListener('click', (e) => {
                     e.stopPropagation();
                     
-                    // BOSS-FIX: Pin absolut mittig zentrieren! KEIN Padding!
+                    // FIX 1: Exakt deine alte Funktionssignatur!
+                    this.openTotem(name, lat, lon, el);
+                    
+                    // FIX 2: Koordinaten strikt [Lon, Lat] für MapLibre!
                     libreMap.flyTo({ 
-                        center: [el.lon, el.lat], 
+                        center: [lon, lat], 
                         zoom: 15.5, 
                         speed: 1.2,
                         essential: true
                     });
-                    
-                    this.openTotem(el);
                 });
 
+                // MapLibre Marker strikt [Lon, Lat]
                 const marker = new maplibregl.Marker({ element: elDiv, anchor: 'bottom' })
-                    .setLngLat([el.lon, el.lat])
+                    .setLngLat([lon, lat])
                     .addTo(libreMap);
 
-                this.markers.push(marker);
+                this.mlMarkers.push(marker);
             });
         },
 
-        openTotem: function(station) {
+        openTotem: function(name, lat, lng, elementRef) {
             const overlay = document.getElementById('gas-totem-overlay');
-            if (!overlay) return;
-
             const brandHeader = document.getElementById('totem-brand-header');
             const brandTitle = document.getElementById('totem-brand');
             
-            if (brandHeader) brandHeader.className = 'totem-header ' + this.getBrandClass(station.name);
-            if (brandTitle) brandTitle.innerText = station.name;
+            if (brandHeader) brandHeader.className = 'totem-header ' + this.getBrandClass(name);
+            if (brandTitle) brandTitle.innerText = name;
             
             const statusEl = document.getElementById('totem-status');
             if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
             
-            overlay.classList.remove('hidden');
+            if (overlay) overlay.classList.remove('hidden');
 
-            const goBtn = overlay.querySelector('.btn-navigate');
-            if (goBtn) {
-                goBtn.onclick = () => {
-                    this.closeTotem();
-                    if (typeof drawTomTomRoute === 'function') drawTomTomRoute(station.lat, station.lon);
-                };
+            // Routing verkabeln
+            if (overlay) {
+                const goBtn = overlay.querySelector('.btn-navigate');
+                if (goBtn) {
+                    goBtn.onclick = () => {
+                        this.closeTotem();
+                        if (typeof drawTomTomRoute === 'function') drawTomTomRoute(lat, lng);
+                    };
+                }
             }
 
-            const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${station.lat}&lng=${station.lon}&rad=1.0&sort=dist&type=all&apikey=${this.apiKey}`;
-            fetch(url).then(r => r.json()).then(data => {
-                if (data.ok && data.stations && data.stations.length > 0) {
-                    const live = data.stations[0];
-                    this.updateTotemUI(live.isOpen, live.diesel, live.e10, live.e5);
-                } else { 
-                    this.updateTotemUI(station.simPrices.isOpen, station.simPrices.diesel, station.simPrices.e10, station.simPrices.e5); 
-                }
-            }).catch(e => {
-                this.updateTotemUI(station.simPrices.isOpen, station.simPrices.diesel, station.simPrices.e10, station.simPrices.e5);
-            });
+            if (this.apiKey && this.apiKey.length > 10) {
+                const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${this.apiKey}`;
+                fetch(url).then(r => r.json()).then(data => {
+                    if (data.ok && data.stations && data.stations.length > 0) {
+                        const station = data.stations[0];
+                        if(elementRef) {
+                            elementRef.realData = station; 
+                            elementRef.simPrices.isOpen = station.isOpen; 
+                            if(station.diesel) elementRef.simPrices.diesel = (Math.floor(station.diesel * 100) / 100).toFixed(2);
+                            if(station.e10) elementRef.simPrices.e10 = (Math.floor(station.e10 * 100) / 100).toFixed(2);
+                            if(station.e5) elementRef.simPrices.e5 = (Math.floor(station.e5 * 100) / 100).toFixed(2);
+                        }
+                        this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
+                        this.redrawGasMarkers(); 
+                    } else { 
+                        this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5); 
+                    }
+                }).catch(e => {
+                    console.log("Tankerkoenig Error", e);
+                    this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
+                });
+            } else {
+                setTimeout(() => {
+                    this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
+                }, 300);
+            }
         },
 
         updateTotemUI: function(isOpen, diesel, e10, e5) {
@@ -1415,13 +1461,13 @@ function restore3DBuildings(activeTheme) {
                 }
             }
             
-            const pd = document.getElementById('price-diesel');
-            const pe10 = document.getElementById('price-e10');
-            const pe5 = document.getElementById('price-e5');
+            const pDiesel = document.getElementById('price-diesel');
+            const pE10 = document.getElementById('price-e10');
+            const pE5 = document.getElementById('price-e5');
 
-            if (pd) pd.innerText = diesel ? (Math.floor(Number(diesel) * 100) / 100).toFixed(2) : "-.--";
-            if (pe10) pe10.innerText = e10 ? (Math.floor(Number(e10) * 100) / 100).toFixed(2) : "-.--";
-            if (pe5) pe5.innerText = e5 ? (Math.floor(Number(e5) * 100) / 100).toFixed(2) : "-.--";
+            if (pDiesel) pDiesel.innerText = diesel ? (Math.floor(Number(diesel) * 100) / 100).toFixed(2) : "-.--";
+            if (pE10) pE10.innerText = e10 ? (Math.floor(Number(e10) * 100) / 100).toFixed(2) : "-.--";
+            if (pE5) pE5.innerText = e5 ? (Math.floor(Number(e5) * 100) / 100).toFixed(2) : "-.--";
             
             this.updateTotemSelectionUI();
         },
@@ -1429,13 +1475,13 @@ function restore3DBuildings(activeTheme) {
         selectFuel: function(type) {
             this.currentFuelType = type;
             this.updateTotemSelectionUI();
-            this.redrawMarkers(); 
+            this.redrawGasMarkers(); 
         },
 
         updateTotemSelectionUI: function() {
             document.querySelectorAll('.price-row').forEach(r => r.classList.remove('selected'));
-            const activeRow = document.getElementById('row-' + this.currentFuelType);
-            if (activeRow) activeRow.classList.add('selected');
+            const row = document.getElementById('row-' + this.currentFuelType);
+            if (row) row.classList.add('selected');
         },
 
         closeTotem: function() {
