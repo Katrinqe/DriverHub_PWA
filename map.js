@@ -1296,7 +1296,7 @@ function restore3DBuildings(activeTheme) {
             }
         },
 
-        fetchData: async function() {
+      fetchData: async function() {
             if (!libreMap || !currentCoords) return;
             const loader = document.getElementById('map-loading');
             if (loader) loader.classList.add('visible');
@@ -1312,8 +1312,7 @@ function restore3DBuildings(activeTheme) {
                 const data = await response.json();
                 if(loader) loader.classList.remove('visible');
 
-        if (data.ok && data.stations) {
-        if (data.ok && data.stations) {
+                if (data.ok && data.stations) {
                     this.cachedStations = data.stations.map(st => {
                         
                         // BOSS-FIX: Radikaler Schnitt! Nur die reine Marke, sonst nichts.
@@ -1351,7 +1350,6 @@ function restore3DBuildings(activeTheme) {
                 console.error("Tankerkönig Fetch Error:", err);
             }
         },
-
         getBrandClass: function(name) {
             if (!name) return '';
             const n = name.toLowerCase();
