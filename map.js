@@ -1232,19 +1232,14 @@ function restore3DBuildings(activeTheme) {
     // ==========================================
     window.ExploreLogic = {
         apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
-        mlMarkers: [], // Speichert die MapLibre Marker
+        mlMarkers: [],
         cachedStations: [],
         currentFuelType: 'e10',
         isActive: false,
 
-init: function() {
-            // --- BOSS-FIX: Wir befreien das Menü per Code aus dem unsichtbaren HTML-Screen! ---
+        init: function() {
             const totemOverlay = document.getElementById('gas-totem-overlay');
             if (totemOverlay) document.body.appendChild(totemOverlay);
-
-            const filterModal = document.getElementById('gas-filter-modal');
-            if (filterModal) document.body.appendChild(filterModal);
-            // ---------------------------------------------------------------------------------
 
             const btnGas = document.getElementById('btn-sheet-gas');
             if (btnGas) {
@@ -1271,11 +1266,13 @@ init: function() {
         },
 
         clearMarkers: function() {
-            this.mlMarkers.forEach(m => m.remove());
-            this.mlMarkers = [];
+            if (this.mlMarkers) {
+                this.mlMarkers.forEach(m => m.remove());
+                this.mlMarkers = [];
+            }
         },
 
-fetchData: async function() {
+        fetchData: async function() {
             if (!libreMap || !currentCoords) return;
             const loader = document.getElementById('map-loading');
             if (loader) loader.classList.add('visible');
@@ -1297,7 +1294,8 @@ fetchData: async function() {
                             lat: st.lat,
                             lon: st.lng,
                             center: { lat: st.lat, lon: st.lng },
-                            tags: { name: (st.brand ? st.brand + " " : "") + st.name },
+                            // Hier ist der sichere Name für das Rendering!
+                            name: st.brand ? st.brand + " " + st.name : st.name, 
                             realData: st,
                             simPrices: {
                                 e10: (typeof st.e10 === 'number') ? (Math.floor(st.e10 * 100) / 100).toFixed(2) : "-.--",
@@ -1307,7 +1305,7 @@ fetchData: async function() {
                             }
                         };
                     });
-                    this.redrawMarkers(); // BOSS-FIX: Hier auf den neuen Namen hören!
+                    this.redrawMarkers();
                 } else {
                     console.error("Tankerkönig API Fehler:", data.message);
                 }
@@ -1318,6 +1316,7 @@ fetchData: async function() {
         },
 
         getBrandClass: function(name) {
+            if (!name) return '';
             const n = name.toLowerCase();
             if(n.includes('aral')) return 'aral';
             if(n.includes('shell')) return 'shell';
@@ -1329,18 +1328,24 @@ fetchData: async function() {
             return ''; 
         },
 
-   redrawMarkers: function() {
+        redrawMarkers: function() {
             this.clearMarkers();
-            if (!this.isActive) return;
+            if (!this.isActive || !this.cachedStations) return;
 
             this.cachedStations.forEach(el => {
+                if (!el.lat || !el.lon) return; 
+
                 const brandClass = this.getBrandClass(el.name);
-                let displayName = el.name.replace(/Tankstelle|Station/gi, "").trim();
+                let displayName = el.name ? el.name.replace(/Tankstelle|Station/gi, "").trim() : "TANK";
                 if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
                 if (displayName === "") displayName = "TANK";
 
-                // BOSS-FIX: Hier zwingen wir die Engine, den exakten, internen Sprit-Typ zu lesen!
-                let displayPrice = el.simPrices[this.currentFuelType];
+                // Absicherung für dummy Daten, falls fetch spinnt
+                if (!el.simPrices) {
+                    el.simPrices = { e10: "-.--", diesel: "-.--", e5: "-.--", isOpen: true };
+                }
+
+                let displayPrice = el.simPrices[this.currentFuelType] || "-.--";
                 const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
 
                 const elDiv = document.createElement('div');
@@ -1366,46 +1371,49 @@ fetchData: async function() {
                         speed: 1.2,
                         essential: true
                     });
-                    this.openTotem(el);
+                    
+                    // BOSS-FIX: Hier übergeben wir exakt die 4 Parameter, die openTotem erwartet!
+                    this.openTotem(el.name, el.lat, el.lon, el);
                 });
 
                 const marker = new maplibregl.Marker({ element: elDiv, anchor: 'bottom' })
                     .setLngLat([el.lon, el.lat])
                     .addTo(libreMap);
 
-                this.markers.push(marker);
+                this.mlMarkers.push(marker);
             });
         },
+
         openTotem: function(name, lat, lng, elementRef) {
             const overlay = document.getElementById('gas-totem-overlay');
             const brandHeader = document.getElementById('totem-brand-header');
             const brandTitle = document.getElementById('totem-brand');
             
             if (brandHeader) brandHeader.className = 'totem-header ' + this.getBrandClass(name);
-            if (brandTitle) brandTitle.innerText = name;
+            if (brandTitle) brandTitle.innerText = name || 'Tankstelle';
             
             const statusEl = document.getElementById('totem-status');
             if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
             
             if (overlay) overlay.classList.remove('hidden');
 
-            // Routing verkabeln
             if (overlay) {
                 const goBtn = overlay.querySelector('.btn-navigate');
                 if (goBtn) {
                     goBtn.onclick = () => {
                         this.closeTotem();
+                        // Routing aufrufen, Parameter sind hier Lat, Lon
                         if (typeof drawTomTomRoute === 'function') drawTomTomRoute(lat, lng);
                     };
                 }
             }
 
-    if (this.apiKey && this.apiKey.length > 10) {
+            if (this.apiKey && this.apiKey.length > 10) {
                 const url = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=1.0&sort=dist&type=all&apikey=${this.apiKey}`;
                 fetch(url).then(r => r.json()).then(data => {
                     if (data.ok && data.stations && data.stations.length > 0) {
                         const station = data.stations[0];
-                        if(elementRef) {
+                        if(elementRef && elementRef.simPrices) {
                             elementRef.realData = station; 
                             elementRef.simPrices.isOpen = station.isOpen; 
                             if(station.diesel) elementRef.simPrices.diesel = (Math.floor(station.diesel * 100) / 100).toFixed(2);
@@ -1413,17 +1421,19 @@ fetchData: async function() {
                             if(station.e5) elementRef.simPrices.e5 = (Math.floor(station.e5 * 100) / 100).toFixed(2);
                         }
                         this.updateTotemUI(station.isOpen, station.diesel, station.e10, station.e5);
-                        this.redrawMarkers(); // BOSS-FIX: Hier auf den neuen Namen hören!
-                    } else { 
-                        this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5); 
+                        this.redrawMarkers(); 
+                    } else if (elementRef && elementRef.simPrices) { 
+                        this.updateTotemUI(elementRef.simPrices.isOpen, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5); 
                     }
                 }).catch(e => {
                     console.log("Tankerkoenig Error", e);
-                    this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
+                    if (elementRef && elementRef.simPrices) {
+                        this.updateTotemUI(elementRef.simPrices.isOpen, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
+                    }
                 });
-            }  else {
+            } else if (elementRef && elementRef.simPrices) {
                 setTimeout(() => {
-                    this.updateTotemUI(true, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
+                    this.updateTotemUI(elementRef.simPrices.isOpen, elementRef.simPrices.diesel, elementRef.simPrices.e10, elementRef.simPrices.e5);
                 }, 300);
             }
         },
@@ -1451,16 +1461,14 @@ fetchData: async function() {
             this.updateTotemSelectionUI();
         },
 
-    selectFuel: function(type) {
-            // FIX: Strikt auf diese interne Variable schreiben!
+        selectFuel: function(type) {
             this.currentFuelType = type;
             this.updateTotemSelectionUI();
             this.redrawMarkers(); 
         },
 
-    updateTotemSelectionUI: function() {
+        updateTotemSelectionUI: function() {
             document.querySelectorAll('.price-row').forEach(r => r.classList.remove('selected'));
-            // FIX: Strikt auf diese interne Variable zugreifen!
             const activeRow = document.getElementById('row-' + this.currentFuelType);
             if (activeRow) activeRow.classList.add('selected');
         },
