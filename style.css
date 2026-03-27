@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
 
 :root {
     --primary: #007aff;
@@ -3535,4 +3536,92 @@ body.ghost-active #ghost-chat-overlay {
         0 8px 20px rgba(0,0,0,0.5), 
         0 0 20px rgba(255, 149, 0, 0.25), 
         inset 0 0 12px rgba(255, 149, 0, 0.2);
+}
+
+/* ========================================== */
+/* === V2 MAP MARKERS (GLASS & LED DOTS) ==== */
+/* ========================================== */
+
+/* 1. Das Gehäuse: Gebogenes, tiefes Frost-Glas */
+.map-v2-marker {
+    background: linear-gradient(145deg, rgba(20, 20, 25, 0.65), rgba(10, 10, 12, 0.85)) !important;
+    backdrop-filter: blur(20px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(150%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.8), inset 0 2px 5px rgba(255,255,255,0.05) !important;
+    width: 68px !important; 
+    overflow: hidden;
+}
+
+/* Klick-Feedback */
+.map-v2-marker:active {
+    transform: scale(0.9) !important;
+    border-color: rgba(255, 149, 0, 0.6) !important; /* Oranger Rahmen beim Antippen */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.9), 0 0 15px rgba(255, 149, 0, 0.2) !important;
+}
+
+/* 2. Die Marken-Leiste: Cleaner, feiner Glow oben statt plumper Balken */
+.map-v2-marker .pm-brand-bar {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    font-size: 0.55rem !important;
+    letter-spacing: 1px !important;
+    padding: 4px 0 !important;
+    height: auto !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8) !important;
+}
+
+/* Wir wandeln die harten Hintergrundfarben in edle, leuchtende Top-Kanten um */
+.map-v2-marker .pm-brand-bar.aral { box-shadow: inset 0 3px 0 #005eb8 !important; background: transparent !important; }
+.map-v2-marker .pm-brand-bar.shell { box-shadow: inset 0 3px 0 #fbce07 !important; background: transparent !important; color: #fff !important; }
+.map-v2-marker .pm-brand-bar.esso { box-shadow: inset 0 3px 0 #e21d38 !important; background: transparent !important; }
+.map-v2-marker .pm-brand-bar.total { box-shadow: inset 0 3px 0 #ed0000 !important; background: transparent !important; }
+.map-v2-marker .pm-brand-bar.jet { box-shadow: inset 0 3px 0 #ffcc00 !important; background: transparent !important; color: #fff !important; }
+.map-v2-marker .pm-brand-bar.hem { box-shadow: inset 0 3px 0 #009640 !important; background: transparent !important; }
+
+/* 3. Der Innenraum */
+.map-v2-marker .pm-content {
+    background: transparent !important;
+    padding: 8px 0 6px 0 !important;
+}
+
+/* ========================================== */
+/* === 4. DAS MAGISCHE DOT-MATRIX DISPLAY === */
+/* ========================================== */
+.map-v2-marker .pm-price {
+    font-family: 'DotGothic16', monospace !important;
+    font-size: 1.25rem !important;
+    font-weight: 400 !important;
+    
+    /* Der extrem helle Kern der LED */
+    color: #ffffff !important; 
+    letter-spacing: 1px !important;
+    
+    /* Der volumetrische Glow, der ins Glas strahlt (Orange passend zum Button) */
+    text-shadow: 
+        0 0 2px #fff,
+        0 0 5px #ff9500,
+        0 0 10px #ff9500,
+        0 0 15px #ff9500 !important;
+        
+    line-height: 1 !important;
+}
+
+/* Wenn die Tankstelle geschlossen ist: Strom aus! */
+.map-v2-marker.closed .pm-price {
+    color: #444 !important; /* LED aus */
+    text-shadow: none !important; /* Kein Glow mehr */
+    text-decoration: none !important; /* Kein hässliches Durchstreichen mehr, sieht sonst kaputt aus */
+}
+
+/* Das kleine Sprit-Label (E10, Diesel) */
+.map-v2-marker .pm-fuel-label {
+    color: rgba(255, 255, 255, 0.4) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 800 !important;
+    letter-spacing: 1.5px !important;
+    font-size: 0.5rem !important;
+    margin-top: 4px !important;
 }
