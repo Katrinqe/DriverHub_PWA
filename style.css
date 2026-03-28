@@ -3991,25 +3991,25 @@ body.ghost-active #ghost-chat-overlay {
 #map-bottom-sheet:not(.expanded) #gas-dashboard {
     display: none !important;
 }
-/* === RECHTE SEITE: Trend-Box (Kompakter Boss-Fit) === */
+/* === RECHTE SEITE: Trend-Box (Vertikaler Boss-Fit) === */
 .dash-trend-box {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column; /* BOSS-FIX: Wir stapeln jetzt von oben nach unten! */
+    gap: 8px; /* Perfekte Luft zwischen Prozent und Min/Max */
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
-    /* BOSS-FIX: Luft rausgelassen! */
-    padding: 8px 10px; 
+    padding: 10px 12px; 
     box-sizing: border-box;
+    width: 100%; /* Nutzt nur noch die Breite, die wirklich da ist */
 }
 
-/* Der Prozent-Indikator (Deutlich verkleinert) */
+/* Oben: Der Prozent-Indikator (Darf wieder schön groß sein!) */
 .trend-percentage {
     display: flex;
     align-items: center;
-    gap: 4px; /* Enger zusammen */
-    font-size: 1.1rem; /* MASSIV verkleinert (vorher 1.6rem) */
+    gap: 6px; 
+    font-size: 1.5rem; /* Wieder massiv und gut lesbar */
     font-weight: 800;
     letter-spacing: -0.5px;
 }
@@ -4017,22 +4017,38 @@ body.ghost-active #ghost-chat-overlay {
 .trend-percentage.up { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.4); }
 .trend-percentage.down { color: #30d158; text-shadow: 0 0 10px rgba(48, 209, 88, 0.4); }
 
-/* Min/Max Block daneben (Alles gestaucht) */
+/* Unten: Sprit-Art links und Min/Max rechts nebeneinander */
+.trend-details {
+    display: flex;
+    justify-content: space-between; 
+    align-items: flex-end;
+}
+
+/* Neu: Das Sprit-Label (z.B. DIESEL) */
+.trend-fuel {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding-bottom: 2px; /* Damit es auf gleicher Höhe mit dem 1.99 Preis abschließt */
+}
+
+/* Min/Max Block */
 .trend-minmax {
     display: flex;
     flex-direction: column;
-    gap: 2px; /* Vorher 4px */
+    gap: 2px; 
 }
 
 .trend-row {
     display: flex;
     justify-content: flex-end;
     align-items: baseline;
-    gap: 5px; /* Vorher 8px */
+    gap: 6px; 
 }
 
 .trend-label {
-    font-size: 0.55rem; /* Vorher 0.6rem */
+    font-size: 0.55rem; 
     color: rgba(255, 255, 255, 0.4);
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -4040,7 +4056,7 @@ body.ghost-active #ghost-chat-overlay {
 
 .trend-price {
     font-family: monospace;
-    font-size: 0.85rem; /* Deutlich kleiner (vorher 1.0rem) */
+    font-size: 0.9rem; 
     line-height: 1.1;
     font-weight: 800;
     color: #fff; 
