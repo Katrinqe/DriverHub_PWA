@@ -3938,3 +3938,9 @@ body.ghost-active #ghost-chat-overlay {
     gap: 8px;
 }
 .dash-graph-placeholder i { font-size: 1.5rem; }
+
+
+/* BOSS-FIX: Dashboard nur anzeigen, wenn die Pille (.expanded) hochgezogen wurde! */
+#map-bottom-sheet:not(.expanded) #gas-dashboard {
+    display: none !important;
+}
