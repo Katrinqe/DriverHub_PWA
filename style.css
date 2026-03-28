@@ -4085,3 +4085,94 @@ body.ghost-active #ghost-chat-overlay {
     color: #fff; 
     text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
+
+/* ========================================== */
+/* === PREIS-ALARM (RECHTE SEITE UNTEN) ===== */
+/* ========================================== */
+.dash-alarm-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; 
+    gap: 6px;
+    
+    /* BOSS-FIX: Schiebt den Alarm dynamisch an den unteren Rand */
+    margin-top: auto; 
+    
+    background: rgba(20, 20, 25, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 8px 10px;
+    width: fit-content;
+    align-self: flex-end; /* Rechtsbündig unter die Trend-Box */
+}
+
+.alarm-header {
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.alarm-header i {
+    color: #ffcc00; /* Sanftes Alarm-Gelb */
+}
+
+.alarm-input-row {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 6px;
+    padding: 4px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: border-color 0.2s;
+}
+
+/* Leuchtet dezent auf, wenn man reinklickt */
+.alarm-input-row:focus-within {
+    border-color: #ffcc00;
+}
+
+#alarm-price-input {
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 800;
+    width: 45px;
+    text-align: right;
+    outline: none;
+}
+
+/* Browser-eigene Pfeile im Nummernfeld radikal verstecken */
+#alarm-price-input::-webkit-outer-spin-button,
+#alarm-price-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+#alarm-price-input[type=number] {
+    -moz-appearance: textfield;
+}
+
+.alarm-currency {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.alarm-footer {
+    font-size: 0.5rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+#alarm-hit-counter {
+    color: #ff3b30;
+    font-weight: 800;
+}
