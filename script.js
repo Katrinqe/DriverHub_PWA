@@ -4,10 +4,17 @@ let map;
 let userMarker = null;
 
 window.addEventListener('load', () => {
+    // === NEU: SERVICE WORKER REGISTRIEREN ===
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker registriert!'))
+        .catch(err => console.error('Service Worker Fehler:', err));
+    }
+    // ========================================
+
     initBackgroundMap();
     initWeather();
 });
-
 function initBackgroundMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
