@@ -268,6 +268,10 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         window.updateMapAppearance();
     }, 350);
 
+    if (window.ExploreLogic) {
+        window.ExploreLogic.fetchData();
+    }
+
 } // <--- DAS SAUBERE ENDE VON loadMap!
 // ==========================================
     // === MAP EXPAND / SHRINK LOGIC ===
@@ -1297,12 +1301,7 @@ window.ExploreLogic = {
             // 1. Zwingt das Dashboard sofort in den Lade-Modus (zeigt den Spinner)
             this.updateDashboard(); 
 
-            // 2. Wir geben dem GPS 3 Sekunden (statt 1,5) Zeit, um den Standort zu fixieren,
-            // bevor wir den stillen API-Call zu Tankerkönig abfeuern.
-            setTimeout(() => {
-                this.fetchData();
-            }, 3000); 
-            // =======================================================
+       
             
         }, // <--- Hier endet die init-Funktion
        
