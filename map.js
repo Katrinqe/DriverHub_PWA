@@ -1595,32 +1595,25 @@ openTotem: function(name, lat, lng, elementRef) {
             if (overlay) overlay.classList.add('hidden');
         }, // <--- WICHTIG: Hier nur ein Komma, kein "};" !
 
-    updateDashboard: function() {
+updateDashboard: function() {
             const dashboard = document.getElementById('gas-dashboard');
             const listContainer = document.getElementById('dash-top-4-list');
             const labelEl = document.getElementById('dash-graph-fuel-label');
             
             if (!dashboard || !listContainer) return;
 
-            // === BOSS-FIX: Dashboard ist IMMER sichtbar, unabhängig vom Map-Button ===
+            // Dashboard IMMER einblenden
             dashboard.classList.remove('hidden');
             const fuel = this.currentFuelType; // 'e10', 'e5', 'diesel'
             if (labelEl) labelEl.textContent = fuel.toUpperCase();
 
-            // Wenn noch keine Daten da sind (App startet gerade)
+            // Wenn noch keine Daten da sind
             if (!this.cachedStations || this.cachedStations.length === 0) {
                 listContainer.innerHTML = '<div style="color:#888; font-size:0.8rem; text-align:center; margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Analysiere Preise im Umkreis...</div>';
                 return;
             }
 
-            // 1. Filtern: Nur offene Tanken, die auch einen echten Preis (> 0) für diesen Sprit haben
-            let validStations = this.cachedStations.filter(st => {
-
-            dashboard.classList.remove('hidden');
-            const fuel = this.currentFuelType; // 'e10', 'e5', 'diesel'
-            if (labelEl) labelEl.textContent = fuel.toUpperCase();
-
-            // 1. Filtern: Nur offene Tanken, die auch einen echten Preis (> 0) für diesen Sprit haben
+            // 1. Filtern: Nur offene Tanken mit echtem Preis
             let validStations = this.cachedStations.filter(st => {
                 if (st.simPrices.isOpen === false) return false;
                 const price = parseFloat(st.simPrices[fuel]);
@@ -1643,7 +1636,6 @@ openTotem: function(name, lat, lng, elementRef) {
 
             top4.forEach((st, index) => {
                 const priceStr = parseFloat(st.simPrices[fuel]).toFixed(2);
-                // Distanz ist in st.realData.dist (kommt von Tankerkönig)
                 const distStr = st.realData.dist ? st.realData.dist.toFixed(1) + ' km' : '';
                 
                 const html = `
