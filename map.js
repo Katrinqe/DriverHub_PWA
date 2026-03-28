@@ -1648,17 +1648,20 @@ updateDashboard: function() {
             }
 
             top4.forEach((st, index) => {
-                const priceStr = parseFloat(st.simPrices[fuel]).toFixed(2);
+           const priceStr = parseFloat(st.simPrices[fuel]).toFixed(2);
                 const distStr = st.realData.dist ? st.realData.dist.toFixed(1) + ' km' : '';
                 
+                // BOSS-FIX: Wir holen uns die Marken-Klasse (z.B. 'aral', 'shell')
+                const brandClass = this.getBrandClass(st.name); 
+                
+                // Neues 2-Zeilen-Layout ohne die Rang-Nummer
                 const html = `
-                    <div class="dash-list-item" onclick="ExploreLogic.flyToAndOpen('${st.name}', ${st.lat}, ${st.lon})">
-                        <div class="dash-item-rank">${index + 1}</div>
-                        <div class="dash-item-info">
-                            <div class="dash-item-name">${st.name}</div>
+                    <div class="dash-list-item ${brandClass}" onclick="ExploreLogic.flyToAndOpen('${st.name}', ${st.lat}, ${st.lon})">
+                        <div class="dash-item-name">${st.name}</div>
+                        <div class="dash-item-bottom">
+                            <div class="dash-item-price">${priceStr}</div>
                             <div class="dash-item-dist">${distStr}</div>
                         </div>
-                        <div class="dash-item-price">${priceStr}</div>
                     </div>
                 `;
                 listContainer.insertAdjacentHTML('beforeend', html);
