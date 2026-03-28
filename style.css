@@ -3991,57 +3991,47 @@ body.ghost-active #ghost-chat-overlay {
 #map-bottom-sheet:not(.expanded) #gas-dashboard {
     display: none !important;
 }
-/* === RECHTE SEITE: Trend-Box (Vertikaler Boss-Fit) === */
+/* === RECHTE SEITE: Trend-Box (Anti-Platzfresser) === */
 .dash-trend-box {
     display: flex;
-    flex-direction: column; /* BOSS-FIX: Wir stapeln jetzt von oben nach unten! */
-    gap: 8px; /* Perfekte Luft zwischen Prozent und Min/Max */
+    flex-direction: column;
+    align-items: flex-end; /* Schiebt alle Inhalte sauber an den rechten Rand */
+    gap: 4px; /* Kompakter Abstand zwischen den 3 Ebenen */
+    
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 10px 12px; 
-    box-sizing: border-box;
-    width: 100%; /* Nutzt nur noch die Breite, die wirklich da ist */
+    border-radius: 10px;
+    padding: 8px 12px; 
+    
+    /* === BOSS-FIX: Das verhindert, dass die Box den Platz frisst === */
+    width: fit-content; 
+    align-self: flex-end; /* Klebt die gesamte Box nach rechts */
 }
 
-/* Oben: Der Prozent-Indikator (Darf wieder schön groß sein!) */
+/* Ebene 1 */
 .trend-percentage {
     display: flex;
     align-items: center;
     gap: 6px; 
-    font-size: 1.5rem; /* Wieder massiv und gut lesbar */
+    font-size: 1.4rem; 
     font-weight: 800;
     letter-spacing: -0.5px;
+    line-height: 1;
 }
 
 .trend-percentage.up { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.4); }
 .trend-percentage.down { color: #30d158; text-shadow: 0 0 10px rgba(48, 209, 88, 0.4); }
 
-/* Unten: Sprit-Art links und Min/Max-Inline rechts */
-.trend-details {
-    display: flex;
-    justify-content: space-between; 
-    align-items: baseline; /* Alle Texte auf einer unsichtbaren Grundlinie */
-    margin-top: 2px;
-}
-
-.trend-fuel {
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.4);
-    font-weight: 800;
-    letter-spacing: 1px;
-}
-
-/* BOSS-FIX: MIN und MAX flach nebeneinander */
+/* Ebene 2 */
 .trend-minmax-inline {
     display: flex;
-    gap: 12px; /* Der Abstand zwischen dem MIN-Block und dem MAX-Block */
+    gap: 10px; 
 }
 
 .trend-item {
     display: flex;
     align-items: baseline;
-    gap: 4px; /* Abstand zwischen dem Wort "MIN" und der Zahl "1.99" */
+    gap: 4px; 
 }
 
 .trend-label {
@@ -4053,9 +4043,17 @@ body.ghost-active #ghost-chat-overlay {
 
 .trend-price {
     font-family: monospace;
-    font-size: 0.9rem; 
-    line-height: 1.1;
+    font-size: 0.85rem; 
     font-weight: 800;
     color: #fff; 
-    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+/* Ebene 3 */
+.trend-fuel {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 2px;
 }
