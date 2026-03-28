@@ -3845,29 +3845,47 @@ body.ghost-active #ghost-chat-overlay {
     flex-direction: column;
     justify-content: center;
     gap: 0.5px;
-    background: #1a1a1a; /* Standard, falls keine Marke greift */
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    
+    /* === BOSS-FIX: HIER IST DER MAGISCHE SOFT GLOW === */
+    /* 1. Wir nutzen 'box-shadow' nicht mehr für die Farbe, 
+          sondern *nur* noch 'background' mit weichen Verläufen.
+    /* 2. Standard (Dunkles Grau, wenn keine Marke passt, dezent glühend) */
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.03) 0%, rgba(20, 20, 25, 0.9) 80%);
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Sehr dezenter Rand */
     border-radius: 8px;
     padding: 8px 12px;
     cursor: pointer;
-    transition: transform 0.2s ease, background 0.2s ease;
+    transition: transform 0.2s ease, background 0.3s ease;
     position: relative;
+    overflow: hidden; /* Wichtig, damit der Glow nicht rausschwimmt */
+}
+
+/* === EDLER GRAUER GLOW FÜR UNBEKANNTE MARKEN === */
+/* Dieser Gradient wird nur auf Pillen angewendet, denen wir KEINE der 
+   untenstehenden Klassen zugeordnet haben. Das ist dein dezent grauer Glow. */
+.dash-list-item {
+    background: linear-gradient(to right, rgba(160, 160, 160, 0.08) 0%, rgba(20, 20, 25, 0.95) 90%);
 }
 
 .dash-list-item:active {
     transform: scale(0.96);
 }
-.dash-list-item.aral   { background: linear-gradient(to right, rgba(0, 94, 184, 0.35) 0%, rgba(20,20,25,0.8) 75%); border-left: 3px solid #005eb8; }
-.dash-list-item.shell  { background: linear-gradient(to right, rgba(251, 206, 7, 0.25) 0%, rgba(20,20,25,0.8) 75%); border-left: 3px solid #fbce07; }
-.dash-list-item.esso   { background: linear-gradient(to right, rgba(226, 29, 56, 0.25) 0%, rgba(20,20,25,0.8) 75%); border-left: 3px solid #e21d38; }
-.dash-list-item.total  { background: linear-gradient(to right, rgba(237, 0, 0, 0.25) 0%, rgba(20,20,25,0.8) 75%); border-left: 3px solid #ed0000; }
-.dash-list-item.jet    { background: linear-gradient(to right, rgba(255, 204, 0, 0.25) 0%, rgba(20,20,25,0.8) 75%); border-left: 3px solid #ffcc00; }
-.dash-list-item.hem    { background: linear-gradient(to right, rgba(0, 150, 64, 0.35) 0%, rgba(20,20,25,0.8) 75%); border-left: 3px solid #009640; }
-.dash-list-item.avanti { background: linear-gradient(to right, rgba(255, 80, 0, 0.25) 0%, rgba(20,20,25,0.8) 75%); border-left: 3px solid #ff5000; }
 
-/* Oben: Der Name */
+/* === SOFT GLOW FÜR BEKANNTE MARKEN (Balken sind weg!) === */
+/* Wir faden von einer sehr transparenten Markenfarbe (0.25 oder 0.35) 
+   ganz weich ins Dunkle. Kein Balken, nur ein schwebender Farb-Hauch. */
+
+.dash-list-item.aral   { background: linear-gradient(to right, rgba(0, 94, 184, 0.35) 0%, rgba(20, 20, 25, 0.95) 85%); }
+.dash-list-item.shell  { background: linear-gradient(to right, rgba(251, 206, 7, 0.25) 0%, rgba(20, 20, 25, 0.95) 85%); }
+.dash-list-item.esso   { background: linear-gradient(to right, rgba(226, 29, 56, 0.25) 0%, rgba(20, 20, 25, 0.95) 85%); }
+.dash-list-item.total  { background: linear-gradient(to right, rgba(237, 0, 0, 0.25) 0%, rgba(20, 20, 25, 0.95) 85%); }
+.dash-list-item.jet    { background: linear-gradient(to right, rgba(255, 204, 0, 0.25) 0%, rgba(20, 20, 25, 0.95) 85%); }
+.dash-list-item.hem    { background: linear-gradient(to right, rgba(0, 150, 64, 0.35) 0%, rgba(20, 20, 25, 0.95) 85%); }
+.dash-list-item.avanti { background: linear-gradient(to right, rgba(255, 80, 0, 0.25) 0%, rgba(20, 20, 25, 0.95) 85%); }
+
+/* Die Texte im Inneren der Pille bleiben (hier nur zur Vollständigkeit) */
 .dash-item-name {
-    font-size: 0.7rem; /* Minimal kleiner (vorher 0.8rem) */
+    font-size: 0.7rem; 
     line-height: 1.1;
     font-weight: 800;
     color: #fff;
@@ -3894,7 +3912,6 @@ body.ghost-active #ghost-chat-overlay {
     flex-direction: column;
 }
 
-/* Unten: Preis links, Distanz rechts */
 .dash-item-bottom {
     display: flex;
     justify-content: space-between;
@@ -3909,7 +3926,7 @@ body.ghost-active #ghost-chat-overlay {
 
 .dash-item-price {
     font-family: monospace;
-    font-size: 1.0rem; /* Tick kleiner (vorher 1.15rem) */
+    font-size: 1.0rem; 
     line-height: 1.1;
     font-weight: 800;
     color: #ff3b30; 
