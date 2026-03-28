@@ -3876,6 +3876,10 @@ body.ghost-active #ghost-chat-overlay {
 /* === SOFT GLOW FÜR BEKANNTE MARKEN (Balken sind weg!) === */
 /* Wir faden von einer sehr transparenten Markenfarbe (0.25 oder 0.35) 
    ganz weich ins Dunkle. Kein Balken, nur ein schwebender Farb-Hauch. */
+/* === BOSS-FIX: Vintage Warmweiß für alle unbekannten Tankstellen === */
+.dash-list-item.unknown { 
+    background: linear-gradient(to right, rgba(255, 230, 190, 0.15) 0%, rgba(20, 20, 25, 0.95) 85%) !important; 
+}
 
 .dash-list-item.aral   { background: linear-gradient(to right, rgba(0, 94, 184, 0.35) 0%, rgba(20, 20, 25, 0.95) 85%); }
 .dash-list-item.shell  { background: linear-gradient(to right, rgba(251, 206, 7, 0.25) 0%, rgba(20, 20, 25, 0.95) 85%); }
