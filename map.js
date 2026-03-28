@@ -1637,7 +1637,7 @@ updateDashboard: function() {
             validStations.sort((a, b) => parseFloat(a.simPrices[fuel]) - parseFloat(b.simPrices[fuel]));
 
             // 3. Die Top 4 abschneiden
-            const top4 = validStations.slice(0, 4);
+            const top4 = validStations.slice(0, 3);
 
             // 4. HTML rendern
             listContainer.innerHTML = '';
