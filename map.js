@@ -1285,10 +1285,19 @@ window.ExploreLogic = {
                     if (searchInput) searchInput.blur();
 
              this.isActive = !this.isActive;
-                    if (this.isActive) {
-                        // BOSS-FIX: Wir schalten nur noch eine saubere CSS-Klasse!
+                 if (this.isActive) {
                         btnGas.classList.add('active-orange');
-                        this.fetchData();
+                        
+                        // === BOSS-FIX: ZEICHNEN STATT LADEN ===
+                        // Wenn wir schon Daten haben, zeichnen wir sofort.
+                        // Wenn nicht (z.B. weil das GPS lahmte), feuern wir doch noch einen Fetch ab.
+                        if (this.cachedStations && this.cachedStations.length > 0) {
+                            this.redrawMarkers();
+                        } else {
+                            this.fetchData();
+                        }
+                        // ======================================
+                        
                     } else {
                         btnGas.classList.remove('active-orange');
                         this.clearMarkers();
