@@ -3825,18 +3825,12 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 .dash-left {
-    flex: 1; 
+    flex: 1.6; /* HIER IST DEIN LENKRAD: 1.6 bedeutet, links bekommt 60% mehr Platz als rechts */
+    
     display: flex;
     flex-direction: column;
-    
-    /* === BOSS-FIX FÜR PERFEKTE SYMMETRIE === */
-    height: 100%; /* Zwingt die linke Seite, exakt so hoch zu sein wie die rechte */
-    justify-content: space-between; /* Drückt Pille 1 nach ganz oben, Pille 3 nach ganz unten */
-    
-    /* Das 'gap' kannst du jetzt löschen oder auskommentieren, 
-       weil 'space-between' die Lücken vollautomatisch berechnet! */
-    /* gap: 4px; */ 
-    
+    height: 100%; 
+    justify-content: space-between; 
     overflow: hidden;
 }
 
@@ -4000,7 +3994,8 @@ body.ghost-active #ghost-chat-overlay {
 
 /* === RECHTE SEITE: Layout & Trend-Box === */
 .dash-right {
-    flex: 1; /* Nimmt die rechte Hälfte ein */
+    flex: 1; /* Rechts bekommt nur noch 1 Anteil (den strikten Rest) */
+    
     display: flex;
     flex-direction: column;
 }
