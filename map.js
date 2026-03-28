@@ -1586,13 +1586,10 @@ openTotem: function(name, lat, lng, elementRef) {
             if (row) row.classList.add('selected');
         },
 
-        closeTotem: function() {
+     closeTotem: function() {
             const overlay = document.getElementById('gas-totem-overlay');
             if (overlay) overlay.classList.add('hidden');
-        }
-
-
-    };
+        }, // <--- WICHTIG: Hier nur ein Komma, kein "};" !
 
         updateDashboard: function() {
             const dashboard = document.getElementById('gas-dashboard');
@@ -1661,6 +1658,7 @@ openTotem: function(name, lat, lng, elementRef) {
             if (el) this.openTotem(name, lat, lon, el);
         }
 
+    }; // <--- DAS ist jetzt das einzige und echte Ende von window.ExploreLogic!
     
 // ==========================================
     // === MATH: ECHTE LUFTLINIEN-DISTANZ IN METER ===
