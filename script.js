@@ -1,19 +1,22 @@
 // --- DRIVERHUB 4.0 - FINAL CORE ---
 
+// --- DRIVERHUB 4.0 - FINAL CORE ---
 let map;
 let userMarker = null;
 
 window.addEventListener('load', () => {
-    // === NEU: SERVICE WORKER REGISTRIEREN ===
+    // 1. Das U-Boot (Service Worker) beim Browser anmelden
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service Worker registriert!'))
         .catch(err => console.error('Service Worker Fehler:', err));
     }
-    // ========================================
 
     initBackgroundMap();
     initWeather();
+    
+    // 2. Den Preis-Alarm und den Funkspruch aktivieren
+    initPriceAlarm(); 
 });
 function initBackgroundMap() {
     map = L.map('background-map', {
@@ -79,3 +82,56 @@ function initWeather() {
 }
 
 document.getElementById('btn-start').addEventListener('click', () => alert("Start!"));
+
+// --- DRIVERHUB 4.0 - FINAL CORE ---
+let map;
+let userMarker = null;
+
+window.addEventListener('load', () => {
+    // 1. Das U-Boot (Service Worker) beim Browser anmelden
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js')
+        .then(reg => console.log('Service Worker registriert!'))
+        .catch(err => console.error('Service Worker Fehler:', err));
+    }
+
+    initBackgroundMap();
+    initWeather();
+    
+    // 2. Den Preis-Alarm und den Funkspruch aktivieren
+    initPriceAlarm(); 
+});
+
+// ... (HIER BLEIBT DEIN GANZER RESTLICHER KARTEN-CODE EXAKT WIE ER IST) ...
+
+// === GANZ UNTEN IN DER DATEI HINZUFÜGEN ===
+function initPriceAlarm() {
+    const input = document.getElementById('alarm-price-input');
+    if (!input) return;
+
+    // Feuert, sobald du einen Preis eingibst und "Enter" drückst (oder daneben tippst)
+    input.addEventListener('change', async function(e) {
+        const val = e.target.value;
+
+        // HIER passiert die Apple-Abfrage für die Benachrichtigungen!
+        if (window.Notification && Notification.permission !== 'granted') {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                console.log('Push-Rechte abgelehnt.');
+                return;
+            }
+        }
+
+        // HIER funkt das Cockpit das U-Boot an!
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'TEST_ALARM',
+                price: val,
+                delay: 20000 // 20.000 Millisekunden = 20 Sekunden
+            });
+            console.log('Funkspruch an sw.js gesendet! Timer läuft.');
+        } else {
+            console.log('Kein U-Boot gefunden. Lade die Seite einmal komplett neu.');
+        }
+    });
+}
