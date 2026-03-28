@@ -3991,15 +3991,7 @@ body.ghost-active #ghost-chat-overlay {
 #map-bottom-sheet:not(.expanded) #gas-dashboard {
     display: none !important;
 }
-
-/* === RECHTE SEITE: Layout & Trend-Box === */
-.dash-right {
-    flex: 1; /* Rechts bekommt nur noch 1 Anteil (den strikten Rest) */
-    
-    display: flex;
-    flex-direction: column;
-}
-
+/* === RECHTE SEITE: Trend-Box (Kompakter Boss-Fit) === */
 .dash-trend-box {
     display: flex;
     align-items: center;
@@ -4007,57 +3999,50 @@ body.ghost-active #ghost-chat-overlay {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 12px;
-    padding: 12px 15px;
+    /* BOSS-FIX: Luft rausgelassen! */
+    padding: 8px 10px; 
     box-sizing: border-box;
 }
 
-/* Großer Prozent-Indikator */
+/* Der Prozent-Indikator (Deutlich verkleinert) */
 .trend-percentage {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 1.6rem;
+    gap: 4px; /* Enger zusammen */
+    font-size: 1.1rem; /* MASSIV verkleinert (vorher 1.6rem) */
     font-weight: 800;
-    letter-spacing: -1px;
+    letter-spacing: -0.5px;
 }
 
-/* Klasse "up" = Rot & Hoch, Klasse "down" = Grün & Runter */
-.trend-percentage.up {
-    color: #ff3b30; 
-    text-shadow: 0 0 10px rgba(255, 59, 48, 0.4);
-}
-.trend-percentage.down {
-    color: #30d158; 
-    text-shadow: 0 0 10px rgba(48, 209, 88, 0.4);
-}
+.trend-percentage.up { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.4); }
+.trend-percentage.down { color: #30d158; text-shadow: 0 0 10px rgba(48, 209, 88, 0.4); }
 
-/* Min/Max Block daneben */
+/* Min/Max Block daneben (Alles gestaucht) */
 .trend-minmax {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px; /* Vorher 4px */
 }
 
 .trend-row {
     display: flex;
     justify-content: flex-end;
     align-items: baseline;
-    gap: 8px;
+    gap: 5px; /* Vorher 8px */
 }
 
 .trend-label {
-    font-size: 0.6rem;
+    font-size: 0.55rem; /* Vorher 0.6rem */
     color: rgba(255, 255, 255, 0.4);
     font-weight: 700;
     letter-spacing: 0.5px;
 }
 
-/* Identisches Design zu den Preisen links! */
 .trend-price {
     font-family: monospace;
-    font-size: 1.0rem; 
+    font-size: 0.85rem; /* Deutlich kleiner (vorher 1.0rem) */
     line-height: 1.1;
     font-weight: 800;
-    color: #fff; /* Neutralweiß, damit das Rot links besser knallt */
+    color: #fff; 
     text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
