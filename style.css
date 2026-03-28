@@ -3848,7 +3848,7 @@ body.ghost-active #ghost-chat-overlay {
     background: #1a1a1a; /* Standard, falls keine Marke greift */
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 8px;
-    padding: 6px 11px;
+    padding: 8px 12px;
     cursor: pointer;
     transition: transform 0.2s ease, background 0.2s ease;
     position: relative;
