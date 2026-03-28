@@ -3933,12 +3933,16 @@ body.ghost-active #ghost-chat-overlay {
     text-shadow: 0 0 8px rgba(255, 59, 48, 0.4);
 }
 
-/* === RECHTE SEITE: Graph Bereich === */
+/* === 1. RECHTE SPALTE: Symmetrie erzwingen === */
 .dash-right {
-    flex: 1; /* Nimmt die anderen 50% */
+    flex: 1; 
     display: flex;
     flex-direction: column;
+    /* BOSS-FIX: Zwingt die rechte Seite gnadenlos auf die exakten 190px der linken Seite */
+    height: 100%; 
 }
+
+
 
 .dash-graph-container {
     background: rgba(0, 0, 0, 0.3);
@@ -4082,18 +4086,19 @@ body.ghost-active #ghost-chat-overlay {
 /* ========================================== */
 /* === PREIS-ALARM (RECHTE SEITE UNTEN) ===== */
 /* ========================================== */
+/* === 2. PREIS-ALARM: Bündiger Abschluss === */
 .dash-alarm-box {
     display: flex;
     flex-direction: column;
     align-items: flex-end; 
-    justify-content: center; /* Zentriert den Inhalt vertikal in der neuen, größeren Box */
+    justify-content: center; 
     gap: 6px;
     
-    /* BOSS-FIX: Nimmt exakt den Raum von Pille 2 und 3 ein */
+    /* BOSS-FIX: Nimmt sich jetzt den echten restlichen Platz der vollen 100% Höhe */
     flex: 1; 
-    margin-top: 10px; /* Symmetrischer Abstand zur Trend-Box */
+    /* BOSS-FIX: Symmetrischer Spalt, der die Lücken der linken Pillen imitiert */
+    margin-top: 8px; 
     
-    /* BOSS-FIX: Exakt dieselbe Breite wie die Trend-Box */
     width: 100%; 
     box-sizing: border-box;
     
@@ -4102,7 +4107,6 @@ body.ghost-active #ghost-chat-overlay {
     border-radius: 8px;
     padding: 8px 10px;
 }
-
 .alarm-header {
     font-size: 0.55rem;
     color: rgba(255, 255, 255, 0.5);
