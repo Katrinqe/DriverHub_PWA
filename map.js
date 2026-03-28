@@ -1477,6 +1477,7 @@ redrawMarkers: function() {
                     }
                 }
             });
+            }
         },
 
 openTotem: function(name, lat, lng, elementRef) {
