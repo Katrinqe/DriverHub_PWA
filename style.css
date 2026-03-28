@@ -4013,24 +4013,28 @@ body.ghost-active #ghost-chat-overlay {
     backdrop-filter: blur(6px); 
     -webkit-backdrop-filter: blur(6px); 
     
-    /* === BOSS-FIX 2: ATMOSPHÄRISCHES LEUCHTEN (Standard Rot) === */
-    /* Ein satter, extrem diffuser Schatten, der tiefer liegt und die Kanten ignoriert */
+    /* === BOSS-FIX 2: INTERNES LEUCHTFELD === */
+    /* Wir nutzen einen radialen Gradienten als Hintergrund, 
+       der eine leuchtende Wolke direkt hinter dem Material simuliert. */
+    background-image: radial-gradient(circle at center, rgba(255, 59, 48, 0.15) 0%, rgba(20, 20, 25, 0.4) 70%); 
+    transition: background-image 0.3s ease; /* Weicher Wechsel zwischen Rot und Grün */
+
+    /* Keine äußeren Leucht-Schatten mehr! */
     box-shadow: inset 0 1px 1px rgba(255,255,255,0.1); /* Subtiler Glanz oben */
-    transition: box-shadow 0.3s ease; /* Weicher Wechsel zwischen Rot und Grün */
 }
 
-/* === FARB-LOGIK FÜR DEN ATMOSPHÄREN-GLOW === */
+/* === FARB-LOGIK FÜR DEN INTERNEN GLOW === */
 
 /* Wenn die Preise steigen (ROT) */
 .dash-trend-box.up {
-    /* Ein sehr diffuser, tief sitzender roter Glow hinter der Pille */
-    box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 5px 20px rgba(255, 59, 48, 0.18); 
+    /* Ein sattes, extrem diffuses Rotes Leuchtfeld HINTER der Pille */
+    background-image: radial-gradient(circle at center, rgba(255, 59, 48, 0.18) 0%, rgba(20, 20, 25, 0.4) 70%); 
 }
 
 /* Wenn die Preise fallen (GIFTGRÜN) */
 .dash-trend-box.down {
-    /* Ein sehr diffuser, giftgrüner Glow hinter der Pille */
-    box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 5px 20px rgba(57, 255, 20, 0.18); 
+    /* Ein sattes, extrem diffuses giftgrüner Leuchtfeld HINTER der Pille */
+    background-image: radial-gradient(circle at center, rgba(57, 255, 20, 0.18) 0%, rgba(20, 20, 25, 0.4) 70%); 
 }
 
 /* Prozentzahl (Textfarben bleiben neutral, damit der Glow dahinter wirkt) */
