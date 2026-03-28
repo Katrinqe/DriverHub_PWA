@@ -1242,14 +1242,15 @@ function restore3DBuildings(activeTheme) {
         savedFuel = 'e10'; // Fallback
     }
 
-apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
+window.ExploreLogic = {
+        apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
         mlMarkers: {}, 
-        mapListenerBound: false, // Verhindert, dass wir den Map-Listener doppelt feuern
+        mapListenerBound: false, 
         cachedStations: [],
         currentFuelType: savedFuel,
         isActive: false,
 
-    init: function() {
+        init: function() {
             // Menüs aus dem unsichtbaren Screen befreien
             const totemOverlay = document.getElementById('gas-totem-overlay');
             if (totemOverlay) document.body.appendChild(totemOverlay);
