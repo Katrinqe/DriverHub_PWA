@@ -1292,6 +1292,10 @@ window.ExploreLogic = {
                     }
                 });
             }
+
+            setTimeout(() => {
+                this.fetchData();
+            }, 1500);
         },
 
  clearMarkers: function() {
@@ -1591,18 +1595,26 @@ openTotem: function(name, lat, lng, elementRef) {
             if (overlay) overlay.classList.add('hidden');
         }, // <--- WICHTIG: Hier nur ein Komma, kein "};" !
 
-        updateDashboard: function() {
+    updateDashboard: function() {
             const dashboard = document.getElementById('gas-dashboard');
             const listContainer = document.getElementById('dash-top-4-list');
             const labelEl = document.getElementById('dash-graph-fuel-label');
             
             if (!dashboard || !listContainer) return;
 
-            // Wenn inaktiv oder keine Tankstellen da, Dashboard verstecken
-            if (!this.isActive || !this.cachedStations || this.cachedStations.length === 0) {
-                dashboard.classList.add('hidden');
+            // === BOSS-FIX: Dashboard ist IMMER sichtbar, unabhängig vom Map-Button ===
+            dashboard.classList.remove('hidden');
+            const fuel = this.currentFuelType; // 'e10', 'e5', 'diesel'
+            if (labelEl) labelEl.textContent = fuel.toUpperCase();
+
+            // Wenn noch keine Daten da sind (App startet gerade)
+            if (!this.cachedStations || this.cachedStations.length === 0) {
+                listContainer.innerHTML = '<div style="color:#888; font-size:0.8rem; text-align:center; margin-top:20px;"><i class="fa-solid fa-spinner fa-spin"></i> Analysiere Preise im Umkreis...</div>';
                 return;
             }
+
+            // 1. Filtern: Nur offene Tanken, die auch einen echten Preis (> 0) für diesen Sprit haben
+            let validStations = this.cachedStations.filter(st => {
 
             dashboard.classList.remove('hidden');
             const fuel = this.currentFuelType; // 'e10', 'e5', 'diesel'
