@@ -2547,4 +2547,32 @@ updateDashboard: function() {
             console.error("Sprachausgabe fehlgeschlagen:", error);
         }
     }
+
+    /* ========================================== */
+/* === PREIS-ALARM LOGIK ==================== */
+/* ========================================== */
+function initPriceAlarm() {
+    const input = document.getElementById('alarm-price-input');
+    if (!input) return;
+
+    // 1. Wert beim Start der App laden
+    const savedPrice = localStorage.getItem('gas_price_alarm_value');
+    if (savedPrice) {
+        input.value = savedPrice;
+    }
+
+    // 2. Jeden Tastendruck sofort speichern
+    input.addEventListener('input', function(e) {
+        const val = e.target.value;
+        localStorage.setItem('gas_price_alarm_value', val);
+        
+        // Späterer Einsprungpunkt für Firebase:
+        // firebase.firestore().collection('users').doc(uid).update({ alarmPrice: val });
+    });
+}
+
+// Startet die Logik, sobald das UI geladen ist
+document.addEventListener('DOMContentLoaded', initPriceAlarm);
+
+    
 }); // <-- Das ist und bleibt deine allerletzte Klammer in der map.js!
