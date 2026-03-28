@@ -818,15 +818,34 @@
                 <button class="map-round-btn" id="btn-explore-gas"><i class="fa-solid fa-gas-pump"></i></button>
             </div>
 <div id="map-bottom-sheet" class="map-bottom-sheet">
-                <div class="sheet-drag-handle"></div>
-                
-                <div class="quick-actions-row">
-                    <button id="btn-sheet-gas" class="quick-action-circle">
-                        <i class="fa-solid fa-gas-pump"></i>
-                    </button>
-                    
-                    </div>
+    <div class="sheet-drag-handle"></div>
+    
+    <div class="quick-actions-row">
+        <button id="btn-sheet-gas" class="quick-action-circle">
+            <i class="fa-solid fa-gas-pump"></i>
+        </button>
+        </div>
+
+    <div id="gas-dashboard" class="hidden">
+        <div class="dash-left" id="dash-top-4-list">
             </div>
+
+        <div class="dash-right">
+            <div class="dash-graph-container">
+                <div class="dash-graph-header">
+                    <span class="graph-title">Tages-Trend</span>
+                    <span class="graph-fuel-type" id="dash-graph-fuel-label">E10</span>
+                </div>
+                <div class="dash-graph-placeholder">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Warte auf Daten...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div> 
+
+
 <div id="route-overview-ui" class="hidden">
     <div class="route-planning-card static-card" id="route-overview-card">
         
