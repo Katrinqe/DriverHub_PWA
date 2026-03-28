@@ -1401,26 +1401,24 @@ fetchData: async function() {
         },
 
 redrawMarkers: function() {
-            // Wenn inaktiv, keine Daten da oder Map nicht bereit -> Abbruch
-           // Wenn noch keine Tankstellen-Daten da sind, Dashboard verstecken
-            if (!this.cachedStations || this.cachedStations.length === 0) {
+            // Wenn keine Daten da sind oder die Map nicht bereit ist -> Abbruch
+            if (!this.cachedStations || !libreMap) return;
 
-            // 1. Die sichtbaren Grenzen (Bounding Box) deines Handy-Bildschirms abrufen
+            // 1. Die sichtbaren Grenzen deines Bildschirms abrufen
             const bounds = libreMap.getBounds();
 
             this.cachedStations.forEach(el => {
                 if (!el.lat || !el.lon) return;
 
-                // Wir generieren einen eindeutigen Key für diese Tankstelle (z.B. "49.45_11.07")
                 const stationKey = el.lat + "_" + el.lon;
                 
-                // 2. Ist die Tankstelle aktuell auf deinem Bildschirm?
-                const isVisible = bounds.contains([el.lon, el.lat]);
+                // 2. Ist die Tankstelle auf dem Bildschirm UND ist der Map-Button (isActive) an?
+                const isVisibleAndActive = bounds.contains([el.lon, el.lat]) && this.isActive;
 
-                if (isVisible) {
-                    // --- TANKSTELLE IST IM BILD ---
+                if (isVisibleAndActive) {
+                    // --- TANKSTELLE SOLL AUF DIE KARTE ---
                     if (!this.mlMarkers[stationKey]) {
-                        // A) Sie existiert noch nicht im DOM -> Neu erschaffen
+                        // A) Neu erschaffen
                         const brandClass = this.getBrandClass(el.name);
                         let displayName = el.name ? el.name.replace(/Tankstelle|Station/gi, "").trim() : "TANK";
                         if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
@@ -1464,11 +1462,9 @@ redrawMarkers: function() {
                             .setLngLat([el.lon, el.lat])
                             .addTo(libreMap);
 
-                        // Im neuen Objekt speichern
                         this.mlMarkers[stationKey] = marker;
                     } else {
-                        // B) Marker existiert bereits -> Nur den Text updaten (z.B. wenn du von E10 auf Diesel tippst)
-                        // Das ist ein MASSIVER Performance-Boost, da das HTML-Element nicht gelöscht und neu gebaut wird!
+                        // B) Update (falls sich der Kraftstoff ändert)
                         const markerDiv = this.mlMarkers[stationKey].getElement();
                         const priceNode = markerDiv.querySelector('.pm-price');
                         const labelNode = markerDiv.querySelector('.pm-fuel-label');
@@ -1477,15 +1473,13 @@ redrawMarkers: function() {
                         if (labelNode) labelNode.innerText = this.currentFuelType.toUpperCase();
                     }
                 } else {
-                    // --- 3. TANKSTELLE IST NICHT MEHR IM BILD ---
-                    // Marker eiskalt aus dem DOM löschen und RAM freigeben
+                    // --- 3. TANKSTELLE IST OUT-OF-BOUNDS ODER BUTTON IST AUS ---
                     if (this.mlMarkers[stationKey]) {
                         this.mlMarkers[stationKey].remove();
                         delete this.mlMarkers[stationKey];
                     }
                 }
             });
-            }
         },
 
 openTotem: function(name, lat, lng, elementRef) {
