@@ -3991,40 +3991,74 @@ body.ghost-active #ghost-chat-overlay {
 #map-bottom-sheet:not(.expanded) #gas-dashboard {
     display: none !important;
 }
-/* === RECHTE SEITE: Trend-Box (Ultra-Kompakt) === */
+/* ========================================== */
+/* === ATMOSPHERIC GLASS TREND PILL ========= */
+/* ========================================== */
 .dash-trend-box {
     display: flex;
     flex-direction: column;
     align-items: flex-end; 
-    gap: 2px; /* BOSS-FIX: Lücke extrem verkleinert */
+    gap: 2px; 
     
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 8px; /* Etwas runder passend zur kleinen Größe */
-    padding: 6px 10px; /* BOSS-FIX: Padding radikal reduziert */
-    
+    border: 1px solid rgba(255, 255, 255, 0.05); /* Sehr feiner Rand */
+    border-radius: 8px; 
+    padding: 6px 10px; 
     width: fit-content; 
     align-self: flex-end; 
+    
+    /* === BOSS-FIX 1: GLASMORPHISMUS === */
+    /* Semi-transparentes Dunkel */
+    background: rgba(20, 20, 25, 0.4); 
+    /* Der Unschärfe-Effekt des Glases */
+    backdrop-filter: blur(6px); 
+    -webkit-backdrop-filter: blur(6px); 
+    
+    /* === BOSS-FIX 2: ATMOSPHÄRISCHES LEUCHTEN (Standard Rot) === */
+    /* Ein satter, extrem diffuser Schatten, der tiefer liegt und die Kanten ignoriert */
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.1); /* Subtiler Glanz oben */
+    transition: box-shadow 0.3s ease; /* Weicher Wechsel zwischen Rot und Grün */
 }
 
-/* Ebene 1: Prozent */
+/* === FARB-LOGIK FÜR DEN ATMOSPHÄREN-GLOW === */
+
+/* Wenn die Preise steigen (ROT) */
+.dash-trend-box.up {
+    /* Ein sehr diffuser, tief sitzender roter Glow hinter der Pille */
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 5px 20px rgba(255, 59, 48, 0.18); 
+}
+
+/* Wenn die Preise fallen (GIFTGRÜN) */
+.dash-trend-box.down {
+    /* Ein sehr diffuser, giftgrüner Glow hinter der Pille */
+    box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 5px 20px rgba(57, 255, 20, 0.18); 
+}
+
+/* Prozentzahl (Textfarben bleiben neutral, damit der Glow dahinter wirkt) */
 .trend-percentage {
     display: flex;
     align-items: center;
     gap: 4px; 
-    font-size: 1.15rem; /* BOSS-FIX: Massiv verkleinert (vorher 1.4rem) */
+    font-size: 1.15rem; 
     font-weight: 800;
     letter-spacing: -0.5px;
     line-height: 1;
+    color: #fff; /* Neutralweiß, damit das Rot links besser knallt */
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
-.trend-percentage.up { color: #ff3b30; text-shadow: 0 0 8px rgba(255, 59, 48, 0.4); }
-.trend-percentage.down { color: #30d158; text-shadow: 0 0 8px rgba(48, 209, 88, 0.4); }
+/* Wenn Prozentzahl in einer 'up' Box steht (Pfeil & Zahl rot) */
+.dash-trend-box.up .trend-percentage {
+    color: #ff3b30; 
+}
+/* Wenn Prozentzahl in einer 'down' Box steht (Pfeil & Zahl giftgrün) */
+.dash-trend-box.down .trend-percentage {
+    color: #39ff14; /* Sattes, giftiges Grün */
+}
 
-/* Ebene 2: Min/Max */
+/* Min/Max (Kompakt) */
 .trend-minmax-inline {
     display: flex;
-    gap: 8px; /* Abstand zwischen MIN und MAX verkleinert */
+    gap: 8px; 
 }
 
 .trend-item {
@@ -4034,7 +4068,7 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 .trend-label {
-    font-size: 0.5rem; /* Winziges, feines Label */
+    font-size: 0.5rem; 
     color: rgba(255, 255, 255, 0.4);
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -4042,7 +4076,8 @@ body.ghost-active #ghost-chat-overlay {
 
 .trend-price {
     font-family: monospace;
-    font-size: 0.75rem; /* Preise dezent verkleinert */
+    font-size: 0.75rem; 
     font-weight: 800;
     color: #fff; 
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
