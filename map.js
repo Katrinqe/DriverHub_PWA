@@ -1242,10 +1242,10 @@ function restore3DBuildings(activeTheme) {
         savedFuel = 'e10'; // Fallback
     }
 
-    // BOSS-FIX: Wir definieren das Objekt global und überschreiben die alte explore.js komplett!
-    window.ExploreLogic = {
-        apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
-        mlMarkers: [],
+apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
+        // BOSS-FIX: Wir ändern das Array in ein Objekt, um Marker intelligent zu verwalten
+        mlMarkers: {}, 
+        mapListenerBound: false, // Verhindert, dass wir den Map-Listener doppelt feuern
         cachedStations: [],
         currentFuelType: savedFuel,
         isActive: false,
@@ -1294,20 +1294,30 @@ function restore3DBuildings(activeTheme) {
             }
         },
 
-        clearMarkers: function() {
+ clearMarkers: function() {
             if (this.mlMarkers) {
-                this.mlMarkers.forEach(m => m.remove());
-                this.mlMarkers = [];
+                // Objekt-Werte (Marker) durchlaufen und hart löschen
+                Object.values(this.mlMarkers).forEach(m => m.remove());
+                this.mlMarkers = {};
             }
         },
-
-      fetchData: async function() {
+fetchData: async function() {
             if (!libreMap || !currentCoords) return;
             const loader = document.getElementById('map-loading');
             if (loader) loader.classList.add('visible');
 
+            // === BOSS-FIX: PERFORMANCE RADAR ===
+            // Sobald der User aufhört, die Karte zu schieben, berechnen wir die Marker neu
+            if (!this.mapListenerBound) {
+                libreMap.on('moveend', () => { if (this.isActive) this.redrawMarkers(); });
+                libreMap.on('zoomend', () => { if (this.isActive) this.redrawMarkers(); });
+                this.mapListenerBound = true;
+            }
+            // ===================================
+
             try {
                 const lat = currentCoords[1];
+// ... Rest der Funktion bleibt unberührt
                 const lng = currentCoords[0];
                 let tkRadius = 15;
 
@@ -1368,61 +1378,89 @@ function restore3DBuildings(activeTheme) {
             return ''; 
         },
 
-        redrawMarkers: function() {
-            this.clearMarkers();
-            if (!this.isActive || !this.cachedStations) return;
+redrawMarkers: function() {
+            // Wenn inaktiv, keine Daten da oder Map nicht bereit -> Abbruch
+            if (!this.isActive || !this.cachedStations || !libreMap) return;
+
+            // 1. Die sichtbaren Grenzen (Bounding Box) deines Handy-Bildschirms abrufen
+            const bounds = libreMap.getBounds();
 
             this.cachedStations.forEach(el => {
-                if (!el.lat || !el.lon) return; 
+                if (!el.lat || !el.lon) return;
 
-                const brandClass = this.getBrandClass(el.name);
-                let displayName = el.name ? el.name.replace(/Tankstelle|Station/gi, "").trim() : "TANK";
-                if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
-                if (displayName === "") displayName = "TANK";
+                // Wir generieren einen eindeutigen Key für diese Tankstelle (z.B. "49.45_11.07")
+                const stationKey = el.lat + "_" + el.lon;
+                
+                // 2. Ist die Tankstelle aktuell auf deinem Bildschirm?
+                const isVisible = bounds.contains([el.lon, el.lat]);
 
-                if (!el.simPrices) {
-                    el.simPrices = { e10: "-.--", diesel: "-.--", e5: "-.--", isOpen: true };
+                if (isVisible) {
+                    // --- TANKSTELLE IST IM BILD ---
+                    if (!this.mlMarkers[stationKey]) {
+                        // A) Sie existiert noch nicht im DOM -> Neu erschaffen
+                        const brandClass = this.getBrandClass(el.name);
+                        let displayName = el.name ? el.name.replace(/Tankstelle|Station/gi, "").trim() : "TANK";
+                        if (displayName.length > 10) displayName = displayName.substring(0, 9) + "..";
+                        if (displayName === "") displayName = "TANK";
+
+                        if (!el.simPrices) {
+                            el.simPrices = { e10: "-.--", diesel: "-.--", e5: "-.--", isOpen: true };
+                        }
+
+                        let displayPrice = el.simPrices[this.currentFuelType] || "-.--";
+                        const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
+
+                        const elDiv = document.createElement('div');
+                        elDiv.className = 'custom-div-icon map-v2-icon'; 
+                        
+                        elDiv.innerHTML = `
+                            <div class="price-marker-wrap map-v2-marker ${closedClass}" style="cursor: pointer; transition: transform 0.1s;">
+                                <div class="pm-brand-bar ${brandClass}">${displayName}</div>
+                                <div class="pm-content">
+                                    <div class="pm-price">${displayPrice}</div>
+                                    <div class="pm-fuel-label">${this.currentFuelType.toUpperCase()}</div>
+                                </div>
+                            </div>
+                        `;
+
+                        elDiv.addEventListener('mouseenter', () => elDiv.firstChild.style.transform = 'scale(1.05)');
+                        elDiv.addEventListener('mouseleave', () => elDiv.firstChild.style.transform = 'scale(1)');
+                        
+                        elDiv.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            libreMap.flyTo({ 
+                                center: [el.lon, el.lat], 
+                                zoom: 15.5, 
+                                speed: 1.2,
+                                essential: true
+                            });
+                            this.openTotem(el.name, el.lat, el.lon, el);
+                        });
+
+                        const marker = new maplibregl.Marker({ element: elDiv, anchor: 'bottom' })
+                            .setLngLat([el.lon, el.lat])
+                            .addTo(libreMap);
+
+                        // Im neuen Objekt speichern
+                        this.mlMarkers[stationKey] = marker;
+                    } else {
+                        // B) Marker existiert bereits -> Nur den Text updaten (z.B. wenn du von E10 auf Diesel tippst)
+                        // Das ist ein MASSIVER Performance-Boost, da das HTML-Element nicht gelöscht und neu gebaut wird!
+                        const markerDiv = this.mlMarkers[stationKey].getElement();
+                        const priceNode = markerDiv.querySelector('.pm-price');
+                        const labelNode = markerDiv.querySelector('.pm-fuel-label');
+                        
+                        if (priceNode) priceNode.innerText = el.simPrices[this.currentFuelType] || "-.--";
+                        if (labelNode) labelNode.innerText = this.currentFuelType.toUpperCase();
+                    }
+                } else {
+                    // --- 3. TANKSTELLE IST NICHT MEHR IM BILD ---
+                    // Marker eiskalt aus dem DOM löschen und RAM freigeben
+                    if (this.mlMarkers[stationKey]) {
+                        this.mlMarkers[stationKey].remove();
+                        delete this.mlMarkers[stationKey];
+                    }
                 }
-
-                // Hier nutzen wir immer die sichere, intern gespeicherte Sprit-Art
-                let displayPrice = el.simPrices[this.currentFuelType] || "-.--";
-                const closedClass = (el.simPrices.isOpen === false) ? 'closed' : '';
-
-     const elDiv = document.createElement('div');
-                // BOSS-FIX: 'map-v2-icon' für den äußeren Container hinzugefügt
-                elDiv.className = 'custom-div-icon map-v2-icon'; 
-                
-                // BOSS-FIX: 'map-v2-marker' zum inneren Wrap hinzugefügt!
-                elDiv.innerHTML = `
-                    <div class="price-marker-wrap map-v2-marker ${closedClass}" style="cursor: pointer; transition: transform 0.1s;">
-                        <div class="pm-brand-bar ${brandClass}">${displayName}</div>
-                        <div class="pm-content">
-                            <div class="pm-price">${displayPrice}</div>
-                            <div class="pm-fuel-label">${this.currentFuelType.toUpperCase()}</div>
-                        </div>
-                    </div>
-                `;
-
-                elDiv.addEventListener('mouseenter', () => elDiv.firstChild.style.transform = 'scale(1.05)');
-                elDiv.addEventListener('mouseleave', () => elDiv.firstChild.style.transform = 'scale(1)');
-                
-                elDiv.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    libreMap.flyTo({ 
-                        center: [el.lon, el.lat], 
-                        zoom: 15.5, 
-                        speed: 1.2,
-                        essential: true
-                    });
-                    
-                    this.openTotem(el.name, el.lat, el.lon, el);
-                });
-
-                const marker = new maplibregl.Marker({ element: elDiv, anchor: 'bottom' })
-                    .setLngLat([el.lon, el.lat])
-                    .addTo(libreMap);
-
-                this.mlMarkers.push(marker);
             });
         },
 
