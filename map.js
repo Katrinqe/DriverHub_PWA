@@ -2548,8 +2548,8 @@ updateDashboard: function() {
         }
     }
 
-    /* ========================================== */
-/* === PREIS-ALARM LOGIK ==================== */
+   /* ========================================== */
+/* === PREIS-ALARM LOGIK (MIT PUSH-TEST) ==== */
 /* ========================================== */
 function initPriceAlarm() {
     const input = document.getElementById('alarm-price-input');
@@ -2561,18 +2561,36 @@ function initPriceAlarm() {
         input.value = savedPrice;
     }
 
-    // 2. Jeden Tastendruck sofort speichern
-    input.addEventListener('input', function(e) {
+    // 2. Event feuert, wenn Eingabe fertig ist (Enter oder Klick daneben)
+    input.addEventListener('change', async function(e) {
         const val = e.target.value;
         localStorage.setItem('gas_price_alarm_value', val);
-        
-        // Späterer Einsprungpunkt für Firebase:
-        // firebase.firestore().collection('users').doc(uid).update({ alarmPrice: val });
+
+        // === BOSS-FIX 1: PUSH-BERECHTIGUNG VON APPLE EINHOLEN ===
+        if (window.Notification && Notification.permission !== 'granted') {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                console.log('Push-Rechte abgelehnt.');
+                return;
+            }
+        }
+
+        // === BOSS-FIX 2: AUFTRAG AN DEN SERVICE WORKER SCHICKEN ===
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+                type: 'TEST_ALARM',
+                price: val,
+                delay: 20000 // 20.000 Millisekunden = 20 Sekunden
+            });
+            console.log('Timer läuft! Du kannst die App jetzt schließen.');
+        } else {
+            console.warn('Kein aktiver Service Worker gefunden. Benachrichtigung läuft nur lokal.');
+            setTimeout(() => {
+                new Notification('🔥 Preis-Alarm!', { body: `Dein Preis von ${val}€ wurde erreicht!` });
+            }, 20000);
+        }
     });
 }
-
-// Startet die Logik, sobald das UI geladen ist
-document.addEventListener('DOMContentLoaded', initPriceAlarm);
 
     
 }); // <-- Das ist und bleibt deine allerletzte Klammer in der map.js!
