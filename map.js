@@ -1387,8 +1387,8 @@ fetchData: async function() {
                 console.error("Tankerkönig Fetch Error:", err);
             }
         },
-        getBrandClass: function(name) {
-            if (!name) return '';
+ getBrandClass: function(name) {
+            if (!name) return 'unknown';
             const n = name.toLowerCase();
             if(n.includes('aral')) return 'aral';
             if(n.includes('shell')) return 'shell';
@@ -1397,7 +1397,9 @@ fetchData: async function() {
             if(n.includes('jet')) return 'jet';
             if(n.includes('hem')) return 'hem';
             if(n.includes('avanti')) return 'avanti';
-            return ''; 
+            
+            // BOSS-FIX: Wenn wir die Marke nicht kennen, kriegt sie das Label 'unknown'
+            return 'unknown'; 
         },
 
 redrawMarkers: function() {
