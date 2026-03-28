@@ -1,6 +1,4 @@
 // --- DRIVERHUB 4.0 - FINAL CORE ---
-
-// --- DRIVERHUB 4.0 - FINAL CORE ---
 let map;
 let userMarker = null;
 
@@ -83,55 +81,50 @@ function initWeather() {
 
 document.getElementById('btn-start').addEventListener('click', () => alert("Start!"));
 
-// --- DRIVERHUB 4.0 - FINAL CORE ---
-let map;
-let userMarker = null;
-
-window.addEventListener('load', () => {
-    // 1. Das U-Boot (Service Worker) beim Browser anmelden
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker registriert!'))
-        .catch(err => console.error('Service Worker Fehler:', err));
-    }
-
-    initBackgroundMap();
-    initWeather();
-    
-    // 2. Den Preis-Alarm und den Funkspruch aktivieren
-    initPriceAlarm(); 
-});
 
 // ... (HIER BLEIBT DEIN GANZER RESTLICHER KARTEN-CODE EXAKT WIE ER IST) ...
 
-// === GANZ UNTEN IN DER DATEI HINZUFÜGEN ===
 function initPriceAlarm() {
+    const btn = document.querySelector('.btn-radar-set');
     const input = document.getElementById('alarm-price-input');
-    if (!input) return;
+    
+    if (!btn || !input) return;
 
-    // Feuert, sobald du einen Preis eingibst und "Enter" drückst (oder daneben tippst)
-    input.addEventListener('change', async function(e) {
-        const val = e.target.value;
+    // Wir feuern jetzt durch einen ECHTEN KLICK auf den Button!
+    btn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        const val = input.value;
+        
+        if(!val) {
+            alert("⚠️ Bitte erst einen Preis eingeben!");
+            return;
+        }
 
-        // HIER passiert die Apple-Abfrage für die Benachrichtigungen!
+        // === 1. PUSH-RECHTE ERZWINGEN ===
         if (window.Notification && Notification.permission !== 'granted') {
-            const permission = await Notification.requestPermission();
-            if (permission !== 'granted') {
-                console.log('Push-Rechte abgelehnt.');
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    alert("❌ Push abgelehnt. Du musst es in den iOS-Einstellungen erlauben.");
+                    return;
+                }
+            } catch (err) {
+                alert("❌ Fataler Push-Fehler (HTTPS aktiv?): " + err);
                 return;
             }
         }
 
-        // HIER funkt das Cockpit das U-Boot an!
+        // === 2. FUNKSPRUCH AN DAS U-BOOT ===
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
             navigator.serviceWorker.controller.postMessage({
                 type: 'TEST_ALARM',
                 price: val,
-                delay: 20000 // 20.000 Millisekunden = 20 Sekunden
+                delay: 20000 
             });
-            console.log('Funkspruch an sw.js gesendet! Timer läuft.');
+            // Dieses Pop-up MUSS jetzt kommen!
+            alert(`✅ Alarm für ${val}€ scharf! Schließe jetzt die App komplett (wegwischen).`);
         } else {
-            console.log('Kein U-Boot gefunden. Lade die Seite einmal komplett neu.');
+            alert("❌ Kein Service Worker gefunden! Testest du über HTTP (ohne S)?");
         }
     });
 }
