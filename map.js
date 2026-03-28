@@ -1357,6 +1357,7 @@ fetchData: async function() {
                         };
                     });
                     this.redrawMarkers();
+                    this.updateDashboard(); // BOSS-FIX: Dashboard updaten nach dem Laden!
                 } else {
                     console.error("Tankerkönig API Fehler:", data.message);
                 }
@@ -1570,12 +1571,13 @@ openTotem: function(name, lat, lng, elementRef) {
             this.updateTotemSelectionUI();
         },
 
-        selectFuel: function(type) {
+   selectFuel: function(type) {
             this.currentFuelType = type;
             localStorage.setItem('preferredFuelType', type); 
             
             this.updateTotemSelectionUI();
             this.redrawMarkers(); 
+            this.updateDashboard(); // BOSS-FIX: Dashboard sofort neu sortieren bei Klick auf Diesel/E10!
         },
 
         updateTotemSelectionUI: function() {
@@ -1588,7 +1590,76 @@ openTotem: function(name, lat, lng, elementRef) {
             const overlay = document.getElementById('gas-totem-overlay');
             if (overlay) overlay.classList.add('hidden');
         }
+
+    updateDashboard: function() {
+            const dashboard = document.getElementById('gas-dashboard');
+            const listContainer = document.getElementById('dash-top-4-list');
+            const labelEl = document.getElementById('dash-graph-fuel-label');
+            
+            if (!dashboard || !listContainer) return;
+
+            // Wenn inaktiv oder keine Tankstellen da, Dashboard verstecken
+            if (!this.isActive || !this.cachedStations || this.cachedStations.length === 0) {
+                dashboard.classList.add('hidden');
+                return;
+            }
+
+            dashboard.classList.remove('hidden');
+            const fuel = this.currentFuelType; // 'e10', 'e5', 'diesel'
+            if (labelEl) labelEl.textContent = fuel.toUpperCase();
+
+            // 1. Filtern: Nur offene Tanken, die auch einen echten Preis (> 0) für diesen Sprit haben
+            let validStations = this.cachedStations.filter(st => {
+                if (st.simPrices.isOpen === false) return false;
+                const price = parseFloat(st.simPrices[fuel]);
+                return !isNaN(price) && price > 0;
+            });
+
+            // 2. Sortieren: Die billigste ganz nach oben (Aufsteigend)
+            validStations.sort((a, b) => parseFloat(a.simPrices[fuel]) - parseFloat(b.simPrices[fuel]));
+
+            // 3. Die Top 4 abschneiden
+            const top4 = validStations.slice(0, 4);
+
+            // 4. HTML rendern
+            listContainer.innerHTML = '';
+            
+            if (top4.length === 0) {
+                listContainer.innerHTML = '<div style="color:#888; font-size:0.8rem; text-align:center; margin-top:20px;">Keine Preise gefunden.</div>';
+                return;
+            }
+
+            top4.forEach((st, index) => {
+                const priceStr = parseFloat(st.simPrices[fuel]).toFixed(2);
+                // Distanz ist in st.realData.dist (kommt von Tankerkönig)
+                const distStr = st.realData.dist ? st.realData.dist.toFixed(1) + ' km' : '';
+                
+                const html = `
+                    <div class="dash-list-item" onclick="ExploreLogic.flyToAndOpen('${st.name}', ${st.lat}, ${st.lon})">
+                        <div class="dash-item-rank">${index + 1}</div>
+                        <div class="dash-item-info">
+                            <div class="dash-item-name">${st.name}</div>
+                            <div class="dash-item-dist">${distStr}</div>
+                        </div>
+                        <div class="dash-item-price">${priceStr}</div>
+                    </div>
+                `;
+                listContainer.insertAdjacentHTML('beforeend', html);
+            });
+        },
+
+        // Helper-Funktion für den Klick auf ein Listenelement im Dashboard
+        flyToAndOpen: function(name, lat, lon) {
+            if (!libreMap) return;
+            libreMap.flyTo({ center: [lon, lat], zoom: 15.5, speed: 1.2, essential: true });
+            
+            // Finde das korrekte Element aus dem Cache, um das Totem mit allen Live-Daten zu füttern
+            const el = this.cachedStations.find(s => s.lat === lat && s.lon === lon);
+            if (el) this.openTotem(name, lat, lon, el);
+        }
     };
+
+    
 // ==========================================
     // === MATH: ECHTE LUFTLINIEN-DISTANZ IN METER ===
     // ==========================================
