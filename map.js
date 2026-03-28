@@ -2568,17 +2568,15 @@ updateDashboard: function() {
 function initPriceAlarm() {
     const input = document.getElementById('alarm-price-input');
     
-    // Bricht ab, wenn das Eingabefeld (noch) nicht existiert
     if (!input) {
         console.warn("Preis-Alarm Input nicht gefunden.");
         return;
     }
 
-    // 'change' feuert auf dem iPhone, sobald du auf "Fertig" tippst oder ins Leere klickst
     input.addEventListener('change', async function(e) {
         const val = input.value;
         
-        if(!val) return; // Wenn leer, nichts machen
+        if(!val) return; 
 
         // === 1. PUSH-RECHTE VON APPLE ERZWINGEN ===
         if (window.Notification && Notification.permission !== 'granted') {
@@ -2599,9 +2597,8 @@ function initPriceAlarm() {
             navigator.serviceWorker.controller.postMessage({
                 type: 'TEST_ALARM',
                 price: val,
-                delay: 20000 // 20 Sekunden Timer
+                delay: 20000 
             });
-            // Dieses Pop-up bestätigt dir, dass das U-Boot den Befehl hat!
             alert(`✅ Alarm für ${val}€ scharf! Schließe jetzt die App komplett (wegwischen).`);
         } else {
             alert("❌ Kein Service Worker gefunden! Testest du über lokales Netzwerk ohne HTTPS?");
@@ -2609,17 +2606,4 @@ function initPriceAlarm() {
     });
 }
 
-// Zündet die Logik, sobald die Seite geladen ist
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Service Worker registrieren
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-        .then(reg => console.log('Service Worker registriert!'))
-        .catch(err => console.error('Service Worker Fehler:', err));
-    }
-    
-    // 2. Alarm-Feld scharfschalten (mit leichter Verzögerung, falls HTML noch lädt)
-    setTimeout(initPriceAlarm, 500); 
-
-    
-}); // <-- Das ist und bleibt deine allerletzte Klammer in der map.js!
+}); // <--- DAS IST DIE EINZIGE KLAMMER DIE GANZ AM ENDE STEHEN DARF! SIE SCHLIEßT DEINE ALLERERSTE ZEILE GANZ OBEN.
