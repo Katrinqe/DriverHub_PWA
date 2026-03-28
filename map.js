@@ -1293,10 +1293,19 @@ window.ExploreLogic = {
                 });
             }
 
+           // === BOSS-FIX: SILENT FETCH & DAUERHAFTES DASHBOARD ===
+            // 1. Zwingt das Dashboard sofort in den Lade-Modus (zeigt den Spinner)
+            this.updateDashboard(); 
+
+            // 2. Wir geben dem GPS 3 Sekunden (statt 1,5) Zeit, um den Standort zu fixieren,
+            // bevor wir den stillen API-Call zu Tankerkönig abfeuern.
             setTimeout(() => {
                 this.fetchData();
-            }, 1500);
-        },
+            }, 3000); 
+            // =======================================================
+            
+        }, // <--- Hier endet die init-Funktion
+       
 
  clearMarkers: function() {
             if (this.mlMarkers) {
@@ -1385,7 +1394,8 @@ fetchData: async function() {
 
 redrawMarkers: function() {
             // Wenn inaktiv, keine Daten da oder Map nicht bereit -> Abbruch
-            if (!this.isActive || !this.cachedStations || !libreMap) return;
+           // Wenn noch keine Tankstellen-Daten da sind, Dashboard verstecken
+            if (!this.cachedStations || this.cachedStations.length === 0) {
 
             // 1. Die sichtbaren Grenzen (Bounding Box) deines Handy-Bildschirms abrufen
             const bounds = libreMap.getBounds();
