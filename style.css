@@ -4017,34 +4017,31 @@ body.ghost-active #ghost-chat-overlay {
 .trend-percentage.up { color: #ff3b30; text-shadow: 0 0 10px rgba(255, 59, 48, 0.4); }
 .trend-percentage.down { color: #30d158; text-shadow: 0 0 10px rgba(48, 209, 88, 0.4); }
 
-/* Unten: Sprit-Art links und Min/Max rechts nebeneinander */
+/* Unten: Sprit-Art links und Min/Max-Inline rechts */
 .trend-details {
     display: flex;
     justify-content: space-between; 
-    align-items: flex-end;
+    align-items: baseline; /* Alle Texte auf einer unsichtbaren Grundlinie */
+    margin-top: 2px;
 }
 
-/* Neu: Das Sprit-Label (z.B. DIESEL) */
 .trend-fuel {
     font-size: 0.65rem;
     color: rgba(255, 255, 255, 0.4);
     font-weight: 800;
     letter-spacing: 1px;
-    padding-bottom: 2px; /* Damit es auf gleicher Höhe mit dem 1.99 Preis abschließt */
 }
 
-/* Min/Max Block */
-.trend-minmax {
+/* BOSS-FIX: MIN und MAX flach nebeneinander */
+.trend-minmax-inline {
     display: flex;
-    flex-direction: column;
-    gap: 2px; 
+    gap: 12px; /* Der Abstand zwischen dem MIN-Block und dem MAX-Block */
 }
 
-.trend-row {
+.trend-item {
     display: flex;
-    justify-content: flex-end;
     align-items: baseline;
-    gap: 6px; 
+    gap: 4px; /* Abstand zwischen dem Wort "MIN" und der Zahl "1.99" */
 }
 
 .trend-label {
