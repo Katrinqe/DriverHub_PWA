@@ -3847,9 +3847,9 @@ body.ghost-active #ghost-chat-overlay {
     gap: 0.5px;
    /* === BOSS-FIX 1: WEISSER DEZENTER GLOW FÜR UNBEKANNTE === */
     /* HIER HABEN WIR DAS GRAU DEUTLICH ERHELLT FÜR EINEN WEISS-SCHIMMER */
-    background: linear-gradient(to right, rgba(200, 200, 200, 0.12) 0%, rgba(20, 20, 25, 0.95) 90%);
+   background: linear-gradient(to right, rgba(255, 230, 190, 0.18) 0%, rgba(20, 20, 25, 0.95) 90%);
     
-    border: 1px solid rgba(255, 255, 255, 0.05); /* Sehr dezenter Rand */
+    border: 1px solid rgba(255, 255, 255, 0.05);
     
     /* === BOSS-FIX 2: KEINE FARBSTRICHE MEHR (Links & Rechts!) === */
     border-left: none !important;
