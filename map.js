@@ -1591,7 +1591,10 @@ openTotem: function(name, lat, lng, elementRef) {
             if (overlay) overlay.classList.add('hidden');
         }
 
-    updateDashboard: function() {
+
+    };
+
+        updateDashboard: function() {
             const dashboard = document.getElementById('gas-dashboard');
             const listContainer = document.getElementById('dash-top-4-list');
             const labelEl = document.getElementById('dash-graph-fuel-label');
@@ -1657,7 +1660,6 @@ openTotem: function(name, lat, lng, elementRef) {
             const el = this.cachedStations.find(s => s.lat === lat && s.lon === lon);
             if (el) this.openTotem(name, lat, lon, el);
         }
-    };
 
     
 // ==========================================
