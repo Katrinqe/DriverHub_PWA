@@ -3997,3 +3997,72 @@ body.ghost-active #ghost-chat-overlay {
 #map-bottom-sheet:not(.expanded) #gas-dashboard {
     display: none !important;
 }
+
+/* === RECHTE SEITE: Layout & Trend-Box === */
+.dash-right {
+    flex: 1; /* Nimmt die rechte Hälfte ein */
+    display: flex;
+    flex-direction: column;
+}
+
+.dash-trend-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 12px 15px;
+    box-sizing: border-box;
+}
+
+/* Großer Prozent-Indikator */
+.trend-percentage {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+}
+
+/* Klasse "up" = Rot & Hoch, Klasse "down" = Grün & Runter */
+.trend-percentage.up {
+    color: #ff3b30; 
+    text-shadow: 0 0 10px rgba(255, 59, 48, 0.4);
+}
+.trend-percentage.down {
+    color: #30d158; 
+    text-shadow: 0 0 10px rgba(48, 209, 88, 0.4);
+}
+
+/* Min/Max Block daneben */
+.trend-minmax {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.trend-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.trend-label {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* Identisches Design zu den Preisen links! */
+.trend-price {
+    font-family: monospace;
+    font-size: 1.0rem; 
+    line-height: 1.1;
+    font-weight: 800;
+    color: #fff; /* Neutralweiß, damit das Rot links besser knallt */
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
