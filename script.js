@@ -1,4 +1,5 @@
 // --- DRIVERHUB 4.0 - FINAL CORE ---
+
 let map;
 let userMarker = null;
 
@@ -16,6 +17,7 @@ window.addEventListener('load', () => {
     // 2. Den Preis-Alarm und den Funkspruch aktivieren
     initPriceAlarm(); 
 });
+
 function initBackgroundMap() {
     map = L.map('background-map', {
         zoomControl: false, attributionControl: false,
@@ -64,25 +66,31 @@ function initWeather() {
         
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
             .then(r => r.json()).then(d => {
-                document.getElementById('loc-text').innerText = d.address.city || d.address.town || "Standort";
+                const city = d.address.city || d.address.town || "Standort";
+                const el = document.getElementById('loc-text');
+                if (el) el.innerText = city;
             });
 
         fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
             .then(r => r.json()).then(d => {
-                document.getElementById('weather-temp').innerText = Math.round(d.current_weather.temperature) + "°";
+                const elTemp = document.getElementById('weather-temp');
+                if (elTemp) elTemp.innerText = Math.round(d.current_weather.temperature) + "°";
+                
                 const c = d.current_weather.weathercode;
                 const i = document.getElementById('weather-icon');
-                if (c <= 1) i.className = "fa-solid fa-sun";
-                else if (c <= 3) i.className = "fa-solid fa-cloud-sun";
-                else i.className = "fa-solid fa-cloud";
+                if (i) {
+                    if (c <= 1) i.className = "fa-solid fa-sun";
+                    else if (c <= 3) i.className = "fa-solid fa-cloud-sun";
+                    else i.className = "fa-solid fa-cloud";
+                }
             });
     });
 }
 
-document.getElementById('btn-start').addEventListener('click', () => alert("Start!"));
-
-
-// ... (HIER BLEIBT DEIN GANZER RESTLICHER KARTEN-CODE EXAKT WIE ER IST) ...
+const btnStart = document.getElementById('btn-start');
+if (btnStart) {
+    btnStart.addEventListener('click', () => alert("Start!"));
+}
 
 function initPriceAlarm() {
     const btn = document.querySelector('.btn-radar-set');
