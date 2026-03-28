@@ -1243,7 +1243,6 @@ function restore3DBuildings(activeTheme) {
     }
 
 apiKey: '448a2db3-bf39-415e-a763-8f889d8b31dd',
-        // BOSS-FIX: Wir ändern das Array in ein Objekt, um Marker intelligent zu verwalten
         mlMarkers: {}, 
         mapListenerBound: false, // Verhindert, dass wir den Map-Listener doppelt feuern
         cachedStations: [],
