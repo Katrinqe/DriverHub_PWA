@@ -666,8 +666,25 @@ allPoints.forEach(coord => bounds.extend(coord));
                 RouteLogic.currentInstructionIndex = 0; // Reset für den Start
             }
 
-            // Im Objekt speichern für späteres Umschalten (Aktiv/Grau)
+          // Im Objekt speichern für späteres Umschalten (Aktiv/Grau)
             RouteLogic.routeGeoJSONs[index] = routeFeatures;
+
+            // --- BOSS-FIX: ASPHALT-INTEGRATION (Route unter Gebäude & Texte schieben) ---
+            let beforeLayerId = null;
+            const layers = libreMap.getStyle().layers;
+            if (layers) {
+                for (let i = 0; i < layers.length; i++) {
+                    // Wir suchen die erste Ebene, die Text oder Symbole (Straßennamen) enthält
+                    if (layers[i].type === 'symbol') {
+                        beforeLayerId = layers[i].id;
+                        break;
+                    }
+                }
+            }
+            // Wenn die 3D-Gebäude da sind, legen wir die Route zwingend auch darunter!
+            if (libreMap.getLayer('3d-buildings')) {
+                beforeLayerId = '3d-buildings';
+            }
 
             // Layer sofort anlegen
             const sourceId = `route-source-${index}`;
@@ -678,27 +695,22 @@ allPoints.forEach(coord => bounds.extend(coord));
                 data: { type: 'FeatureCollection', features: routeFeatures }
             });
 
+            // Wir zeichnen jetzt einen perfekten, sauberen Layer (und keine doppelten IDs mehr)
             libreMap.addLayer({
                 id: layerId,
                 type: 'line',
                 source: sourceId,
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
+                layout: { 
+                    'line-join': 'round', 
+                    'line-cap': 'round' 
+                },
                 paint: { 
                     'line-color': ['get', 'color'], 
-                    // Pro-Tipp: Wenn es eine Stau-Linie ist (isTraffic = true), machen wir sie 1px dicker (7 statt 6). 
-                    // Das verhindert, dass die blaue Basis-Linie an den Rändern hässlich durchschimmert.
+                    // Traffic-Linien minimal dicker machen, damit das Blau an den Rändern nicht durchblitzt
                     'line-width': ['case', ['==', ['get', 'isTraffic'], true], 7, 6] 
                 }
-            });
-
-            libreMap.addLayer({
-                id: layerId,
-                type: 'line',
-                source: sourceId,
-                layout: { 'line-join': 'round', 'line-cap': 'round' },
-                paint: { 'line-color': ['get', 'color'], 'line-width': 6 }
-            });
-
+            }, beforeLayerId); // <--- HIER WIRD DIE ROUTE UNTER DEN ASPHALT GEDRÜCKT!
+            // ============================================================================
 // --- UI DATEN BEFÜLLEN ---
             const summary = route.summary;
             const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
@@ -1044,8 +1056,22 @@ function restore3DBuildings(activeTheme) {
         });
     }
 
-    function restoreRoutes() {
+function restoreRoutes() {
         if (!window.RouteLogic || !window.RouteLogic.routeGeoJSONs) return;
+
+        // BOSS-FIX: Auch beim Theme-Wechsel die Route unter den Asphalt legen!
+        let beforeLayerId = null;
+        const layers = libreMap.getStyle().layers;
+        if (layers) {
+            for (let i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol') { 
+                    beforeLayerId = layers[i].id; 
+                    break; 
+                }
+            }
+        }
+        if (libreMap.getLayer('3d-buildings')) beforeLayerId = '3d-buildings';
+
         window.RouteLogic.routeGeoJSONs.forEach((features, index) => {
             if (!features) return;
             const sourceId = `route-source-${index}`;
@@ -1056,10 +1082,12 @@ function restore3DBuildings(activeTheme) {
             }
             if (!libreMap.getLayer(layerId)) {
                 libreMap.addLayer({
-                    id: layerId, type: 'line', source: sourceId,
+                    id: layerId, 
+                    type: 'line', 
+                    source: sourceId,
                     layout: { 'line-join': 'round', 'line-cap': 'round' },
                     paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['==', ['get', 'isTraffic'], true], 7, 6] }
-                });
+                }, beforeLayerId); // <-- Hier exakt eingefügt!
             }
         });
         window.RouteLogic.updateMapLayers();
