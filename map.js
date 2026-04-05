@@ -2798,8 +2798,8 @@ updateDashboard: function() {
                     }
 
 
-                    // ====================================================
-                    // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (SINGLE SOURCE OF TRUTH) ===
+                   // ====================================================
+                    // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (PHASE ENGINE V1) ===
                     // ====================================================
                     
                     // 1. DIE WEICHE: Woher kommen die Daten?
@@ -2807,25 +2807,57 @@ updateDashboard: function() {
                     let renderDist = distMeters;
 
                     if (window.testScenarioIdx > 0) {
-                        // TEST-MODUS: Wir überschreiben die Live-Daten mit dem Fake-Szenario
+                        // TEST-MODUS: Wir überschreiben die Live-Daten
                         renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
                         renderDist = renderManeuver.mockDist;
                     }
 
-                    if (!renderManeuver) return; // Wenn weder Live noch Test Daten haben -> abbrechen
+                    if (!renderManeuver) return; 
 
-                    // 2. DAS RENDERING: Egal ob Live oder Test, dieser Code läuft IMMER bei jedem GPS Tick!
                     const shortInfo = getShortInstruction(renderManeuver);
                     const manType = renderManeuver.maneuver || '';
 
-                    // A) Hauptaktion
+                    // --- 2. DIE PHASE ENGINE LOGIK ---
+                    let navPhase = "CRUISE";
+                    const isKeep = manType.includes('KEEP') || manType.includes('BIFURCATION');
+                    const isExit = manType.includes('EXIT') || manType.includes('OFF_RAMP');
+                    const isTurn = manType.includes('TURN');
+
+                    // Combo-Check: Blick in die Zukunft (Nur im Live-Modus)
+                    let isCombo = false;
+                    if (isKeep && window.testScenarioIdx === 0) { 
+                        const instructions = RouteLogic.currentInstructions || [];
+                        let peekIdx = RouteLogic.currentInstructionIndex + 1;
+                        while (peekIdx < instructions.length && instructions[peekIdx].maneuver === 'DEPART') peekIdx++;
+                        
+                        if (peekIdx < instructions.length) {
+                            const nextMan = instructions[peekIdx];
+                            if (nextMan.maneuver.includes('EXIT') || nextMan.maneuver.includes('OFF_RAMP')) {
+                                const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
+                                if (cumulativeDists && cumulativeDists[nextMan.pointIndex] && cumulativeDists[renderManeuver.pointIndex]) {
+                                    const nextDistMeters = cumulativeDists[nextMan.pointIndex] - cumulativeDists[renderManeuver.pointIndex];
+                                    // Wenn die echte Ausfahrt zwischen 50m und 1200m nach der Abfahrt kommt = COMBO!
+                                    if (nextDistMeters > 50 && nextDistMeters < 1200) {
+                                        isCombo = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Phase zuweisen
+                    if (isCombo || isKeep) navPhase = "PRE_EXIT"; // Vorbereitung (Abfahrt)
+                    else if (isExit) navPhase = "EXIT";           // Ausführung (Ausfahrt)
+                    else if (isTurn) navPhase = "TURN";           // Stadt-Abbiegung
+
+                    // A) Hauptaktion Text
                     const actionEl = document.getElementById('nav-top-action');
                     if (actionEl) actionEl.textContent = shortInfo.action;
 
-                    // B) Meter-Anzeige (Intelligent ausblenden bei Gabelungen)
+                    // B) Meter-Anzeige (Ausblenden in Phase 1 "PRE_EXIT")
                     const distEl = document.getElementById('nav-top-distance');
                     if (distEl) {
-                        if (manType.includes('KEEP') || manType.includes('BIFURCATION')) {
+                        if (navPhase === "PRE_EXIT") {
                             distEl.style.display = 'none'; 
                         } else {
                             distEl.style.display = 'block';
@@ -2838,18 +2870,20 @@ updateDashboard: function() {
                         }
                     }
 
-                    // C) Das Haupt-Icon (Mit Rotation)
+                    // C) Das Haupt-Icon (Dynamische Rotation je nach Phase)
                     const iconEl = document.getElementById('nav-top-icon');
                     if (iconEl) {
                         let iconClass = 'fa-arrow-up'; 
                         let rotation = 'rotate(0deg)';
                         
-                        if (manType.includes('EXIT') || manType.includes('OFF_RAMP')) {
+                        if (navPhase === "EXIT") {
                             iconClass = 'fa-arrow-up'; 
                             rotation = manType.includes('LEFT') ? 'rotate(-45deg)' : 'rotate(45deg)'; 
                         }
-                        else if (manType.includes('KEEP_LEFT') || manType.includes('BIFURCATION_LEFT')) { iconClass = 'fa-arrow-up'; rotation = 'rotate(-30deg)'; }
-                        else if (manType.includes('KEEP_RIGHT') || manType.includes('BIFURCATION_RIGHT')) { iconClass = 'fa-arrow-up'; rotation = 'rotate(30deg)'; }
+                        else if (navPhase === "PRE_EXIT") { 
+                            iconClass = 'fa-arrow-up'; 
+                            rotation = manType.includes('LEFT') ? 'rotate(-25deg)' : 'rotate(25deg)'; 
+                        }
                         else if (manType.includes('TURN_LEFT')) { iconClass = 'fa-arrow-left'; }
                         else if (manType.includes('TURN_RIGHT')) { iconClass = 'fa-arrow-right'; }
                         else if (manType.includes('U_TURN')) { iconClass = 'fa-arrow-rotate-left'; }
@@ -2860,7 +2894,7 @@ updateDashboard: function() {
                         iconEl.style.display = 'inline-block'; 
                     }
 
-                    // D) Schilder & Straßentexte
+                    // D) Schilder & Straßentexte bereinigen
                     const streetEl = document.getElementById('nav-top-street');
                     if (streetEl) {
                         streetEl.innerHTML = ''; 
@@ -2894,62 +2928,66 @@ updateDashboard: function() {
                         streetEl.appendChild(textSpan);
                         streetEl.style.display = 'block';
                         
-                        // E) Der Spur-Assistent
-                  // ==========================================
-                                // === BOSS-FIX: CLEAN UI SPUR-ASSISTENT ===
-                                // ==========================================
-                                let laneContainer = document.getElementById('nav-top-lanes');
-                                if (!laneContainer) {
-                                    laneContainer = document.createElement('div');
-                                    laneContainer.id = 'nav-top-lanes';
-                                    laneContainer.className = 'lane-assist-container';
-                                    streetEl.parentNode.appendChild(laneContainer);
-                                }
-                                laneContainer.innerHTML = ''; 
+                        // E) Der Spur-Assistent (PHASE ENGINE CONTROLLED)
+                        let laneContainer = document.getElementById('nav-top-lanes');
+                        if (!laneContainer) {
+                            laneContainer = document.createElement('div');
+                            laneContainer.id = 'nav-top-lanes';
+                            laneContainer.className = 'lane-assist-container';
+                            streetEl.parentNode.appendChild(laneContainer);
+                        }
+                        laneContainer.innerHTML = ''; 
+                        
+                        let showLanes = false;
+                        if (renderManeuver.lanes && renderManeuver.lanes.length > 0) {
+                            showLanes = true;
+                            // Peters Regel: Keine Spuren bei normaler Ausfahrt (<=2 Spuren) oder simplen Abbiegungen
+                            if ((navPhase === "EXIT" && !isCombo && renderManeuver.lanes.length <= 2) || navPhase === "TURN") {
+                                showLanes = false;
+                            }
+                        }
+
+                        if (showLanes) {
+                            laneContainer.style.display = 'flex';
+                            renderManeuver.lanes.forEach(lane => {
+                                const arrowDiv = document.createElement('div');
+                                arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
                                 
-                                // KI-Entscheidung: Brauchen wir die Spuren hier wirklich?
-                                let showLanes = false;
-                                if (renderManeuver.lanes && renderManeuver.lanes.length > 0) {
-                                    showLanes = true;
-                                    // Wenn es nur eine simple Ausfahrt (EXIT) ist und es insgesamt wenige Spuren gibt (z.B. 2), 
-                                    // kicken wir die Anzeige raus, da der fette Hauptpfeil oben völlig ausreicht.
-                                    if (manType.includes('EXIT') && renderManeuver.lanes.length <= 2) {
-                                        showLanes = false;
+                                let faIcon = 'fa-arrow-up'; 
+                                let laneRot = 'rotate(0deg)';
+                                
+                                if (lane.indications && lane.indications.length > 0) {
+                                    const inds = lane.indications.map(i => i.toLowerCase());
+                                    
+                                    if (navPhase === "PRE_EXIT") {
+                                        // PHASE 1: Wir bereiten die Abfahrt vor. Erlaubte Spuren zeigen GERADEAUS.
+                                        if (lane.valid) {
+                                            laneRot = 'rotate(0deg)';
+                                        } else {
+                                            // Falsche Spuren drehen wir optisch leicht weg, damit der Flow klar ist
+                                            laneRot = inds.includes('left') ? 'rotate(-20deg)' : 'rotate(20deg)';
+                                        }
+                                    } 
+                                    else if (navPhase === "EXIT") {
+                                        // PHASE 2: Die echte Ausfahrt. Erlaubte Spuren knicken hart NACH RECHTS (oder LINKS).
+                                        if (inds.includes('slight_right') || inds.includes('right')) {
+                                            laneRot = 'rotate(35deg)';
+                                        } else if (inds.includes('slight_left') || inds.includes('left')) {
+                                            laneRot = 'rotate(-35deg)';
+                                        } else {
+                                            laneRot = 'rotate(0deg)'; 
+                                        }
                                     }
                                 }
-
-                                if (showLanes) {
-                                    laneContainer.style.display = 'flex';
-                                    renderManeuver.lanes.forEach(lane => {
-                                        const arrowDiv = document.createElement('div');
-                                        arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
-                                        
-                                        let faIcon = 'fa-arrow-up'; 
-                                        let laneRot = 'rotate(0deg)';
-                                        
-                                        if (lane.indications && lane.indications.length > 0) {
-                                            // Wenn wir uns auf einer Gabelung/Abfahrt (KEEP) befinden,
-                                            // erzwingen wir bei den GÜLTIGEN Spuren (valid) eine Geradeaus-Optik,
-                                            // damit es fließend aussieht und nicht wie ein 90-Grad-Knick auf der Autobahn!
-                                            if (lane.valid && (manType.includes('KEEP') || manType.includes('BIFURCATION'))) {
-                                                faIcon = 'fa-arrow-up';
-                                                laneRot = 'rotate(0deg)';
-                                            } else {
-                                                // Normale TomTom Logik
-                                                const ind = lane.indications[0].toLowerCase();
-                                                if (ind.includes('slight_left')) laneRot = 'rotate(-30deg)';
-                                                else if (ind.includes('left')) laneRot = 'rotate(-45deg)';
-                                                else if (ind.includes('slight_right')) laneRot = 'rotate(30deg)';
-                                                else if (ind.includes('right')) laneRot = 'rotate(45deg)';
-                                                else if (ind.includes('u-turn')) faIcon = 'fa-arrow-rotate-left';
-                                            }
-                                        }
-                                        arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}" style="transform: ${laneRot}; display: inline-block;"></i>`;
-                                        laneContainer.appendChild(arrowDiv);
-                                    });
-                                } else {
-                                    laneContainer.style.display = 'none';
-                                }
+                                arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}" style="transform: ${laneRot}; display: inline-block;"></i>`;
+                                laneContainer.appendChild(arrowDiv);
+                            });
+                        } else {
+                            laneContainer.style.display = 'none';
+                        }
+                    }
+                    // ====================================================
+                                // ==========================================
                      
                     }
                     // ====================================================
