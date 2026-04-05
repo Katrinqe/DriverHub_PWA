@@ -2135,6 +2135,75 @@ updateDashboard: function() {
     }
 
 
+// --- NIKITAS NAV-SIMULATOR (Szenarien 1-4) ---
+    window.testScenarioIdx = 0;
+    window.NavTestScenarios = [
+        null, // Index 0 = Live Betrieb
+        {
+            // Szenario 1: Komplexe Autobahnausfahrt (A9)
+            maneuver: "EXIT_RIGHT",
+            roadNumbers: ["A9"],
+            signpostText: "München-Schwabing",
+            street: "A9",
+            lanes: [
+                {valid: false, indications: ["STRAIGHT"]},
+                {valid: true, indications: ["STRAIGHT", "RIGHT"]},
+                {valid: true, indications: ["RIGHT"]}
+            ],
+            mockSpeed: 120,
+            mockDist: 450
+        },
+        {
+            // Szenario 2: Autobahngabelung (A3)
+            maneuver: "KEEP_LEFT",
+            roadNumbers: ["A3"],
+            signpostText: "Frankfurt",
+            street: "A3",
+            lanes: [
+                {valid: true, indications: ["LEFT"]},
+                {valid: true, indications: ["LEFT"]},
+                {valid: false, indications: ["STRAIGHT"]},
+                {valid: false, indications: ["STRAIGHT"]}
+            ],
+            mockSpeed: 110,
+            mockDist: 850
+        },
+        {
+            // Szenario 3: Stadt-Abbiegung (B16)
+            maneuver: "TURN_RIGHT",
+            roadNumbers: ["B16"],
+            street: "Regensburger Straße",
+            lanes: [
+                {valid: false, indications: ["STRAIGHT"]},
+                {valid: true, indications: ["RIGHT"]}
+            ],
+            mockSpeed: 45,
+            mockDist: 80
+        },
+        {
+            // Szenario 4: Kreisverkehr
+            maneuver: "ROUNDABOUT",
+            roundaboutExitNumber: 3,
+            street: "Regensburger Ring",
+            mockSpeed: 25,
+            mockDist: 40
+        }
+    ];
+
+    // Button-Logic
+    function toggleNavTest() {
+        window.testScenarioIdx++;
+        if (window.testScenarioIdx >= window.NavTestScenarios.length) {
+            window.testScenarioIdx = 0; // Zurück zu Live
+        }
+        
+        const btn = document.getElementById('btn-test-hud');
+        if (btn) {
+            btn.textContent = window.testScenarioIdx === 0 ? 'T' : window.testScenarioIdx;
+            btn.classList.toggle('active', window.testScenarioIdx > 0);
+        }
+    }
+        
     // ==========================================
     // === SMART CAMERA ENGINE (V9 BITURBO) ===
     // ==========================================
@@ -2563,6 +2632,23 @@ updateDashboard: function() {
                         );
                     }
                     // ------------------------------------------------
+
+                    // --- BOSS-FIX: DIE TEST-WEICHE ---
+                    let currentManeuver = null;
+                    let distMeters = 0;
+                    let speedKmh = speed ? Math.round(speed * 3.6) : 0;
+
+                    if (window.testScenarioIdx > 0) {
+                        // SIMULATOR MODUS AKTIV
+                        const scenario = window.NavTestScenarios[window.testScenarioIdx];
+                        currentManeuver = scenario;
+                        distMeters = scenario.mockDist;
+                        speedKmh = scenario.mockSpeed;
+                    } else {
+                        // LIVE MODUS AKTIV
+                        // ... hier berechnet dein Code wie bisher das aktuelle Maneuver und die Distanz ...
+                        // (Lass deine bestehende Logik zur Ermittlung von currentManeuver & distMeters einfach hier laufen)
+                    }
 
                     const activeRoutePts = RouteLogic.routePointsData[RouteLogic.activeIndex];
                     const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
