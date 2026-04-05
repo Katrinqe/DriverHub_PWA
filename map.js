@@ -2287,8 +2287,14 @@ updateDashboard: function() {
             window.userIsLookingAround = false;
             window.resumeNavTimer = null;
 
-            const lockCamera = () => {
+        const lockCamera = () => {
                 if (!window.isNavigating) return;
+                
+                // BOSS-FIX: Nur beim ersten Berühren das Padding auf Null setzen!
+                if (!window.userIsLookingAround) {
+                    if (libreMap) libreMap.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
+                }
+
                 window.userIsLookingAround = true;
                 if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
             };
