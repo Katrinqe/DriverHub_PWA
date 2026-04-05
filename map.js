@@ -2138,12 +2138,12 @@ updateDashboard: function() {
                     el.innerHTML = '<div class="nav-arrow-wrap"><i class="fa-solid fa-location-arrow"></i></div>';
                 }
 
-                // 2. Kamera-Setup für Navigation
+              // 2. Kamera-Setup für Navigation (ALLES FREIGEBEN!)
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
-                libreMap.touchZoomRotate.disable(); 
+                libreMap.touchZoomRotate.enable(); // <-- BOSS-FIX: Anfassen erlaubt!
                 libreMap.doubleClickZoom.disable();
-                if (libreMap.dragRotate) libreMap.dragRotate.disable();
+                if (libreMap.dragRotate) libreMap.dragRotate.enable(); // <-- BOSS-FIX: Drehen erlaubt!
 
            libreMap.flyTo({
                     center: currentCoords, 
@@ -2282,6 +2282,50 @@ updateDashboard: function() {
             
             triggerGoogleVoice(welcomeSpeech);
 
+          // --- BOSS-FIX: DIE "FREE LOOK" ENGINE ---
+            window.isNavigating = true;
+            window.userIsLookingAround = false;
+            window.resumeNavTimer = null;
+
+            const lockCamera = () => {
+                if (!window.isNavigating) return;
+                window.userIsLookingAround = true;
+                if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
+            };
+
+            const unlockCameraTimer = () => {
+                if (!window.isNavigating) return;
+                if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
+                
+                // Startet den 5-Sekunden Countdown
+                window.resumeNavTimer = setTimeout(() => {
+                    window.userIsLookingAround = false;
+                    
+                    // Sanfter Rückflug zum Auto
+                    if (libreMap && currentCoords) {
+                        libreMap.flyTo({
+                            center: currentCoords,
+                            zoom: 17.5,
+                            pitch: 60,
+                            bearing: window.lastHeading || 0,
+                            padding: { top: window.innerHeight * 0.5, bottom: 0, left: 0, right: 0 },
+                            duration: 1500,
+                            essential: true
+                        });
+                    }
+                }, 5000); 
+            };
+
+            // Karte lauscht auf deine Finger
+            libreMap.on('touchstart', lockCamera);
+            libreMap.on('mousedown', lockCamera);
+            libreMap.on('wheel', lockCamera); // Fürs Scrollrad am Laptop
+
+            // Sobald du loslässt, tickt die Uhr
+            libreMap.on('touchend', unlockCameraTimer);
+            libreMap.on('mouseup', unlockCameraTimer);
+            // ----------------------------------------
+
             // 7. LIVE GPS MOTOR STARTEN
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
@@ -2299,25 +2343,25 @@ updateDashboard: function() {
                     const speedDisplay = document.getElementById('hud-current-speed');
                     if (speedDisplay) speedDisplay.textContent = speedKmh;
 
-              if (window.userLocationMarker) {
+if (window.userLocationMarker) {
                         window.userLocationMarker.setLngLat(currentCoords);
-                        // BOSS-FIX: Pfeil in Fahrtrichtung drehen
                         if (heading !== null && speed !== null && speed > 0.8) {
                             window.userLocationMarker.setRotation(heading);
+                            window.lastHeading = heading; // <-- WICHTIG: Für den Rückflug merken!
                         }
                     }
 
-           if (libreMap && elapsedSinceStart > 2500) {
+                    // BOSS-FIX: Die Kamera darf NUR nachziehen, wenn du NICHT in der Map wischst!
+                    if (libreMap && elapsedSinceStart > 2500 && !window.userIsLookingAround) {
                         const cameraOpts = { 
                             center: currentCoords, 
                             duration: 1000, 
                             easing: (t) => t,
-                            // BOSS-FIX: Padding TOP auch im Live-Tracking!
                             padding: { top: window.innerHeight * 0.5, bottom: 0, left: 0, right: 0 }
                         };
                         if (heading !== null && speed !== null && speed > 0.8) {
                             cameraOpts.bearing = heading;
-                            cameraOpts.pitch = 60; // 3D-Blick nach vorne erzwingen
+                            cameraOpts.pitch = 60; 
                         }
                         libreMap.easeTo(cameraOpts);
                     }
@@ -2520,6 +2564,11 @@ updateDashboard: function() {
     if (btnCancelActiveNav) {
         btnCancelActiveNav.onclick = (e) => {
             e.stopPropagation();
+
+            // BOSS-FIX: Free Look Engine hart abschalten
+            window.isNavigating = false;
+            window.userIsLookingAround = false;
+            if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
 
             if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
             if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
