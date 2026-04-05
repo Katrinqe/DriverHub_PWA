@@ -2637,22 +2637,7 @@ updateDashboard: function() {
                     }
                     // ------------------------------------------------
 
-        // --- BOSS-FIX: DIE TEST-WEICHE ---
-                    let currentManeuver = null;
-                    let distMeters = 0;
-                    // LÖSCHE HIER DIE ZEILE MIT "let speedKmh = ..." !
 
-                    if (window.testScenarioIdx > 0) {
-                        // SIMULATOR MODUS AKTIV
-                        const scenario = window.NavTestScenarios[window.testScenarioIdx];
-                        currentManeuver = scenario;
-                        distMeters = scenario.mockDist;
-                        speedKmh = scenario.mockSpeed; // Hier überschreiben wir jetzt einfach den Live-Wert von oben
-                    } else {
-                        // LIVE MODUS AKTIV
-                        // ... hier berechnet dein Code wie bisher das aktuelle Maneuver und die Distanz ...
-                        // (Lass deine bestehende Logik zur Ermittlung von currentManeuver & distMeters einfach hier laufen)
-                    }
 
                     const activeRoutePts = RouteLogic.routePointsData[RouteLogic.activeIndex];
                     const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
@@ -2905,6 +2890,93 @@ updateDashboard: function() {
                                 else if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
                                 
                                 iconEl.className = `fa-solid ${iconClass}`;
+
+                                // ====================================================
+                    // === BOSS-FIX: DER UNABHÄNGIGE SIMULATOR-RENDERER ===
+                    // ====================================================
+                    if (window.testScenarioIdx > 0) {
+                        const mockManeuver = window.NavTestScenarios[window.testScenarioIdx];
+                        const mockDist = mockManeuver.mockDist;
+                        
+                        // 1. Text & Pfeil berechnen
+                        const shortInfo = getShortInstruction(mockManeuver);
+                        
+                        const actionEl = document.getElementById('nav-top-action');
+                        if (actionEl) actionEl.textContent = shortInfo.action;
+
+                        const distEl = document.getElementById('nav-top-distance');
+                        if (distEl) distEl.textContent = `in ${mockDist} m`;
+
+                        const iconEl = document.getElementById('nav-top-icon');
+                        if (iconEl) {
+                            let iconClass = 'fa-arrow-up'; 
+                            const man = mockManeuver.maneuver || '';
+                            if (man.includes('EXIT') || man.includes('OFF_RAMP')) iconClass = man.includes('LEFT') ? 'fa-arrow-up-left' : 'fa-arrow-up-right';
+                            else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT')) iconClass = 'fa-arrow-up-left';
+                            else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT')) iconClass = 'fa-arrow-up-right';
+                            else if (man.includes('TURN_LEFT')) iconClass = 'fa-arrow-left';
+                            else if (man.includes('TURN_RIGHT')) iconClass = 'fa-arrow-right';
+                            else if (man.includes('U_TURN')) iconClass = 'fa-arrow-rotate-left';
+                            else if (man.includes('ROUNDABOUT')) iconClass = 'fa-arrows-spin';
+                            iconEl.className = `fa-solid ${iconClass}`;
+                        }
+
+                        // 2. HUD Schilder & Spuren (Multi-Layer) überschreiben
+                        const streetEl = document.getElementById('nav-top-street');
+                        if (streetEl) {
+                            streetEl.innerHTML = ''; 
+                            
+                            if (mockManeuver.roadNumbers && mockManeuver.roadNumbers.length > 0) {
+                                const rn = mockManeuver.roadNumbers[0];
+                                let badgeClass = '';
+                                if (rn.startsWith('A')) badgeClass = 'autobahn';
+                                else if (rn.startsWith('B')) badgeClass = 'bundesstrasse';
+                                if (badgeClass) streetEl.innerHTML += `<span class="road-badge ${badgeClass}">${rn}</span>`;
+                            }
+
+                            let directionText = mockManeuver.signpostText || "";
+                            let baseStreet = mockManeuver.street || "";
+                            let textSpan = document.createElement('span');
+                            if (directionText) textSpan.textContent = baseStreet ? `${baseStreet} Richtung ${directionText}` : `Richtung ${directionText}`;
+                            else textSpan.textContent = baseStreet;
+                            streetEl.appendChild(textSpan);
+                            streetEl.style.display = 'block';
+                            
+                            // 3. Spuren zeichnen
+                            let laneContainer = document.getElementById('nav-top-lanes');
+                            if (!laneContainer) {
+                                laneContainer = document.createElement('div');
+                                laneContainer.id = 'nav-top-lanes';
+                                laneContainer.className = 'lane-assist-container';
+                                streetEl.parentNode.appendChild(laneContainer);
+                            }
+                            laneContainer.innerHTML = ''; 
+                            
+                            if (mockManeuver.lanes && mockManeuver.lanes.length > 0) {
+                                laneContainer.style.display = 'flex';
+                                mockManeuver.lanes.forEach(lane => {
+                                    const arrowDiv = document.createElement('div');
+                                    arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
+                                    let faIcon = 'fa-arrow-up'; 
+                                    if (lane.indications && lane.indications.length > 0) {
+                                        const ind = lane.indications[0].toLowerCase();
+                                        if (ind.includes('slight_left')) faIcon = 'fa-arrow-up-left';
+                                        else if (ind.includes('left')) faIcon = 'fa-arrow-left';
+                                        else if (ind.includes('slight_right')) faIcon = 'fa-arrow-up-right';
+                                        else if (ind.includes('right')) faIcon = 'fa-arrow-right';
+                                        else if (ind.includes('u-turn')) faIcon = 'fa-arrow-rotate-left';
+                                    }
+                                    arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}"></i>`;
+                                    laneContainer.appendChild(arrowDiv);
+                                });
+                            } else {
+                                laneContainer.style.display = 'none';
+                            }
+                        }
+                    }
+                    // ====================================================
+
+                                
                             }
                         }
                     }
