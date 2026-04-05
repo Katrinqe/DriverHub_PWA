@@ -2312,30 +2312,46 @@ updateDashboard: function() {
             const topCard = document.getElementById('nav-top-card');
             if(topCard) topCard.classList.remove('hidden');
 
-            const getShortInstruction = (maneuverObj) => {
+       const getShortInstruction = (maneuverObj) => {
                 const man = maneuverObj.maneuver || '';
                 let actionText = "Geradeaus";
+
+                // --- BOSS-FIX: PREMIUM MANÖVER WÖRTERBUCH ---
                 if (man.includes('TURN_LEFT')) actionText = "Links abbiegen";
                 else if (man.includes('TURN_RIGHT')) actionText = "Rechts abbiegen";
-                else if (man.includes('KEEP_LEFT')) actionText = "Links halten";
-                else if (man.includes('KEEP_RIGHT')) actionText = "Rechts halten";
+                // Autobahn Gabelungen & Spuren
+                else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT')) actionText = "Links halten";
+                else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT')) actionText = "Rechts halten";
+                // Autobahn Ausfahrten
+                else if (man.includes('EXIT_RIGHT') || man.includes('EXIT_LEFT') || man.includes('OFF_RAMP')) actionText = "Ausfahrt nehmen";
+                else if (man.includes('MERGE')) actionText = "Einfädeln";
                 else if (man.includes('U_TURN')) actionText = "Wenden";
-                else if (man.includes('ROUNDABOUT')) actionText = "Kreisverkehr";
+                // Kreisverkehr (Zieht sich die exakte Ausfahrt!)
+                else if (man.includes('ROUNDABOUT')) {
+                    if (maneuverObj.roundaboutExitNumber) {
+                        actionText = `Die ${maneuverObj.roundaboutExitNumber}. Ausfahrt nehmen`;
+                    } else {
+                        actionText = "In den Kreisverkehr fahren";
+                    }
+                }
                 else if (man.includes('ARRIVE') || man.includes('FINISH')) actionText = "Ziel erreicht";
                 else if (man.includes('DEPART')) actionText = "Route folgen";
 
+                // Straßenname extrahieren
                 let streetText = maneuverObj.street || "";
                 if (!streetText && maneuverObj.roadNumbers && maneuverObj.roadNumbers.length > 0) {
                     streetText = maneuverObj.roadNumbers[0];
                 }
 
+                // Autobahn-Schilder (Signpost) extrahieren
                 let directionText = maneuverObj.signpostText || maneuverObj.destination || "";
 
+                // Sauberen Satz für HUD Sub-Title und Voice zusammenbauen
                 if (directionText) {
-                    if (streetText) streetText = "auf " + streetText + " Richtung " + directionText;
-                    else streetText = "in Richtung " + directionText;
+                    if (streetText) streetText = `auf ${streetText} Richtung ${directionText}`;
+                    else streetText = `in Richtung ${directionText}`;
                 } else {
-                    if (streetText) streetText = "auf " + streetText;
+                    if (streetText) streetText = `auf ${streetText}`;
                 }
                 
                 return { action: actionText, street: streetText };
@@ -2706,17 +2722,26 @@ updateDashboard: function() {
                                 }
                             }
 
-                            const iconEl = document.getElementById('nav-top-icon');
+                         const iconEl = document.getElementById('nav-top-icon');
                             if (iconEl) {
                                 let iconClass = 'fa-arrow-up'; 
                                 const man = currentManeuver.maneuver || '';
-                                if (man.includes('LEFT')) iconClass = 'fa-arrow-left';
-                                if (man.includes('RIGHT')) iconClass = 'fa-arrow-right';
-                                if (man.includes('KEEP_LEFT')) iconClass = 'fa-arrow-up-left';
-                                if (man.includes('KEEP_RIGHT')) iconClass = 'fa-arrow-up-right';
-                                if (man.includes('U_TURN')) iconClass = 'fa-arrow-rotate-left';
-                                if (man.includes('ROUNDABOUT')) iconClass = 'fa-arrows-spin';
-                                if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
+                                
+                                // --- BOSS-FIX: INTELLIGENTES ICON-ROUTING ---
+                                // 1. Ausfahrten & Gabelungen (Priorität, damit sie nicht als "Turn" missverstanden werden)
+                                if (man.includes('EXIT') || man.includes('OFF_RAMP')) {
+                                    iconClass = man.includes('LEFT') ? 'fa-arrow-up-left' : 'fa-arrow-up-right';
+                                }
+                                else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT')) iconClass = 'fa-arrow-up-left';
+                                else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT')) iconClass = 'fa-arrow-up-right';
+                                // 2. Normale Abbiegungen
+                                else if (man.includes('TURN_LEFT')) iconClass = 'fa-arrow-left';
+                                else if (man.includes('TURN_RIGHT')) iconClass = 'fa-arrow-right';
+                                // 3. Special
+                                else if (man.includes('U_TURN')) iconClass = 'fa-arrow-rotate-left';
+                                else if (man.includes('ROUNDABOUT')) iconClass = 'fa-arrows-spin';
+                                else if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
+                                
                                 iconEl.className = `fa-solid ${iconClass}`;
                             }
                         }
