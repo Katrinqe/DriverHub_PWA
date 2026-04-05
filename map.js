@@ -141,10 +141,14 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         <div class="user-pulse"></div>
         <div class="user-dot"></div>
     `;
- // NEU:
-    window.userLocationMarker = new maplibregl.Marker({ element: customMarkerElement })
-        .setLngLat(coords)
-        .addTo(libreMap);
+// NEU:
+    window.userLocationMarker = new maplibregl.Marker({ 
+        element: customMarkerElement,
+        pitchAlignment: 'map',    // <-- BOSS-FIX: Legt den Marker flach auf die 3D-Karte!
+        rotationAlignment: 'map'  // <-- BOSS-FIX: Dreht den Pfeil synchron zur Karte!
+    })
+    .setLngLat(coords)
+    .addTo(libreMap);
 // === BOSS-FIX: DYNAMISCHER ZOOM-WÄCHTER (COMPACT MARKERS) ===
         // Überwacht jeden einzelnen Frame beim Zoomen
         libreMap.on('zoom', () => {
@@ -2141,13 +2145,13 @@ updateDashboard: function() {
                 libreMap.doubleClickZoom.disable();
                 if (libreMap.dragRotate) libreMap.dragRotate.disable();
 
-                libreMap.flyTo({
+           libreMap.flyTo({
                     center: currentCoords, 
-                    zoom: 16.5, // Etwas näher ran für Nav-Feeling
-                    pitch: 60,  // Kamera flachlegen (3D)
+                    zoom: 16.5, 
+                    pitch: 60,  
                     bearing: 0, 
-                    // BOSS-FIX: Bottom-Padding drückt deinen Marker ans untere Drittel!
-                    padding: { top: 0, bottom: window.innerHeight * 0.45, left: 0, right: 0 }, 
+                    // BOSS-FIX: Padding TOP drückt die Kamera-Mitte nach UNTEN!
+                    padding: { top: window.innerHeight * 0.5, bottom: 0, left: 0, right: 0 }, 
                     duration: 2000, 
                     essential: true
                 });
@@ -2303,13 +2307,13 @@ updateDashboard: function() {
                         }
                     }
 
-                    if (libreMap && elapsedSinceStart > 2500) {
-                        // Dynamisches Offset beibehalten!
+           if (libreMap && elapsedSinceStart > 2500) {
                         const cameraOpts = { 
                             center: currentCoords, 
                             duration: 1000, 
                             easing: (t) => t,
-                            padding: { top: 0, bottom: window.innerHeight * 0.45, left: 0, right: 0 }
+                            // BOSS-FIX: Padding TOP auch im Live-Tracking!
+                            padding: { top: window.innerHeight * 0.5, bottom: 0, left: 0, right: 0 }
                         };
                         if (heading !== null && speed !== null && speed > 0.8) {
                             cameraOpts.bearing = heading;
