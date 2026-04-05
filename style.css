@@ -4208,3 +4208,18 @@ body.ghost-active #ghost-chat-overlay {
 .map-compact-mode .pm-brand-bar {
     transform: scale(0.9);
 }
+
+/* --- NAVIGATION ARROW --- */
+.nav-arrow-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    transform: rotate(-45deg); /* Zwingt den Pfeil exakt nach vorne */
+}
+.nav-arrow-wrap i {
+    font-size: 28px;
+    color: #30d158;
+    filter: drop-shadow(0 0 12px rgba(48, 209, 88, 0.8));
+}
