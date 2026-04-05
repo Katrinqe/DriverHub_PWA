@@ -2127,8 +2127,14 @@ updateDashboard: function() {
             const etaText = document.getElementById(`opt-eta-${activeRouteIndex}`).textContent;
             document.getElementById('hud-arrival-time').textContent = etaText;
             
-            if (libreMap && currentCoords) {
-                libreMap.setPadding({ left: 0, right: 0, top: 0, bottom: 0 });
+ if (libreMap && currentCoords) {
+                // 1. Aus Punkt wird Pfeil!
+                if (window.userLocationMarker) {
+                    const el = window.userLocationMarker.getElement();
+                    el.innerHTML = '<div class="nav-arrow-wrap"><i class="fa-solid fa-location-arrow"></i></div>';
+                }
+
+                // 2. Kamera-Setup für Navigation
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
                 libreMap.touchZoomRotate.disable(); 
@@ -2137,14 +2143,15 @@ updateDashboard: function() {
 
                 libreMap.flyTo({
                     center: currentCoords, 
-                    zoom: 16.5, 
-                    pitch: 0, 
+                    zoom: 16.5, // Etwas näher ran für Nav-Feeling
+                    pitch: 60,  // Kamera flachlegen (3D)
                     bearing: 0, 
-                    padding: { top: 0, bottom: 0, left: 0, right: 0 }, 
+                    // BOSS-FIX: Bottom-Padding drückt deinen Marker ans untere Drittel!
+                    padding: { top: 0, bottom: window.innerHeight * 0.45, left: 0, right: 0 }, 
                     duration: 2000, 
                     essential: true
                 });
-            }
+            }}
 
             const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
             if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
@@ -2288,13 +2295,26 @@ updateDashboard: function() {
                     const speedDisplay = document.getElementById('hud-current-speed');
                     if (speedDisplay) speedDisplay.textContent = speedKmh;
 
-                    if (window.userLocationMarker) {
+              if (window.userLocationMarker) {
                         window.userLocationMarker.setLngLat(currentCoords);
+                        // BOSS-FIX: Pfeil in Fahrtrichtung drehen
+                        if (heading !== null && speed !== null && speed > 0.8) {
+                            window.userLocationMarker.setRotation(heading);
+                        }
                     }
 
                     if (libreMap && elapsedSinceStart > 2500) {
-                        const cameraOpts = { center: currentCoords, duration: 1000, easing: (t) => t };
-                        if (heading !== null && speed !== null && speed > 0.8) cameraOpts.bearing = heading;
+                        // Dynamisches Offset beibehalten!
+                        const cameraOpts = { 
+                            center: currentCoords, 
+                            duration: 1000, 
+                            easing: (t) => t,
+                            padding: { top: 0, bottom: window.innerHeight * 0.45, left: 0, right: 0 }
+                        };
+                        if (heading !== null && speed !== null && speed > 0.8) {
+                            cameraOpts.bearing = heading;
+                            cameraOpts.pitch = 60; // 3D-Blick nach vorne erzwingen
+                        }
                         libreMap.easeTo(cameraOpts);
                     }
 
@@ -2545,10 +2565,25 @@ updateDashboard: function() {
 
             clearRoutes();
 
-            if (libreMap && currentCoords) {
+      if (libreMap && currentCoords) {
+                // 1. Aus Pfeil wird wieder Punkt
+                if (window.userLocationMarker) {
+                    const el = window.userLocationMarker.getElement();
+                    el.innerHTML = '<div class="user-pulse"></div><div class="user-dot"></div>';
+                    window.userLocationMarker.setRotation(0); // Drehung resetten
+                }
+
+                // 2. Kamera wieder gerade über die Map hängen
                 libreMap.dragPan.enable();
                 libreMap.scrollZoom.enable();
-                libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, padding: { right: 0, bottom: 0 }, duration: 1500 });
+                libreMap.flyTo({ 
+                    center: currentCoords, 
+                    zoom: 14, 
+                    pitch: 0, 
+                    bearing: 0, 
+                    padding: { top: 0, bottom: 0, left: 0, right: 0 }, // Zentrierung zurücksetzen
+                    duration: 1500 
+                });
             }
         };
     }
