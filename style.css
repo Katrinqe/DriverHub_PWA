@@ -4251,27 +4251,27 @@ body.ghost-active #ghost-chat-overlay {
     border: 1px solid rgba(0,0,0,0.2);
 }
 
-/* Der Spur-Assistent */
+/* Der Spur-Assistent (Massiv & Leuchtend) */
 .lane-assist-container {
     display: flex;
-    gap: 6px;
-    margin-top: 8px;
-    padding-top: 8px;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     align-items: center;
 }
 .lane-arrow {
-    width: 24px;
-    height: 24px;
+    width: 36px;  /* Vorher 24px -> Deutlich größer für schnelle Lesbarkeit */
+    height: 36px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.25); /* Blassgrau für falsche Spuren */
+    font-size: 24px; /* Vorher 18px */
+    color: rgba(255, 255, 255, 0.2); /* Sehr blass für ungültige Spuren */
 }
 .lane-arrow.valid {
-    color: #30d158; /* Leuchtend Grün für die richtige Spur */
-    filter: drop-shadow(0 0 6px rgba(48, 209, 88, 0.6));
+    color: #30d158; /* Premium Grün */
+    filter: drop-shadow(0 0 12px rgba(48, 209, 88, 0.8));
 }
 
 /* Der Simulator-Button */
