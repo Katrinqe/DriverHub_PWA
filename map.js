@@ -1336,28 +1336,33 @@ window.ExploreLogic = {
             }
         },
 fetchData: async function() {
-            if (!libreMap || !currentCoords) return;
+            if (!libreMap) return; // currentCoords Check entfernt, da wir jetzt die Map nutzen
             const loader = document.getElementById('map-loading');
             if (loader) loader.classList.add('visible');
 
-            // === BOSS-FIX: PERFORMANCE RADAR ===
-            // Sobald der User aufhört, die Karte zu schieben, berechnen wir die Marker neu
+            // === BOSS-FIX: DYNAMISCHES RADAR ===
             if (!this.mapListenerBound) {
-                libreMap.on('moveend', () => { if (this.isActive) this.redrawMarkers(); });
+                // Wenn die Karte bewegt wird, müssen wir NEUE Daten vom Server holen!
+                libreMap.on('moveend', () => { if (this.isActive) this.fetchData(); });
+                // Beim reinen Zoomen reicht es, die bestehenden neu zu skalieren
                 libreMap.on('zoomend', () => { if (this.isActive) this.redrawMarkers(); });
                 this.mapListenerBound = true;
             }
-            // ===================================
 
             try {
-                const lat = currentCoords[1];
-// ... Rest der Funktion bleibt unberührt
-                const lng = currentCoords[0];
-                let tkRadius = 15;
+                // === BOSS-FIX: KARTEN-MITTE STATT KÖRPER-GPS ===
+                // Wir scannen jetzt immer dort, wo du gerade hinschaust!
+                const center = libreMap.getCenter();
+                const lat = center.lat;
+                const lng = center.lng;
+                
+                // Wir suchen 15km um den sichtbaren Kartenausschnitt
+                let tkRadius = 15; 
 
                 const tkUrl = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=${tkRadius}&sort=dist&type=all&apikey=${this.apiKey}`;
                 
                 const response = await fetch(tkUrl);
+                // ... ab hier geht dein Code mit "const data = await response.json();" exakt so weiter wie bisher!
                 const data = await response.json();
                 if(loader) loader.classList.remove('visible');
 
