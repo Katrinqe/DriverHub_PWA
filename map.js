@@ -2180,13 +2180,21 @@ updateDashboard: function() {
             mockSpeed: 45,
             mockDist: 80
         },
-        {
-            // Szenario 4: Kreisverkehr
-            maneuver: "ROUNDABOUT",
-            roundaboutExitNumber: 3,
-            street: "Regensburger Ring",
-            mockSpeed: 25,
-            mockDist: 40
+      {
+            // Szenario 5: Die 5-Spurige Monster-Kreuzung (A9 -> A99)
+            maneuver: "EXIT_RIGHT", // Es ist eine Ausfahrt...
+            roadNumbers: ["A99"],
+            signpostText: "München-Ost",
+            street: "A9",
+            lanes: [
+                {valid: false, indications: ["STRAIGHT"]}, // Spur 1: Falsch, geht geradeaus
+                {valid: false, indications: ["STRAIGHT"]}, // Spur 2: Falsch, geht geradeaus
+                {valid: true, indications: ["STRAIGHT", "RIGHT"]}, // Spur 3: KOMBI-SPUR! (Hier triggert dein neuer Prioritäten-Filter!)
+                {valid: true, indications: ["RIGHT"]}, // Spur 4: Ausfahrt
+                {valid: true, indications: ["RIGHT"]}  // Spur 5: Ausfahrt
+            ],
+            mockSpeed: 130,
+            mockDist: 500
         }
     ];
 
