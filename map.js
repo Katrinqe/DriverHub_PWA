@@ -2576,6 +2576,7 @@ updateDashboard: function() {
             libreMap.on('movestart', lockCamera);
             libreMap.on('moveend', unlockCameraTimer);
             // ----------------------------------------
+         // ----------------------------------------
             // 7. LIVE GPS MOTOR STARTEN
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
@@ -2587,14 +2588,12 @@ updateDashboard: function() {
                     const heading = position.coords.heading; 
                     const speed = position.coords.speed; 
 
-                // --- BOSS-FIX: GPS LERP SMOOTHING (Peters Punkt 5 & 6) ---
+                // --- BOSS-FIX: GPS LERP SMOOTHING ---
                     const rawCoords = [lng, lat];
                     
                     if (!currentCoords) {
                         currentCoords = rawCoords;
                     } else {
-                        // Mathematische Interpolation (20% Sprung auf die neue Position pro Tick)
-                        // Verhindert hartes Ruckeln bei ungenauem GPS-Signal
                         const alpha = 0.25; 
                         const smoothLng = currentCoords[0] + (rawCoords[0] - currentCoords[0]) * alpha;
                         const smoothLat = currentCoords[1] + (rawCoords[1] - currentCoords[1]) * alpha;
@@ -2608,7 +2607,6 @@ updateDashboard: function() {
                     // --- MARKER UPDATE MIT HEADING-TRUST ---
                     if (window.userLocationMarker) {
                         window.userLocationMarker.setLngLat(currentCoords);
-                        // Pfeil friert an der Ampel ein, dreht sich nur ab 10 km/h
                         if (speedKmh >= 10 && heading !== null) {
                             window.userLocationMarker.setRotation(heading);
                             window.lastHeading = heading; 
@@ -2616,13 +2614,154 @@ updateDashboard: function() {
                     }
                     // ---------------------------------------------------------
 
-                    // --- BOSS-FIX: DIE SMART CAMERA ENGINE STARTEN ---
-                    // Die Engine darf nur eingreifen, wenn du NICHT gerade mit den Fingern auf der Karte wischst
+                    // --- DIE SMART CAMERA ENGINE STARTEN ---
+                    let currentManeuver = null;
+                    let distMeters = 0;
+
                     if (libreMap && elapsedSinceStart > 2500 && !window.userIsLookingAround) {
                         
-                        // Wir füttern die Engine mit allen Live-Daten. 
-                        // Falls 'currentManeuver' oder 'distMeters' gerade undefiniert sind (z.B. freie Fahrt), 
-                        // sichern wir das mit Fallbacks (null, 9999) ab.
+                        const activeRoutePts = RouteLogic.routePointsData[RouteLogic.activeIndex];
+                        const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
+
+                        if (activeRoutePts && cumulativeDists && RouteLogic.currentInstructions && RouteLogic.currentInstructions.length > 0) {
+                            if (typeof window.lastRouteIdx === 'undefined') window.lastRouteIdx = 0;
+                            
+                            let closestIdx = window.lastRouteIdx;
+                            let minDist = Infinity;
+                            const limit = Math.min(activeRoutePts.length, closestIdx + 120); 
+                            
+                            for (let i = closestIdx; i < limit; i++) {
+                                const d = calculateDistance(lat, lng, activeRoutePts[i][1], activeRoutePts[i][0]);
+                                if (d < minDist) {
+                                    minDist = d;
+                                    closestIdx = i;
+                                }
+                            }
+                            window.lastRouteIdx = closestIdx;
+
+                            let currIdx = RouteLogic.currentInstructionIndex;
+                            const instructions = RouteLogic.currentInstructions;
+
+                            while (currIdx < instructions.length && instructions[currIdx].maneuver === 'DEPART') {
+                                RouteLogic.currentInstructionIndex++;
+                                currIdx = RouteLogic.currentInstructionIndex;
+                            }
+
+                            if (currIdx < instructions.length) {
+                                currentManeuver = instructions[currIdx];
+                                
+                                let isPassed = closestIdx >= currentManeuver.pointIndex; 
+                                distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
+                                
+                                if (!isPassed && distMeters < 1500) {
+                                    distMeters = calculateDistance(lat, lng, currentManeuver.point.latitude, currentManeuver.point.longitude);
+                                }
+                                if (distMeters < 0) distMeters = 0;
+
+                                if (isPassed || distMeters <= 35) {
+                                    RouteLogic.currentInstructionIndex++;
+                                    currIdx = RouteLogic.currentInstructionIndex;
+                                    
+                                    while (currIdx < instructions.length && instructions[currIdx].maneuver === 'DEPART') {
+                                        RouteLogic.currentInstructionIndex++;
+                                        currIdx = RouteLogic.currentInstructionIndex;
+                                    }
+
+                                    if (currIdx < instructions.length) {
+                                        currentManeuver = instructions[currIdx];
+                                        distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
+                                        if (distMeters < 0) distMeters = 0;
+                                        
+                                        window.voiceBlockUntil = Date.now() + 5000;
+                                        RouteLogic.forceFirstInstruction = false;
+                                        if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
+                                        window.startVoiceTimeout = setTimeout(() => {
+                                            RouteLogic.forceFirstInstruction = true;
+                                        }, 3500);
+                                    }
+                                }
+
+                                // SPRACHAUSGABE LOGIK
+                                const shortInfo = getShortInstruction(currentManeuver);
+                                const laneText = getLaneText(currentManeuver);
+                                const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
+                                const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
+
+                                if (RouteLogic.voiceState.idx !== currIdx && elapsedSinceStart > 4000) {
+                                    let trueSegDist = distMeters; 
+                                    if (currIdx > 0) {
+                                        let prevIdx = currIdx - 1;
+                                        while (prevIdx > 0 && instructions[prevIdx].maneuver === 'DEPART') prevIdx--;
+                                        if (cumulativeDists[instructions[prevIdx].pointIndex] !== undefined) {
+                                            trueSegDist = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[instructions[prevIdx].pointIndex];
+                                        }
+                                    } else {
+                                        trueSegDist = cumulativeDists[currentManeuver.pointIndex];
+                                    }
+                                    if (trueSegDist < distMeters || isNaN(trueSegDist)) trueSegDist = distMeters;
+
+                                    RouteLogic.voiceState = {
+                                        idx: currIdx,
+                                        segmentTotalDist: trueSegDist,
+                                        spokenInit: false, 
+                                        spoken5km: false,
+                                        spoken2km: false,  
+                                        spoken500m: false,
+                                        spoken100m: false,
+                                        spoken50m: false,
+                                        spokenNow: false
+                                    };
+                                }
+                                
+                                let vs = RouteLogic.voiceState;
+                                let textToSpeak = null;
+                                
+                                if (Date.now() > window.voiceBlockUntil || RouteLogic.forceFirstInstruction) {
+                                    if (!vs.spokenInit) {
+                                        RouteLogic.forceFirstInstruction = false;
+                                        if (distMeters < 70) {
+                                            textToSpeak = actionStr; 
+                                        } else if (vs.segmentTotalDist > 5000) {
+                                            textToSpeak = `Folgen Sie der Route für ${Math.round(vs.segmentTotalDist/1000)} Kilometer.`;
+                                        } else {
+                                            textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
+                                        }
+                                        vs.spokenInit = true;
+                                    }
+                                    else {
+                                        if (vs.segmentTotalDist > 10000) {
+                                            if (distMeters <= 5000 && distMeters > 2000 && !vs.spoken5km) { textToSpeak = `In 5 Kilometern ${actionStr}.`; vs.spoken5km = true; }
+                                            else if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
+                                            else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
+                                            else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                        }
+                                        else if (vs.segmentTotalDist > 5000 && vs.segmentTotalDist <= 10000) {
+                                            if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
+                                            else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
+                                            else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                        }
+                                        else if (vs.segmentTotalDist > 800 && vs.segmentTotalDist <= 5000) {
+                                            if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
+                                            else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                        }
+                                        else if (vs.segmentTotalDist >= 200 && vs.segmentTotalDist <= 800) {
+                                            if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                        }
+                                        else if (vs.segmentTotalDist < 200) {
+                                            if (distMeters <= 50 && distMeters > 15 && !vs.spoken50m) { textToSpeak = `In 50 Metern ${actionStr}.`; vs.spoken50m = true; }
+                                        }
+
+                                        if (distMeters <= 15 && !vs.spokenNow) {
+                                            textToSpeak = actionStr; 
+                                            vs.spokenNow = true;
+                                        }
+                                    }
+                                    if (textToSpeak) triggerGoogleVoice(textToSpeak);
+                                }
+                            }
+                        }
+
+                        // Kamera aktualisieren (Live Daten)
                         const safeDist = (typeof distMeters !== 'undefined' && distMeters !== null) ? distMeters : 9999;
                         const safeManeuver = (typeof currentManeuver !== 'undefined') ? currentManeuver : null;
                         
@@ -2635,351 +2774,138 @@ updateDashboard: function() {
                             safeManeuver
                         );
                     }
-                    // ------------------------------------------------
 
 
-
-                    const activeRoutePts = RouteLogic.routePointsData[RouteLogic.activeIndex];
-                    const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
-
-                    if (activeRoutePts && cumulativeDists && RouteLogic.currentInstructions && RouteLogic.currentInstructions.length > 0) {
-                        if (typeof window.lastRouteIdx === 'undefined') window.lastRouteIdx = 0;
-                        
-                        let closestIdx = window.lastRouteIdx;
-                        let minDist = Infinity;
-                        const limit = Math.min(activeRoutePts.length, closestIdx + 120); 
-                        
-                        for (let i = closestIdx; i < limit; i++) {
-                            const d = calculateDistance(lat, lng, activeRoutePts[i][1], activeRoutePts[i][0]);
-                            if (d < minDist) {
-                                minDist = d;
-                                closestIdx = i;
-                            }
-                        }
-                        window.lastRouteIdx = closestIdx;
-
-                        let currIdx = RouteLogic.currentInstructionIndex;
-                        const instructions = RouteLogic.currentInstructions;
-
-                        while (currIdx < instructions.length && instructions[currIdx].maneuver === 'DEPART') {
-                            RouteLogic.currentInstructionIndex++;
-                            currIdx = RouteLogic.currentInstructionIndex;
-                        }
-
-                     if (currIdx < instructions.length) {
-                            let currentManeuver = instructions[currIdx];
-                            
-                            // NEU: Intelligente Pass-by-Logik! Wir checken, ob unser Index auf der Route den Abbiegepunkt bereits überschritten hat.
-                            let isPassed = closestIdx >= currentManeuver.pointIndex; 
-                            
-                            let distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
-                            
-                            // Nur noch echte Luftlinie berechnen, wenn wir noch nicht vorbei sind
-                            if (!isPassed && distMeters < 1500) {
-                                distMeters = calculateDistance(lat, lng, currentManeuver.point.latitude, currentManeuver.point.longitude);
-                            }
-                            if (distMeters < 0) distMeters = 0;
-
-                            // WIR SCHALTEN UM, WENN: Wir den Punkt passiert haben ODER wir auf 35m dran sind!
-                            if (isPassed || distMeters <= 35) {
-                                RouteLogic.currentInstructionIndex++;
-                                currIdx = RouteLogic.currentInstructionIndex;
-                                
-                                while (currIdx < instructions.length && instructions[currIdx].maneuver === 'DEPART') {
-                                    RouteLogic.currentInstructionIndex++;
-                                    currIdx = RouteLogic.currentInstructionIndex;
-                                }
-
-                                if (currIdx < instructions.length) {
-                                    currentManeuver = instructions[currIdx];
-                                    distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
-                                    if (distMeters < 0) distMeters = 0;
-                                    
-                                    window.voiceBlockUntil = Date.now() + 5000;
-                                    // PETERS SAFETY HACK: Fallback nach dem Abbiegen
-                                    RouteLogic.forceFirstInstruction = false;
-                                    if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
-                                    window.startVoiceTimeout = setTimeout(() => {
-                                        RouteLogic.forceFirstInstruction = true;
-                                    }, 3500);
-                                }
-                            }
-
-                            const shortInfo = getShortInstruction(currentManeuver);
-                            const laneText = getLaneText(currentManeuver);
-                            const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
-                            const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
-
-                            if (RouteLogic.voiceState.idx !== currIdx && elapsedSinceStart > 4000) {
-                                let trueSegDist = distMeters; 
-                                if (currIdx > 0) {
-                                    let prevIdx = currIdx - 1;
-                                    while (prevIdx > 0 && instructions[prevIdx].maneuver === 'DEPART') prevIdx--;
-                                    if (cumulativeDists[instructions[prevIdx].pointIndex] !== undefined) {
-                                        trueSegDist = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[instructions[prevIdx].pointIndex];
-                                    }
-                                } else {
-                                    trueSegDist = cumulativeDists[currentManeuver.pointIndex];
-                                }
-                                if (trueSegDist < distMeters || isNaN(trueSegDist)) trueSegDist = distMeters;
-
-                                RouteLogic.voiceState = {
-                                    idx: currIdx,
-                                    segmentTotalDist: trueSegDist,
-                                    spokenInit: false, 
-                                    spoken5km: false,
-                                    spoken2km: false,  
-                                    spoken500m: false,
-                                    spoken100m: false,
-                                    spoken50m: false,
-                                    spokenNow: false
-                                };
-                            }
-                            
-                            let vs = RouteLogic.voiceState;
-                            let textToSpeak = null;
-                            
-                           // DIE STIMME DARF REDEN, WENN DIE SPERRE WEG IST (Oder beim Force-Notfall!)
-                            if (Date.now() > window.voiceBlockUntil || RouteLogic.forceFirstInstruction) {
-                                
-                                if (!vs.spokenInit) {
-                                    RouteLogic.forceFirstInstruction = false; // Flag sofort wieder löschen
-                                    if (distMeters < 70) {
-                                        textToSpeak = actionStr; 
-                                    } else if (vs.segmentTotalDist > 5000) {
-                                        textToSpeak = `Folgen Sie der Route für ${Math.round(vs.segmentTotalDist/1000)} Kilometer.`;
-                                    } else {
-                                        textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
-                                    }
-                                    vs.spokenInit = true;
-                                }
-                                else {
-                                    if (vs.segmentTotalDist > 10000) {
-                                        if (distMeters <= 5000 && distMeters > 2000 && !vs.spoken5km) { textToSpeak = `In 5 Kilometern ${actionStr}.`; vs.spoken5km = true; }
-                                        else if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
-                                        else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
-                                        else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
-                                    }
-                                    else if (vs.segmentTotalDist > 5000 && vs.segmentTotalDist <= 10000) {
-                                        if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
-                                        else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
-                                        else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
-                                    }
-                                    else if (vs.segmentTotalDist > 800 && vs.segmentTotalDist <= 5000) {
-                                        if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
-                                        else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
-                                    }
-                                    else if (vs.segmentTotalDist >= 200 && vs.segmentTotalDist <= 800) {
-                                        if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
-                                    }
-                                    else if (vs.segmentTotalDist < 200) {
-                                        if (distMeters <= 50 && distMeters > 15 && !vs.spoken50m) { textToSpeak = `In 50 Metern ${actionStr}.`; vs.spoken50m = true; }
-                                    }
-
-                                    if (distMeters <= 15 && !vs.spokenNow) {
-                                        textToSpeak = actionStr; 
-                                        vs.spokenNow = true;
-                                    }
-                                }
-
-                                if (textToSpeak) triggerGoogleVoice(textToSpeak);
-                            }
-
-                            const actionEl = document.getElementById('nav-top-action');
-                            if (actionEl) actionEl.textContent = shortInfo.action;
-
-                           // --- BOSS-FIX: MULTI-LAYER HUD (SCHILDER & SPUREN) ---
-                            const streetEl = document.getElementById('nav-top-street');
-                            if (streetEl) {
-                                streetEl.innerHTML = ''; // Altes Text-Rendering löschen
-                                
-                                // 1. Road Badges generieren (A9, B16 etc.)
-                                if (currentManeuver.roadNumbers && currentManeuver.roadNumbers.length > 0) {
-                                    const rn = currentManeuver.roadNumbers[0];
-                                    let badgeClass = '';
-                                    if (rn.startsWith('A')) badgeClass = 'autobahn';
-                                    else if (rn.startsWith('B')) badgeClass = 'bundesstrasse';
-                                    
-                                    if (badgeClass) {
-                                        streetEl.innerHTML += `<span class="road-badge ${badgeClass}">${rn}</span>`;
-                                    }
-                                }
-
-                                // 2. Richtungstext generieren ("Richtung München")
-                                let directionText = currentManeuver.signpostText || currentManeuver.destination || "";
-                                let baseStreet = currentManeuver.street || "";
-                                let textSpan = document.createElement('span');
-                                
-                                if (directionText) {
-                                    textSpan.textContent = baseStreet ? `${baseStreet} Richtung ${directionText}` : `Richtung ${directionText}`;
-                                } else {
-                                    textSpan.textContent = baseStreet;
-                                }
-                                streetEl.appendChild(textSpan);
-                                streetEl.style.display = 'block';
-                                
-                                // 3. SPUR-ASSISTENT (Lane Assist)
-                                // Suchen oder erstellen wir den Container direkt unter dem Text
-                                let laneContainer = document.getElementById('nav-top-lanes');
-                                if (!laneContainer) {
-                                    laneContainer = document.createElement('div');
-                                    laneContainer.id = 'nav-top-lanes';
-                                    laneContainer.className = 'lane-assist-container';
-                                    streetEl.parentNode.appendChild(laneContainer);
-                                }
-
-                                laneContainer.innerHTML = ''; // Reset für den aktuellen Tick
-                                
-                                if (currentManeuver.lanes && currentManeuver.lanes.length > 0) {
-                                    laneContainer.style.display = 'flex';
-                                    
-                                    currentManeuver.lanes.forEach(lane => {
-                                        const arrowDiv = document.createElement('div');
-                                        arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
-                                        
-                                        // Die Richtung des Pfeils bestimmen
-                                        let faIcon = 'fa-arrow-up'; 
-                                        if (lane.indications && lane.indications.length > 0) {
-                                            // TomTom liefert Richtungen wie "LEFT", "SLIGHT_LEFT", "STRAIGHT"
-                                            const ind = lane.indications[0].toLowerCase();
-                                            if (ind.includes('slight_left')) faIcon = 'fa-arrow-up-left';
-                                            else if (ind.includes('left')) faIcon = 'fa-arrow-left';
-                                            else if (ind.includes('slight_right')) faIcon = 'fa-arrow-up-right';
-                                            else if (ind.includes('right')) faIcon = 'fa-arrow-right';
-                                            else if (ind.includes('u-turn')) faIcon = 'fa-arrow-rotate-left';
-                                            else faIcon = 'fa-arrow-up'; // Default Geradeaus
-                                        }
-                                        
-                                        arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}"></i>`;
-                                        laneContainer.appendChild(arrowDiv);
-                                    });
-                                } else {
-                                    laneContainer.style.display = 'none';
-                                }
-                            }
-                            // ----------------------------------------------------
-
-                            let displayDist = Math.max(0, Math.round(distMeters / 20) * 20);
-                            const distEl = document.getElementById('nav-top-distance');
-                            if (distEl) {
-                                if (displayDist >= 1000) {
-                                    distEl.textContent = `in ${(displayDist / 1000).toFixed(1).replace('.', ',')} km`;
-                                } else {
-                                    distEl.textContent = `in ${displayDist} m`;
-                                }
-                            }
-
-                         const iconEl = document.getElementById('nav-top-icon');
-                            if (iconEl) {
-                                let iconClass = 'fa-arrow-up'; 
-                                const man = currentManeuver.maneuver || '';
-                                
-                                // --- BOSS-FIX: INTELLIGENTES ICON-ROUTING ---
-                                // 1. Ausfahrten & Gabelungen (Priorität, damit sie nicht als "Turn" missverstanden werden)
-                                if (man.includes('EXIT') || man.includes('OFF_RAMP')) {
-                                    iconClass = man.includes('LEFT') ? 'fa-arrow-up-left' : 'fa-arrow-up-right';
-                                }
-                                else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT')) iconClass = 'fa-arrow-up-left';
-                                else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT')) iconClass = 'fa-arrow-up-right';
-                                // 2. Normale Abbiegungen
-                                else if (man.includes('TURN_LEFT')) iconClass = 'fa-arrow-left';
-                                else if (man.includes('TURN_RIGHT')) iconClass = 'fa-arrow-right';
-                                // 3. Special
-                                else if (man.includes('U_TURN')) iconClass = 'fa-arrow-rotate-left';
-                                else if (man.includes('ROUNDABOUT')) iconClass = 'fa-arrows-spin';
-                                else if (man.includes('FINISH') || man.includes('ARRIVE')) iconClass = 'fa-flag-checkered';
-                                
-                                iconEl.className = `fa-solid ${iconClass}`;
-
-                                // ====================================================
-                    // === BOSS-FIX: DER UNABHÄNGIGE SIMULATOR-RENDERER ===
                     // ====================================================
+                    // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (SINGLE SOURCE OF TRUTH) ===
+                    // ====================================================
+                    
+                    // 1. DIE WEICHE: Woher kommen die Daten?
+                    let renderManeuver = currentManeuver; 
+                    let renderDist = distMeters;
+
                     if (window.testScenarioIdx > 0) {
-                        const mockManeuver = window.NavTestScenarios[window.testScenarioIdx];
-                        const mockDist = mockManeuver.mockDist;
-                        
-                        // 1. Text & Pfeil berechnen
-                        const shortInfo = getShortInstruction(mockManeuver);
-                        
-                        const actionEl = document.getElementById('nav-top-action');
-                        if (actionEl) actionEl.textContent = shortInfo.action;
+                        // TEST-MODUS: Wir überschreiben die Live-Daten mit dem Fake-Szenario
+                        renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
+                        renderDist = renderManeuver.mockDist;
+                    }
 
-                        const distEl = document.getElementById('nav-top-distance');
-                        if (distEl) distEl.textContent = `in ${mockDist} m`;
+                    if (!renderManeuver) return; // Wenn weder Live noch Test Daten haben -> abbrechen
 
-                        const iconEl = document.getElementById('nav-top-icon');
-                        if (iconEl) {
-                            let iconClass = 'fa-arrow-up'; 
-                            const man = mockManeuver.maneuver || '';
-                            if (man.includes('EXIT') || man.includes('OFF_RAMP')) iconClass = man.includes('LEFT') ? 'fa-arrow-up-left' : 'fa-arrow-up-right';
-                            else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT')) iconClass = 'fa-arrow-up-left';
-                            else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT')) iconClass = 'fa-arrow-up-right';
-                            else if (man.includes('TURN_LEFT')) iconClass = 'fa-arrow-left';
-                            else if (man.includes('TURN_RIGHT')) iconClass = 'fa-arrow-right';
-                            else if (man.includes('U_TURN')) iconClass = 'fa-arrow-rotate-left';
-                            else if (man.includes('ROUNDABOUT')) iconClass = 'fa-arrows-spin';
-                            iconEl.className = `fa-solid ${iconClass}`;
+                    // 2. DAS RENDERING: Egal ob Live oder Test, dieser Code läuft IMMER bei jedem GPS Tick!
+                    const shortInfo = getShortInstruction(renderManeuver);
+                    const manType = renderManeuver.maneuver || '';
+
+                    // A) Hauptaktion
+                    const actionEl = document.getElementById('nav-top-action');
+                    if (actionEl) actionEl.textContent = shortInfo.action;
+
+                    // B) Meter-Anzeige (Intelligent ausblenden bei Gabelungen)
+                    const distEl = document.getElementById('nav-top-distance');
+                    if (distEl) {
+                        if (manType.includes('KEEP') || manType.includes('BIFURCATION')) {
+                            distEl.style.display = 'none'; 
+                        } else {
+                            distEl.style.display = 'block';
+                            let displayDist = Math.max(0, Math.round(renderDist / 20) * 20);
+                            if (displayDist >= 1000) {
+                                distEl.textContent = `in ${(displayDist / 1000).toFixed(1).replace('.', ',')} km`;
+                            } else {
+                                distEl.textContent = `in ${displayDist} m`;
+                            }
+                        }
+                    }
+
+                    // C) Das Haupt-Icon (Mit Rotation)
+                    const iconEl = document.getElementById('nav-top-icon');
+                    if (iconEl) {
+                        let iconClass = 'fa-arrow-up'; 
+                        let rotation = 'rotate(0deg)';
+                        
+                        if (manType.includes('EXIT') || manType.includes('OFF_RAMP')) {
+                            iconClass = 'fa-arrow-up'; 
+                            rotation = manType.includes('LEFT') ? 'rotate(-45deg)' : 'rotate(45deg)'; 
+                        }
+                        else if (manType.includes('KEEP_LEFT') || manType.includes('BIFURCATION_LEFT')) { iconClass = 'fa-arrow-up'; rotation = 'rotate(-30deg)'; }
+                        else if (manType.includes('KEEP_RIGHT') || manType.includes('BIFURCATION_RIGHT')) { iconClass = 'fa-arrow-up'; rotation = 'rotate(30deg)'; }
+                        else if (manType.includes('TURN_LEFT')) { iconClass = 'fa-arrow-left'; }
+                        else if (manType.includes('TURN_RIGHT')) { iconClass = 'fa-arrow-right'; }
+                        else if (manType.includes('U_TURN')) { iconClass = 'fa-arrow-rotate-left'; }
+                        else if (manType.includes('ROUNDABOUT')) { iconClass = 'fa-arrows-spin'; } 
+                        
+                        iconEl.className = `fa-solid ${iconClass}`;
+                        iconEl.style.transform = rotation; 
+                        iconEl.style.display = 'inline-block'; 
+                    }
+
+                    // D) Schilder & Straßentexte
+                    const streetEl = document.getElementById('nav-top-street');
+                    if (streetEl) {
+                        streetEl.innerHTML = ''; 
+                        let rn = "";
+                        
+                        if (renderManeuver.roadNumbers && renderManeuver.roadNumbers.length > 0) {
+                            rn = renderManeuver.roadNumbers[0];
+                            let badgeClass = '';
+                            if (rn.startsWith('A')) badgeClass = 'autobahn';
+                            else if (rn.startsWith('B')) badgeClass = 'bundesstrasse';
+                            
+                            if (badgeClass) streetEl.innerHTML += `<span class="road-badge ${badgeClass}">${rn}</span>`;
                         }
 
-                        // 2. HUD Schilder & Spuren (Multi-Layer) überschreiben
-                        const streetEl = document.getElementById('nav-top-street');
-                        if (streetEl) {
-                            streetEl.innerHTML = ''; 
-                            
-                            if (mockManeuver.roadNumbers && mockManeuver.roadNumbers.length > 0) {
-                                const rn = mockManeuver.roadNumbers[0];
-                                let badgeClass = '';
-                                if (rn.startsWith('A')) badgeClass = 'autobahn';
-                                else if (rn.startsWith('B')) badgeClass = 'bundesstrasse';
-                                if (badgeClass) streetEl.innerHTML += `<span class="road-badge ${badgeClass}">${rn}</span>`;
+                        let directionText = renderManeuver.signpostText || renderManeuver.destination || "";
+                        let baseStreet = renderManeuver.street || "";
+                        
+                        if (rn && baseStreet.includes(rn)) {
+                            baseStreet = baseStreet.replace(rn, '').trim();
+                            if (baseStreet.startsWith('-') || baseStreet.startsWith(',')) {
+                                baseStreet = baseStreet.substring(1).trim();
                             }
+                        }
 
-                            let directionText = mockManeuver.signpostText || "";
-                            let baseStreet = mockManeuver.street || "";
-                            let textSpan = document.createElement('span');
-                            if (directionText) textSpan.textContent = baseStreet ? `${baseStreet} Richtung ${directionText}` : `Richtung ${directionText}`;
-                            else textSpan.textContent = baseStreet;
-                            streetEl.appendChild(textSpan);
-                            streetEl.style.display = 'block';
-                            
-                            // 3. Spuren zeichnen
-                            let laneContainer = document.getElementById('nav-top-lanes');
-                            if (!laneContainer) {
-                                laneContainer = document.createElement('div');
-                                laneContainer.id = 'nav-top-lanes';
-                                laneContainer.className = 'lane-assist-container';
-                                streetEl.parentNode.appendChild(laneContainer);
-                            }
-                            laneContainer.innerHTML = ''; 
-                            
-                            if (mockManeuver.lanes && mockManeuver.lanes.length > 0) {
-                                laneContainer.style.display = 'flex';
-                                mockManeuver.lanes.forEach(lane => {
-                                    const arrowDiv = document.createElement('div');
-                                    arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
-                                    let faIcon = 'fa-arrow-up'; 
-                                    if (lane.indications && lane.indications.length > 0) {
-                                        const ind = lane.indications[0].toLowerCase();
-                                        if (ind.includes('slight_left')) faIcon = 'fa-arrow-up-left';
-                                        else if (ind.includes('left')) faIcon = 'fa-arrow-left';
-                                        else if (ind.includes('slight_right')) faIcon = 'fa-arrow-up-right';
-                                        else if (ind.includes('right')) faIcon = 'fa-arrow-right';
-                                        else if (ind.includes('u-turn')) faIcon = 'fa-arrow-rotate-left';
-                                    }
-                                    arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}"></i>`;
-                                    laneContainer.appendChild(arrowDiv);
-                                });
-                            } else {
-                                laneContainer.style.display = 'none';
-                            }
+                        let textSpan = document.createElement('span');
+                        if (directionText) {
+                            textSpan.textContent = baseStreet ? `${baseStreet} Richtung ${directionText}` : `Richtung ${directionText}`;
+                        } else {
+                            textSpan.textContent = baseStreet;
+                        }
+                        streetEl.appendChild(textSpan);
+                        streetEl.style.display = 'block';
+                        
+                        // E) Der Spur-Assistent
+                        let laneContainer = document.getElementById('nav-top-lanes');
+                        if (!laneContainer) {
+                            laneContainer = document.createElement('div');
+                            laneContainer.id = 'nav-top-lanes';
+                            laneContainer.className = 'lane-assist-container';
+                            streetEl.parentNode.appendChild(laneContainer);
+                        }
+                        laneContainer.innerHTML = ''; 
+                        
+                        if (renderManeuver.lanes && renderManeuver.lanes.length > 0) {
+                            laneContainer.style.display = 'flex';
+                            renderManeuver.lanes.forEach(lane => {
+                                const arrowDiv = document.createElement('div');
+                                arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
+                                
+                                let faIcon = 'fa-arrow-up'; 
+                                let laneRot = 'rotate(0deg)';
+                                if (lane.indications && lane.indications.length > 0) {
+                                    const ind = lane.indications[0].toLowerCase();
+                                    if (ind.includes('slight_left')) laneRot = 'rotate(-30deg)';
+                                    else if (ind.includes('left')) laneRot = 'rotate(-45deg)';
+                                    else if (ind.includes('slight_right')) laneRot = 'rotate(30deg)';
+                                    else if (ind.includes('right')) laneRot = 'rotate(45deg)';
+                                    else if (ind.includes('u-turn')) faIcon = 'fa-arrow-rotate-left';
+                                }
+                                arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}" style="transform: ${laneRot}; display: inline-block;"></i>`;
+                                laneContainer.appendChild(arrowDiv);
+                            });
+                        } else {
+                            laneContainer.style.display = 'none';
                         }
                     }
                     // ====================================================
-
-                                
-                            }
-                        }
-                    }
 
                 }, (error) => {
                     console.warn("GPS Signal verloren:", error);
