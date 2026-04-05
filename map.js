@@ -2134,6 +2134,127 @@ updateDashboard: function() {
         }
     }
 
+
+    // ==========================================
+    // === SMART CAMERA ENGINE (V9 BITURBO) ===
+    // ==========================================
+    window.SmartCameraEngine = {
+        currentState: 'CRUISE_CITY',
+        stateChangeInitiatedAt: 0,
+        pendingState: null,
+        lastHeading: 0,
+
+        getTimeToTurn: function(distMeters, speedKmh) {
+            if (speedKmh < 5) return 999; 
+            return distMeters / (speedKmh / 3.6); // Echte Sekunden bis zum Ziel
+        },
+
+        update: function(libreMap, currentCoords, heading, speedKmh, distMeters, currentManeuver) {
+            if (!libreMap) return;
+
+            const timeToTurn = this.getTimeToTurn(distMeters, speedKmh);
+            const manType = currentManeuver ? (currentManeuver.maneuver || '') : '';
+            // Peters Fix: Saubere Regex für Autobahnen (z.B. "A3", "A 100"), ignoriert "B10A"
+            const roadNums = currentManeuver && currentManeuver.roadNumbers ? currentManeuver.roadNumbers.join(',') : '';
+            const isHighway = /^[A]\s?\d+/i.test(roadNums) || speedKmh > 100;
+
+            let newState = 'CRUISE_CITY';
+
+            // Prio 1: Kreisverkehr (Echte 2D Draufsicht)
+            if (manType.includes('ROUNDABOUT') && (timeToTurn < 15 || distMeters < 150)) {
+                newState = 'ROUNDABOUT';
+            }
+            // Prio 2: Autobahn-Gabelung (Strikes 3D)
+            else if ((manType.includes('EXIT') || manType.includes('KEEP_LEFT') || manType.includes('KEEP_RIGHT')) &&
+                     isHighway && (timeToTurn < 20 || distMeters < 600)) {
+                newState = 'HIGHWAY_EXIT';
+            }
+            // Prio 3: Stadt-Abbiegung
+            else if ((manType.includes('TURN') || manType.includes('U_TURN')) && (timeToTurn < 12 || distMeters < 120)) {
+                newState = 'CITY_TURN';
+            }
+            // Prio 4: Stop & Go (Peters Fix: Darf die Abbiege-Kamera nicht überschreiben!)
+            else if (speedKmh < 10 && timeToTurn > 15 && distMeters > 100) {
+                newState = 'STOP_AND_GO';
+            }
+            // Prio 5: Cruise Control
+            else {
+                if (isHighway || speedKmh > 90) newState = 'CRUISE_HIGHWAY';
+                else if (speedKmh > 50) newState = 'CRUISE_LAND';
+                else newState = 'CRUISE_CITY';
+            }
+
+            // Die intelligente Hysterese (Peters Fix: Dynamische Wartezeiten)
+            if (newState !== this.currentState) {
+                if (this.pendingState !== newState) {
+                    this.pendingState = newState;
+                    this.stateChangeInitiatedAt = Date.now();
+                } else {
+                    let waitTime = 0;
+                    
+                    // Manöver greifen SOFORT
+                    if (!newState.includes('TURN') && !newState.includes('EXIT') && !newState.includes('ROUNDABOUT')) {
+                        // Dynamische Logik: Beschleunigen vs. Abbremsen
+                        const isSpeedIncrease = (newState === 'CRUISE_HIGHWAY' && this.currentState !== 'CRUISE_HIGHWAY') ||
+                                                (newState === 'CRUISE_LAND' && this.currentState === 'CRUISE_CITY');
+                        waitTime = isSpeedIncrease ? 8000 : 4000;
+                    }
+
+                    if (Date.now() - this.stateChangeInitiatedAt >= waitTime) {
+                        this.currentState = newState;
+                        this.pendingState = null;
+                    }
+                }
+            } else {
+                this.pendingState = null;
+            }
+
+            this.applyCamera(libreMap, currentCoords, heading, speedKmh);
+        },
+
+        applyCamera: function(libreMap, coords, heading, speedKmh) {
+            let targetZoom = 16.5;
+            let targetPitch = 45;
+            // Wir bleiben bei Padding! (Peters Offset-Idee zerschießt die MapLibre 3D-Rotation)
+            const targetPadding = { top: window.innerHeight * 0.45, bottom: 0, left: 0, right: 0 };
+            
+            // Peters Fix: Dynamische Duration basierend auf Speed (geclampt zwischen 800ms und 3000ms)
+            let baseDuration = Math.max(800, Math.min(3000, 500 + speedKmh * 10));
+
+            switch(this.currentState) {
+                case 'STOP_AND_GO':
+                    targetZoom = 16.0; targetPitch = 30; baseDuration = 2000; break;
+                case 'ROUNDABOUT':
+                    targetZoom = 17.5; targetPitch = 0; baseDuration = 1500; break;
+                case 'HIGHWAY_EXIT':
+                    targetZoom = 15.0; targetPitch = 60; baseDuration = 2000; break;
+                case 'CITY_TURN':
+                    targetZoom = 18.0; targetPitch = 20; baseDuration = 1500; break;
+                case 'CRUISE_HIGHWAY':
+                    targetZoom = 14.5; targetPitch = 65; baseDuration = 3000; break;
+                case 'CRUISE_LAND':
+                    targetZoom = 15.5; targetPitch = 55; baseDuration = 2500; break;
+                case 'CRUISE_CITY':
+                default:
+                    targetZoom = 16.5; targetPitch = 45; baseDuration = 1500; break;
+            }
+
+            // Heading Trust System (friert Drehung ein, wenn man an der Ampel hält)
+            if (speedKmh >= 10 && heading !== null) {
+                this.lastHeading = heading;
+            }
+
+            libreMap.easeTo({
+                center: coords,
+                zoom: targetZoom,
+                pitch: targetPitch,
+                bearing: this.lastHeading,
+                padding: targetPadding,
+                duration: baseDuration,
+                easing: (t) => t // Linearer Ablauf für flüssiges Live-Tracking
+            });
+        }
+    };
 // ==========================================
     // === PHASE 1: GO BUTTON & 3D LAUNCH ===
     // ==========================================
@@ -2366,34 +2487,55 @@ updateDashboard: function() {
                     const heading = position.coords.heading; 
                     const speed = position.coords.speed; 
 
-                    currentCoords = [lng, lat];
+                // --- BOSS-FIX: GPS LERP SMOOTHING (Peters Punkt 5 & 6) ---
+                    const rawCoords = [lng, lat];
+                    
+                    if (!currentCoords) {
+                        currentCoords = rawCoords;
+                    } else {
+                        // Mathematische Interpolation (20% Sprung auf die neue Position pro Tick)
+                        // Verhindert hartes Ruckeln bei ungenauem GPS-Signal
+                        const alpha = 0.25; 
+                        const smoothLng = currentCoords[0] + (rawCoords[0] - currentCoords[0]) * alpha;
+                        const smoothLat = currentCoords[1] + (rawCoords[1] - currentCoords[1]) * alpha;
+                        currentCoords = [smoothLng, smoothLat];
+                    }
 
                     const speedKmh = speed ? Math.round(speed * 3.6) : 0;
                     const speedDisplay = document.getElementById('hud-current-speed');
                     if (speedDisplay) speedDisplay.textContent = speedKmh;
 
-if (window.userLocationMarker) {
+                    // --- MARKER UPDATE MIT HEADING-TRUST ---
+                    if (window.userLocationMarker) {
                         window.userLocationMarker.setLngLat(currentCoords);
-                        if (heading !== null && speed !== null && speed > 0.8) {
+                        // Pfeil friert an der Ampel ein, dreht sich nur ab 10 km/h
+                        if (speedKmh >= 10 && heading !== null) {
                             window.userLocationMarker.setRotation(heading);
-                            window.lastHeading = heading; // <-- WICHTIG: Für den Rückflug merken!
+                            window.lastHeading = heading; 
                         }
                     }
+                    // ---------------------------------------------------------
 
-                    // BOSS-FIX: Die Kamera darf NUR nachziehen, wenn du NICHT in der Map wischst!
+                    // --- BOSS-FIX: DIE SMART CAMERA ENGINE STARTEN ---
+                    // Die Engine darf nur eingreifen, wenn du NICHT gerade mit den Fingern auf der Karte wischst
                     if (libreMap && elapsedSinceStart > 2500 && !window.userIsLookingAround) {
-                        const cameraOpts = { 
-                            center: currentCoords, 
-                            duration: 1000, 
-                            easing: (t) => t,
-                            padding: { top: window.innerHeight * 0.5, bottom: 0, left: 0, right: 0 }
-                        };
-                        if (heading !== null && speed !== null && speed > 0.8) {
-                            cameraOpts.bearing = heading;
-                            cameraOpts.pitch = 60; 
-                        }
-                        libreMap.easeTo(cameraOpts);
+                        
+                        // Wir füttern die Engine mit allen Live-Daten. 
+                        // Falls 'currentManeuver' oder 'distMeters' gerade undefiniert sind (z.B. freie Fahrt), 
+                        // sichern wir das mit Fallbacks (null, 9999) ab.
+                        const safeDist = (typeof distMeters !== 'undefined' && distMeters !== null) ? distMeters : 9999;
+                        const safeManeuver = (typeof currentManeuver !== 'undefined') ? currentManeuver : null;
+                        
+                        window.SmartCameraEngine.update(
+                            libreMap, 
+                            currentCoords, 
+                            heading, 
+                            speedKmh, 
+                            safeDist, 
+                            safeManeuver
+                        );
                     }
+                    // ------------------------------------------------
 
                     const activeRoutePts = RouteLogic.routePointsData[RouteLogic.activeIndex];
                     const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
