@@ -145,7 +145,30 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
     window.userLocationMarker = new maplibregl.Marker({ element: customMarkerElement })
         .setLngLat(coords)
         .addTo(libreMap);
+// === BOSS-FIX: DYNAMISCHER ZOOM-WÄCHTER (COMPACT MARKERS) ===
+        // Überwacht jeden einzelnen Frame beim Zoomen
+        libreMap.on('zoom', () => {
+            const currentZoom = libreMap.getZoom();
+            const mapEl = document.getElementById(mapContainerId);
+            if (!mapEl) return;
+            
+            // Ab Zoom-Level 14.2 abwärts klappen wir die Preise ein!
+            // (Du kannst diesen Wert perfektionieren: 14.5 ist näher dran, 13.5 weiter weg)
+            if (currentZoom < 14.2) {
+                mapEl.classList.add('map-compact-mode');
+            } else {
+                mapEl.classList.remove('map-compact-mode');
+            }
+        });
 
+        // Einmaliger Check direkt beim Start, falls die Karte schon rausgezoomt startet
+        libreMap.once('idle', () => {
+            const mapEl = document.getElementById(mapContainerId);
+            if (mapEl && libreMap.getZoom() < 14.2) {
+                mapEl.classList.add('map-compact-mode');
+            }
+        });
+        // ============================================================
 // 4. Restliche Einstellungen laden
    libreMap.on('load', () => {
        libreMap.setPadding({ right: 150, bottom: 20 });
