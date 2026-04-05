@@ -2681,11 +2681,33 @@ updateDashboard: function() {
                                     }
                                 }
 
-                                // SPRACHAUSGABE LOGIK
+                    // ==========================================
+                                // === BOSS-FIX: LOOK-AHEAD VOICE ENGINE ===
+                                // ==========================================
                                 const shortInfo = getShortInstruction(currentManeuver);
                                 const laneText = getLaneText(currentManeuver);
                                 const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
-                                const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
+                                let actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
+
+                                // KI-Blick in die Zukunft (Nächstes Manöver checken)
+                                let peekIdx = currIdx + 1;
+                                while (peekIdx < instructions.length && instructions[peekIdx].maneuver === 'DEPART') peekIdx++;
+                                
+                                if (peekIdx < instructions.length) {
+                                    const nextMan = instructions[peekIdx];
+                                    const nextDistMeters = cumulativeDists[nextMan.pointIndex] - cumulativeDists[currentManeuver.pointIndex];
+                                    
+                                    // Wenn wir auf einer Gabelung/Abfahrt sind UND in unter 1500m eine Ausfahrt kommt
+                                    if ((currentManeuver.maneuver.includes('KEEP') || currentManeuver.maneuver.includes('BIFURCATION')) && 
+                                        (nextMan.maneuver.includes('EXIT') || nextMan.maneuver.includes('OFF_RAMP')) && 
+                                        nextDistMeters <= 1500) {
+                                        
+                                        const nextShortInfo = getShortInstruction(nextMan);
+                                        // Sätze zu einem flüssigen Befehl zusammenschweißen!
+                                        actionStr = `${actionStr}, um im Anschluss die ${nextShortInfo.action} ${nextShortInfo.street} zu nehmen`;
+                                    }
+                                }
+                                // ==========================================
 
                                 if (RouteLogic.voiceState.idx !== currIdx && elapsedSinceStart > 4000) {
                                     let trueSegDist = distMeters; 
@@ -2873,37 +2895,62 @@ updateDashboard: function() {
                         streetEl.style.display = 'block';
                         
                         // E) Der Spur-Assistent
-                        let laneContainer = document.getElementById('nav-top-lanes');
-                        if (!laneContainer) {
-                            laneContainer = document.createElement('div');
-                            laneContainer.id = 'nav-top-lanes';
-                            laneContainer.className = 'lane-assist-container';
-                            streetEl.parentNode.appendChild(laneContainer);
-                        }
-                        laneContainer.innerHTML = ''; 
-                        
-                        if (renderManeuver.lanes && renderManeuver.lanes.length > 0) {
-                            laneContainer.style.display = 'flex';
-                            renderManeuver.lanes.forEach(lane => {
-                                const arrowDiv = document.createElement('div');
-                                arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
-                                
-                                let faIcon = 'fa-arrow-up'; 
-                                let laneRot = 'rotate(0deg)';
-                                if (lane.indications && lane.indications.length > 0) {
-                                    const ind = lane.indications[0].toLowerCase();
-                                    if (ind.includes('slight_left')) laneRot = 'rotate(-30deg)';
-                                    else if (ind.includes('left')) laneRot = 'rotate(-45deg)';
-                                    else if (ind.includes('slight_right')) laneRot = 'rotate(30deg)';
-                                    else if (ind.includes('right')) laneRot = 'rotate(45deg)';
-                                    else if (ind.includes('u-turn')) faIcon = 'fa-arrow-rotate-left';
+                  // ==========================================
+                                // === BOSS-FIX: CLEAN UI SPUR-ASSISTENT ===
+                                // ==========================================
+                                let laneContainer = document.getElementById('nav-top-lanes');
+                                if (!laneContainer) {
+                                    laneContainer = document.createElement('div');
+                                    laneContainer.id = 'nav-top-lanes';
+                                    laneContainer.className = 'lane-assist-container';
+                                    streetEl.parentNode.appendChild(laneContainer);
                                 }
-                                arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}" style="transform: ${laneRot}; display: inline-block;"></i>`;
-                                laneContainer.appendChild(arrowDiv);
-                            });
-                        } else {
-                            laneContainer.style.display = 'none';
-                        }
+                                laneContainer.innerHTML = ''; 
+                                
+                                // KI-Entscheidung: Brauchen wir die Spuren hier wirklich?
+                                let showLanes = false;
+                                if (renderManeuver.lanes && renderManeuver.lanes.length > 0) {
+                                    showLanes = true;
+                                    // Wenn es nur eine simple Ausfahrt (EXIT) ist und es insgesamt wenige Spuren gibt (z.B. 2), 
+                                    // kicken wir die Anzeige raus, da der fette Hauptpfeil oben völlig ausreicht.
+                                    if (manType.includes('EXIT') && renderManeuver.lanes.length <= 2) {
+                                        showLanes = false;
+                                    }
+                                }
+
+                                if (showLanes) {
+                                    laneContainer.style.display = 'flex';
+                                    renderManeuver.lanes.forEach(lane => {
+                                        const arrowDiv = document.createElement('div');
+                                        arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
+                                        
+                                        let faIcon = 'fa-arrow-up'; 
+                                        let laneRot = 'rotate(0deg)';
+                                        
+                                        if (lane.indications && lane.indications.length > 0) {
+                                            // Wenn wir uns auf einer Gabelung/Abfahrt (KEEP) befinden,
+                                            // erzwingen wir bei den GÜLTIGEN Spuren (valid) eine Geradeaus-Optik,
+                                            // damit es fließend aussieht und nicht wie ein 90-Grad-Knick auf der Autobahn!
+                                            if (lane.valid && (manType.includes('KEEP') || manType.includes('BIFURCATION'))) {
+                                                faIcon = 'fa-arrow-up';
+                                                laneRot = 'rotate(0deg)';
+                                            } else {
+                                                // Normale TomTom Logik
+                                                const ind = lane.indications[0].toLowerCase();
+                                                if (ind.includes('slight_left')) laneRot = 'rotate(-30deg)';
+                                                else if (ind.includes('left')) laneRot = 'rotate(-45deg)';
+                                                else if (ind.includes('slight_right')) laneRot = 'rotate(30deg)';
+                                                else if (ind.includes('right')) laneRot = 'rotate(45deg)';
+                                                else if (ind.includes('u-turn')) faIcon = 'fa-arrow-rotate-left';
+                                            }
+                                        }
+                                        arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}" style="transform: ${laneRot}; display: inline-block;"></i>`;
+                                        laneContainer.appendChild(arrowDiv);
+                                    });
+                                } else {
+                                    laneContainer.style.display = 'none';
+                                }
+                     
                     }
                     // ====================================================
 
