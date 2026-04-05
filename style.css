@@ -4223,3 +4223,53 @@ body.ghost-active #ghost-chat-overlay {
     transform: rotate(-45deg); /* Zwingt das Icon in den geografischen Nordpol */
     filter: drop-shadow(0 0 12px rgba(48, 209, 88, 0.8));
 }
+
+
+/* ========================================== */
+/* === PREMIUM HUD: SCHILDER & SPUREN === */
+/* ========================================== */
+
+/* Die Schilder (A9, B16 etc.) */
+.road-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 13px;
+    margin-right: 6px;
+    vertical-align: middle;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.road-badge.autobahn {
+    background-color: #005293; /* Autobahn Blau */
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+.road-badge.bundesstrasse {
+    background-color: #fcc200; /* Bundesstraße Gelb */
+    color: #000000;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+/* Der Spur-Assistent */
+.lane-assist-container {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    align-items: center;
+}
+.lane-arrow {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.25); /* Blassgrau für falsche Spuren */
+}
+.lane-arrow.valid {
+    color: #30d158; /* Leuchtend Grün für die richtige Spur */
+    filter: drop-shadow(0 0 6px rgba(48, 209, 88, 0.6));
+}
