@@ -2597,7 +2597,7 @@ updateDashboard: function() {
                         currentCoords = [smoothLng, smoothLat];
                     }
 
-                    const speedKmh = speed ? Math.round(speed * 3.6) : 0;
+                    let speedKmh = speed ? Math.round(speed * 3.6) : 0;
                     const speedDisplay = document.getElementById('hud-current-speed');
                     if (speedDisplay) speedDisplay.textContent = speedKmh;
 
@@ -2633,17 +2633,17 @@ updateDashboard: function() {
                     }
                     // ------------------------------------------------
 
-                    // --- BOSS-FIX: DIE TEST-WEICHE ---
+        // --- BOSS-FIX: DIE TEST-WEICHE ---
                     let currentManeuver = null;
                     let distMeters = 0;
-                    let speedKmh = speed ? Math.round(speed * 3.6) : 0;
+                    // LÖSCHE HIER DIE ZEILE MIT "let speedKmh = ..." !
 
                     if (window.testScenarioIdx > 0) {
                         // SIMULATOR MODUS AKTIV
                         const scenario = window.NavTestScenarios[window.testScenarioIdx];
                         currentManeuver = scenario;
                         distMeters = scenario.mockDist;
-                        speedKmh = scenario.mockSpeed;
+                        speedKmh = scenario.mockSpeed; // Hier überschreiben wir jetzt einfach den Live-Wert von oben
                     } else {
                         // LIVE MODUS AKTIV
                         // ... hier berechnet dein Code wie bisher das aktuelle Maneuver und die Distanz ...
