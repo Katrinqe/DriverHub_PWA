@@ -2151,7 +2151,7 @@ updateDashboard: function() {
                     duration: 2000, 
                     essential: true
                 });
-            }}
+            }
 
             const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
             if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
