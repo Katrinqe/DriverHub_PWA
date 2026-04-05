@@ -2897,7 +2897,7 @@ updateDashboard: function() {
                         iconEl.style.display = 'inline-block'; 
                     }
 
-                    // D) Schilder & Straßentexte bereinigen
+                 // D) Schilder & Straßentexte bereinigen
                     const streetEl = document.getElementById('nav-top-street');
                     if (streetEl) {
                         streetEl.innerHTML = ''; 
@@ -2915,19 +2915,27 @@ updateDashboard: function() {
                         let directionText = renderManeuver.signpostText || renderManeuver.destination || "";
                         let baseStreet = renderManeuver.street || "";
                         
-                        if (rn && baseStreet.includes(rn)) {
-                            baseStreet = baseStreet.replace(rn, '').trim();
-                            if (baseStreet.startsWith('-') || baseStreet.startsWith(',')) {
-                                baseStreet = baseStreet.substring(1).trim();
+                        // --- BOSS-FIX: DER INTELLIGENTE TEXT-FILTER ---
+                        let finalString = "";
+                        
+                        if (directionText) {
+                            // Wenn wir ein echtes Schild haben (z.B. "München-Ost"), 
+                            // ignorieren wir die aktuelle Straße (z.B. "A9") komplett!
+                            finalString = `Richtung ${directionText}`;
+                        } else if (baseStreet) {
+                            // Wenn es KEIN Schild gibt (z.B. Stadtverkehr auf der B16), zeigen wir die Straße.
+                            // Wir putzen aber doppelte "B16" aus dem Text, falls das Badge schon "B16" ist.
+                            if (rn && baseStreet.includes(rn)) {
+                                baseStreet = baseStreet.replace(rn, '').trim();
+                                if (baseStreet.startsWith('-') || baseStreet.startsWith(',')) {
+                                    baseStreet = baseStreet.substring(1).trim();
+                                }
                             }
+                            finalString = baseStreet;
                         }
 
                         let textSpan = document.createElement('span');
-                        if (directionText) {
-                            textSpan.textContent = baseStreet ? `${baseStreet} Richtung ${directionText}` : `Richtung ${directionText}`;
-                        } else {
-                            textSpan.textContent = baseStreet;
-                        }
+                        textSpan.textContent = finalString.trim();
                         streetEl.appendChild(textSpan);
                         streetEl.style.display = 'block';
                         
