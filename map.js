@@ -2713,15 +2713,76 @@ updateDashboard: function() {
                             const actionEl = document.getElementById('nav-top-action');
                             if (actionEl) actionEl.textContent = shortInfo.action;
 
+                           // --- BOSS-FIX: MULTI-LAYER HUD (SCHILDER & SPUREN) ---
                             const streetEl = document.getElementById('nav-top-street');
                             if (streetEl) {
-                                if (shortInfo.street) {
-                                    streetEl.textContent = shortInfo.street;
-                                    streetEl.style.display = 'block';
+                                streetEl.innerHTML = ''; // Altes Text-Rendering löschen
+                                
+                                // 1. Road Badges generieren (A9, B16 etc.)
+                                if (currentManeuver.roadNumbers && currentManeuver.roadNumbers.length > 0) {
+                                    const rn = currentManeuver.roadNumbers[0];
+                                    let badgeClass = '';
+                                    if (rn.startsWith('A')) badgeClass = 'autobahn';
+                                    else if (rn.startsWith('B')) badgeClass = 'bundesstrasse';
+                                    
+                                    if (badgeClass) {
+                                        streetEl.innerHTML += `<span class="road-badge ${badgeClass}">${rn}</span>`;
+                                    }
+                                }
+
+                                // 2. Richtungstext generieren ("Richtung München")
+                                let directionText = currentManeuver.signpostText || currentManeuver.destination || "";
+                                let baseStreet = currentManeuver.street || "";
+                                let textSpan = document.createElement('span');
+                                
+                                if (directionText) {
+                                    textSpan.textContent = baseStreet ? `${baseStreet} Richtung ${directionText}` : `Richtung ${directionText}`;
                                 } else {
-                                    streetEl.style.display = 'none';
+                                    textSpan.textContent = baseStreet;
+                                }
+                                streetEl.appendChild(textSpan);
+                                streetEl.style.display = 'block';
+                                
+                                // 3. SPUR-ASSISTENT (Lane Assist)
+                                // Suchen oder erstellen wir den Container direkt unter dem Text
+                                let laneContainer = document.getElementById('nav-top-lanes');
+                                if (!laneContainer) {
+                                    laneContainer = document.createElement('div');
+                                    laneContainer.id = 'nav-top-lanes';
+                                    laneContainer.className = 'lane-assist-container';
+                                    streetEl.parentNode.appendChild(laneContainer);
+                                }
+
+                                laneContainer.innerHTML = ''; // Reset für den aktuellen Tick
+                                
+                                if (currentManeuver.lanes && currentManeuver.lanes.length > 0) {
+                                    laneContainer.style.display = 'flex';
+                                    
+                                    currentManeuver.lanes.forEach(lane => {
+                                        const arrowDiv = document.createElement('div');
+                                        arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
+                                        
+                                        // Die Richtung des Pfeils bestimmen
+                                        let faIcon = 'fa-arrow-up'; 
+                                        if (lane.indications && lane.indications.length > 0) {
+                                            // TomTom liefert Richtungen wie "LEFT", "SLIGHT_LEFT", "STRAIGHT"
+                                            const ind = lane.indications[0].toLowerCase();
+                                            if (ind.includes('slight_left')) faIcon = 'fa-arrow-up-left';
+                                            else if (ind.includes('left')) faIcon = 'fa-arrow-left';
+                                            else if (ind.includes('slight_right')) faIcon = 'fa-arrow-up-right';
+                                            else if (ind.includes('right')) faIcon = 'fa-arrow-right';
+                                            else if (ind.includes('u-turn')) faIcon = 'fa-arrow-rotate-left';
+                                            else faIcon = 'fa-arrow-up'; // Default Geradeaus
+                                        }
+                                        
+                                        arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}"></i>`;
+                                        laneContainer.appendChild(arrowDiv);
+                                    });
+                                } else {
+                                    laneContainer.style.display = 'none';
                                 }
                             }
+                            // ----------------------------------------------------
 
                             let displayDist = Math.max(0, Math.round(distMeters / 20) * 20);
                             const distEl = document.getElementById('nav-top-distance');
