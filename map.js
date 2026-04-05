@@ -2799,7 +2799,7 @@ updateDashboard: function() {
 
 
                    // ====================================================
-                    // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (PHASE ENGINE V1) ===
+                    // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (PHASE ENGINE V1.1) ===
                     // ====================================================
                     
                     // 1. DIE WEICHE: Woher kommen die Daten?
@@ -2807,7 +2807,6 @@ updateDashboard: function() {
                     let renderDist = distMeters;
 
                     if (window.testScenarioIdx > 0) {
-                        // TEST-MODUS: Wir überschreiben die Live-Daten
                         renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
                         renderDist = renderManeuver.mockDist;
                     }
@@ -2823,36 +2822,32 @@ updateDashboard: function() {
                     const isExit = manType.includes('EXIT') || manType.includes('OFF_RAMP');
                     const isTurn = manType.includes('TURN');
 
-                    // Combo-Check: Blick in die Zukunft (Nur im Live-Modus)
-                    let isCombo = false;
-                    if (isKeep && window.testScenarioIdx === 0) { 
-                        const instructions = RouteLogic.currentInstructions || [];
-                        let peekIdx = RouteLogic.currentInstructionIndex + 1;
-                        while (peekIdx < instructions.length && instructions[peekIdx].maneuver === 'DEPART') peekIdx++;
-                        
-                        if (peekIdx < instructions.length) {
-                            const nextMan = instructions[peekIdx];
-                            if (nextMan.maneuver.includes('EXIT') || nextMan.maneuver.includes('OFF_RAMP')) {
-                                const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
-                                if (cumulativeDists && cumulativeDists[nextMan.pointIndex] && cumulativeDists[renderManeuver.pointIndex]) {
-                                    const nextDistMeters = cumulativeDists[nextMan.pointIndex] - cumulativeDists[renderManeuver.pointIndex];
-                                    // Wenn die echte Ausfahrt zwischen 50m und 1200m nach der Abfahrt kommt = COMBO!
-                                    if (nextDistMeters > 50 && nextDistMeters < 1200) {
-                                        isCombo = true;
-                                    }
-                                }
-                            }
-                        }
+                    // ERKENNUNG: Ist es eine 2-Phasen-Abfahrt? (Kombi-Spur vorhanden)
+                    let isAbfahrt = false;
+                    if (isExit && renderManeuver.lanes) {
+                        const hasComboLane = renderManeuver.lanes.some(l => {
+                            if (!l.valid || !l.indications) return false;
+                            const inds = l.indications.map(i => i.toLowerCase());
+                            // Wenn eine Spur "Geradeaus" UND "Rechts/Links" erlaubt, sind wir auf einer Vor-Abfahrt!
+                            return inds.includes('straight') && inds.some(i => i.includes('right') || i.includes('left'));
+                        });
+                        if (hasComboLane) isAbfahrt = true;
                     }
 
                     // Phase zuweisen
-                    if (isCombo || isKeep) navPhase = "PRE_EXIT"; // Vorbereitung (Abfahrt)
-                    else if (isExit) navPhase = "EXIT";           // Ausführung (Ausfahrt)
-                    else if (isTurn) navPhase = "TURN";           // Stadt-Abbiegung
+                    if (isKeep) navPhase = "PRE_EXIT"; 
+                    else if (isExit) navPhase = "EXIT";           
+                    else if (isTurn) navPhase = "TURN";           
 
                     // A) Hauptaktion Text
+                    let actionText = shortInfo.action;
+                    // WUNSCH: Wenn es Phase 1 einer Ausfahrt ist, benennen wir es in "Halten" um!
+                    if (isAbfahrt) {
+                        actionText = manType.includes('LEFT') ? "Links halten" : "Rechts halten";
+                    }
+
                     const actionEl = document.getElementById('nav-top-action');
-                    if (actionEl) actionEl.textContent = shortInfo.action;
+                    if (actionEl) actionEl.textContent = actionText;
 
                     // B) Meter-Anzeige (Ausblenden in Phase 1 "PRE_EXIT")
                     const distEl = document.getElementById('nav-top-distance');
@@ -2870,7 +2865,7 @@ updateDashboard: function() {
                         }
                     }
 
-                    // C) Das Haupt-Icon (Dynamische Rotation je nach Phase)
+                    // C) Das Haupt-Icon (Dynamische Rotation)
                     const iconEl = document.getElementById('nav-top-icon');
                     if (iconEl) {
                         let iconClass = 'fa-arrow-up'; 
@@ -2882,7 +2877,7 @@ updateDashboard: function() {
                         }
                         else if (navPhase === "PRE_EXIT") { 
                             iconClass = 'fa-arrow-up'; 
-                            rotation = manType.includes('LEFT') ? 'rotate(-25deg)' : 'rotate(25deg)'; 
+                            rotation = 'rotate(0deg)'; // WUNSCH: Keine Neigung bei Links/Rechts halten!
                         }
                         else if (manType.includes('TURN_LEFT')) { iconClass = 'fa-arrow-left'; }
                         else if (manType.includes('TURN_RIGHT')) { iconClass = 'fa-arrow-right'; }
@@ -2942,7 +2937,7 @@ updateDashboard: function() {
                         if (renderManeuver.lanes && renderManeuver.lanes.length > 0) {
                             showLanes = true;
                             // Peters Regel: Keine Spuren bei normaler Ausfahrt (<=2 Spuren) oder simplen Abbiegungen
-                            if ((navPhase === "EXIT" && !isCombo && renderManeuver.lanes.length <= 2) || navPhase === "TURN") {
+                            if ((navPhase === "EXIT" && !isAbfahrt && renderManeuver.lanes.length <= 2) || navPhase === "TURN") {
                                 showLanes = false;
                             }
                         }
@@ -2960,16 +2955,11 @@ updateDashboard: function() {
                                     const inds = lane.indications.map(i => i.toLowerCase());
                                     
                                     if (navPhase === "PRE_EXIT") {
-                                        // PHASE 1: Wir bereiten die Abfahrt vor. Erlaubte Spuren zeigen GERADEAUS.
-                                        if (lane.valid) {
-                                            laneRot = 'rotate(0deg)';
-                                        } else {
-                                            // Falsche Spuren drehen wir optisch leicht weg, damit der Flow klar ist
-                                            laneRot = inds.includes('left') ? 'rotate(-20deg)' : 'rotate(20deg)';
-                                        }
+                                        // WUNSCH: Bei Links/Rechts halten (PRE_EXIT) zeigen ALLE Pfeile stur geradeaus!
+                                        laneRot = 'rotate(0deg)';
                                     } 
                                     else if (navPhase === "EXIT") {
-                                        // PHASE 2: Die echte Ausfahrt. Erlaubte Spuren knicken hart NACH RECHTS (oder LINKS).
+                                        // Bei der Ausfahrt behalten wir die schönen fließenden 35-Grad-Winkel
                                         if (inds.includes('slight_right') || inds.includes('right')) {
                                             laneRot = 'rotate(35deg)';
                                         } else if (inds.includes('slight_left') || inds.includes('left')) {
@@ -2986,10 +2976,6 @@ updateDashboard: function() {
                             laneContainer.style.display = 'none';
                         }
                     }
-                    // ====================================================
-                                // ==========================================
-                     
-                    
                     // ====================================================
 
                 }, (error) => {
