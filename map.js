@@ -2305,7 +2305,7 @@ updateDashboard: function() {
                     if (libreMap && currentCoords) {
                         libreMap.flyTo({
                             center: currentCoords,
-                            zoom: 17.5,
+                            zoom: 16.5,
                             pitch: 60,
                             bearing: window.lastHeading || 0,
                             padding: { top: window.innerHeight * 0.5, bottom: 0, left: 0, right: 0 },
