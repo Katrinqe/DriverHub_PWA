@@ -2282,28 +2282,29 @@ updateDashboard: function() {
             
             triggerGoogleVoice(welcomeSpeech);
 
-          // --- BOSS-FIX: DIE "FREE LOOK" ENGINE ---
+          // --- BOSS-FIX: DIE "FREE LOOK" ENGINE (V2 - SMOOTH & MULTI-TOUCH) ---
             window.isNavigating = true;
             window.userIsLookingAround = false;
             window.resumeNavTimer = null;
 
-        const lockCamera = () => {
+            const lockCamera = (e) => {
                 if (!window.isNavigating) return;
                 
-                // BOSS-FIX: Nur beim ersten Berühren das Padding auf Null setzen!
-                if (!window.userIsLookingAround) {
-                    if (libreMap) libreMap.setPadding({ top: 0, bottom: 0, left: 0, right: 0 });
-                }
+                // DER MASTER-CHECK: Reagiert NUR auf echte menschliche Finger (originalEvent), 
+                // NICHT auf unsere eigenen Code-Kamerafahrten!
+                if (!e.originalEvent) return; 
 
                 window.userIsLookingAround = true;
                 if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
             };
 
-            const unlockCameraTimer = () => {
+            const unlockCameraTimer = (e) => {
                 if (!window.isNavigating) return;
+                if (!e.originalEvent) return; 
+                
                 if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
                 
-                // Startet den 5-Sekunden Countdown
+                // Startet den 5-Sekunden Countdown erst, wenn ALLE Finger weg sind
                 window.resumeNavTimer = setTimeout(() => {
                     window.userIsLookingAround = false;
                     
@@ -2311,7 +2312,7 @@ updateDashboard: function() {
                     if (libreMap && currentCoords) {
                         libreMap.flyTo({
                             center: currentCoords,
-                            zoom: 16.5,
+                            zoom: 16.5,  // Deinen Wunsch-Zoom beibehalten
                             pitch: 60,
                             bearing: window.lastHeading || 0,
                             padding: { top: window.innerHeight * 0.5, bottom: 0, left: 0, right: 0 },
@@ -2322,16 +2323,10 @@ updateDashboard: function() {
                 }, 5000); 
             };
 
-            // Karte lauscht auf deine Finger
-            libreMap.on('touchstart', lockCamera);
-            libreMap.on('mousedown', lockCamera);
-            libreMap.on('wheel', lockCamera); // Fürs Scrollrad am Laptop
-
-            // Sobald du loslässt, tickt die Uhr
-            libreMap.on('touchend', unlockCameraTimer);
-            libreMap.on('mouseup', unlockCameraTimer);
+            // MapLibre's native Gesten-Erkennung statt roher Touch-Events
+            libreMap.on('movestart', lockCamera);
+            libreMap.on('moveend', unlockCameraTimer);
             // ----------------------------------------
-
             // 7. LIVE GPS MOTOR STARTEN
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
