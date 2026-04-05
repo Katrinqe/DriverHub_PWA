@@ -4171,3 +4171,40 @@ body.ghost-active #ghost-chat-overlay {
     color: #ff3b30;
     font-weight: 800;
 }
+
+/* ========================================== */
+/* === ZOOM-REACTIVE MARKER ANIMATION ======= */
+/* ========================================== */
+
+.pm-content {
+    /* Wir geben dem Container eine maximale Höhe, die wir animieren können */
+    max-height: 50px; 
+    opacity: 1;
+    overflow: hidden; /* Verhindert, dass der Text beim Einfahren übersteht */
+    
+    /* Eine Premium-Kurve für ein natürliches, nicht-lineares Einrasten */
+    transition: max-height 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), 
+                opacity 0.2s ease, 
+                margin 0.3s ease, 
+                padding 0.3s ease;
+}
+
+.pm-brand-bar {
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* === DER COMPACT MODE === */
+/* Wenn das JS diese Klasse auf die Map legt, fahren alle Marker gleichzeitig ein */
+.map-compact-mode .pm-content {
+    max-height: 0 !important;
+    opacity: 0 !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Optionaler Feinschliff: Die Marke selbst wird im Compact Mode 10% kleiner, 
+   damit die Karte aus der Vogelperspektive noch sauberer wirkt. */
+.map-compact-mode .pm-brand-bar {
+    transform: scale(0.9);
+}
