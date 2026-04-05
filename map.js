@@ -2362,30 +2362,41 @@ updateDashboard: function() {
                 return `${Math.round(m/10)*10} Metern`; 
             };
 
-            const getLaneText = (maneuverObj) => {
+    const getLaneText = (maneuverObj) => {
+                // Gibt es überhaupt Spuren-Daten?
                 if (!maneuverObj.lanes || !Array.isArray(maneuverObj.lanes)) return "";
                 
+                // 1. Filtere NUR die Spuren heraus, auf denen der Fahrer fahren darf (grüner Haken)
                 const validLanes = maneuverObj.lanes.filter(l => l.valid === true);
-                if (validLanes.length === 0) return "";
+                const count = validLanes.length;
+                if (count === 0) return "";
 
-                let directions = new Set();
+                // 2. Wohin zeigen diese erlaubten Spuren primär?
+                let left = 0, right = 0, center = 0;
                 validLanes.forEach(l => {
-                    if (l.indication) {
-                        l.indication.forEach(ind => {
-                            const i = ind.toLowerCase();
-                            if (i.includes('left')) directions.add('linken');
-                            else if (i.includes('right')) directions.add('rechten');
-                            else if (i.includes('straight') || i.includes('center')) directions.add('mittleren');
-                        });
+                    // BOSS-FIX: TomTom nutzt "indications" (Plural!)
+                    if (l.indications) {
+                        const inds = l.indications.map(i => i.toLowerCase());
+                        if (inds.some(i => i.includes('left'))) left++;
+                        else if (inds.some(i => i.includes('right'))) right++;
+                        else center++;
                     }
                 });
 
-                const dirArray = Array.from(directions);
-                if (dirArray.length === 0) return "";
-                if (dirArray.length === 1) return `halten Sie sich auf der ${dirArray[0]} Spur`;
-                return `nutzen Sie die ${dirArray.join(" oder ")} Spur`;
-            };
+                // 3. Dominante Richtung und Grammatik (Singular vs. Plural) ermitteln
+                let dirWord = "mittleren";
+                if (left > right && left >= center) dirWord = count > 1 ? "linken" : "linke";
+                else if (right > left && right >= center) dirWord = count > 1 ? "rechten" : "rechte";
+                else dirWord = count > 1 ? "mittleren" : "mittlere";
 
+                // 4. Echte Zahlwörter für die TTS-Sprachausgabe (klingt natürlicher als Ziffern)
+                const numText = ["null", "eine", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht"];
+                const countStr = numText[count] || count.toString();
+
+                // 5. Finalen Satzbaustein zurückgeben
+                if (count === 1) return `halten Sie sich auf der ${dirWord} Spur`;
+                return `nutzen Sie die ${countStr} ${dirWord} Spuren`;
+            };
             // 6. DIE PERFEKTE START-ANSAGE (Bulletproof Version)
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
