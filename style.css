@@ -4273,3 +4273,33 @@ body.ghost-active #ghost-chat-overlay {
     color: #30d158; /* Leuchtend Grün für die richtige Spur */
     filter: drop-shadow(0 0 6px rgba(48, 209, 88, 0.6));
 }
+
+/* Der Simulator-Button */
+#btn-test-hud {
+    position: absolute;
+    right: 18px;
+    bottom: 240px; /* Über den normalen Map-Controls */
+    width: 44px;
+    height: 44px;
+    background: rgba(28, 28, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 800;
+    font-size: 18px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s;
+}
+#btn-test-hud.active {
+    background: #30d158;
+    color: #000;
+    border-color: #30d158;
+    box-shadow: 0 0 15px rgba(48, 209, 88, 0.4);
+}
+#btn-test-hud.hidden {
+    display: none;
+}
