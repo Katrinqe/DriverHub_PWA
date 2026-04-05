@@ -2191,7 +2191,8 @@ updateDashboard: function() {
     ];
 
     // Button-Logic
-    function toggleNavTest() {
+ // Button-Logic (BOSS-FIX: Global verfügbar machen!)
+    window.toggleNavTest = function() {
         window.testScenarioIdx++;
         if (window.testScenarioIdx >= window.NavTestScenarios.length) {
             window.testScenarioIdx = 0; // Zurück zu Live
@@ -2377,6 +2378,9 @@ updateDashboard: function() {
 
             const cancelNavBtn = document.getElementById('btn-cancel-active-nav');
             if(cancelNavBtn) cancelNavBtn.classList.remove('hidden');
+
+          const testBtn = document.getElementById('btn-test-hud');
+            if(testBtn) testBtn.classList.remove('hidden');
             
             const topCard = document.getElementById('nav-top-card');
             if(topCard) topCard.classList.remove('hidden');
@@ -2937,6 +2941,10 @@ updateDashboard: function() {
 
             document.getElementById('navigation-hud-pill').classList.add('hidden');
             btnCancelActiveNav.classList.add('hidden');
+
+const testBtn = document.getElementById('btn-test-hud');
+            if(testBtn) testBtn.classList.add('hidden');
+            window.testScenarioIdx = 0; // Simulator hart zurücksetzen
             
             // NEU: Top-Card beim Abbruch ebenfalls sprengen
             const topCard = document.getElementById('nav-top-card');
