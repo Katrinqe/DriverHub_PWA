@@ -154,7 +154,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
             
             // Ab Zoom-Level 14.2 abwärts klappen wir die Preise ein!
             // (Du kannst diesen Wert perfektionieren: 14.5 ist näher dran, 13.5 weiter weg)
-            if (currentZoom < 14.2) {
+            if (currentZoom < 12) {
                 mapEl.classList.add('map-compact-mode');
             } else {
                 mapEl.classList.remove('map-compact-mode');
@@ -164,7 +164,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         // Einmaliger Check direkt beim Start, falls die Karte schon rausgezoomt startet
         libreMap.once('idle', () => {
             const mapEl = document.getElementById(mapContainerId);
-            if (mapEl && libreMap.getZoom() < 14.2) {
+            if (mapEl && libreMap.getZoom() < 12) {
                 mapEl.classList.add('map-compact-mode');
             }
         });
