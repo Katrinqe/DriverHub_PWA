@@ -1790,25 +1790,30 @@ updateDashboard: function() {
         return R * c;
     }
 
-        // ====================================================
+      // ====================================================
     // === BOSS-FEATURE: DIE SCHLAUCH-ARCHITEKTUR (AMPELN) ===
     // ====================================================
     async function scanTrafficLightsForNext3KM() {
-        if (!window.activeRoutePts || window.activeRoutePts.length === 0) return;
+        // BOSS-FIX: Hier greifen wir jetzt auf deine ECHTEN Routen-Daten zu!
+        const activeRoutePts = window.RouteLogic.routePointsData[window.RouteLogic.activeIndex];
+        if (!activeRoutePts || activeRoutePts.length === 0) return;
 
-        let startIdx = RouteLogic.activeIndex > -1 ? RouteLogic.activeIndex : 0;
+        let startIdx = window.RouteLogic.activeIndex > -1 ? window.RouteLogic.activeIndex : 0;
         let endIdx = startIdx;
         let distanceCovered = 0;
 
-        while (endIdx < window.activeRoutePts.length - 1 && distanceCovered < 3000) {
-            let p1 = window.activeRoutePts[endIdx];
-            let p2 = window.activeRoutePts[endIdx + 1];
+        // 3km Schlauch abstecken
+        while (endIdx < activeRoutePts.length - 1 && distanceCovered < 3000) {
+            let p1 = activeRoutePts[endIdx];
+            let p2 = activeRoutePts[endIdx + 1];
             distanceCovered += calculateDistance(p1[1], p1[0], p2[1], p2[0]);
             endIdx++;
         }
 
-        const routeChunk = window.activeRoutePts.slice(startIdx, endIdx + 1);
+        const routeChunk = activeRoutePts.slice(startIdx, endIdx + 1);
         if (routeChunk.length === 0) return;
+
+        console.log("🚦 Ampel-Scan gestartet für die nächsten", Math.round(distanceCovered), "Meter...");
 
         let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
         routeChunk.forEach(coord => {
@@ -1818,6 +1823,7 @@ updateDashboard: function() {
             if (coord[0] > maxLng) maxLng = coord[0];
         });
 
+        // 50m Puffer für die Bounding Box
         minLat -= 0.0005; maxLat += 0.0005; 
         minLng -= 0.0005; maxLng += 0.0005;
 
@@ -1832,7 +1838,13 @@ updateDashboard: function() {
             const response = await fetch(url);
             const data = await response.json();
             
-            if (!data.elements) return;
+            if (!data.elements) {
+                console.log("🚦 OSM API hat keine Ampeln zurückgegeben.");
+                return;
+            }
+
+            let validCount = 0;
+            let trashCount = 0;
 
             data.elements.forEach(node => {
                 if (window.knownTrafficLightNodes.has(node.id)) return;
@@ -1840,34 +1852,49 @@ updateDashboard: function() {
                 let isInsideTube = false;
                 let closestDist = Infinity;
 
+                // Türsteher-Mathematik: Abstand zur blauen Linie berechnen
                 routeChunk.forEach(routePt => {
                     let dist = calculateDistance(node.lat, node.lon, routePt[1], routePt[0]);
                     if (dist < closestDist) closestDist = dist;
                 });
 
-                if (closestDist <= 15) isInsideTube = true;
+                if (closestDist <= 15) {
+                    isInsideTube = true;
+                } else {
+                    trashCount++;
+                }
 
                 if (isInsideTube) {
                     window.knownTrafficLightNodes.add(node.id);
+                    validCount++;
 
                     const el = document.createElement('div');
                     el.className = 'traffic-light-marker';
+                    // BOSS-FIX: Richtig geiles Premium-Styling für das Icon
+                    el.style.backgroundColor = '#2c2c2e';
+                    el.style.border = '2px solid #30d158';
+                    el.style.borderRadius = '50%';
+                    el.style.width = '28px';
+                    el.style.height = '28px';
+                    el.style.display = 'flex';
+                    el.style.alignItems = 'center';
+                    el.style.justifyContent = 'center';
+                    el.style.fontSize = '12px';
+                    el.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
                     el.innerHTML = '🚥'; 
-                    el.style.fontSize = '20px';
-                    el.style.textShadow = '0px 0px 5px rgba(0,0,0,0.8)';
 
                     const marker = new maplibregl.Marker({ element: el })
                         .setLngLat([node.lon, node.lat])
-                        .addTo(libreMap); // Nutze libreMap statt map!
+                        .addTo(libreMap);
 
                     window.trafficLightMarkers.push(marker);
                 }
             });
+            console.log(`🚦 Ampel-Scan beendet: ${validCount} Ampeln gezeichnet, ${trashCount} Müll-Ampeln blockiert!`);
         } catch (error) {
             console.warn("Ampel-Scan fehlgeschlagen:", error);
         }
     }
-
     // ==========================================
     // === ROUTE LOGIC (MULTI-ROUTE & UI) ===
     // ==========================================
