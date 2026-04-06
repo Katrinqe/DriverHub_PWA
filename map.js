@@ -1790,19 +1790,25 @@ updateDashboard: function() {
         return R * c;
     }
 
-      // ====================================================
-    // === BOSS-FEATURE: DIE SCHLAUCH-ARCHITEKTUR (AMPELN) ===
+  // ====================================================
+    // === BOSS-FEATURE: DIE SCHLAUCH-ARCHITEKTUR (AMPELN V3 - PRO LEVEL) ===
     // ====================================================
     async function scanTrafficLightsForNext3KM() {
-        // BOSS-FIX: Hier greifen wir jetzt auf deine ECHTEN Routen-Daten zu!
-        const activeRoutePts = window.RouteLogic.routePointsData[window.RouteLogic.activeIndex];
-        if (!activeRoutePts || activeRoutePts.length === 0) return;
+        // 1. THROTTLE (API Spam Protection)
+        if (!window.lastAmpelScanTime) window.lastAmpelScanTime = 0;
+        if (Date.now() - window.lastAmpelScanTime < 15000) return; // Maximal alle 15 Sekunden feuern
+        window.lastAmpelScanTime = Date.now();
 
-        let startIdx = window.RouteLogic.activeIndex > -1 ? window.RouteLogic.activeIndex : 0;
+        const activeRoutePts = window.RouteLogic.routePointsData[window.RouteLogic.activeIndex];
+        const cumulativeDists = window.RouteLogic.routeCumulativeDistances[window.RouteLogic.activeIndex];
+        if (!activeRoutePts || activeRoutePts.length === 0 || !cumulativeDists) return;
+
+        // 2. ECHTER START-INDEX (Wo ist das Auto JETZT?)
+        let startIdx = window.lastRouteIdx !== undefined ? window.lastRouteIdx : 0;
         let endIdx = startIdx;
         let distanceCovered = 0;
 
-        // 3km Schlauch abstecken
+        // 3km Schlauch abstecken (ab dem Auto!)
         while (endIdx < activeRoutePts.length - 1 && distanceCovered < 3000) {
             let p1 = activeRoutePts[endIdx];
             let p2 = activeRoutePts[endIdx + 1];
@@ -1813,7 +1819,7 @@ updateDashboard: function() {
         const routeChunk = activeRoutePts.slice(startIdx, endIdx + 1);
         if (routeChunk.length === 0) return;
 
-        console.log("🚦 Ampel-Scan gestartet für die nächsten", Math.round(distanceCovered), "Meter...");
+        console.log(`🚦 API Call: Scanne nächste ${Math.round(distanceCovered)}m ab Position...`);
 
         let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
         routeChunk.forEach(coord => {
@@ -1823,7 +1829,6 @@ updateDashboard: function() {
             if (coord[0] > maxLng) maxLng = coord[0];
         });
 
-        // 50m Puffer für die Bounding Box
         minLat -= 0.0005; maxLat += 0.0005; 
         minLng -= 0.0005; maxLng += 0.0005;
 
@@ -1838,59 +1843,74 @@ updateDashboard: function() {
             const response = await fetch(url);
             const data = await response.json();
             
-            if (!data.elements) {
-                console.log("🚦 OSM API hat keine Ampeln zurückgegeben.");
-                return;
-            }
+            if (!data.elements) return;
 
-            let validCount = 0;
-            let trashCount = 0;
+            let validLights = [];
+            const userCurrentDist = cumulativeDists[startIdx]; // Wie weit ist das Auto vom Start der Route entfernt?
 
+            // 3. FILTERN & ECHTE DISTANZ ZUM AUTO BERECHNEN
             data.elements.forEach(node => {
-                if (window.knownTrafficLightNodes.has(node.id)) return;
+                let closestDistToLine = Infinity;
+                let routePositionIndex = -1;
 
-                let isInsideTube = false;
-                let closestDist = Infinity;
-
-                // Türsteher-Mathematik: Abstand zur blauen Linie berechnen
-                routeChunk.forEach(routePt => {
+                // Finde exakt den Punkt auf der blauen Linie, der der Ampel am nächsten ist
+                routeChunk.forEach((routePt, chunkIdx) => {
                     let dist = calculateDistance(node.lat, node.lon, routePt[1], routePt[0]);
-                    if (dist < closestDist) closestDist = dist;
+                    if (dist < closestDistToLine) {
+                        closestDistToLine = dist;
+                        routePositionIndex = startIdx + chunkIdx; // Absoluter Index auf der Gesamtroute
+                    }
                 });
 
-                if (closestDist <= 15) {
-                    isInsideTube = true;
-                } else {
-                    trashCount++;
-                }
+                // 8-Meter Türsteher
+                if (closestDistToLine <= 8) {
+                    // Berechne die echte Fahr-Distanz vom Auto bis zur Ampel
+                    let lightDistFromStart = cumulativeDists[routePositionIndex];
+                    let distFromUser = lightDistFromStart - userCurrentDist;
 
-                if (isInsideTube) {
-                    window.knownTrafficLightNodes.add(node.id);
-                    validCount++;
-
-                    const el = document.createElement('div');
-                    el.className = 'traffic-light-marker';
-                    // BOSS-FIX: Richtig geiles Premium-Styling für das Icon
-                    el.style.backgroundColor = '#2c2c2e';
-                    el.style.border = '2px solid #30d158';
-                    el.style.borderRadius = '50%';
-                    el.style.width = '28px';
-                    el.style.height = '28px';
-                    el.style.display = 'flex';
-                    el.style.alignItems = 'center';
-                    el.style.justifyContent = 'center';
-                    el.style.fontSize = '12px';
-                    el.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
-                    el.innerHTML = '🚥'; 
-
-                    const marker = new maplibregl.Marker({ element: el })
-                        .setLngLat([node.lon, node.lat])
-                        .addTo(libreMap);
-
-                    window.trafficLightMarkers.push(marker);
+                    // Nur Ampeln VOR uns aufnehmen (verhindert Geisterampeln im Rückspiegel)
+                    if (distFromUser > -20) { 
+                        validLights.push({ 
+                            node: node, 
+                            distFromUser: distFromUser 
+                        });
+                    }
                 }
             });
-            console.log(`🚦 Ampel-Scan beendet: ${validCount} Ampeln gezeichnet, ${trashCount} Müll-Ampeln blockiert!`);
+
+            // 4. SORTIEREN NACH ECHTER DISTANZ
+            validLights.sort((a, b) => a.distFromUser - b.distFromUser);
+
+            // 5. CLEANUP (Alte Marker radikal löschen)
+            if (window.trafficLightMarkers) {
+                window.trafficLightMarkers.forEach(m => m.remove());
+            }
+            window.trafficLightMarkers = [];
+            window.knownTrafficLightNodes.clear(); // Reset Memory
+
+            // 6. TOP 3 ZEICHNEN
+            const next3Lights = validLights.slice(0, 3);
+            
+            next3Lights.forEach(item => {
+                window.knownTrafficLightNodes.add(item.node.id);
+
+                const el = document.createElement('div');
+                el.className = 'traffic-light-marker';
+                el.innerHTML = '🚦'; 
+                el.style.fontSize = '26px';
+                el.style.background = 'transparent';
+                el.style.border = 'none';
+                el.style.boxShadow = 'none';
+                el.style.textShadow = '0px 3px 6px rgba(0,0,0,0.6)';
+
+                const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+                    .setLngLat([item.node.lon, item.node.lat])
+                    .addTo(libreMap);
+
+                window.trafficLightMarkers.push(marker);
+            });
+
+            console.log(`🚦 Update: ${next3Lights.length} Ampeln live vor dir.`);
         } catch (error) {
             console.warn("Ampel-Scan fehlgeschlagen:", error);
         }
@@ -2984,7 +3004,10 @@ updateDashboard: function() {
                             safeManeuver
                         );
                     }
-
+// BOSS-FEATURE: Live Ampel-Scanner (Drosselt sich selbst auf 15s)
+                    if (window.isNavigating && speedKmh > 5) {
+                        scanTrafficLightsForNext3KM();
+                    }
 
                    // ====================================================
                     // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (PHASE ENGINE V1.1) ===
