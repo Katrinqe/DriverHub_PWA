@@ -3062,6 +3062,20 @@ updateDashboard: function() {
             window.isNavigating = false;
             window.userIsLookingAround = false;
             if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
+            
+            // NEU: Die 60FPS Pfeil-Animation hart stoppen!
+            if (window.MarkerAnimator) window.MarkerAnimator.stop();
+
+            if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
+            if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
+
+            // 0. GPS MOTOR ABWÜRGEN
+            if (navWatchId !== null) {
+
+            // BOSS-FIX: Free Look Engine hart abschalten
+            window.isNavigating = false;
+            window.userIsLookingAround = false;
+            if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
 
             if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
             if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
