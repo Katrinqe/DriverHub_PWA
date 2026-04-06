@@ -24,7 +24,12 @@
     let navWatchId = null; // <-- NEU: Hier speichern wir den Motor
 
     let ttsAudioPlayer = new Audio();
-    
+
+// --- BOSS-FEATURE: TRAFFIC LIGHT ENGINE STATE ---
+    window.trafficLightMarkers = []; 
+    window.knownTrafficLightNodes = new Set();
+
+        
     if (btnNewExplore && newExploreScreen) {
         // ... restlicher Code
         
@@ -904,7 +909,22 @@ function clearRoutes() {
     if (window.RouteLogic) {
         window.RouteLogic.routeGeoJSONs = [null, null];
     }
-}
+
+    // 4. Den Multi-Route Zwischenspeicher leeren
+    if (window.RouteLogic) {
+        window.RouteLogic.routeGeoJSONs = [null, null];
+    }
+
+    // BOSS-FEATURE: Ampeln von der Karte putzen
+    if (window.trafficLightMarkers) {
+        window.trafficLightMarkers.forEach(m => m.remove());
+        window.trafficLightMarkers = [];
+    }
+    if (window.knownTrafficLightNodes) {
+        window.knownTrafficLightNodes.clear();
+    }
+} // <--- Das ist die schließende Klammer von clearRoutes()
+
 
 
 
@@ -1770,6 +1790,84 @@ updateDashboard: function() {
         return R * c;
     }
 
+        // ====================================================
+    // === BOSS-FEATURE: DIE SCHLAUCH-ARCHITEKTUR (AMPELN) ===
+    // ====================================================
+    async function scanTrafficLightsForNext3KM() {
+        if (!window.activeRoutePts || window.activeRoutePts.length === 0) return;
+
+        let startIdx = RouteLogic.activeIndex > -1 ? RouteLogic.activeIndex : 0;
+        let endIdx = startIdx;
+        let distanceCovered = 0;
+
+        while (endIdx < window.activeRoutePts.length - 1 && distanceCovered < 3000) {
+            let p1 = window.activeRoutePts[endIdx];
+            let p2 = window.activeRoutePts[endIdx + 1];
+            distanceCovered += calculateDistance(p1[1], p1[0], p2[1], p2[0]);
+            endIdx++;
+        }
+
+        const routeChunk = window.activeRoutePts.slice(startIdx, endIdx + 1);
+        if (routeChunk.length === 0) return;
+
+        let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+        routeChunk.forEach(coord => {
+            if (coord[1] < minLat) minLat = coord[1];
+            if (coord[1] > maxLat) maxLat = coord[1];
+            if (coord[0] < minLng) minLng = coord[0];
+            if (coord[0] > maxLng) maxLng = coord[0];
+        });
+
+        minLat -= 0.0005; maxLat += 0.0005; 
+        minLng -= 0.0005; maxLng += 0.0005;
+
+        const overpassQuery = `
+            [out:json][timeout:10];
+            node["highway"="traffic_signals"](${minLat},${minLng},${maxLat},${maxLng});
+            out body;
+        `;
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (!data.elements) return;
+
+            data.elements.forEach(node => {
+                if (window.knownTrafficLightNodes.has(node.id)) return;
+
+                let isInsideTube = false;
+                let closestDist = Infinity;
+
+                routeChunk.forEach(routePt => {
+                    let dist = calculateDistance(node.lat, node.lon, routePt[1], routePt[0]);
+                    if (dist < closestDist) closestDist = dist;
+                });
+
+                if (closestDist <= 15) isInsideTube = true;
+
+                if (isInsideTube) {
+                    window.knownTrafficLightNodes.add(node.id);
+
+                    const el = document.createElement('div');
+                    el.className = 'traffic-light-marker';
+                    el.innerHTML = '🚥'; 
+                    el.style.fontSize = '20px';
+                    el.style.textShadow = '0px 0px 5px rgba(0,0,0,0.8)';
+
+                    const marker = new maplibregl.Marker({ element: el })
+                        .setLngLat([node.lon, node.lat])
+                        .addTo(libreMap); // Nutze libreMap statt map!
+
+                    window.trafficLightMarkers.push(marker);
+                }
+            });
+        } catch (error) {
+            console.warn("Ampel-Scan fehlgeschlagen:", error);
+        }
+    }
+
     // ==========================================
     // === ROUTE LOGIC (MULTI-ROUTE & UI) ===
     // ==========================================
@@ -2534,10 +2632,15 @@ updateDashboard: function() {
                     RouteLogic.forceFirstInstruction = true;
                 }, 3500);
             } else {
-                RouteLogic.voiceState = { idx: -1 };
-            }
+               RouteLogic.voiceState = { idx: -1 };
+            }
+            
+            triggerGoogleVoice(welcomeSpeech);
             
-            triggerGoogleVoice(welcomeSpeech);
+            // BOSS-FEATURE: Ampel-Scan für die ersten 3km anwerfen
+            scanTrafficLightsForNext3KM();
+
+          // --- BOSS-FIX: DIE "FREE LOOK" ENGINE (V2 - SMOOTH & MULTI-TOUCH) ---
 
           // --- BOSS-FIX: DIE "FREE LOOK" ENGINE (V2 - SMOOTH & MULTI-TOUCH) ---
             window.isNavigating = true;
