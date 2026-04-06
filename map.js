@@ -2658,23 +2658,18 @@ updateDashboard: function() {
                             if (currIdx < instructions.length) {
                                 currentManeuver = instructions[currIdx];
                                 
-                            // ====================================================
-                                // === BOSS-FIX: SYNCHRONE DISTANZ-BERECHNUNG ===
+                          // ====================================================
+                                // === BOSS-FIX: DIE PERFEKTE ASPHALT-DISTANZ ===
                                 // ====================================================
                                 let isPassed = closestIdx >= currentManeuver.pointIndex; 
-                                let routeRemaining = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
                                 
-                                // Wir werfen die ungenaue Luftlinie weg!
-                                // Wir nehmen die exakte Straßenlänge + deinen minimalen Abstand zur Route
-                                if (!isPassed) {
-                                    let distToNextPoint = calculateDistance(lat, lng, activeRoutePts[closestIdx][1], activeRoutePts[closestIdx][0]);
-                                    distMeters = routeRemaining + distToNextPoint;
-                                } else {
-                                    distMeters = routeRemaining;
-                                }
+                                // Wir nutzen ausschließlich die echte TomTom-Kurvenlänge!
+                                // Keine Luftlinie, kein Vektor-Zuschlag. Nur Zielpunkt minus aktueller Punkt.
+                                distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
                                 
-                                if (distMeters < 0) distMeters = 0;
+                                if (distMeters < 0 || isPassed) distMeters = 0;
                                 // ====================================================
+     
 
                                 if (isPassed || distMeters <= 35) {
                                     RouteLogic.currentInstructionIndex++;
