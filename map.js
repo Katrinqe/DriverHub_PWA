@@ -2658,13 +2658,23 @@ updateDashboard: function() {
                             if (currIdx < instructions.length) {
                                 currentManeuver = instructions[currIdx];
                                 
+                            // ====================================================
+                                // === BOSS-FIX: SYNCHRONE DISTANZ-BERECHNUNG ===
+                                // ====================================================
                                 let isPassed = closestIdx >= currentManeuver.pointIndex; 
-                                distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
+                                let routeRemaining = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
                                 
-                                if (!isPassed && distMeters < 1500) {
-                                    distMeters = calculateDistance(lat, lng, currentManeuver.point.latitude, currentManeuver.point.longitude);
+                                // Wir werfen die ungenaue Luftlinie weg!
+                                // Wir nehmen die exakte Straßenlänge + deinen minimalen Abstand zur Route
+                                if (!isPassed) {
+                                    let distToNextPoint = calculateDistance(lat, lng, activeRoutePts[closestIdx][1], activeRoutePts[closestIdx][0]);
+                                    distMeters = routeRemaining + distToNextPoint;
+                                } else {
+                                    distMeters = routeRemaining;
                                 }
+                                
                                 if (distMeters < 0) distMeters = 0;
+                                // ====================================================
 
                                 if (isPassed || distMeters <= 35) {
                                     RouteLogic.currentInstructionIndex++;
