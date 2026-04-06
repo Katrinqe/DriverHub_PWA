@@ -3152,6 +3152,8 @@ const testBtn = document.getElementById('btn-test-hud');
         };
     }
 
+    }
+
   // ==========================================
     // === GOOGLE TEXT-TO-SPEECH ENGINE ===
     // ==========================================
