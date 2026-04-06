@@ -2864,7 +2864,7 @@ updateDashboard: function() {
                             distEl.style.display = 'none'; 
                         } else {
                             distEl.style.display = 'block';
-                            let displayDist = Math.max(0, Math.round(renderDist / 20) * 20);
+                            let displayDist = Math.max(0, Math.round(renderDist / 10) * 10);
                             if (displayDist >= 1000) {
                                 distEl.textContent = `in ${(displayDist / 1000).toFixed(1).replace('.', ',')} km`;
                             } else {
