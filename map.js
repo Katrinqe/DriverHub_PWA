@@ -2585,9 +2585,66 @@ updateDashboard: function() {
             libreMap.on('moveend', unlockCameraTimer);
             // ----------------------------------------
          // ----------------------------------------
+          // ----------------------------------------
             // 7. LIVE GPS MOTOR STARTEN
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
+
+                // ====================================================
+                // === BOSS-FIX: 60FPS GHOST-GLIDE ENGINE (PFEIL-ANIMATION) ===
+                // ====================================================
+                if (window.MarkerAnimator && window.MarkerAnimator.animating) {
+                    window.MarkerAnimator.stop();
+                }
+                
+                window.MarkerAnimator = {
+                    currentLng: currentCoords ? currentCoords[0] : null,
+                    currentLat: currentCoords ? currentCoords[1] : null,
+                    currentHeading: window.lastHeading || 0,
+                    targetLng: currentCoords ? currentCoords[0] : null,
+                    targetLat: currentCoords ? currentCoords[1] : null,
+                    targetHeading: window.lastHeading || 0,
+                    animating: true,
+                    
+                    setTarget: function(lng, lat, heading) {
+                        if (this.currentLng === null) {
+                            this.currentLng = lng; this.currentLat = lat;
+                        }
+                        this.targetLng = lng;
+                        this.targetLat = lat;
+                        
+                        if (heading !== null) {
+                            // Verhindert den 360-Grad-Kreisel-Bug (z.B. von 359° auf 1° springen)
+                            let diff = heading - this.currentHeading;
+                            diff = ((diff + 180) % 360 + 360) % 360 - 180;
+                            this.targetHeading = this.currentHeading + diff;
+                        }
+                    },
+                    
+                    loop: function() {
+                        if (!this.animating) return;
+                        requestAnimationFrame(this.loop.bind(this));
+                        
+                        if (this.currentLng === null) return;
+                        
+                        // Sanftes Gleiten: Zieht den Pfeil pro Frame um 10% ans echte GPS-Ziel
+                        const ease = 0.1;
+                        this.currentLng += (this.targetLng - this.currentLng) * ease;
+                        this.currentLat += (this.targetLat - this.currentLat) * ease;
+                        this.currentHeading += (this.targetHeading - this.currentHeading) * ease;
+                        
+                        // Globale Koordinaten für die Kamera-Engine updaten
+                        currentCoords = [this.currentLng, this.currentLat]; 
+                        
+                        if (window.userLocationMarker) {
+                            window.userLocationMarker.setLngLat(currentCoords);
+                            window.userLocationMarker.setRotation(this.currentHeading);
+                        }
+                    },
+                    stop: function() { this.animating = false; }
+                };
+                window.MarkerAnimator.loop(); // Startet den 60FPS-Maler!
+                // ====================================================
 
                 navWatchId = navigator.geolocation.watchPosition((position) => {
                     const elapsedSinceStart = Date.now() - window.navStartTime;
@@ -2596,32 +2653,20 @@ updateDashboard: function() {
                     const heading = position.coords.heading; 
                     const speed = position.coords.speed; 
 
-                // --- BOSS-FIX: GPS LERP SMOOTHING ---
-                    const rawCoords = [lng, lat];
-                    
-                    if (!currentCoords) {
-                        currentCoords = rawCoords;
-                    } else {
-                        const alpha = 0.25; 
-                        const smoothLng = currentCoords[0] + (rawCoords[0] - currentCoords[0]) * alpha;
-                        const smoothLat = currentCoords[1] + (rawCoords[1] - currentCoords[1]) * alpha;
-                        currentCoords = [smoothLng, smoothLat];
-                    }
-
                     let speedKmh = speed ? Math.round(speed * 3.6) : 0;
                     const speedDisplay = document.getElementById('hud-current-speed');
                     if (speedDisplay) speedDisplay.textContent = speedKmh;
 
-                    // --- MARKER UPDATE MIT HEADING-TRUST ---
-                    if (window.userLocationMarker) {
-                        window.userLocationMarker.setLngLat(currentCoords);
-                        if (speedKmh >= 10 && heading !== null) {
-                            window.userLocationMarker.setRotation(heading);
-                            window.lastHeading = heading; 
-                        }
+                    // --- MARKER-ZIEL SETZEN (Die 60FPS-Engine übernimmt das Zeichnen) ---
+                    // Unter 5 km/h frieren wir die Drehung ein, damit der Pfeil an der Ampel nicht zittert
+                    if (speedKmh > 5 && heading !== null) {
+                        window.lastHeading = heading;
+                        window.MarkerAnimator.setTarget(lng, lat, heading);
+                    } else {
+                        // Im Stand nur die Position updaten, nicht die Drehung
+                        window.MarkerAnimator.setTarget(lng, lat, null);
                     }
                     // ---------------------------------------------------------
-
                     // --- DIE SMART CAMERA ENGINE STARTEN ---
                     let currentManeuver = null;
                     let distMeters = 0;
