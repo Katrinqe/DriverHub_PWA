@@ -99,21 +99,21 @@
 
         console.log("Initialisiere MapLibre Snippet...");
 
-        // 1. Standorterkennung
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userCoords = [position.coords.longitude, position.coords.latitude];
-                console.log("Standort erkannt:", userCoords);
-                loadMap(userCoords, true); // Erfolgreich mit Standort
-            },
-            (error) => {
-                console.warn("Standorterkennung fehlgeschlagen, nutze Default (Nürnberg):", error);
-                const defaultCoords = [11.0767, 49.4521]; // Nürnberg Altstadt
-                loadMap(defaultCoords, false); // Geladen mit Default-Position
-            },
-           // FIX: High Accuracy beim App-Start aus, damit Laptops (WLAN-Ortung) keinen Timeout werfen!
-            { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 }
-        );
+  // 1. Standorterkennung (BOSS-FIX: 3uTools Hack)
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userCoords = [position.coords.longitude, position.coords.latitude];
+                console.log("Standort erkannt:", userCoords);
+                loadMap(userCoords, true); // Erfolgreich mit Standort
+            },
+            (error) => {
+                console.warn("Standorterkennung fehlgeschlagen, nutze Default (Nürnberg):", error.message);
+                const defaultCoords = [11.0767, 49.4521]; // Nürnberg Altstadt
+                loadMap(defaultCoords, false); // Geladen mit Default-Position
+            },
+            // BOSS-FIX: High Accuracy AN, Timeout massiv hochgeschraubt für 3uTools!
+            { enableHighAccuracy: true, timeout: 60000, maximumAge: 0 }
+        );
     }
 function loadMap(coords, hasLocation) {
     // 1. Standort sichern
