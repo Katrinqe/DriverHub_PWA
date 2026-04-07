@@ -99,43 +99,31 @@
 
         console.log("Initialisiere MapLibre Snippet...");
 
-  // 1. Standorterkennung (BOSS-FIX: GPS Hunting Engine für 3uTools)
-        console.log("GPS Hunting Engine gestartet (Warte auf 3uTools Signal)...");
+// 1. Standorterkennung (BOSS-FIX: Hardcore 3uTools Waiter - KEIN FALLBACK)
+        console.log("Warte auf 3uTools GPS-Signal... KEIN NÜRNBERG FALLBACK MEHR!");
         
-        let huntingActive = true;
-        
-        // Fallback-Timer: Wenn nach 5 Sek. kein Signal da ist, nimm Nürnberg
-        const huntTimer = setTimeout(() => {
-            if (huntingActive) {
-                huntingActive = false;
-                navigator.geolocation.clearWatch(huntWatchId);
-                console.warn("GPS Hunt Timeout - Nutze Default (Nürnberg)");
-                loadMap([11.0767, 49.4521], false);
-            }
-        }, 5000); 
+        const options = {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: Infinity // Wir warten bis zum bitteren Ende! Keine Kompromisse.
+        };
 
         const huntWatchId = navigator.geolocation.watchPosition(
             (position) => {
-                if (huntingActive) {
-                    const userCoords = [position.coords.longitude, position.coords.latitude];
-                    
-                    // Wir akzeptieren den Standort erst, wenn er valid ist (nicht 0,0)
-                    if (userCoords[0] !== 0 && userCoords[1] !== 0) {
-                        console.log("Standort erfolgreich 'gefangen':", userCoords);
-                        
-                        huntingActive = false;
-                        clearTimeout(huntTimer);
-                        navigator.geolocation.clearWatch(huntWatchId);
-                        
-                        loadMap(userCoords, true);
-                    }
+                const userCoords = [position.coords.longitude, position.coords.latitude];
+                
+                // Sobald wir ECHTE Koordinaten haben und die Karte noch nicht geladen ist
+                if (!libreMap && userCoords[0] !== 0 && userCoords[1] !== 0) {
+                    console.log("BOOM! 3uTools Standort gefangen:", userCoords);
+                    navigator.geolocation.clearWatch(huntWatchId); // Motor stoppen, Karte laden
+                    loadMap(userCoords, true);
                 }
             },
             (error) => {
-                // Wir loggen den Fehler, brechen aber nicht ab, solange der Timer läuft
-                console.log("GPS Hunt Trial...", error.message);
+                // Wir loggen den Fehler nur, aber wir geben NICHT auf und setzen KEINEN Default-Standort.
+                console.warn("GPS wartet weiter... Error:", error.message);
             },
-            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            options
         );
     }
 function loadMap(coords, hasLocation) {
