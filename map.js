@@ -2736,6 +2736,73 @@ updateDashboard: function() {
             // ----------------------------------------
          // ----------------------------------------
           // ----------------------------------------
+
+          // ====================================================
+            // === BOSS-FEATURE: SHADOW ENGINE (SITUATION INTELLIGENCE) ===
+            // ====================================================
+            const classifyManeuver = (man) => {
+                if (!man) return 'STRAIGHT';
+                if (man.includes('TURN_LEFT')) return 'TURN_LEFT';
+                if (man.includes('TURN_RIGHT')) return 'TURN_RIGHT';
+                if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT')) return 'KEEP_LEFT';
+                if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT')) return 'KEEP_RIGHT';
+                if (man.includes('EXIT') || man.includes('OFF_RAMP')) return 'EXIT';
+                if (man.includes('MERGE')) return 'MERGE';
+                if (man.includes('ROUNDABOUT')) return 'ROUNDABOUT';
+                return 'STRAIGHT';
+            };
+
+            const getUpcomingManeuvers = (instructions, startIdx, count = 3) => {
+                const result = [];
+                let idx = startIdx + 1;
+                while (idx < instructions.length && result.length < count) {
+                    if (instructions[idx].maneuver !== 'DEPART') {
+                        result.push(instructions[idx]);
+                    }
+                    idx++;
+                }
+                return result;
+            };
+
+            const detectSituation = (current, upcoming, cumulativeDists) => {
+                const currType = classifyManeuver(current.maneuver);
+                const nextType = upcoming[0] ? classifyManeuver(upcoming[0].maneuver) : null;
+                
+                const distToNext = upcoming[0] 
+                    ? cumulativeDists[upcoming[0].pointIndex] - cumulativeDists[current.pointIndex] 
+                    : Infinity;
+
+                // Fall 1: PRE-EXIT (Ausfahrt vorbereiten)
+                if ((currType === 'KEEP_LEFT' || currType === 'KEEP_RIGHT') && nextType === 'EXIT' && distToNext < 1500) {
+                    return 'PRE_EXIT_SEQUENCE';
+                }
+                // Fall 2: DOUBLE TURN (Stadt-Chaos)
+                if ((currType === 'TURN_LEFT' || currType === 'TURN_RIGHT') && (nextType === 'TURN_LEFT' || nextType === 'TURN_RIGHT') && distToNext < 300) {
+                    return 'DOUBLE_TURN';
+                }
+                // Fall 3: MERGE + EXIT (Kurz auffahren, sofort wieder runter)
+                if (currType === 'MERGE' && nextType === 'EXIT' && distToNext < 2000) {
+                    return 'MERGE_EXIT';
+                }
+                return 'NORMAL';
+            };
+
+            const buildInstruction = (current, upcoming, situation, shortInfo) => {
+                const base = `${shortInfo.action} ${shortInfo.street}`.trim();
+                if (situation === 'PRE_EXIT_SEQUENCE' && upcoming[0]) {
+                    const nextInfo = getShortInstruction(upcoming[0]);
+                    return `${base}, um im Anschluss die ${nextInfo.action.toLowerCase()} ${nextInfo.street} zu nehmen`;
+                }
+                if (situation === 'DOUBLE_TURN' && upcoming[0]) {
+                    const nextInfo = getShortInstruction(upcoming[0]);
+                    return `${base}, danach sofort ${nextInfo.action.toLowerCase()}`;
+                }
+                if (situation === 'MERGE_EXIT') {
+                    return `${base}, anschließend direkt die Ausfahrt nehmen`;
+                }
+                return base;
+            };
+            // ====================================================
             // 7. LIVE GPS MOTOR STARTEN
             if (navigator.geolocation) {
                 if (navWatchId) navigator.geolocation.clearWatch(navWatchId);
@@ -2889,32 +2956,43 @@ updateDashboard: function() {
                                     }
                                 }
 
-                    // ==========================================
-                                // === BOSS-FIX: LOOK-AHEAD VOICE ENGINE ===
+           // ==========================================
+                                // === BOSS-FIX: LOOK-AHEAD VOICE ENGINE (SHADOW MODE) ===
                                 // ==========================================
                                 const shortInfo = getShortInstruction(currentManeuver);
                                 const laneText = getLaneText(currentManeuver);
                                 const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
+                                
+                                // 1. Deine alte, funktionierende UI-Sicherheit
                                 let actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
 
-                                // KI-Blick in die Zukunft (Nächstes Manöver checken)
-                                let peekIdx = currIdx + 1;
-                                while (peekIdx < instructions.length && instructions[peekIdx].maneuver === 'DEPART') peekIdx++;
+                                // 2. Die NEUE Situation Engine (Rechnet im Hintergrund)
+                                const upcoming = getUpcomingManeuvers(instructions, currIdx, 3);
+                                const situation = detectSituation(currentManeuver, upcoming, cumulativeDists);
                                 
-                                if (peekIdx < instructions.length) {
-                                    const nextMan = instructions[peekIdx];
-                                    const nextDistMeters = cumulativeDists[nextMan.pointIndex] - cumulativeDists[currentManeuver.pointIndex];
-                                    
-                                    // Wenn wir auf einer Gabelung/Abfahrt sind UND in unter 1500m eine Ausfahrt kommt
-                                    if ((currentManeuver.maneuver.includes('KEEP') || currentManeuver.maneuver.includes('BIFURCATION')) && 
-                                        (nextMan.maneuver.includes('EXIT') || nextMan.maneuver.includes('OFF_RAMP')) && 
-                                        nextDistMeters <= 1500) {
-                                        
-                                        const nextShortInfo = getShortInstruction(nextMan);
-                                        // Sätze zu einem flüssigen Befehl zusammenschweißen!
-                                        actionStr = `${actionStr}, um im Anschluss die ${nextShortInfo.action} ${nextShortInfo.street} zu nehmen`;
-                                    }
+                                let smartActionStr = buildInstruction(currentManeuver, upcoming, situation, shortInfo);
+                                if (distMeters <= 600 && laneText) {
+                                    smartActionStr += `, ${laneText}`; // Spuren anhängen
                                 }
+
+                                // 3. Cognitive Load Check (Zu viele Infos auf der Autobahn killen!)
+                                if (distMeters < 100 || speedKmh > 100) {
+                                    smartActionStr = shortInfo.action; // Simpler Modus
+                                }
+
+                                // 4. Fallback für dein aktuelles HUD (Damit nichts kaputt geht!)
+                                if (situation === 'PRE_EXIT_SEQUENCE' && upcoming[0]) {
+                                    const nextShortInfo = getShortInstruction(upcoming[0]);
+                                    actionStr = `${actionStr}, um im Anschluss die ${nextShortInfo.action} ${nextShortInfo.street} zu nehmen`;
+                                }
+
+                                // 🔥 DAS IST DER FLIGHT-RECORDER 🔥
+                                // Er vergleicht lautlos, was die alte Engine macht und was die neue KI denken würde
+                                console.log(`🧠 [SHADOW ENGINE] Distanz: ${Math.round(distMeters)}m | Speed: ${speedKmh}kmh`);
+                                console.log(`   - TomTom Original: ${currentManeuver.maneuver}`);
+                                console.log(`   - Situation erkannt: ${situation}`);
+                                console.log(`   - Altes HUD würde sagen: "${actionStr}"`);
+                                console.log(`   - Neue KI würde sagen:   "${smartActionStr}"`);
                                 // ==========================================
 
                                 if (RouteLogic.voiceState.idx !== currIdx && elapsedSinceStart > 4000) {
@@ -3156,7 +3234,7 @@ updateDashboard: function() {
                         if (renderManeuver.lanes && renderManeuver.lanes.length > 0) {
                             showLanes = true;
                             // Peters Regel: Keine Spuren bei normaler Ausfahrt (<=2 Spuren) oder simplen Abbiegungen
-                            if ((navPhase === "EXIT" && !isAbfahrt && renderManeuver.lanes.length <= 2) || navPhase === "TURN") {
+                           if (navPhase === "TURN") {
                                 showLanes = false;
                             }
                         }
