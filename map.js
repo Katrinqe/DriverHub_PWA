@@ -99,21 +99,44 @@
 
         console.log("Initialisiere MapLibre Snippet...");
 
-  // 1. Standorterkennung (BOSS-FIX: 3uTools Hack)
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userCoords = [position.coords.longitude, position.coords.latitude];
-                console.log("Standort erkannt:", userCoords);
-                loadMap(userCoords, true); // Erfolgreich mit Standort
-            },
-            (error) => {
-                console.warn("Standorterkennung fehlgeschlagen, nutze Default (Nürnberg):", error.message);
-                const defaultCoords = [11.0767, 49.4521]; // Nürnberg Altstadt
-                loadMap(defaultCoords, false); // Geladen mit Default-Position
-            },
-            // BOSS-FIX: High Accuracy AN, Timeout massiv hochgeschraubt für 3uTools!
-            { enableHighAccuracy: true, timeout: 60000, maximumAge: 0 }
-        );
+  // 1. Standorterkennung (BOSS-FIX: GPS Hunting Engine für 3uTools)
+        console.log("GPS Hunting Engine gestartet (Warte auf 3uTools Signal)...");
+        
+        let huntingActive = true;
+        
+        // Fallback-Timer: Wenn nach 5 Sek. kein Signal da ist, nimm Nürnberg
+        const huntTimer = setTimeout(() => {
+            if (huntingActive) {
+                huntingActive = false;
+                navigator.geolocation.clearWatch(huntWatchId);
+                console.warn("GPS Hunt Timeout - Nutze Default (Nürnberg)");
+                loadMap([11.0767, 49.4521], false);
+            }
+        }, 5000); 
+
+        const huntWatchId = navigator.geolocation.watchPosition(
+            (position) => {
+                if (huntingActive) {
+                    const userCoords = [position.coords.longitude, position.coords.latitude];
+                    
+                    // Wir akzeptieren den Standort erst, wenn er valid ist (nicht 0,0)
+                    if (userCoords[0] !== 0 && userCoords[1] !== 0) {
+                        console.log("Standort erfolgreich 'gefangen':", userCoords);
+                        
+                        huntingActive = false;
+                        clearTimeout(huntTimer);
+                        navigator.geolocation.clearWatch(huntWatchId);
+                        
+                        loadMap(userCoords, true);
+                    }
+                }
+            },
+            (error) => {
+                // Wir loggen den Fehler, brechen aber nicht ab, solange der Timer läuft
+                console.log("GPS Hunt Trial...", error.message);
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
     }
 function loadMap(coords, hasLocation) {
     // 1. Standort sichern
