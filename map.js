@@ -2668,31 +2668,11 @@ const getShortInstruction = (maneuverObj) => {
             }
             RouteLogic.currentInstructionIndex = startIdx;
 
-            const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
+           const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
             if (startIdx < instructions.length && cumulativeDists) {
                 const firstMan = instructions[startIdx];
                 let distMeters = cumulativeDists[firstMan.pointIndex] - cumulativeDists[0];
                 if (distMeters < 0) distMeters = 0;
-
-
-                // ====================================================
-                                // === BOSS-FIX: PROXIMITY SIGNPOST FILTER (Schilderklau) ===
-                                // ====================================================
-                                let peekSchild = currIdx + 1;
-                                while (peekSchild < instructions.length && instructions[peekSchild].maneuver === 'DEPART') peekSchild++;
-                                
-                                if (peekSchild < instructions.length) {
-                                    const nextMan = instructions[peekSchild];
-                                    const distToNext = cumulativeDists[nextMan.pointIndex] - cumulativeDists[currentManeuver.pointIndex];
-                                    
-                                    // DEINE LOGIK: Wenn das nächste Manöver sehr nah ist (unter 250m) UND ein Schild hat
-                                    if (distToNext <= 250 && nextMan.signpostText) {
-                                        // Wir überschreiben das aktuelle "München" lautlos mit dem besseren Ziel "Fürth"!
-                                        currentManeuver.signpostText = nextMan.signpostText;
-                                    }
-                                }
-                                // ====================================================
-                
 
                 const shortInfo = getShortInstruction(firstMan);
                 const laneText = getLaneText(firstMan);
@@ -2732,9 +2712,9 @@ const getShortInstruction = (maneuverObj) => {
                 }, 3500);
             } else {
                RouteLogic.voiceState = { idx: -1 };
-            }
-            
-            triggerGoogleVoice(welcomeSpeech);
+            }
+            
+            triggerGoogleVoice(welcomeSpeech);
             
             // BOSS-FEATURE: Ampel-Scan für die ersten 3km anwerfen
             scanTrafficLightsForNext3KM();
@@ -3008,9 +2988,24 @@ const getShortInstruction = (maneuverObj) => {
                                     }
                                 }
 
-           // ==========================================
+           // ================// ==========================================
                                 // === BOSS-FIX: LOOK-AHEAD VOICE ENGINE (SHADOW MODE) ===
                                 // ==========================================
+
+                                // --- NEU: PROXIMITY SIGNPOST FILTER (Schilderklau) ---
+                                let peekSchild = currIdx + 1;
+                                while (peekSchild < instructions.length && instructions[peekSchild].maneuver === 'DEPART') peekSchild++;
+                                
+                                if (peekSchild < instructions.length) {
+                                    const nextMan = instructions[peekSchild];
+                                    const distToNext = cumulativeDists[nextMan.pointIndex] - cumulativeDists[currentManeuver.pointIndex];
+                                    
+                                    if (distToNext <= 250 && nextMan.signpostText) {
+                                        currentManeuver.signpostText = nextMan.signpostText;
+                                    }
+                                }
+                                // ----------------------------------------------------
+
                                 const shortInfo = getShortInstruction(currentManeuver);
                                 const laneText = getLaneText(currentManeuver);
                                 const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
@@ -3349,7 +3344,7 @@ const getShortInstruction = (maneuverObj) => {
             }
         });
     }
-    // ==========================================
+   // ==========================================
     // === NOT-AUS: DER NUKLEAR-ABBRUCH ===
     // ==========================================
     const btnCancelActiveNav = document.getElementById('btn-cancel-active-nav');
@@ -3370,16 +3365,6 @@ const getShortInstruction = (maneuverObj) => {
 
             // 0. GPS MOTOR ABWÜRGEN
             if (navWatchId !== null) {
-
-            // BOSS-FIX: Free Look Engine hart abschalten
-            window.isNavigating = false;
-            window.userIsLookingAround = false;
-            if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
-
-            if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
-            if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
-
-            if (navWatchId !== null) {
                 navigator.geolocation.clearWatch(navWatchId);
                 navWatchId = null;
             }
@@ -3390,11 +3375,11 @@ const getShortInstruction = (maneuverObj) => {
             document.getElementById('navigation-hud-pill').classList.add('hidden');
             btnCancelActiveNav.classList.add('hidden');
 
-const testBtn = document.getElementById('btn-test-hud');
+            const testBtn = document.getElementById('btn-test-hud');
             if(testBtn) testBtn.classList.add('hidden');
             window.testScenarioIdx = 0; // Simulator hart zurücksetzen
             
-            // NEU: Top-Card beim Abbruch ebenfalls sprengen
+            // Top-Card beim Abbruch sprengen
             const topCard = document.getElementById('nav-top-card');
             if (topCard) topCard.classList.add('hidden');
             
@@ -3410,13 +3395,13 @@ const testBtn = document.getElementById('btn-test-hud');
                 searchInput.blur();
             }
 
-         const bottomSheet = document.getElementById('map-bottom-sheet');
+            const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.style.display = 'flex';
             
             const pillV = document.querySelector('.map-controls-pill-v');
             if (pillV) pillV.style.display = 'flex';
 
-            // BOSS-FIX: Hier holen wir die Suchleiste nach dem Abbruch wieder zurück!
+            // Suchleiste wieder anzeigen!
             const topSearch = document.getElementById('top-search-container');
             if (topSearch) topSearch.style.display = 'flex';
             
@@ -3428,7 +3413,7 @@ const testBtn = document.getElementById('btn-test-hud');
 
             clearRoutes();
 
-      if (libreMap && currentCoords) {
+            if (libreMap && currentCoords) {
                 // 1. Aus Pfeil wird wieder Punkt
                 if (window.userLocationMarker) {
                     const el = window.userLocationMarker.getElement();
@@ -3450,9 +3435,6 @@ const testBtn = document.getElementById('btn-test-hud');
             }
         };
     }
-
-    }
-
   // ==========================================
     // === GOOGLE TEXT-TO-SPEECH ENGINE ===
     // ==========================================
