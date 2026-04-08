@@ -3176,23 +3176,30 @@ updateDashboard: function() {
                         }
                     }
 
-                    // C) Das Haupt-Icon (Dynamische Rotation)
+               // C) Das Haupt-Icon (Dynamische Rotation)
                     const iconEl = document.getElementById('nav-top-icon');
                     if (iconEl) {
                         let iconClass = 'fa-arrow-up'; 
                         let rotation = 'rotate(0deg)';
                         
-                        if (navPhase === "EXIT") {
+                        // Autobahn Abfahrten & Wechsel
+                        if (navPhase === "EXIT" || manType.includes('EXIT_MOTORWAY') || manType.includes('SWITCH_MOTORWAY')) {
                             iconClass = 'fa-arrow-up'; 
                             rotation = manType.includes('LEFT') ? 'rotate(-45deg)' : 'rotate(45deg)'; 
                         }
-                        else if (navPhase === "PRE_EXIT") { 
+                        // Halten
+                        else if (navPhase === "PRE_EXIT" || manType === 'KEEP_LEFT' || manType === 'KEEP_RIGHT') { 
                             iconClass = 'fa-arrow-up'; 
-                            rotation = 'rotate(0deg)'; // WUNSCH: Keine Neigung bei Links/Rechts halten!
+                            rotation = 'rotate(0deg)'; 
                         }
-                        else if (manType.includes('TURN_LEFT')) { iconClass = 'fa-arrow-left'; }
-                        else if (manType.includes('TURN_RIGHT')) { iconClass = 'fa-arrow-right'; }
-                        else if (manType.includes('U_TURN')) { iconClass = 'fa-arrow-rotate-left'; }
+                        // Harte Abbiegungen
+                        else if (manType === 'TURN_LEFT' || manType === 'SHARP_LEFT') { iconClass = 'fa-arrow-left'; }
+                        else if (manType === 'TURN_RIGHT' || manType === 'SHARP_RIGHT') { iconClass = 'fa-arrow-right'; }
+                        // Sanfte Abbiegungen (Neu!)
+                        else if (manType === 'SLIGHT_LEFT') { iconClass = 'fa-arrow-up'; rotation = 'rotate(-30deg)'; }
+                        else if (manType === 'SLIGHT_RIGHT') { iconClass = 'fa-arrow-up'; rotation = 'rotate(30deg)'; }
+                        // Rest
+                        else if (manType === 'MAKE_UTURN') { iconClass = 'fa-arrow-rotate-left'; }
                         else if (manType.includes('ROUNDABOUT')) { iconClass = 'fa-arrows-spin'; } 
                         
                         iconEl.className = `fa-solid ${iconClass}`;
