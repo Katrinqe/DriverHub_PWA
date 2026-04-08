@@ -4303,3 +4303,41 @@ body.ghost-active #ghost-chat-overlay {
 #btn-test-hud.hidden {
     display: none;
 }
+
+
+/* === FLIGHT MANIFEST STYLES === */
+.manifest-row {
+    background: #1c1c1e;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 12px;
+    border: 1px solid #333;
+    opacity: 0.6; /* Vergangene/Zukünftige sind leicht ausgegraut */
+}
+
+.manifest-row.current-row {
+    background: rgba(48, 209, 88, 0.1);
+    border: 1px solid #30d158;
+    opacity: 1.0;
+    box-shadow: 0 0 15px rgba(48, 209, 88, 0.2);
+}
+
+.mf-idx {
+    color: #888;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.current-row .mf-idx { color: #30d158; }
+
+.mf-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mf-maneuver { color: #ff9500; font-weight: bold; font-size: 1.1rem; }
+.mf-street { color: #fff; font-size: 0.9rem; }
+.mf-sign { color: #aaa; font-size: 0.8rem; }
