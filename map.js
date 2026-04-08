@@ -2550,13 +2550,10 @@ updateDashboard: function() {
             if(topCard) topCard.classList.remove('hidden');
 
 const getShortInstruction = (maneuverObj) => {
-            // BOSS-FIX: toUpperCase() schützt uns vor Schreibweisen-Chaos von TomTom
             const man = (maneuverObj.maneuver || '').toUpperCase();
             let actionText = "Geradeaus";
 
-            // --- BOSS-FIX: PREMIUM MANÖVER WÖRTERBUCH (PETER'S INCLUDES-LOGIK) ---
-            
-            // 1. ZIEL / START (Höchste Prio)
+            // 1. ZIEL / START
             if (man.includes('ARRIVE') || man.includes('FINISH')) actionText = "Ziel erreicht";
             else if (man.includes('DEPART')) actionText = "Route folgen";
             
@@ -2569,18 +2566,19 @@ const getShortInstruction = (maneuverObj) => {
                 }
             }
             
-            // 3. AUTOBAHN AUSFAHRTEN (Müssen VOR dem "Halten" geprüft werden!)
+            // 3. AUTOBAHN AUSFAHRTEN & AUFFAHRTEN
+            else if (man.includes('ENTER_MOTORWAY')) actionText = "Auffahren";
             else if (man.includes('EXIT_MOTORWAY_LEFT') || man.includes('EXIT_LEFT') || man.includes('OFF_RAMP_LEFT')) actionText = "Ausfahrt links nehmen";
-            else if (man.includes('EXIT_MOTORWAY_RIGHT') || man.includes('EXIT_RIGHT') || man.includes('OFF_RAMP') || man.includes('EXIT')) actionText = "Ausfahrt nehmen";
+            else if (man.includes('EXIT_MOTORWAY_RIGHT') || man.includes('EXIT_RIGHT') || man.includes('OFF_RAMP') || man.includes('EXIT') || man.includes('TAKE_EXIT')) actionText = "Ausfahrt nehmen";
             
             // 4. EINFÄDELN / WECHSELN
             else if (man.includes('MERGE_LEFT') || man.includes('SWITCH_MOTORWAY_LEFT')) actionText = "Links einfädeln";
             else if (man.includes('MERGE_RIGHT') || man.includes('SWITCH_MOTORWAY_RIGHT')) actionText = "Rechts einfädeln";
             else if (man.includes('MERGE')) actionText = "Einfädeln";
             
-            // 5. SPUR HALTEN (Autobahn Gabelungen)
-            else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT')) actionText = "Links halten";
-            else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT')) actionText = "Rechts halten";
+            // 5. SPUR HALTEN (inklusive BEAR)
+            else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT') || man.includes('BEAR_LEFT')) actionText = "Links halten";
+            else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT') || man.includes('BEAR_RIGHT')) actionText = "Rechts halten";
             
             // 6. SCHARF ABBIEGEN / WENDEN
             else if (man.includes('U_TURN')) actionText = "Wenden";
@@ -2591,28 +2589,23 @@ const getShortInstruction = (maneuverObj) => {
             else if (man.includes('TURN_LEFT')) actionText = "Links abbiegen";
             else if (man.includes('TURN_RIGHT')) actionText = "Rechts abbiegen";
             
-            // 8. SANFTES ABBIEGEN
+            // 8. SANFTES ABBIEGEN & FOLGEN
             else if (man.includes('SLIGHT_LEFT')) actionText = "Leicht links abbiegen";
             else if (man.includes('SLIGHT_RIGHT')) actionText = "Leicht rechts abbiegen";
+            else if (man.includes('FOLLOW')) actionText = "Geradeaus";
 
-            // 🔥 FLIGHT RECORDER (Debug-Modus) 🔥
-            // Wenn es "Geradeaus" ist, obwohl TomTom NICHT explizit "STRAIGHT" gesagt hat, loggen wir es!
-            if (actionText === "Geradeaus" && man !== "STRAIGHT" && man !== "") {
+            if (actionText === "Geradeaus" && man !== "STRAIGHT" && man !== "FOLLOW" && man !== "") {
                 console.warn(`🚨 [FLIGHT RECORDER] Unbekanntes Manöver erkannt: "${man}"`, maneuverObj);
             }
 
-            // Straßenname extrahieren
             let streetText = maneuverObj.street || "";
             if (!streetText && maneuverObj.roadNumbers && maneuverObj.roadNumbers.length > 0) {
                 streetText = maneuverObj.roadNumbers[0];
             }
 
-            // Autobahn-Schilder (Signpost) extrahieren
             let directionText = maneuverObj.signpostText || maneuverObj.destination || "";
 
-            // Sauberen Satz für HUD Sub-Title und Voice zusammenbauen
             if (directionText) {
-                // Wenn es ein echtes Schild ist, nutzen wir es
                 if (streetText) streetText = `auf ${streetText} Richtung ${directionText}`;
                 else streetText = `in Richtung ${directionText}`;
             } else {
@@ -2680,6 +2673,26 @@ const getShortInstruction = (maneuverObj) => {
                 const firstMan = instructions[startIdx];
                 let distMeters = cumulativeDists[firstMan.pointIndex] - cumulativeDists[0];
                 if (distMeters < 0) distMeters = 0;
+
+
+                // ====================================================
+                                // === BOSS-FIX: PROXIMITY SIGNPOST FILTER (Schilderklau) ===
+                                // ====================================================
+                                let peekSchild = currIdx + 1;
+                                while (peekSchild < instructions.length && instructions[peekSchild].maneuver === 'DEPART') peekSchild++;
+                                
+                                if (peekSchild < instructions.length) {
+                                    const nextMan = instructions[peekSchild];
+                                    const distToNext = cumulativeDists[nextMan.pointIndex] - cumulativeDists[currentManeuver.pointIndex];
+                                    
+                                    // DEINE LOGIK: Wenn das nächste Manöver sehr nah ist (unter 250m) UND ein Schild hat
+                                    if (distToNext <= 250 && nextMan.signpostText) {
+                                        // Wir überschreiben das aktuelle "München" lautlos mit dem besseren Ziel "Fürth"!
+                                        currentManeuver.signpostText = nextMan.signpostText;
+                                    }
+                                }
+                                // ====================================================
+                
 
                 const shortInfo = getShortInstruction(firstMan);
                 const laneText = getLaneText(firstMan);
@@ -3205,30 +3218,25 @@ const getShortInstruction = (maneuverObj) => {
                         }
                     }
 
-               // C) Das Haupt-Icon (Dynamische Rotation)
+       // C) Das Haupt-Icon (Dynamische Rotation)
                     const iconEl = document.getElementById('nav-top-icon');
                     if (iconEl) {
                         let iconClass = 'fa-arrow-up'; 
                         let rotation = 'rotate(0deg)';
                         
-                        // Autobahn Abfahrten & Wechsel
-                        if (navPhase === "EXIT" || manType.includes('EXIT_MOTORWAY') || manType.includes('SWITCH_MOTORWAY')) {
+                        if (navPhase === "EXIT" || manType.includes('EXIT') || manType.includes('SWITCH_MOTORWAY') || manType.includes('TAKE_EXIT')) {
                             iconClass = 'fa-arrow-up'; 
                             rotation = manType.includes('LEFT') ? 'rotate(-45deg)' : 'rotate(45deg)'; 
                         }
-                        // Halten
-                        else if (navPhase === "PRE_EXIT" || manType === 'KEEP_LEFT' || manType === 'KEEP_RIGHT') { 
+                        else if (navPhase === "PRE_EXIT" || manType.includes('KEEP') || manType.includes('ENTER_MOTORWAY') || manType.includes('FOLLOW')) { 
                             iconClass = 'fa-arrow-up'; 
                             rotation = 'rotate(0deg)'; 
                         }
-                        // Harte Abbiegungen
-                        else if (manType === 'TURN_LEFT' || manType === 'SHARP_LEFT') { iconClass = 'fa-arrow-left'; }
-                        else if (manType === 'TURN_RIGHT' || manType === 'SHARP_RIGHT') { iconClass = 'fa-arrow-right'; }
-                        // Sanfte Abbiegungen (Neu!)
-                        else if (manType === 'SLIGHT_LEFT') { iconClass = 'fa-arrow-up'; rotation = 'rotate(-30deg)'; }
-                        else if (manType === 'SLIGHT_RIGHT') { iconClass = 'fa-arrow-up'; rotation = 'rotate(30deg)'; }
-                        // Rest
-                        else if (manType === 'MAKE_UTURN') { iconClass = 'fa-arrow-rotate-left'; }
+                        else if (manType.includes('TURN_LEFT') || manType.includes('SHARP_LEFT')) { iconClass = 'fa-arrow-left'; }
+                        else if (manType.includes('TURN_RIGHT') || manType.includes('SHARP_RIGHT')) { iconClass = 'fa-arrow-right'; }
+                        else if (manType.includes('BEAR_LEFT') || manType.includes('SLIGHT_LEFT')) { iconClass = 'fa-arrow-up'; rotation = 'rotate(-30deg)'; }
+                        else if (manType.includes('BEAR_RIGHT') || manType.includes('SLIGHT_RIGHT')) { iconClass = 'fa-arrow-up'; rotation = 'rotate(30deg)'; }
+                        else if (manType.includes('U_TURN')) { iconClass = 'fa-arrow-rotate-left'; }
                         else if (manType.includes('ROUNDABOUT')) { iconClass = 'fa-arrows-spin'; } 
                         
                         iconEl.className = `fa-solid ${iconClass}`;
@@ -3247,6 +3255,8 @@ const getShortInstruction = (maneuverObj) => {
                             let badgeClass = '';
                             if (rn.startsWith('A')) badgeClass = 'autobahn';
                             else if (rn.startsWith('B')) badgeClass = 'bundesstrasse';
+                            // BOSS-FIX: Bayerische Staatsstraßen (St), Landesstraßen (L) und Kreisstraßen (K)
+                            else if (rn.startsWith('St') || rn.startsWith('L') || rn.startsWith('K')) badgeClass = 'landesstrasse';
                             
                             if (badgeClass) streetEl.innerHTML += `<span class="road-badge ${badgeClass}">${rn}</span>`;
                         }
