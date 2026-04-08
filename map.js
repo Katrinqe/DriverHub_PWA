@@ -2549,21 +2549,30 @@ updateDashboard: function() {
             const topCard = document.getElementById('nav-top-card');
             if(topCard) topCard.classList.remove('hidden');
 
-       const getShortInstruction = (maneuverObj) => {
+    const getShortInstruction = (maneuverObj) => {
                 const man = maneuverObj.maneuver || '';
                 let actionText = "Geradeaus";
 
-                // --- BOSS-FIX: PREMIUM MANÖVER WÖRTERBUCH ---
-                if (man.includes('TURN_LEFT')) actionText = "Links abbiegen";
-                else if (man.includes('TURN_RIGHT')) actionText = "Rechts abbiegen";
-                // Autobahn Gabelungen & Spuren
-                else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT')) actionText = "Links halten";
-                else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT')) actionText = "Rechts halten";
-                // Autobahn Ausfahrten
-                else if (man.includes('EXIT_RIGHT') || man.includes('EXIT_LEFT') || man.includes('OFF_RAMP')) actionText = "Ausfahrt nehmen";
-                else if (man.includes('MERGE')) actionText = "Einfädeln";
-                else if (man.includes('U_TURN')) actionText = "Wenden";
-                // Kreisverkehr (Zieht sich die exakte Ausfahrt!)
+                // --- BOSS-FIX: DAS OFFIZIELLE TOMTOM WÖRTERBUCH ---
+                // Abbiegen (Stadt)
+                if (man === 'SHARP_LEFT') actionText = "Scharf links abbiegen";
+                else if (man === 'TURN_LEFT') actionText = "Links abbiegen";
+                else if (man === 'SLIGHT_LEFT') actionText = "Leicht links abbiegen";
+                else if (man === 'SHARP_RIGHT') actionText = "Scharf rechts abbiegen";
+                else if (man === 'TURN_RIGHT') actionText = "Rechts abbiegen";
+                else if (man === 'SLIGHT_RIGHT') actionText = "Leicht rechts abbiegen";
+                
+                // Autobahn / Halten
+                else if (man === 'KEEP_LEFT' || man === 'SWITCH_MOTORWAY_LEFT') actionText = "Links halten";
+                else if (man === 'KEEP_RIGHT' || man === 'SWITCH_MOTORWAY_RIGHT') actionText = "Rechts halten";
+                else if (man === 'EXIT_MOTORWAY_LEFT' || man === 'EXIT_LEFT') actionText = "Ausfahrt links nehmen";
+                else if (man === 'EXIT_MOTORWAY_RIGHT' || man === 'EXIT_RIGHT') actionText = "Ausfahrt nehmen";
+                
+                // Merging & Sonderfälle
+                else if (man === 'MERGE_LEFT_LANE' || man === 'MERGE_RIGHT_LANE' || man.includes('MERGE')) actionText = "Einfädeln";
+                else if (man === 'MAKE_UTURN') actionText = "Wenden";
+                
+                // Kreisverkehr
                 else if (man.includes('ROUNDABOUT')) {
                     if (maneuverObj.roundaboutExitNumber) {
                         actionText = `Die ${maneuverObj.roundaboutExitNumber}. Ausfahrt nehmen`;
@@ -2571,8 +2580,10 @@ updateDashboard: function() {
                         actionText = "In den Kreisverkehr fahren";
                     }
                 }
-                else if (man.includes('ARRIVE') || man.includes('FINISH')) actionText = "Ziel erreicht";
-                else if (man.includes('DEPART')) actionText = "Route folgen";
+                
+                // Ziel / Start
+                else if (man.includes('ARRIVE')) actionText = "Ziel erreicht";
+                else if (man === 'DEPART') actionText = "Route folgen";
 
                 // Straßenname extrahieren
                 let streetText = maneuverObj.street || "";
