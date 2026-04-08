@@ -3523,5 +3523,83 @@ function initPriceAlarm() {
         }
     });
 }
+// ==========================================
+    // === BOSS-FEATURE: FLIGHT MANIFEST ENGINE ===
+    // ==========================================
+    const btnDebug = document.getElementById('btn-debug-manifest');
+    const manifestOverlay = document.getElementById('debug-manifest-overlay');
+    const manifestContent = document.getElementById('debug-manifest-content');
+    const btnCloseManifest = document.getElementById('btn-close-manifest');
 
+    // Den Button zusammen mit dem Test-Button ("T") beim Start einblenden
+    const originalBtnStartRoute = document.getElementById('btn-start-nav');
+    if (originalBtnStartRoute && btnDebug) {
+        originalBtnStartRoute.addEventListener('click', () => {
+            btnDebug.classList.remove('hidden');
+        });
+    }
+    
+    // Den Button beim Abbruch der Navigation wieder verstecken
+    const originalBtnCancelRoute = document.getElementById('btn-cancel-active-nav');
+    if (originalBtnCancelRoute && btnDebug) {
+        originalBtnCancelRoute.addEventListener('click', () => {
+            btnDebug.classList.add('hidden');
+        });
+    }
+
+    if (btnDebug && manifestOverlay) {
+        // Tracker öffnen
+        btnDebug.addEventListener('click', (e) => {
+            e.stopPropagation();
+            manifestOverlay.classList.remove('hidden');
+            renderManifest();
+        });
+
+        // Tracker schließen
+        btnCloseManifest.addEventListener('click', (e) => {
+            e.stopPropagation();
+            manifestOverlay.classList.add('hidden');
+        });
+
+        function renderManifest() {
+            if (!window.RouteLogic || !window.RouteLogic.currentInstructions || window.RouteLogic.currentInstructions.length === 0) {
+                manifestContent.innerHTML = '<div style="color:#ff453a;">[SYSTEM] Keine Route aktiv. Lade TomTom Daten...</div>';
+                return;
+            }
+
+            const instructions = window.RouteLogic.currentInstructions;
+            const currentIndex = window.RouteLogic.currentInstructionIndex || 0;
+
+            let html = '';
+            instructions.forEach((inst, idx) => {
+                const isCurrent = idx === currentIndex;
+                const rowClass = isCurrent ? 'manifest-row current-row' : 'manifest-row';
+                
+                const maneuver = inst.maneuver || 'UNKNOWN_MANEUVER';
+                const street = inst.street || (inst.roadNumbers ? inst.roadNumbers.join(', ') : 'Keine Straßeninfo');
+                const sign = inst.signpostText || inst.destination || 'Kein Beschilderungstext';
+
+                html += `
+                    <div class="${rowClass}">
+                        <div class="mf-idx">[${idx.toString().padStart(2, '0')}]</div>
+                        <div class="mf-details">
+                            <div class="mf-maneuver">${maneuver}</div>
+                            <div class="mf-street">🛣️ ${street}</div>
+                            <div class="mf-sign">🏁 ${sign}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            manifestContent.innerHTML = html;
+
+            // Auto-Scroll zur aktuellen Position, damit du beim Fahren nicht suchen musst
+            setTimeout(() => {
+                const activeRow = manifestContent.querySelector('.current-row');
+                if (activeRow) {
+                    activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 200);
+        }
+    }
 }); // <--- DAS IST DIE EINZIGE KLAMMER DIE GANZ AM ENDE STEHEN DARF! SIE SCHLIEßT DEINE ALLERERSTE ZEILE GANZ OBEN.
