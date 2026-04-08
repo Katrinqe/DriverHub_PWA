@@ -2549,61 +2549,78 @@ updateDashboard: function() {
             const topCard = document.getElementById('nav-top-card');
             if(topCard) topCard.classList.remove('hidden');
 
-    const getShortInstruction = (maneuverObj) => {
-                const man = maneuverObj.maneuver || '';
-                let actionText = "Geradeaus";
+const getShortInstruction = (maneuverObj) => {
+            // BOSS-FIX: toUpperCase() schützt uns vor Schreibweisen-Chaos von TomTom
+            const man = (maneuverObj.maneuver || '').toUpperCase();
+            let actionText = "Geradeaus";
 
-                // --- BOSS-FIX: DAS OFFIZIELLE TOMTOM WÖRTERBUCH ---
-                // Abbiegen (Stadt)
-                if (man === 'SHARP_LEFT') actionText = "Scharf links abbiegen";
-                else if (man === 'TURN_LEFT') actionText = "Links abbiegen";
-                else if (man === 'SLIGHT_LEFT') actionText = "Leicht links abbiegen";
-                else if (man === 'SHARP_RIGHT') actionText = "Scharf rechts abbiegen";
-                else if (man === 'TURN_RIGHT') actionText = "Rechts abbiegen";
-                else if (man === 'SLIGHT_RIGHT') actionText = "Leicht rechts abbiegen";
-                
-                // Autobahn / Halten
-                else if (man === 'KEEP_LEFT' || man === 'SWITCH_MOTORWAY_LEFT') actionText = "Links halten";
-                else if (man === 'KEEP_RIGHT' || man === 'SWITCH_MOTORWAY_RIGHT') actionText = "Rechts halten";
-                else if (man === 'EXIT_MOTORWAY_LEFT' || man === 'EXIT_LEFT') actionText = "Ausfahrt links nehmen";
-                else if (man === 'EXIT_MOTORWAY_RIGHT' || man === 'EXIT_RIGHT') actionText = "Ausfahrt nehmen";
-                
-                // Merging & Sonderfälle
-                else if (man === 'MERGE_LEFT_LANE' || man === 'MERGE_RIGHT_LANE' || man.includes('MERGE')) actionText = "Einfädeln";
-                else if (man === 'MAKE_UTURN') actionText = "Wenden";
-                
-                // Kreisverkehr
-                else if (man.includes('ROUNDABOUT')) {
-                    if (maneuverObj.roundaboutExitNumber) {
-                        actionText = `Die ${maneuverObj.roundaboutExitNumber}. Ausfahrt nehmen`;
-                    } else {
-                        actionText = "In den Kreisverkehr fahren";
-                    }
-                }
-                
-                // Ziel / Start
-                else if (man.includes('ARRIVE')) actionText = "Ziel erreicht";
-                else if (man === 'DEPART') actionText = "Route folgen";
-
-                // Straßenname extrahieren
-                let streetText = maneuverObj.street || "";
-                if (!streetText && maneuverObj.roadNumbers && maneuverObj.roadNumbers.length > 0) {
-                    streetText = maneuverObj.roadNumbers[0];
-                }
-
-                // Autobahn-Schilder (Signpost) extrahieren
-                let directionText = maneuverObj.signpostText || maneuverObj.destination || "";
-
-                // Sauberen Satz für HUD Sub-Title und Voice zusammenbauen
-                if (directionText) {
-                    if (streetText) streetText = `auf ${streetText} Richtung ${directionText}`;
-                    else streetText = `in Richtung ${directionText}`;
+            // --- BOSS-FIX: PREMIUM MANÖVER WÖRTERBUCH (PETER'S INCLUDES-LOGIK) ---
+            
+            // 1. ZIEL / START (Höchste Prio)
+            if (man.includes('ARRIVE') || man.includes('FINISH')) actionText = "Ziel erreicht";
+            else if (man.includes('DEPART')) actionText = "Route folgen";
+            
+            // 2. KREISVERKEHR
+            else if (man.includes('ROUNDABOUT')) {
+                if (maneuverObj.roundaboutExitNumber) {
+                    actionText = `Die ${maneuverObj.roundaboutExitNumber}. Ausfahrt nehmen`;
                 } else {
-                    if (streetText) streetText = `auf ${streetText}`;
+                    actionText = "In den Kreisverkehr fahren";
                 }
-                
-                return { action: actionText, street: streetText };
-            };
+            }
+            
+            // 3. AUTOBAHN AUSFAHRTEN (Müssen VOR dem "Halten" geprüft werden!)
+            else if (man.includes('EXIT_MOTORWAY_LEFT') || man.includes('EXIT_LEFT') || man.includes('OFF_RAMP_LEFT')) actionText = "Ausfahrt links nehmen";
+            else if (man.includes('EXIT_MOTORWAY_RIGHT') || man.includes('EXIT_RIGHT') || man.includes('OFF_RAMP') || man.includes('EXIT')) actionText = "Ausfahrt nehmen";
+            
+            // 4. EINFÄDELN / WECHSELN
+            else if (man.includes('MERGE_LEFT') || man.includes('SWITCH_MOTORWAY_LEFT')) actionText = "Links einfädeln";
+            else if (man.includes('MERGE_RIGHT') || man.includes('SWITCH_MOTORWAY_RIGHT')) actionText = "Rechts einfädeln";
+            else if (man.includes('MERGE')) actionText = "Einfädeln";
+            
+            // 5. SPUR HALTEN (Autobahn Gabelungen)
+            else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT')) actionText = "Links halten";
+            else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT')) actionText = "Rechts halten";
+            
+            // 6. SCHARF ABBIEGEN / WENDEN
+            else if (man.includes('U_TURN')) actionText = "Wenden";
+            else if (man.includes('SHARP_LEFT')) actionText = "Scharf links abbiegen";
+            else if (man.includes('SHARP_RIGHT')) actionText = "Scharf rechts abbiegen";
+            
+            // 7. NORMALES ABBIEGEN
+            else if (man.includes('TURN_LEFT')) actionText = "Links abbiegen";
+            else if (man.includes('TURN_RIGHT')) actionText = "Rechts abbiegen";
+            
+            // 8. SANFTES ABBIEGEN
+            else if (man.includes('SLIGHT_LEFT')) actionText = "Leicht links abbiegen";
+            else if (man.includes('SLIGHT_RIGHT')) actionText = "Leicht rechts abbiegen";
+
+            // 🔥 FLIGHT RECORDER (Debug-Modus) 🔥
+            // Wenn es "Geradeaus" ist, obwohl TomTom NICHT explizit "STRAIGHT" gesagt hat, loggen wir es!
+            if (actionText === "Geradeaus" && man !== "STRAIGHT" && man !== "") {
+                console.warn(`🚨 [FLIGHT RECORDER] Unbekanntes Manöver erkannt: "${man}"`, maneuverObj);
+            }
+
+            // Straßenname extrahieren
+            let streetText = maneuverObj.street || "";
+            if (!streetText && maneuverObj.roadNumbers && maneuverObj.roadNumbers.length > 0) {
+                streetText = maneuverObj.roadNumbers[0];
+            }
+
+            // Autobahn-Schilder (Signpost) extrahieren
+            let directionText = maneuverObj.signpostText || maneuverObj.destination || "";
+
+            // Sauberen Satz für HUD Sub-Title und Voice zusammenbauen
+            if (directionText) {
+                // Wenn es ein echtes Schild ist, nutzen wir es
+                if (streetText) streetText = `auf ${streetText} Richtung ${directionText}`;
+                else streetText = `in Richtung ${directionText}`;
+            } else {
+                if (streetText) streetText = `auf ${streetText}`;
+            }
+            
+            return { action: actionText, street: streetText };
+        };
 
             const formatDist = (m) => {
                 if (m >= 1000) return `${(m/1000).toFixed(1).replace('.', ',')} Kilometern`;
@@ -3123,6 +3140,18 @@ updateDashboard: function() {
                     }
 
                     if (!renderManeuver) return; 
+
+                    // === BOSS-FIX: TOMTOM LANE ADAPTER (Übersetzt TomTom auf unser HUD) ===
+                    if (renderManeuver.lanes) {
+                        renderManeuver.lanes = renderManeuver.lanes.map(lane => {
+                            // Wenn TomTom "follow" schickt (die Richtung), machen wir daraus unser "valid = true"
+                            let isValid = lane.follow ? true : false;
+                            // Wir mappen die neuen "directions" auf unsere alten "indications"
+                            let newIndications = lane.directions ? lane.directions : [];
+                            
+                            return { ...lane, valid: isValid, indications: newIndications };
+                        });
+                    }
 
                     const shortInfo = getShortInstruction(renderManeuver);
                     const manType = renderManeuver.maneuver || '';
