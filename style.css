@@ -4341,3 +4341,11 @@ body.ghost-active #ghost-chat-overlay {
 .mf-maneuver { color: #ff9500; font-weight: bold; font-size: 1.1rem; }
 .mf-street { color: #fff; font-size: 0.9rem; }
 .mf-sign { color: #aaa; font-size: 0.8rem; }
+
+
+/* === BOSS-FIX: NEUE STRAßEN-BADGES (Staats- und Landesstraßen) === */
+.road-badge.landesstrasse {
+    background: #ffffff;
+    color: #000000;
+    border: 1px solid #000000;
+}
