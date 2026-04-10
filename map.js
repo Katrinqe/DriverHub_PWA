@@ -583,12 +583,8 @@ try {
             headingParam = `&heading=${Math.round(window.lastHeading)}`;
         }
 
-        // === BOSS-FIX: TOMTOM API AUF MAXIMALE DETAILS ZWINGEN ===
-        // Wir nutzen Peters Parameter: tagged instructions, travelMode und verbieten die Routen-Simplifizierung
-       // === BOSS-FIX: TOMTOM API AUF MAXIMALE DETAILS ZWINGEN ===
-        // Wir nutzen 'tagged' für mehr Details, werfen aber den tödlichen 'computeBestOrder' Parameter raus, 
-        // da er bei reinen A-nach-B Routen die TomTom API zum Abstürzen bringt!
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,travelMode&maxAlternatives=1&instructionsType=tagged&language=de-DE${headingParam}`;
+      // NEU: maxAlternatives=1 liefert uns bis zu 2 Routen. instructionsType liefert Straßennamen.
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=text&language=de-DE${headingParam}`;
         
         const response = await fetch(url);
         if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
