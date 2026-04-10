@@ -3618,7 +3618,7 @@ function initPriceAlarm() {
             manifestOverlay.classList.add('hidden');
         });
 
-        function renderManifest() {
+    function renderManifest() {
             if (!window.RouteLogic || !window.RouteLogic.currentInstructions || window.RouteLogic.currentInstructions.length === 0) {
                 manifestContent.innerHTML = '<div style="color:#ff453a;">[SYSTEM] Keine Route aktiv. Lade TomTom Daten...</div>';
                 return;
@@ -3626,8 +3626,25 @@ function initPriceAlarm() {
 
             const instructions = window.RouteLogic.currentInstructions;
             const currentIndex = window.RouteLogic.currentInstructionIndex || 0;
+            
+            // BOSS-FIX: Wir zapfen den Kofferraum an!
+            const laneGuidance = window.RouteLogic.currentLaneGuidance || [];
 
-   let html = '';
+            let html = '';
+
+            // === 1. RÖNTGENBLICK: DER KOFFERRAUM (LANE GUIDANCE) ===
+            html += `
+                <div style="margin-bottom: 20px; padding: 12px; background: rgba(10, 132, 255, 0.1); border: 1px solid #0a84ff; border-radius: 8px;">
+                    <h3 style="color: #0a84ff; margin-top: 0; margin-bottom: 10px; font-size: 1rem;">
+                        🛣️ TOMTOM LANE GUIDANCE (${laneGuidance.length} Einträge)
+                    </h3>
+                    <div style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px;">
+                        <pre style="margin: 0; color: #64d2ff; font-size: 0.75rem; line-height: 1.3;">${JSON.stringify(laneGuidance, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+
+            // === 2. RÖNTGENBLICK: DIE MANÖVER ===
             instructions.forEach((inst, idx) => {
                 const isCurrent = idx === currentIndex;
                 const rowClass = isCurrent ? 'manifest-row current-row' : 'manifest-row';
@@ -3636,12 +3653,10 @@ function initPriceAlarm() {
                 const street = inst.street || (inst.roadNumbers ? inst.roadNumbers.join(', ') : 'Keine Straßeninfo');
                 const sign = inst.signpostText || inst.destination || 'Kein Beschilderungstext';
 
-                // === BOSS-FIX: DIE NACKTE MATRIX ===
-                // Wir wandeln das rohe TomTom-Objekt in einen lesbaren String um
                 const rawJson = JSON.stringify(inst, null, 2);
 
                 html += `
-                    <div class="${rowClass}" style="flex-direction: column;">
+                    <div class="${rowClass}" style="flex-direction: column; margin-bottom: 15px;">
                         <div style="display: flex; gap: 12px; margin-bottom: 10px;">
                             <div class="mf-idx">[${idx.toString().padStart(2, '0')}]</div>
                             <div class="mf-details">
@@ -3659,7 +3674,7 @@ function initPriceAlarm() {
 
             manifestContent.innerHTML = html;
 
-            // Auto-Scroll zur aktuellen Position, damit du beim Fahren nicht suchen musst
+            // Auto-Scroll zur aktuellen Position
             setTimeout(() => {
                 const activeRow = manifestContent.querySelector('.current-row');
                 if (activeRow) {
