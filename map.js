@@ -606,18 +606,6 @@ try {
         RouteLogic.activeIndex = 0;
 
         const bounds = new maplibregl.LngLatBounds();
-        
-        if (!data.routes || data.routes.length === 0) {
-            console.error("🚨 TomTom hat keine Routen zurückgegeben!");
-            return;
-        }
-
-        // Alte Routen restlos löschen, bevor wir neu zeichnen
-        clearRoutes();
-        RouteLogic.routeGeoJSONs = [null, null];
-        RouteLogic.activeIndex = 0;
-
-        const bounds = new maplibregl.LngLatBounds();
 
         // BEIDE ROUTEN VERARBEITEN (Hauptroute = 0, Alternative = 1)
         data.routes.forEach((route, index) => {
