@@ -579,7 +579,13 @@ async function drawTomTomRoute(destLat, destLng) {
     try {
         // ... (Dein restlicher Code ab hier bleibt unberührt!)
         // NEU: maxAlternatives=1 liefert uns bis zu 2 Routen. instructionsType liefert Straßennamen.
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=text&language=de-DE`;
+  let headingParam = "";
+        if (typeof window.lastHeading !== 'undefined' && window.lastHeading !== null) {
+            headingParam = `&heading=${Math.round(window.lastHeading)}`;
+        }
+
+        // NEU: maxAlternatives=1 liefert uns bis zu 2 Routen. instructionsType liefert Straßennamen.
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=text&language=de-DE${headingParam}`;
         
         const response = await fetch(url);
         if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
@@ -3617,8 +3623,7 @@ function initPriceAlarm() {
             e.stopPropagation();
             manifestOverlay.classList.add('hidden');
         });
-
-    function renderManifest() {
+function renderManifest() {
             if (!window.RouteLogic || !window.RouteLogic.currentInstructions || window.RouteLogic.currentInstructions.length === 0) {
                 manifestContent.innerHTML = '<div style="color:#ff453a;">[SYSTEM] Keine Route aktiv. Lade TomTom Daten...</div>';
                 return;
@@ -3626,25 +3631,9 @@ function initPriceAlarm() {
 
             const instructions = window.RouteLogic.currentInstructions;
             const currentIndex = window.RouteLogic.currentInstructionIndex || 0;
-            
-            // BOSS-FIX: Wir zapfen den Kofferraum an!
-            const laneGuidance = window.RouteLogic.currentLaneGuidance || [];
 
             let html = '';
 
-            // === 1. RÖNTGENBLICK: DER KOFFERRAUM (LANE GUIDANCE) ===
-            html += `
-                <div style="margin-bottom: 20px; padding: 12px; background: rgba(10, 132, 255, 0.1); border: 1px solid #0a84ff; border-radius: 8px;">
-                    <h3 style="color: #0a84ff; margin-top: 0; margin-bottom: 10px; font-size: 1rem;">
-                        🛣️ TOMTOM LANE GUIDANCE (${laneGuidance.length} Einträge)
-                    </h3>
-                    <div style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px;">
-                        <pre style="margin: 0; color: #64d2ff; font-size: 0.75rem; line-height: 1.3;">${JSON.stringify(laneGuidance, null, 2)}</pre>
-                    </div>
-                </div>
-            `;
-
-            // === 2. RÖNTGENBLICK: DIE MANÖVER ===
             instructions.forEach((inst, idx) => {
                 const isCurrent = idx === currentIndex;
                 const rowClass = isCurrent ? 'manifest-row current-row' : 'manifest-row';
