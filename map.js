@@ -2620,23 +2620,24 @@ const getShortInstruction = (maneuverObj) => {
                 return `${Math.round(m/10)*10} Metern`; 
             };
 
-    const getLaneText = (maneuverObj) => {
-                // Gibt es überhaupt Spuren-Daten?
+const getLaneText = (maneuverObj) => {
+                // Gibt es überhaupt Spuren-Daten in der offiziellen TomTom-Struktur?
                 if (!maneuverObj.lanes || !Array.isArray(maneuverObj.lanes)) return "";
                 
-                // 1. Filtere NUR die Spuren heraus, auf denen der Fahrer fahren darf (grüner Haken)
-                const validLanes = maneuverObj.lanes.filter(l => l.valid === true);
+                // 1. Filtere NUR die Spuren heraus, auf denen der Fahrer fahren darf
+                // BOSS-FIX: TomTom nutzt 'follow' (Wenn follow existiert, ist die Spur richtig)
+                const validLanes = maneuverObj.lanes.filter(l => l.follow);
                 const count = validLanes.length;
                 if (count === 0) return "";
 
                 // 2. Wohin zeigen diese erlaubten Spuren primär?
                 let left = 0, right = 0, center = 0;
                 validLanes.forEach(l => {
-                    // BOSS-FIX: TomTom nutzt "indications" (Plural!)
-                    if (l.indications) {
-                        const inds = l.indications.map(i => i.toLowerCase());
-                        if (inds.some(i => i.includes('left'))) left++;
-                        else if (inds.some(i => i.includes('right'))) right++;
+                    // BOSS-FIX: TomTom nutzt 'directions' (z.B. ["STRAIGHT", "RIGHT"])
+                    if (l.directions && Array.isArray(l.directions)) {
+                        const dirs = l.directions.map(d => d.toLowerCase());
+                        if (dirs.some(d => d.includes('left'))) left++;
+                        else if (dirs.some(d => d.includes('right'))) right++;
                         else center++;
                     }
                 });
@@ -2647,7 +2648,7 @@ const getShortInstruction = (maneuverObj) => {
                 else if (right > left && right >= center) dirWord = count > 1 ? "rechten" : "rechte";
                 else dirWord = count > 1 ? "mittleren" : "mittlere";
 
-                // 4. Echte Zahlwörter für die TTS-Sprachausgabe (klingt natürlicher als Ziffern)
+                // 4. Echte Zahlwörter für die TTS-Sprachausgabe
                 const numText = ["null", "eine", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht"];
                 const countStr = numText[count] || count.toString();
 
@@ -3283,7 +3284,7 @@ const getShortInstruction = (maneuverObj) => {
                         streetEl.appendChild(textSpan);
                         streetEl.style.display = 'block';
                         
-                        // E) Der Spur-Assistent (PHASE ENGINE CONTROLLED)
+              // E) Der Spur-Assistent (TOMTOM PRO-LEVEL ARCHITECTURE)
                         let laneContainer = document.getElementById('nav-top-lanes');
                         if (!laneContainer) {
                             laneContainer = document.createElement('div');
@@ -3291,50 +3292,69 @@ const getShortInstruction = (maneuverObj) => {
                             laneContainer.className = 'lane-assist-container';
                             streetEl.parentNode.appendChild(laneContainer);
                         }
-                        laneContainer.innerHTML = ''; 
+
+                        // 1. Sichere Variablen
+                        const mType = manType || ""; 
                         
-                        let showLanes = false;
-                        if (renderManeuver.lanes && renderManeuver.lanes.length > 0) {
-                            showLanes = true;
-                            // Peters Regel: Keine Spuren bei normaler Ausfahrt (<=2 Spuren) oder simplen Abbiegungen
-                           if (navPhase === "TURN") {
-                                showLanes = false;
-                            }
+                        // 2. Elegante Sichtbarkeits-Regel (Keine Spuren im Kreisverkehr oder beim Abbiegen)
+                        const showLanes = renderManeuver?.lanes?.length > 0 && 
+                                          navPhase !== "TURN" && 
+                                          !mType.includes("ROUNDABOUT");
+
+                        if (!showLanes) {
+                            laneContainer.style.display = 'none';
+                            // Wichtig: Container leeren, damit bei der nächsten Einblendung keine Geister-Pfeile auftauchen
+                            if (laneContainer.innerHTML !== '') laneContainer.innerHTML = '';
+                            return; 
                         }
 
-                        if (showLanes) {
+                        // 3. Performance-Check: Nur neu zeichnen, wenn sich das Manöver wirklich geändert hat!
+                        // (Verhindert das Flackern bei jedem GPS-Tick)
+                        const currentLaneSig = renderManeuver.lanes.map(l => (l.follow ? '1' : '0') + (l.directions ? l.directions.join() : '')).join('-');
+                        if (laneContainer.dataset.laneSig === currentLaneSig) {
+                            // Die Spuren sind noch exakt die gleichen -> Wir müssen den DOM nicht anfassen!
                             laneContainer.style.display = 'flex';
-                            renderManeuver.lanes.forEach(lane => {
-                                const arrowDiv = document.createElement('div');
-                                arrowDiv.className = `lane-arrow ${lane.valid ? 'valid' : ''}`;
-                                
-                                let faIcon = 'fa-arrow-up'; 
-                                let laneRot = 'rotate(0deg)';
-                                
-                                if (lane.indications && lane.indications.length > 0) {
-                                    const inds = lane.indications.map(i => i.toLowerCase());
-                                    
-                                    if (navPhase === "PRE_EXIT") {
-                                        // WUNSCH: Bei Links/Rechts halten (PRE_EXIT) zeigen ALLE Pfeile stur geradeaus!
-                                        laneRot = 'rotate(0deg)';
-                                    } 
-                                    else if (navPhase === "EXIT") {
-                                        // Bei der Ausfahrt behalten wir die schönen fließenden 35-Grad-Winkel
-                                        if (inds.includes('slight_right') || inds.includes('right')) {
-                                            laneRot = 'rotate(35deg)';
-                                        } else if (inds.includes('slight_left') || inds.includes('left')) {
-                                            laneRot = 'rotate(-35deg)';
-                                        } else {
-                                            laneRot = 'rotate(0deg)'; 
-                                        }
-                                    }
-                                }
-                                arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}" style="transform: ${laneRot}; display: inline-block;"></i>`;
-                                laneContainer.appendChild(arrowDiv);
-                            });
-                        } else {
-                            laneContainer.style.display = 'none';
+                            return;
                         }
+                        laneContainer.dataset.laneSig = currentLaneSig;
+
+                        // 4. Frisches Rendering (mit DocumentFragment für maximale Performance)
+                        laneContainer.innerHTML = ''; 
+                        laneContainer.style.display = 'flex';
+                        const fragment = document.createDocumentFragment();
+
+                        renderManeuver.lanes.forEach(lane => {
+                            const isValidLane = !!lane.follow; // Sauberer Boolean-Check
+                            
+                            const arrowDiv = document.createElement('div');
+                            arrowDiv.className = `lane-arrow ${isValidLane ? 'valid' : ''}`;
+                            
+                            let faIcon = 'fa-arrow-up'; 
+                            let laneRot = 0; // Wir rechnen jetzt in echten Zahlen
+                            
+                            if (lane.directions && Array.isArray(lane.directions)) {
+                                const dirs = lane.directions.map(d => d.toLowerCase());
+                                
+                                if (navPhase === "PRE_EXIT" || mType.includes("KEEP")) {
+                                    // Ruhiges UI vor der Gabelung
+                                    laneRot = 0;
+                                } 
+                                else if (navPhase === "EXIT" || mType.includes('EXIT') || mType.includes('SWITCH_MOTORWAY')) {
+                                    // Organische Winkel für Ausfahrten
+                                    if (dirs.includes('sharp_right')) laneRot = 55;
+                                    else if (dirs.includes('right')) laneRot = 35;
+                                    else if (dirs.includes('slight_right')) laneRot = 20;
+                                    else if (dirs.includes('sharp_left')) laneRot = -55;
+                                    else if (dirs.includes('left')) laneRot = -35;
+                                    else if (dirs.includes('slight_left')) laneRot = -20;
+                                }
+                            }
+                            
+                            arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}" style="transform: rotate(${laneRot}deg); display: inline-block;"></i>`;
+                            fragment.appendChild(arrowDiv);
+                        });
+
+                        laneContainer.appendChild(fragment);
                     }
                     // ====================================================
 
