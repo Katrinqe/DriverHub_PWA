@@ -682,6 +682,20 @@ allPoints.forEach(coord => bounds.extend(coord));
                 RouteLogic.currentInstructionIndex = 0; // Reset für den Start
             }
 
+            // --- NEU FÜR PHASE 2: INSTRUCTIONS SPEICHERN ---
+            if (index === 0 && route.guidance && route.guidance.instructions) {
+                RouteLogic.currentInstructions = route.guidance.instructions;
+                RouteLogic.currentInstructionIndex = 0; // Reset für den Start
+                
+                // === BOSS-FIX: LANE GUIDANCE SICHERN ===
+                // Wir speichern das zweite, parallele Array von TomTom ab!
+                if (route.guidance.laneGuidance && route.guidance.laneGuidance.length > 0) {
+                    RouteLogic.currentLaneGuidance = route.guidance.laneGuidance;
+                } else {
+                    RouteLogic.currentLaneGuidance = [];
+                }
+            }
+
           // Im Objekt speichern für späteres Umschalten (Aktiv/Grau)
             RouteLogic.routeGeoJSONs[index] = routeFeatures;
 
@@ -3006,6 +3020,37 @@ const getLaneText = (maneuverObj) => {
                                     }
                                 }
                                 // ----------------------------------------------------
+
+                                // ==========================================
+                                // === BOSS-FIX: THE LANE MATCHER ===
+                                // ==========================================
+                                // Wir prüfen, ob es für unseren aktuellen Punkt Spuren gibt!
+                                if (RouteLogic.currentLaneGuidance && RouteLogic.currentLaneGuidance.length > 0) {
+                                    // 1. Sicherheitshalber das lanes-Array des aktuellen Manövers löschen, 
+                                    // um Geisterspuren aus vorherigen Manövern zu vermeiden.
+                                    currentManeuver.lanes = null; 
+
+                                    // 2. Suchen wir den passenden Spur-Abschnitt für unseren aktuellen Standort (closestIdx)
+                                    for (let i = 0; i < RouteLogic.currentLaneGuidance.length; i++) {
+                                        const guidanceObj = RouteLogic.currentLaneGuidance[i];
+                                        
+                                        if (guidanceObj.lanes && guidanceObj.lanes.length > 0) {
+                                            // TomTom verpackt die Start/Endpunkte in laneSections (meist nur ein Array-Element)
+                                            // Optional: Wir nutzen einen kleinen "Vorlauf" (z.B. + 2 Punkte), damit die Spuren 
+                                            // minimal früher im HUD aufpoppen.
+                                            const section = guidanceObj.laneSections?.[0];
+                                            const lookAheadIdx = closestIdx + 2; 
+
+                                            if (section && lookAheadIdx >= section.startPointIndex && closestIdx <= section.endPointIndex) {
+                                                // MATCH! Wir injizieren die Spuren aus dem Kofferraum (laneGuidance) 
+                                                // in das Handschuhfach (currentManeuver), wo unser HUD-Code sie erwartet!
+                                                currentManeuver.lanes = guidanceObj.lanes;
+                                                break; // Sobald wir einen Match haben, beenden wir die Suche
+                                            }
+                                        }
+                                    }
+                                }
+                                // ==========================================
 
                                 const shortInfo = getShortInstruction(currentManeuver);
                                 const laneText = getLaneText(currentManeuver);
