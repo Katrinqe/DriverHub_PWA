@@ -585,7 +585,9 @@ async function drawTomTomRoute(destLat, destLng) {
         }
 
         // NEU: maxAlternatives=1 liefert uns bis zu 2 Routen. instructionsType liefert Straßennamen.
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=text&language=de-DE${headingParam}`;
+      // === BOSS-FIX: TOMTOM API AUF MAXIMALE DETAILS ZWINGEN ===
+        // Wir nutzen Peters Parameter: tagged instructions, travelMode und verbieten die Routen-Simplifizierung
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,travelMode&maxAlternatives=1&instructionsType=tagged&routeRepresentation=polyline&computeBestOrder=false&language=de-DE${headingParam}`;
         
         const response = await fetch(url);
         if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
