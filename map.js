@@ -577,29 +577,35 @@ async function drawTomTomRoute(destLat, destLng) {
     libreMap.setPadding({ right: 0, bottom: 0 });
 
 try {
-        // === BOSS-FIX: HEADING PARAMETER ERZWINGEN ===
-        let headingParam = "";
-        if (typeof window.lastHeading !== 'undefined' && window.lastHeading !== null) {
-            headingParam = `&heading=${Math.round(window.lastHeading)}`;
-        }
-
-        // === PETER'S PRO-API CALL (ANTI-DUMMES-NAVI) ===
-        // instructionsType=tagged liefert uns die maximale Detailtiefe!
-        // sectionType=traffic,travelMode gibt uns den perfekten Kontext.
-        // Wir lassen 'routeRepresentation' auf Default, damit TomTom uns direkt das Array liefert 
-        // und wir kein komplexes Polyline-Decoding bauen müssen!
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,travelMode&maxAlternatives=1&instructionsType=tagged&language=de-DE${headingParam}`;
+        // === PETER'S PRO-API CALL (STRICT MODE) ===
+        // Wir schmeißen heading und travelMode raus, da TomTom hier brutal mit 400 abbricht.
+        // Wir behalten die Master-Keys: tagged (für tiefe Details) und polyline (Pflicht für tagged).
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=tagged&routeRepresentation=polyline&language=de-DE`;
         
-        console.log("🚀 Lade Pro-Level Route von TomTom...");
+        console.log("🚀 Lade Pro-Level Route von TomTom (Clean URL)...");
         const response = await fetch(url);
         
         if (!response.ok) {
             const errorData = await response.json();
-            console.error("🚨 TomTom API Fehler-Details:", errorData);
+            // Peters Deep-Log für maximale Transparenz
+            console.error("🚨 TomTom API Fehler-Details:", JSON.stringify(errorData, null, 2));
+            alert("TOMTOM MECKERT: " + (errorData.detailedError?.message || JSON.stringify(errorData)));
             throw new Error(`API Fehler: ${response.status}`);
         }
         
         const data = await response.json();
+        
+        if (!data.routes || data.routes.length === 0) {
+            console.error("🚨 TomTom hat keine Routen zurückgegeben!");
+            return;
+        }
+
+        // Alte Routen restlos löschen, bevor wir neu zeichnen
+        clearRoutes();
+        RouteLogic.routeGeoJSONs = [null, null];
+        RouteLogic.activeIndex = 0;
+
+        const bounds = new maplibregl.LngLatBounds();
         
         if (!data.routes || data.routes.length === 0) {
             console.error("🚨 TomTom hat keine Routen zurückgegeben!");
