@@ -576,16 +576,14 @@ async function drawTomTomRoute(destLat, destLng) {
     if (libreMap.dragRotate) libreMap.dragRotate.enable();
     libreMap.setPadding({ right: 0, bottom: 0 });
 
-    try {
-        // ... (Dein restlicher Code ab hier bleibt unberührt!)
-        // NEU: maxAlternatives=1 liefert uns bis zu 2 Routen. instructionsType liefert Straßennamen.
-  let headingParam = "";
+try {
+        // === BOSS-FIX: HEADING PARAMETER ERZWINGEN ===
+        let headingParam = "";
         if (typeof window.lastHeading !== 'undefined' && window.lastHeading !== null) {
             headingParam = `&heading=${Math.round(window.lastHeading)}`;
         }
 
-        // NEU: maxAlternatives=1 liefert uns bis zu 2 Routen. instructionsType liefert Straßennamen.
-      // === BOSS-FIX: TOMTOM API AUF MAXIMALE DETAILS ZWINGEN ===
+        // === BOSS-FIX: TOMTOM API AUF MAXIMALE DETAILS ZWINGEN ===
         // Wir nutzen Peters Parameter: tagged instructions, travelMode und verbieten die Routen-Simplifizierung
         const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,travelMode&maxAlternatives=1&instructionsType=tagged&routeRepresentation=polyline&computeBestOrder=false&language=de-DE${headingParam}`;
         
