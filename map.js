@@ -583,14 +583,28 @@ try {
             headingParam = `&heading=${Math.round(window.lastHeading)}`;
         }
 
-      // NEU: maxAlternatives=1 liefert uns bis zu 2 Routen. instructionsType liefert Straßennamen.
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=text&language=de-DE${headingParam}`;
+        // === PETER'S PRO-API CALL (ANTI-DUMMES-NAVI) ===
+        // instructionsType=tagged liefert uns die maximale Detailtiefe!
+        // sectionType=traffic,travelMode gibt uns den perfekten Kontext.
+        // Wir lassen 'routeRepresentation' auf Default, damit TomTom uns direkt das Array liefert 
+        // und wir kein komplexes Polyline-Decoding bauen müssen!
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,travelMode&maxAlternatives=1&instructionsType=tagged&language=de-DE${headingParam}`;
         
+        console.log("🚀 Lade Pro-Level Route von TomTom...");
         const response = await fetch(url);
-        if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("🚨 TomTom API Fehler-Details:", errorData);
+            throw new Error(`API Fehler: ${response.status}`);
+        }
         
         const data = await response.json();
-        if (!data.routes || data.routes.length === 0) return;
+        
+        if (!data.routes || data.routes.length === 0) {
+            console.error("🚨 TomTom hat keine Routen zurückgegeben!");
+            return;
+        }
 
         // Alte Routen restlos löschen, bevor wir neu zeichnen
         clearRoutes();
