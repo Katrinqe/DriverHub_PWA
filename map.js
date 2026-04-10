@@ -3582,7 +3582,7 @@ function initPriceAlarm() {
             const instructions = window.RouteLogic.currentInstructions;
             const currentIndex = window.RouteLogic.currentInstructionIndex || 0;
 
-            let html = '';
+   let html = '';
             instructions.forEach((inst, idx) => {
                 const isCurrent = idx === currentIndex;
                 const rowClass = isCurrent ? 'manifest-row current-row' : 'manifest-row';
@@ -3591,13 +3591,22 @@ function initPriceAlarm() {
                 const street = inst.street || (inst.roadNumbers ? inst.roadNumbers.join(', ') : 'Keine Straßeninfo');
                 const sign = inst.signpostText || inst.destination || 'Kein Beschilderungstext';
 
+                // === BOSS-FIX: DIE NACKTE MATRIX ===
+                // Wir wandeln das rohe TomTom-Objekt in einen lesbaren String um
+                const rawJson = JSON.stringify(inst, null, 2);
+
                 html += `
-                    <div class="${rowClass}">
-                        <div class="mf-idx">[${idx.toString().padStart(2, '0')}]</div>
-                        <div class="mf-details">
-                            <div class="mf-maneuver">${maneuver}</div>
-                            <div class="mf-street">🛣️ ${street}</div>
-                            <div class="mf-sign">🏁 ${sign}</div>
+                    <div class="${rowClass}" style="flex-direction: column;">
+                        <div style="display: flex; gap: 12px; margin-bottom: 10px;">
+                            <div class="mf-idx">[${idx.toString().padStart(2, '0')}]</div>
+                            <div class="mf-details">
+                                <div class="mf-maneuver">${maneuver}</div>
+                                <div class="mf-street">🛣️ ${street}</div>
+                                <div class="mf-sign">🏁 ${sign}</div>
+                            </div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; overflow-x: auto; border: 1px solid #333;">
+                            <pre style="margin: 0; color: #30d158; font-size: 0.75rem; line-height: 1.3;">${rawJson}</pre>
                         </div>
                     </div>
                 `;
