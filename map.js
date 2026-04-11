@@ -577,26 +577,29 @@ async function drawTomTomRoute(destLat, destLng) {
     libreMap.setPadding({ right: 0, bottom: 0 });
 
 try {
-        // === BOSS-FIX: HEADING KOMPLETT RAUS ===
-        // Wir übergeben KEIN vehicleHeading mehr, da TomTom uns sonst mit 400 Bad Request blockiert!
-        // Der Schlüssel für Spuren: sectionType=traffic,lanes
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,lanes&maxAlternatives=1&instructionsType=text&language=de-DE`;
+        // === BOSS-FIX: HEADING PARAMETER ===
+        let headingParam = "";
+        if (typeof window.lastHeading !== 'undefined' && window.lastHeading !== null) {
+            headingParam = `&vehicleHeading=${Math.round(window.lastHeading)}`;
+        }
+
+        // === DIE OFFIZIELLE TOMTOM-SUPPORT URL ===
+        // 1. Zweimal sectionType (einmal traffic, einmal lanes) - KEINE KOMMAS!
+        // 2. instructionAnnouncementPoints=all (Für perfekte Sprach-Timings)
+        // 3. instructionRoadShieldReferences=all (Für deutsche Autobahnschilder)
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&sectionType=lanes&maxAlternatives=1&instructionsType=text&instructionAnnouncementPoints=all&instructionRoadShieldReferences=all&language=de-DE${headingParam}`;
         
-        console.log("🚀 Lade Pro-Level Route von TomTom (mit Lanes)...");
+        console.log("🚀 Lade Route mit offiziellen Support-Parametern...");
         const response = await fetch(url);
         
         if (!response.ok) {
-            const errorData = await response.json();
-            alert("TOMTOM MECKERT: " + (errorData.detailedError?.message || "Unbekannter Fehler"));
-            throw new Error(`API Fehler: ${response.status}`);
+            const err = await response.json();
+            alert("TomTom 400 Fehler: " + (err.detailedError?.message || JSON.stringify(err)));
+            return;
         }
         
         const data = await response.json();
-        
-        if (!data.routes || data.routes.length === 0) {
-            console.error("🚨 TomTom hat keine Routen zurückgegeben!");
-            return;
-        }
+        if (!data.routes || data.routes.length === 0) return;
 
         // Alte Routen restlos löschen, bevor wir neu zeichnen
         clearRoutes();
@@ -694,8 +697,8 @@ allPoints.forEach(coord => bounds.extend(coord));
                 RouteLogic.currentInstructions = route.guidance.instructions;
                 RouteLogic.currentInstructionIndex = 0; // Reset für den Start
                 
-                // === BOSS-FIX: DIE ECHTEN SPUREN SPEICHERN ===
-                // TomTom versteckt die Lanes nicht in den Instructions, sondern parallel in route.sections!
+                // === BOSS-FIX: DIE SPUREN AUS DEN SECTIONS FILTERN ===
+                // Genau wie der Support gesagt hat: Sie liegen in 'route.sections'!
                 if (route.sections) {
                     RouteLogic.currentLaneSections = route.sections.filter(s => s.sectionType === 'LANES');
                 } else {
@@ -3062,11 +3065,16 @@ const getLaneText = (maneuverObj) => {
                                 // ==========================================
                                 // === BOSS-FIX: DER ECHTE LANE MATCHER ===
                                 // ==========================================
+                         // ==========================================
+                                // === BOSS-FIX: DER ECHTE LANE MATCHER ===
+                                // ==========================================
                                 currentManeuver.lanes = null;
                                 if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
+                                    // Wir scannen alle Spur-Abschnitte der Route ab
                                     for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
                                         const section = RouteLogic.currentLaneSections[i];
-                                        // Wir blenden die Spuren schon 3 GPS-Punkte VOR dem eigentlichen Beginn ein!
+                                        // Wenn das Auto (closestIdx) sich im Bereich der Spuren befindet 
+                                        // (mit 3 GPS-Punkten Vorlauf, damit sie frühzeitig aufpoppen!)
                                         if (closestIdx >= section.startPointIndex - 3 && closestIdx <= section.endPointIndex) {
                                             currentManeuver.lanes = section.lanes;
                                             break;
