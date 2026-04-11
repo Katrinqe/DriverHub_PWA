@@ -577,28 +577,21 @@ async function drawTomTomRoute(destLat, destLng) {
     libreMap.setPadding({ right: 0, bottom: 0 });
 
 try {
-        // === PETER'S PRO-API CALL (STRICT MODE) ===
-        // Wir schmeißen heading und travelMode raus, da TomTom hier brutal mit 400 abbricht.
-        // Wir behalten die Master-Keys: tagged (für tiefe Details) und polyline (Pflicht für tagged).
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=tagged&routeRepresentation=polyline&language=de-DE`;
-        
-        console.log("🚀 Lade Pro-Level Route von TomTom (Clean URL)...");
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            const errorData = await response.json();
-            // Peters Deep-Log für maximale Transparenz
-            console.error("🚨 TomTom API Fehler-Details:", JSON.stringify(errorData, null, 2));
-            alert("TOMTOM MECKERT: " + (errorData.detailedError?.message || JSON.stringify(errorData)));
-            throw new Error(`API Fehler: ${response.status}`);
+        // === BOSS-FIX: HEADING PARAMETER ERZWINGEN ===
+        let headingParam = "";
+        if (typeof window.lastHeading !== 'undefined' && window.lastHeading !== null) {
+            headingParam = `&heading=${Math.round(window.lastHeading)}`;
         }
+
+        // === ZURÜCK ZUR STABILEN MATRIX (ABER MIT LANES!) ===
+        // Der magische Schlüssel: Wir müssen 'lanes' im sectionType zwingend anfordern!
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,lanes&maxAlternatives=1&instructionsType=text&language=de-DE${headingParam}`;
+        
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`API Fehler: ${response.status}`);
         
         const data = await response.json();
-        
-        if (!data.routes || data.routes.length === 0) {
-            console.error("🚨 TomTom hat keine Routen zurückgegeben!");
-            return;
-        }
+        if (!data.routes || data.routes.length === 0) return;
 
         // Alte Routen restlos löschen, bevor wir neu zeichnen
         clearRoutes();
@@ -689,23 +682,19 @@ allPoints.forEach(coord => bounds.extend(coord));
             }
             RouteLogic.routeCumulativeDistances[index] = cumulativeDists;
             
-            // --- NEU FÜR PHASE 2: INSTRUCTIONS SPEICHERN ---
-            if (index === 0 && route.guidance && route.guidance.instructions) {
-                RouteLogic.currentInstructions = route.guidance.instructions;
-                RouteLogic.currentInstructionIndex = 0; // Reset für den Start
-            }
+          
 
-            // --- NEU FÜR PHASE 2: INSTRUCTIONS SPEICHERN ---
+     // --- NEU FÜR PHASE 2: INSTRUCTIONS SPEICHERN ---
             if (index === 0 && route.guidance && route.guidance.instructions) {
                 RouteLogic.currentInstructions = route.guidance.instructions;
                 RouteLogic.currentInstructionIndex = 0; // Reset für den Start
                 
-                // === BOSS-FIX: LANE GUIDANCE SICHERN ===
-                // Wir speichern das zweite, parallele Array von TomTom ab!
-                if (route.guidance.laneGuidance && route.guidance.laneGuidance.length > 0) {
-                    RouteLogic.currentLaneGuidance = route.guidance.laneGuidance;
+                // === BOSS-FIX: DEN ECHTEN KOFFERRAUM AUSRÄUMEN ===
+                // Die Spuren liegen bei der Web-API versteckt in den allgemeinen 'sections'!
+                if (route.sections) {
+                    RouteLogic.currentLaneSections = route.sections.filter(s => s.sectionType === 'LANES');
                 } else {
-                    RouteLogic.currentLaneGuidance = [];
+                    RouteLogic.currentLaneSections = [];
                 }
             }
 
@@ -3638,9 +3627,25 @@ function renderManifest() {
 
             const instructions = window.RouteLogic.currentInstructions;
             const currentIndex = window.RouteLogic.currentInstructionIndex || 0;
+            
+            // Wir laden die echten Spuren aus dem neuen Zwischenspeicher!
+            const laneSections = window.RouteLogic.currentLaneSections || [];
 
             let html = '';
 
+            // === 1. RÖNTGENBLICK: DIE ECHTEN SPUREN ===
+            html += `
+                <div style="margin-bottom: 20px; padding: 12px; background: rgba(10, 132, 255, 0.1); border: 1px solid #0a84ff; border-radius: 8px;">
+                    <h3 style="color: #0a84ff; margin-top: 0; margin-bottom: 10px; font-size: 1rem;">
+                        🛣️ TOMTOM LANE SECTIONS (${laneSections.length} Abschnitte gefunden!)
+                    </h3>
+                    <div style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px;">
+                        <pre style="margin: 0; color: #64d2ff; font-size: 0.75rem; line-height: 1.3;">${JSON.stringify(laneSections, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+
+            // === 2. MANÖVER ===
             instructions.forEach((inst, idx) => {
                 const isCurrent = idx === currentIndex;
                 const rowClass = isCurrent ? 'manifest-row current-row' : 'manifest-row';
@@ -3670,7 +3675,6 @@ function renderManifest() {
 
             manifestContent.innerHTML = html;
 
-            // Auto-Scroll zur aktuellen Position
             setTimeout(() => {
                 const activeRow = manifestContent.querySelector('.current-row');
                 if (activeRow) {
