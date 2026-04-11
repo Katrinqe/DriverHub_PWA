@@ -577,28 +577,26 @@ async function drawTomTomRoute(destLat, destLng) {
     libreMap.setPadding({ right: 0, bottom: 0 });
 
 try {
-        // === BOSS-FIX: DER ECHTE HEADING-PARAMETER ===
-        // Es heißt bei TomTom "vehicleHeading", NICHT "heading"! 
-        // Das hat den 400er Absturz verursacht!
-        let headingParam = "";
-        if (typeof window.lastHeading !== 'undefined' && window.lastHeading !== null) {
-            headingParam = `&vehicleHeading=${Math.round(window.lastHeading)}`;
-        }
-
-        // === DIE STABILE URL ===
-        // Wir entfernen den erfundenen "lanes" sectionType.
-        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&maxAlternatives=1&instructionsType=text&language=de-DE${headingParam}`;
+        // === BOSS-FIX: HEADING KOMPLETT RAUS ===
+        // Wir übergeben KEIN vehicleHeading mehr, da TomTom uns sonst mit 400 Bad Request blockiert!
+        // Der Schlüssel für Spuren: sectionType=traffic,lanes
+        const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic,lanes&maxAlternatives=1&instructionsType=text&language=de-DE`;
         
+        console.log("🚀 Lade Pro-Level Route von TomTom (mit Lanes)...");
         const response = await fetch(url);
         
         if (!response.ok) {
-            const err = await response.json();
-            alert("TomTom 400 Fehler: " + (err.detailedError?.message || JSON.stringify(err)));
-            return;
+            const errorData = await response.json();
+            alert("TOMTOM MECKERT: " + (errorData.detailedError?.message || "Unbekannter Fehler"));
+            throw new Error(`API Fehler: ${response.status}`);
         }
         
         const data = await response.json();
-        if (!data.routes || data.routes.length === 0) return;
+        
+        if (!data.routes || data.routes.length === 0) {
+            console.error("🚨 TomTom hat keine Routen zurückgegeben!");
+            return;
+        }
 
         // Alte Routen restlos löschen, bevor wir neu zeichnen
         clearRoutes();
@@ -691,10 +689,18 @@ allPoints.forEach(coord => bounds.extend(coord));
             
           
 
-  // --- NEU FÜR PHASE 2: INSTRUCTIONS SPEICHERN ---
+// --- NEU FÜR PHASE 2: INSTRUCTIONS SPEICHERN ---
             if (index === 0 && route.guidance && route.guidance.instructions) {
                 RouteLogic.currentInstructions = route.guidance.instructions;
                 RouteLogic.currentInstructionIndex = 0; // Reset für den Start
+                
+                // === BOSS-FIX: DIE ECHTEN SPUREN SPEICHERN ===
+                // TomTom versteckt die Lanes nicht in den Instructions, sondern parallel in route.sections!
+                if (route.sections) {
+                    RouteLogic.currentLaneSections = route.sections.filter(s => s.sectionType === 'LANES');
+                } else {
+                    RouteLogic.currentLaneSections = [];
+                }
             }
 
           // Im Objekt speichern für späteres Umschalten (Aktiv/Grau)
@@ -3053,6 +3059,22 @@ const getLaneText = (maneuverObj) => {
                                 }
                                 // ==========================================
 
+                                // ==========================================
+                                // === BOSS-FIX: DER ECHTE LANE MATCHER ===
+                                // ==========================================
+                                currentManeuver.lanes = null;
+                                if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
+                                    for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
+                                        const section = RouteLogic.currentLaneSections[i];
+                                        // Wir blenden die Spuren schon 3 GPS-Punkte VOR dem eigentlichen Beginn ein!
+                                        if (closestIdx >= section.startPointIndex - 3 && closestIdx <= section.endPointIndex) {
+                                            currentManeuver.lanes = section.lanes;
+                                            break;
+                                        }
+                                    }
+                                }
+                                // ==========================================
+
                                 const shortInfo = getShortInstruction(currentManeuver);
                                 const laneText = getLaneText(currentManeuver);
                                 const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
@@ -3626,9 +3648,25 @@ function renderManifest() {
 
             const instructions = window.RouteLogic.currentInstructions;
             const currentIndex = window.RouteLogic.currentInstructionIndex || 0;
+            
+            // Wir laden die ECHTEN Spuren aus unserem neuen Filter!
+            const laneSections = window.RouteLogic.currentLaneSections || [];
 
             let html = '';
 
+            // === 1. RÖNTGENBLICK: DIE ECHTEN SPUREN ===
+            html += `
+                <div style="margin-bottom: 20px; padding: 12px; background: rgba(10, 132, 255, 0.1); border: 1px solid #0a84ff; border-radius: 8px;">
+                    <h3 style="color: #0a84ff; margin-top: 0; margin-bottom: 10px; font-size: 1rem;">
+                        🛣️ TOMTOM LANE SECTIONS (${laneSections.length} Abschnitte gefunden!)
+                    </h3>
+                    <div style="max-height: 250px; overflow-y: auto; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 6px;">
+                        <pre style="margin: 0; color: #64d2ff; font-size: 0.75rem; line-height: 1.3;">${JSON.stringify(laneSections, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+
+            // === 2. MANÖVER ===
             instructions.forEach((inst, idx) => {
                 const isCurrent = idx === currentIndex;
                 const rowClass = isCurrent ? 'manifest-row current-row' : 'manifest-row';
