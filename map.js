@@ -692,18 +692,29 @@ allPoints.forEach(coord => bounds.extend(coord));
             
           
 
-// --- NEU FÜR PHASE 2: INSTRUCTIONS SPEICHERN ---
-            if (index === 0 && route.guidance && route.guidance.instructions) {
-                RouteLogic.currentInstructions = route.guidance.instructions;
-                RouteLogic.currentInstructionIndex = 0; // Reset für den Start
-                
-                // === BOSS-FIX: DIE SPUREN AUS DEN SECTIONS FILTERN ===
-                // Genau wie der Support gesagt hat: Sie liegen in 'route.sections'!
-                if (route.sections) {
-                    RouteLogic.currentLaneSections = route.sections.filter(s => s.sectionType === 'LANES');
-                } else {
-                    RouteLogic.currentLaneSections = [];
-                }
+// --- BOSS-FIX: BEIDE GEHIRNE SPEICHERN (MULTI-ROUTE AWARENESS) ---
+            // Wir speichern nicht mehr nur Index 0 ab, sondern laden ALLE verfügbaren
+            // Routen in Arrays, damit wir beim Klick später umschalten können!
+            if (!RouteLogic.allInstructions) RouteLogic.allInstructions = [];
+            if (!RouteLogic.allLaneSections) RouteLogic.allLaneSections = [];
+            
+            if (route.guidance && route.guidance.instructions) {
+                RouteLogic.allInstructions[index] = route.guidance.instructions;
+            } else {
+                RouteLogic.allInstructions[index] = [];
+            }
+            
+            if (route.sections) {
+                RouteLogic.allLaneSections[index] = route.sections.filter(s => s.sectionType === 'LANES');
+            } else {
+                RouteLogic.allLaneSections[index] = [];
+            }
+
+            // Für den ersten Start setzen wir standardmäßig alles auf Route 0
+            if (index === 0) {
+                RouteLogic.currentInstructions = RouteLogic.allInstructions[0];
+                RouteLogic.currentLaneSections = RouteLogic.allLaneSections[0];
+                RouteLogic.currentInstructionIndex = 0;
             }
 
           // Im Objekt speichern für späteres Umschalten (Aktiv/Grau)
@@ -1965,7 +1976,7 @@ updateDashboard: function() {
         currentInstructions: [],
         currentInstructionIndex: 0,
 
-        selectRouteOpt: function(index) {
+selectRouteOpt: function(index) {
             if (!this.routeGeoJSONs[index]) return; 
             this.activeIndex = index;
 
@@ -1976,6 +1987,17 @@ updateDashboard: function() {
             
             if (this.routePointsData[index]) {
                 window.loadElevationData(this.routePointsData[index], this.routeColorsData[index], this.routeDistances[index], this.routeTimesData[index]);
+            }
+            
+            // === BOSS-FIX: GEHIRN-SWAP ===
+            // Wenn der User die Route wechselt, MÜSSEN wir auch die Navigations-Daten 
+            // (Manöver und Spuren) auf diese Route umschalten, bevor er auf GO drückt!
+            if (this.allInstructions && this.allInstructions[index]) {
+                this.currentInstructions = this.allInstructions[index];
+                this.currentInstructionIndex = 0; // Zurückspulen für den neuen Start
+            }
+            if (this.allLaneSections && this.allLaneSections[index]) {
+                this.currentLaneSections = this.allLaneSections[index];
             }
         },
 
