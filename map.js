@@ -2725,10 +2725,16 @@ const getLaneText = (maneuverObj) => {
                 const laneText = getLaneText(firstMan);
                 const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
                 
-                const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
+               const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
+
+                // === BOSS-FIX: SONDERREGEL FÜR AUFFAHRTEN BEIM START ===
+                const isAuffahren = firstMan.maneuver && firstMan.maneuver.includes('ENTER_MOTORWAY');
 
                 let firstInstructionText = "";
-                if (distMeters > 5000) {
+                if (isAuffahren) {
+                    // Kein Gelaber, keine Distanz. Einfach: "Auffahren auf A8."
+                    firstInstructionText = actionStr + ".";
+                } else if (distMeters > 5000) {
                     firstInstructionText = `Folgen Sie der Route für ${Math.round(distMeters/1000)} Kilometer.`;
                 } else if (distMeters < 70) {
                     firstInstructionText = actionStr; 
@@ -3170,21 +3176,37 @@ const getLaneText = (maneuverObj) => {
                                 let vs = RouteLogic.voiceState;
                                 let textToSpeak = null;
                                 
-                                if (Date.now() > window.voiceBlockUntil || RouteLogic.forceFirstInstruction) {
+                               if (Date.now() > window.voiceBlockUntil || RouteLogic.forceFirstInstruction) {
+                                    
+                                    // Erkennen, ob das aktuelle Manöver eine Auffahrt ist
+                                    const isAuffahren = currentManeuver && currentManeuver.maneuver && currentManeuver.maneuver.includes('ENTER_MOTORWAY');
+
                                     if (!vs.spokenInit) {
                                         RouteLogic.forceFirstInstruction = false;
-                                        if (distMeters < 70) {
+                                        
+                                        if (isAuffahren) {
+                                            // BOSS-FIX: Bei Auffahrten labern wir den Fahrer nicht voll. 
+                                            // Einmaliger Hinweis ohne Distanz.
+                                            textToSpeak = actionStr;
+                                            // Trick 17: Wir setzen alle Countdown-Variablen auf 'true', 
+                                            // damit die Engine in diesem Streckenabschnitt für immer die Klappe hält!
+                                            vs.spoken5km = true; vs.spoken2km = true; vs.spoken500m = true; vs.spoken100m = true; vs.spoken50m = true; vs.spokenNow = true;
+                                        } 
+                                        else if (distMeters < 70) {
                                             textToSpeak = actionStr; 
                                         } else if (vs.segmentTotalDist > 5000) {
                                             textToSpeak = `Folgen Sie der Route für ${Math.round(vs.segmentTotalDist/1000)} Kilometer.`;
                                         } else {
                                             textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
                                         }
+                                        
                                         vs.spokenInit = true;
                                     }
                                     else {
+                                        // Normaler Countdown für alle anderen Manöver (z.B. Ausfahrten)
                                         if (vs.segmentTotalDist > 10000) {
                                             if (distMeters <= 5000 && distMeters > 2000 && !vs.spoken5km) { textToSpeak = `In 5 Kilometern ${actionStr}.`; vs.spoken5km = true; }
+// ... (Dein restlicher Code mit den Countdowns bleibt exakt gleich) ...
                                             else if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
                                             else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
                                             else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
@@ -3296,10 +3318,12 @@ const getLaneText = (maneuverObj) => {
                     const actionEl = document.getElementById('nav-top-action');
                     if (actionEl) actionEl.textContent = actionText;
 
-                    // B) Meter-Anzeige (Ausblenden in Phase 1 "PRE_EXIT")
+                // B) Meter-Anzeige (Distanz bei "Halten" zeigen, bei "Auffahren" verstecken)
                     const distEl = document.getElementById('nav-top-distance');
                     if (distEl) {
-                        if (navPhase === "PRE_EXIT") {
+                        // NEU: Wir verstecken die Distanz NUR noch beim Auffahren.
+                        // "Links/Rechts halten" (PRE_EXIT) kriegt seine Distanz zurück!
+                        if (manType.includes('ENTER_MOTORWAY')) {
                             distEl.style.display = 'none'; 
                         } else {
                             distEl.style.display = 'block';
