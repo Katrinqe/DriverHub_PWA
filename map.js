@@ -3287,13 +3287,21 @@ const getLaneText = (maneuverObj) => {
                     // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (PHASE ENGINE V1.1) ===
                     // ====================================================
                     
-                   // 1. DIE WEICHE & SPUREN-LOGIK: Woher kommen die Daten?
-                    let renderManeuver = { ...currentManeuver }; // Saubere Kopie für das HUD
+                // 1. DIE WEICHE & SPUREN-LOGIK: Woher kommen die Daten?
+                    let renderManeuver = currentManeuver ? { ...currentManeuver } : null; 
                     let renderDist = distMeters;
                     let isIndependentLane = false;
 
+                    if (window.testScenarioIdx > 0) {
+                        renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
+                        renderDist = renderManeuver.mockDist;
+                    }
+
+                    // BOSS-FIX: Dieser Türsteher verhindert den Crash beim Laden!
+                    if (!renderManeuver) return; 
+
                     // A) Fahren wir gerade durch eine Spur-Zone?
-                    if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
+                    if (window.testScenarioIdx === 0 && RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
                         for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
                             const section = RouteLogic.currentLaneSections[i];
                             // Mit 4 Punkten Vorlauf scannen, damit es rechtzeitig einblendet
@@ -3301,7 +3309,7 @@ const getLaneText = (maneuverObj) => {
                                 renderManeuver.lanes = section.lanes;
                                 
                                 // B) Gehören diese Spuren zum aktuellen Manöver?
-                                const distToManeuver = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[section.endPointIndex];
+                                const distToManeuver = cumulativeDists[renderManeuver.pointIndex] - cumulativeDists[section.endPointIndex];
                                 
                                 // Wenn das Manöver noch weit weg ist (> 200m nach den Spuren), ist es unabhängig!
                                 if (distToManeuver > 200 || renderDist > 800) {
@@ -3312,11 +3320,7 @@ const getLaneText = (maneuverObj) => {
                         }
                     }
 
-                    if (window.testScenarioIdx > 0) {
-                        renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
-                        renderDist = renderManeuver.mockDist;
-                        isIndependentLane = false;
-                    } else if (isIndependentLane) {
+                    if (isIndependentLane) {
                         // C) HUD TEMPORÄR ÜBERSCHREIBEN!
                         renderManeuver.maneuver = "FOLLOW";
                         renderManeuver.signpostText = "";
