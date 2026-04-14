@@ -2501,15 +2501,18 @@ selectRouteOpt: function(index) {
             // Peters Fix: Dynamische Duration basierend auf Speed (geclampt zwischen 800ms und 3000ms)
             let baseDuration = Math.max(800, Math.min(3000, 500 + speedKmh * 10));
 
-            switch(this.currentState) {
+switch(this.currentState) {
                 case 'STOP_AND_GO':
                     targetZoom = 16.0; targetPitch = 30; baseDuration = 2000; break;
                 case 'ROUNDABOUT':
-                    targetZoom = 17.5; targetPitch = 0; baseDuration = 1500; break;
+                    // BOSS-FIX: Zoom entspannt lassen, nur Draufsicht (Pitch 0)
+                    targetZoom = 16.5; targetPitch = 0; baseDuration = 1500; break;
                 case 'HIGHWAY_EXIT':
                     targetZoom = 15.0; targetPitch = 60; baseDuration = 2000; break;
                 case 'CITY_TURN':
-                    targetZoom = 18.0; targetPitch = 20; baseDuration = 1500; break;
+                    // BOSS-FIX: Kein aggressiver Zoom mehr! 
+                    // Wir bleiben auf 16.5 (wie CRUISE_CITY) und gehen nur in die 2D-Ansicht (Pitch 0)
+                    targetZoom = 16.5; targetPitch = 0; baseDuration = 1500; break;
                 case 'CRUISE_HIGHWAY':
                     targetZoom = 14.5; targetPitch = 65; baseDuration = 3000; break;
                 case 'CRUISE_LAND':
