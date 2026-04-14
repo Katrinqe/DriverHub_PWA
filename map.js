@@ -3283,7 +3283,7 @@ const getLaneText = (maneuverObj) => {
                         scanTrafficLightsForNext3KM();
                     }
 
-                 // ====================================================
+             // ====================================================
                                 // === BOSS-FIX: HUD INTERRUPT ENGINE (SPUREN VS MANÖVER) ===
                                 // ====================================================
                                 let activeInterruptSection = null;
@@ -3342,72 +3342,65 @@ const getLaneText = (maneuverObj) => {
                                 }
                                 // ====================================================
 
-                    // === BOSS-FIX: TOMTOM LANE ADAPTER (Übersetzt TomTom auf unser HUD) ===
-                    if (renderManeuver.lanes) {
-                        renderManeuver.lanes = renderManeuver.lanes.map(lane => {
-                            // Wenn TomTom "follow" schickt (die Richtung), machen wir daraus unser "valid = true"
-                            let isValid = lane.follow ? true : false;
-                            // Wir mappen die neuen "directions" auf unsere alten "indications"
-                            let newIndications = lane.directions ? lane.directions : [];
-                            
-                            return { ...lane, valid: isValid, indications: newIndications };
-                        });
-                    }
+                                // === TOMTOM LANE ADAPTER (Jetzt auf renderManeuver anwenden!) ===
+                                if (renderManeuver.lanes) {
+                                    renderManeuver.lanes = renderManeuver.lanes.map(lane => {
+                                        let isValid = lane.follow ? true : false;
+                                        let newIndications = lane.directions ? lane.directions : [];
+                                        return { ...lane, valid: isValid, indications: newIndications };
+                                    });
+                                }
 
-                    const shortInfo = getShortInstruction(renderManeuver);
-                    const manType = renderManeuver.maneuver || '';
+                                // Wir nutzen einen neuen Namen, um den Fehler "already declared" zu verhindern!
+                                const displayShortInfo = getShortInstruction(renderManeuver);
+                                const manType = renderManeuver.maneuver || '';
 
-                    // --- 2. DIE PHASE ENGINE LOGIK ---
-                    let navPhase = "CRUISE";
-                    const isKeep = manType.includes('KEEP') || manType.includes('BIFURCATION');
-                    const isExit = manType.includes('EXIT') || manType.includes('OFF_RAMP');
-                    const isTurn = manType.includes('TURN');
+                                // --- DIE PHASE ENGINE LOGIK ---
+                                const isKeep = manType.includes('KEEP') || manType.includes('BIFURCATION');
+                                const isExit = manType.includes('EXIT') || manType.includes('OFF_RAMP');
+                                const isTurn = manType.includes('TURN');
 
-                    // ERKENNUNG: Ist es eine 2-Phasen-Abfahrt? (Kombi-Spur vorhanden)
-                    let isAbfahrt = false;
-                    if (isExit && renderManeuver.lanes) {
-                        const hasComboLane = renderManeuver.lanes.some(l => {
-                            if (!l.valid || !l.indications) return false;
-                            const inds = l.indications.map(i => i.toLowerCase());
-                            // Wenn eine Spur "Geradeaus" UND "Rechts/Links" erlaubt, sind wir auf einer Vor-Abfahrt!
-                            return inds.includes('straight') && inds.some(i => i.includes('right') || i.includes('left'));
-                        });
-                        if (hasComboLane) isAbfahrt = true;
-                    }
+                                // ERKENNUNG: Ist es eine 2-Phasen-Abfahrt? (Kombi-Spur vorhanden)
+                                let isAbfahrt = false;
+                                if (isExit && renderManeuver.lanes) {
+                                    const hasComboLane = renderManeuver.lanes.some(l => {
+                                        if (!l.valid || !l.indications) return false;
+                                        const inds = l.indications.map(i => i.toLowerCase());
+                                        return inds.includes('straight') && inds.some(i => i.includes('right') || i.includes('left'));
+                                    });
+                                    if (hasComboLane) isAbfahrt = true;
+                                }
 
-                    // Phase zuweisen
-                    if (isKeep) navPhase = "PRE_EXIT"; 
-                    else if (isExit) navPhase = "EXIT";           
-                    else if (isTurn) navPhase = "TURN";           
+                                // Phase zuweisen (wurde oben schon deklariert)
+                                if (isKeep) navPhase = "PRE_EXIT"; 
+                                else if (isExit) navPhase = "EXIT";            
+                                else if (isTurn) navPhase = "TURN";            
 
-                    // A) Hauptaktion Text
-                    let actionText = shortInfo.action;
-                    // WUNSCH: Wenn es Phase 1 einer Ausfahrt ist, benennen wir es in "Halten" um!
-                    if (isAbfahrt) {
-                        actionText = manType.includes('LEFT') ? "Links halten" : "Rechts halten";
-                    }
+                                // A) Hauptaktion Text
+                                let actionText = displayShortInfo.action;
+                                // WUNSCH: Wenn es Phase 1 einer Ausfahrt ist, benennen wir es in "Halten" um!
+                                if (isAbfahrt) {
+                                    actionText = manType.includes('LEFT') ? "Links halten" : "Rechts halten";
+                                }
 
-                    const actionEl = document.getElementById('nav-top-action');
-                    if (actionEl) actionEl.textContent = actionText;
+                                const actionEl = document.getElementById('nav-top-action');
+                                if (actionEl) actionEl.textContent = actionText;
 
-                // B) Meter-Anzeige (Distanz bei "Halten" zeigen, bei "Auffahren" verstecken)
-                    const distEl = document.getElementById('nav-top-distance');
-                    if (distEl) {
-                        // NEU: Wir verstecken die Distanz NUR noch beim Auffahren.
-                        // "Links/Rechts halten" (PRE_EXIT) kriegt seine Distanz zurück!
-                        if (manType.includes('ENTER_MOTORWAY')) {
-                            distEl.style.display = 'none'; 
-                        } else {
-                            distEl.style.display = 'block';
-                            let displayDist = Math.max(0, Math.round(renderDist / 10) * 10);
-                            if (displayDist >= 1000) {
-                                distEl.textContent = `in ${(displayDist / 1000).toFixed(1).replace('.', ',')} km`;
-                            } else {
-                                distEl.textContent = `in ${displayDist} m`;
-                            }
-                        }
-                    }
-
+                                // B) Meter-Anzeige (Distanz bei "Halten" zeigen, bei "Auffahren" verstecken)
+                                const distEl = document.getElementById('nav-top-distance');
+                                if (distEl) {
+                                    if (manType.includes('ENTER_MOTORWAY') || navPhase === "PRE_EXIT") {
+                                        distEl.style.display = 'none'; 
+                                    } else {
+                                        distEl.style.display = 'block';
+                                        let displayDist = Math.max(0, Math.round(renderDist / 10) * 10);
+                                        if (displayDist >= 1000) {
+                                            distEl.textContent = `in ${(displayDist / 1000).toFixed(1).replace('.', ',')} km`;
+                                        } else {
+                                            distEl.textContent = `in ${displayDist} m`;
+                                        }
+                                    }
+                                }
        // C) Das Haupt-Icon (Dynamische Rotation)
                     const iconEl = document.getElementById('nav-top-icon');
                     if (iconEl) {
