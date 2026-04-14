@@ -2647,21 +2647,46 @@ const getShortInstruction = (maneuverObj) => {
                 console.warn(`🚨 [FLIGHT RECORDER] Unbekanntes Manöver erkannt: "${man}"`, maneuverObj);
             }
 
+// ====================================================
+            // === BOSS-FIX: SINGLE SOURCE OF TRUTH (VOICE = HUD) ===
+            // ====================================================
             let streetText = maneuverObj.street || "";
-            if (!streetText && maneuverObj.roadNumbers && maneuverObj.roadNumbers.length > 0) {
-                streetText = maneuverObj.roadNumbers[0];
-            }
-
+            let rn = (maneuverObj.roadNumbers && maneuverObj.roadNumbers.length > 0) ? maneuverObj.roadNumbers[0] : "";
             let directionText = maneuverObj.signpostText || maneuverObj.destination || "";
 
+            let voiceStreet = "";
+            
+            // Trick für Google TTS: "A73" zu "A 73" machen, damit die Stimme flüssig spricht!
+            let spokenRn = rn ? rn.replace(/([A-Za-z]+)(\d+)/, "$1 $2") : "";
+
             if (directionText) {
-                if (streetText) streetText = `auf ${streetText} Richtung ${directionText}`;
-                else streetText = `in Richtung ${directionText}`;
+                // 1. SCHILD SCHLÄGT ALLES (Exakt wie die HUD-Logik!)
+                if (spokenRn) {
+                    // HUD zeigt: [A73] Richtung Fürth -> Stimme sagt: "auf A 73 Richtung Fürth"
+                    voiceStreet = `auf ${spokenRn} Richtung ${directionText}`;
+                } else {
+                    voiceStreet = `in Richtung ${directionText}`;
+                }
             } else {
-                if (streetText) streetText = `auf ${streetText}`;
+                // 2. KEIN SCHILD (Nur normale Straße)
+                // Gleicher Putz-Algorithmus wie im HUD: Doppelte "B16" entfernen
+                if (rn && streetText.includes(rn)) {
+                    streetText = streetText.replace(rn, '').trim();
+                    if (streetText.startsWith('-') || streetText.startsWith(',')) {
+                        streetText = streetText.substring(1).trim();
+                    }
+                }
+                
+                if (spokenRn && streetText) {
+                    voiceStreet = `auf ${spokenRn} ${streetText}`;
+                } else if (spokenRn) {
+                    voiceStreet = `auf ${spokenRn}`;
+                } else if (streetText) {
+                    voiceStreet = `auf ${streetText}`;
+                }
             }
             
-            return { action: actionText, street: streetText };
+            return { action: actionText, street: voiceStreet };
         };
 
             const formatDist = (m) => {
