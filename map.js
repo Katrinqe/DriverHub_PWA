@@ -3085,78 +3085,63 @@ const getLaneText = (maneuverObj) => {
                                         currentManeuver.signpostText = nextMan.signpostText;
                                     }
                                 }
-                         // ====================================================
-                                // === BOSS-FIX: HUD INTERRUPT ENGINE (SPUREN VS MANÖVER) ===
-                                // ====================================================
-                                let activeInterruptSection = null;
-                                let isLaneInterruptActive = false;
+                                // ----------------------------------------------------
 
-                                // 1. Fahren wir gerade durch eine Spur-Zone?
-                                if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
-                                    for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
-                                        const section = RouteLogic.currentLaneSections[i];
-                                        // Wir scannen mit 4 Punkten Vorlauf
-                                        if (closestIdx >= section.startPointIndex - 4 && closestIdx <= section.endPointIndex) {
-                                            activeInterruptSection = section;
-                                            break;
-                                        }
-                                    }
-                                }
+                                // ==========================================
+                                // === BOSS-FIX: THE LANE MATCHER ===
+                                // ==========================================
+                                // Wir prüfen, ob es für unseren aktuellen Punkt Spuren gibt!
+                                if (RouteLogic.currentLaneGuidance && RouteLogic.currentLaneGuidance.length > 0) {
+                                    // 1. Sicherheitshalber das lanes-Array des aktuellen Manövers löschen, 
+                                    // um Geisterspuren aus vorherigen Manövern zu vermeiden.
+                                    currentManeuver.lanes = null; 
 
-                                if (activeInterruptSection) {
-                                    // 2. Gehören diese Spuren zum aktuellen Manöver?
-                                    // Wir prüfen, ob der Manöver-Punkt nahe am Ende der Spur-Zone liegt.
-                                    const distFromZoneEndToManeuver = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[activeInterruptSection.endPointIndex];
-                                    
-                                    // Wenn das Manöver noch ewig weit weg ist (> 150m nach der Spur-Zone), 
-                                    // ist es ein UNABHÄNGIGES Spur-Event!
-                                    if (distFromZoneEndToManeuver > 150 || distMeters > 800) {
-                                        isLaneInterruptActive = true;
-                                    }
-                                }
+                                    // 2. Suchen wir den passenden Spur-Abschnitt für unseren aktuellen Standort (closestIdx)
+                                    for (let i = 0; i < RouteLogic.currentLaneGuidance.length; i++) {
+                                        const guidanceObj = RouteLogic.currentLaneGuidance[i];
+                                        
+                                        if (guidanceObj.lanes && guidanceObj.lanes.length > 0) {
+                                            // TomTom verpackt die Start/Endpunkte in laneSections (meist nur ein Array-Element)
+                                            // Optional: Wir nutzen einen kleinen "Vorlauf" (z.B. + 2 Punkte), damit die Spuren 
+                                            // minimal früher im HUD aufpoppen.
+                                            const section = guidanceObj.laneSections?.[0];
+                                            const lookAheadIdx = closestIdx + 2; 
 
-                                // 3. Das renderManeuver anpassen (Die Weiche für das HUD)
-                                let renderManeuver = { ...currentManeuver }; // Saubere Kopie
-                                let renderDist = distMeters;
+                                            if (section && lookAheadIdx >= section.startPointIndex && closestIdx <= section.endPointIndex) {
+                                                // MATCH! Wir injizieren die Spuren aus dem Kofferraum (laneGuidance) 
+                                                // in das Handschuhfach (currentManeuver), wo unser HUD-Code sie erwartet!
+                                                currentManeuver.lanes = guidanceObj.lanes;
+                                                break; // Sobald wir einen Match haben, beenden wir die Suche
+                                            }
+                                        }
+                                    }
+                                }
+                                // ==========================================
 
-                                if (window.testScenarioIdx > 0) {
-                                    renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
-                                    renderDist = renderManeuver.mockDist;
-                                    isLaneInterruptActive = false; // Im Simulator ausmachen
-                                } else if (isLaneInterruptActive && activeInterruptSection) {
-                                    // === DER INTERRUPT LÖST AUS ===
-                                    // Wir überschreiben das aktuelle HUD-Paket mit einem Dummy-Manöver
-                                    renderManeuver.maneuver = "FOLLOW";
-                                    renderManeuver.street = "Spur halten";
-                                    // action wird später über shortInfo gezogen!
-                                    renderManeuver.lanes = activeInterruptSection.lanes;
-                                    // Kein Schild im Interrupt!
-                                    renderManeuver.signpostText = ""; 
-                                    renderManeuver.destination = "";
-                                    // Distanz killen, damit das HUD beruhigt wird
-                                    renderDist = 0; 
-                                } else if (activeInterruptSection) {
-                                    // === DIE SPUREN GEHÖREN ZUM MANÖVER ===
-                                    renderManeuver.lanes = activeInterruptSection.lanes;
-                                } else {
-                                    renderManeuver.lanes = null;
-                                }
+                                // ==========================================
+                                // === BOSS-FIX: DER ECHTE LANE MATCHER ===
+                                // ==========================================
+                         // ==========================================
+                                // === BOSS-FIX: DER ECHTE LANE MATCHER ===
+                                // ==========================================
+                                currentManeuver.lanes = null;
+                                if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
+                                    // Wir scannen alle Spur-Abschnitte der Route ab
+                                    for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
+                                        const section = RouteLogic.currentLaneSections[i];
+                                        // Wenn das Auto (closestIdx) sich im Bereich der Spuren befindet 
+                                        // (mit 3 GPS-Punkten Vorlauf, damit sie frühzeitig aufpoppen!)
+                                        if (closestIdx >= section.startPointIndex - 3 && closestIdx <= section.endPointIndex) {
+                                            currentManeuver.lanes = section.lanes;
+                                            break;
+                                        }
+                                    }
+                                }
+                                // ==========================================
 
-                                // === TOMTOM LANE ADAPTER (Jetzt auf renderManeuver anwenden!) ===
-                                if (renderManeuver.lanes) {
-                                    renderManeuver.lanes = renderManeuver.lanes.map(lane => {
-                                        let isValid = lane.follow ? true : false;
-                                        let newIndications = lane.directions ? lane.directions : [];
-                                        return { ...lane, valid: isValid, indications: newIndications };
-                                    });
-                                }
-
-                                // Ab hier arbeiten wir NUR NOCH mit "renderManeuver" und "renderDist" für das UI!
-                                const shortInfo = getShortInstruction(renderManeuver);
-                                const laneText = getLaneText(renderManeuver);
-                                const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
-
-                            
+                                const shortInfo = getShortInstruction(currentManeuver);
+                                const laneText = getLaneText(currentManeuver);
+                                const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
                                 
                                 // 1. Deine alte, funktionierende UI-Sicherheit
                                 let actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
@@ -3352,37 +3337,32 @@ const getLaneText = (maneuverObj) => {
                     else if (isTurn) navPhase = "TURN";           
 
                     // A) Hauptaktion Text
-                  // A) Hauptaktion Text
-                                let actionText = shortInfo.action;
-                                // WUNSCH: Wenn es Phase 1 einer Ausfahrt ist, benennen wir es in "Halten" um!
-                                if (isAbfahrt) {
-                                    actionText = manType.includes('LEFT') ? "Links halten" : "Rechts halten";
-                                }
-                                // NEU: Wenn der Interrupt aktiv ist, hart den Titel setzen!
-                                if (isLaneInterruptActive) {
-                                    actionText = "Fahrstreifen wählen";
-                                }
+                    let actionText = shortInfo.action;
+                    // WUNSCH: Wenn es Phase 1 einer Ausfahrt ist, benennen wir es in "Halten" um!
+                    if (isAbfahrt) {
+                        actionText = manType.includes('LEFT') ? "Links halten" : "Rechts halten";
+                    }
 
                     const actionEl = document.getElementById('nav-top-action');
                     if (actionEl) actionEl.textContent = actionText;
 
                 // B) Meter-Anzeige (Distanz bei "Halten" zeigen, bei "Auffahren" verstecken)
-                 // B) Meter-Anzeige (Distanz bei "Halten" zeigen, bei "Auffahren" verstecken)
-                                const distEl = document.getElementById('nav-top-distance');
-                                if (distEl) {
-                                    // Im Interrupt-Modus ODER bei Auffahrten verstecken wir die Distanz!
-                                    if (manType.includes('ENTER_MOTORWAY') || navPhase === "PRE_EXIT" || isLaneInterruptActive) {
-                                        distEl.style.display = 'none'; 
-                                    } else {
-                                        distEl.style.display = 'block';
-                                        let displayDist = Math.max(0, Math.round(renderDist / 10) * 10); // HIER MUSS renderDist STEHEN!
-                                        if (displayDist >= 1000) {
-                                            distEl.textContent = `in ${(displayDist / 1000).toFixed(1).replace('.', ',')} km`;
-                                        } else {
-                                            distEl.textContent = `in ${displayDist} m`;
-                                        }
-                                    }
-                                }
+                    const distEl = document.getElementById('nav-top-distance');
+                    if (distEl) {
+                        // NEU: Wir verstecken die Distanz NUR noch beim Auffahren.
+                        // "Links/Rechts halten" (PRE_EXIT) kriegt seine Distanz zurück!
+                        if (manType.includes('ENTER_MOTORWAY')) {
+                            distEl.style.display = 'none'; 
+                        } else {
+                            distEl.style.display = 'block';
+                            let displayDist = Math.max(0, Math.round(renderDist / 10) * 10);
+                            if (displayDist >= 1000) {
+                                distEl.textContent = `in ${(displayDist / 1000).toFixed(1).replace('.', ',')} km`;
+                            } else {
+                                distEl.textContent = `in ${displayDist} m`;
+                            }
+                        }
+                    }
 
        // C) Das Haupt-Icon (Dynamische Rotation)
                     const iconEl = document.getElementById('nav-top-icon');
