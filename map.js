@@ -2755,84 +2755,6 @@ const getLaneText = (maneuverObj) => {
                 
                const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
 
-                // ====================================================
-                                // === BOSS-FIX: HUD INTERRUPT ENGINE (SPUREN VS MANÖVER) ===
-                                // ====================================================
-                                let activeInterruptSection = null;
-                                let isLaneInterruptActive = false;
-
-                                // 1. Fahren wir gerade durch eine Spur-Zone?
-                                if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
-                                    for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
-                                        const section = RouteLogic.currentLaneSections[i];
-                                        // Wir scannen mit 4 Punkten Vorlauf
-                                        if (closestIdx >= section.startPointIndex - 4 && closestIdx <= section.endPointIndex) {
-                                            activeInterruptSection = section;
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if (activeInterruptSection) {
-                                    // 2. Gehören diese Spuren zum aktuellen Manöver?
-                                    // Wir prüfen, ob der Manöver-Punkt nahe am Ende der Spur-Zone liegt.
-                                    // (TomTom beendet die Spur-Zone oft exakt auf dem Manöver-Punkt)
-                                    const distFromZoneEndToManeuver = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[activeInterruptSection.endPointIndex];
-                                    
-                                    // Wenn das Manöver noch ewig weit weg ist (> 150m nach der Spur-Zone), 
-                                    // ist es ein UNABHÄNGIGES Spur-Event!
-                                    if (distFromZoneEndToManeuver > 150 || distMeters > 800) {
-                                        isLaneInterruptActive = true;
-                                    }
-                                }
-
-                                // 3. Das renderManeuver anpassen (Die Weiche für das HUD)
-                                let renderManeuver = currentManeuver; 
-                                let renderDist = distMeters;
-
-                                if (window.testScenarioIdx > 0) {
-                                    renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
-                                    renderDist = renderManeuver.mockDist;
-                                    isLaneInterruptActive = false; // Im Simulator ausmachen
-                                } else if (isLaneInterruptActive && activeInterruptSection) {
-                                    // === DER INTERRUPT LÖST AUS ===
-                                    // Wir erzeugen on-the-fly ein FAKE-Manöver für das HUD!
-                                    renderManeuver = {
-                                        maneuver: "FOLLOW", // Damit kein blöder Pfeil kommt
-                                        street: "Spur halten",
-                                        action: "Fahrstreifen wählen", // Haupt-Text im HUD
-                                        lanes: activeInterruptSection.lanes
-                                    };
-                                    // Wir zeigen keine Meter-Distanz für den Interrupt an, 
-                                    // das lenkt nur vom nächsten echten Manöver ab.
-                                    renderDist = 0; 
-                                    navPhase = "PRE_EXIT"; // Versteckt die Distanzanzeige im HUD
-                                } else if (activeInterruptSection) {
-                                    // === DIE SPUREN GEHÖREN ZUM MANÖVER ===
-                                    // Wir packen die Spuren sauber ins ECHTE Manöver
-                                    renderManeuver = { ...currentManeuver, lanes: activeInterruptSection.lanes };
-                                }
-                                // ====================================================
-
-                                // === TOMTOM LANE ADAPTER (Jetzt auf renderManeuver anwenden!) ===
-                             // === TOMTOM LANE ADAPTER (Jetzt auf renderManeuver anwenden!) ===
-                     // === TOMTOM LANE ADAPTER (Jetzt auf renderManeuver anwenden!) ===
-                                if (renderManeuver.lanes) {
-                                    renderManeuver.lanes = renderManeuver.lanes.map(lane => {
-                                        let isValid = lane.follow ? true : false;
-                                        let newIndications = lane.directions ? lane.directions : [];
-                                        return { ...lane, valid: isValid, indications: newIndications };
-                                    });
-                                }
-
-                                // BOSS-FIX: Wir deklarieren shortInfo NICHT neu (kein 'const'!), 
-                                // sondern rufen einfach die bestehende Variable auf, die weiter oben schon existiert.
-                                shortInfo = getShortInstruction(renderManeuver);
-                                const manType = renderManeuver.maneuver || '';
-
-                                // --- DIE PHASE ENGINE LOGIK ---
-                                // ... DEIN BESTEHENDER CODE ...
-
                 // === BOSS-FIX: SONDERREGEL FÜR AUFFAHRTEN BEIM START ===
                 const isAuffahren = firstMan.maneuver && firstMan.maneuver.includes('ENTER_MOTORWAY');
 
@@ -3388,8 +3310,8 @@ const getLaneText = (maneuverObj) => {
                         });
                     }
 
-               const renderShortInfo = getShortInstruction(renderManeuver);
-                                const manType = renderManeuver.maneuver || '';
+                    const shortInfo = getShortInstruction(renderManeuver);
+                    const manType = renderManeuver.maneuver || '';
 
                     // --- 2. DIE PHASE ENGINE LOGIK ---
                     let navPhase = "CRUISE";
@@ -3415,8 +3337,7 @@ const getLaneText = (maneuverObj) => {
                     else if (isTurn) navPhase = "TURN";           
 
                     // A) Hauptaktion Text
-    // A) Hauptaktion Text
-                                let actionText = renderShortInfo.action;
+                    let actionText = shortInfo.action;
                     // WUNSCH: Wenn es Phase 1 einer Ausfahrt ist, benennen wir es in "Halten" um!
                     if (isAbfahrt) {
                         actionText = manType.includes('LEFT') ? "Links halten" : "Rechts halten";
