@@ -3364,7 +3364,7 @@ const getLaneText = (maneuverObj) => {
                             if (textToSpeak) triggerGoogleVoice(textToSpeak);
                         }
                     }
-                }
+                
 
                         // Kamera aktualisieren (Live Daten)
                         const safeDist = (typeof distMeters !== 'undefined' && distMeters !== null) ? distMeters : 9999;
@@ -3379,6 +3379,8 @@ const getLaneText = (maneuverObj) => {
                             safeManeuver
                         );
                     }
+
+                                                                 
 // BOSS-FEATURE: Live Ampel-Scanner (Drosselt sich selbst auf 15s)
                     if (window.isNavigating && speedKmh > 5) {
                         scanTrafficLightsForNext3KM();
