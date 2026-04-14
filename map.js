@@ -3283,20 +3283,64 @@ const getLaneText = (maneuverObj) => {
                         scanTrafficLightsForNext3KM();
                     }
 
-                   // ====================================================
-                    // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (PHASE ENGINE V1.1) ===
-                    // ====================================================
-                    
-                    // 1. DIE WEICHE: Woher kommen die Daten?
-                    let renderManeuver = currentManeuver; 
-                    let renderDist = distMeters;
+                 // ====================================================
+                                // === BOSS-FIX: HUD INTERRUPT ENGINE (SPUREN VS MANÖVER) ===
+                                // ====================================================
+                                let activeInterruptSection = null;
+                                let isLaneInterruptActive = false;
 
-                    if (window.testScenarioIdx > 0) {
-                        renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
-                        renderDist = renderManeuver.mockDist;
-                    }
+                                // 1. Fahren wir gerade durch eine Spur-Zone?
+                                if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
+                                    for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
+                                        const section = RouteLogic.currentLaneSections[i];
+                                        // Wir scannen mit 4 Punkten Vorlauf
+                                        if (closestIdx >= section.startPointIndex - 4 && closestIdx <= section.endPointIndex) {
+                                            activeInterruptSection = section;
+                                            break;
+                                        }
+                                    }
+                                }
 
-                    if (!renderManeuver) return; 
+                                if (activeInterruptSection) {
+                                    // 2. Gehören diese Spuren zum aktuellen Manöver?
+                                    // Wir prüfen, ob der Manöver-Punkt nahe am Ende der Spur-Zone liegt.
+                                    const distFromZoneEndToManeuver = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[activeInterruptSection.endPointIndex];
+                                    
+                                    // Wenn das Manöver noch ewig weit weg ist (> 150m nach der Spur-Zone), 
+                                    // ist es ein UNABHÄNGIGES Spur-Event!
+                                    if (distFromZoneEndToManeuver > 150 || distMeters > 800) {
+                                        isLaneInterruptActive = true;
+                                    }
+                                }
+
+                                // 3. Das renderManeuver anpassen (Die Weiche für das HUD)
+                                let renderManeuver = currentManeuver; 
+                                let renderDist = distMeters;
+                                let navPhase = "CRUISE"; // Hier schon mal vorbereiten, damit es unten überschrieben werden kann
+
+                                if (window.testScenarioIdx > 0) {
+                                    renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
+                                    renderDist = renderManeuver.mockDist;
+                                    isLaneInterruptActive = false; // Im Simulator ausmachen
+                                } else if (isLaneInterruptActive && activeInterruptSection) {
+                                    // === DER INTERRUPT LÖST AUS ===
+                                    // Wir erzeugen on-the-fly ein FAKE-Manöver für das HUD!
+                                    renderManeuver = {
+                                        maneuver: "FOLLOW", // Damit kein blöder Pfeil kommt
+                                        street: "Spur halten",
+                                        action: "Fahrstreifen wählen", // Haupt-Text im HUD
+                                        lanes: activeInterruptSection.lanes
+                                    };
+                                    // Wir zeigen keine Meter-Distanz für den Interrupt an, 
+                                    // das lenkt nur vom nächsten echten Manöver ab.
+                                    renderDist = 0; 
+                                    navPhase = "PRE_EXIT"; // Versteckt die Distanzanzeige im HUD
+                                } else if (activeInterruptSection) {
+                                    // === DIE SPUREN GEHÖREN ZUM MANÖVER ===
+                                    // Wir packen die Spuren sauber ins ECHTE Manöver
+                                    renderManeuver = { ...currentManeuver, lanes: activeInterruptSection.lanes };
+                                }
+                                // ====================================================
 
                     // === BOSS-FIX: TOMTOM LANE ADAPTER (Übersetzt TomTom auf unser HUD) ===
                     if (renderManeuver.lanes) {
