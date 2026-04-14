@@ -2815,6 +2815,8 @@ const getLaneText = (maneuverObj) => {
                                 // ====================================================
 
                                 // === TOMTOM LANE ADAPTER (Jetzt auf renderManeuver anwenden!) ===
+                             // === TOMTOM LANE ADAPTER (Jetzt auf renderManeuver anwenden!) ===
+                     // === TOMTOM LANE ADAPTER (Jetzt auf renderManeuver anwenden!) ===
                                 if (renderManeuver.lanes) {
                                     renderManeuver.lanes = renderManeuver.lanes.map(lane => {
                                         let isValid = lane.follow ? true : false;
@@ -2823,7 +2825,9 @@ const getLaneText = (maneuverObj) => {
                                     });
                                 }
 
-                                const shortInfo = getShortInstruction(renderManeuver);
+                                // BOSS-FIX: Wir deklarieren shortInfo NICHT neu (kein 'const'!), 
+                                // sondern rufen einfach die bestehende Variable auf, die weiter oben schon existiert.
+                                shortInfo = getShortInstruction(renderManeuver);
                                 const manType = renderManeuver.maneuver || '';
 
                                 // --- DIE PHASE ENGINE LOGIK ---
@@ -3384,8 +3388,8 @@ const getLaneText = (maneuverObj) => {
                         });
                     }
 
-                    const shortInfo = getShortInstruction(renderManeuver);
-                    const manType = renderManeuver.maneuver || '';
+               const renderShortInfo = getShortInstruction(renderManeuver);
+                                const manType = renderManeuver.maneuver || '';
 
                     // --- 2. DIE PHASE ENGINE LOGIK ---
                     let navPhase = "CRUISE";
@@ -3411,7 +3415,8 @@ const getLaneText = (maneuverObj) => {
                     else if (isTurn) navPhase = "TURN";           
 
                     // A) Hauptaktion Text
-                    let actionText = shortInfo.action;
+    // A) Hauptaktion Text
+                                let actionText = renderShortInfo.action;
                     // WUNSCH: Wenn es Phase 1 einer Ausfahrt ist, benennen wir es in "Halten" um!
                     if (isAbfahrt) {
                         actionText = manType.includes('LEFT') ? "Links halten" : "Rechts halten";
