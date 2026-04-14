@@ -2730,7 +2730,7 @@ const getLaneText = (maneuverObj) => {
                 if (count === 1) return `halten Sie sich auf der ${dirWord} Spur`;
                 return `nutzen Sie die ${countStr} ${dirWord} Spuren`;
             };
-            // 6. DIE PERFEKTE START-ANSAGE (Bulletproof Version)
+           // 6. DIE PERFEKTE START-ANSAGE (Bulletproof Version)
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
             
@@ -2743,31 +2743,31 @@ const getLaneText = (maneuverObj) => {
             }
             RouteLogic.currentInstructionIndex = startIdx;
 
-           const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
+            const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
             if (startIdx < instructions.length && cumulativeDists) {
                 const firstMan = instructions[startIdx];
                 let distMeters = cumulativeDists[firstMan.pointIndex] - cumulativeDists[0];
                 if (distMeters < 0) distMeters = 0;
 
-                const shortInfo = getShortInstruction(firstMan);
-                const laneText = getLaneText(firstMan);
-                const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
+                // BOSS-FIX: Wir nutzen hier let statt const!
+                let firstShortInfo = getShortInstruction(firstMan);
+                let firstLaneText = getLaneText(firstMan);
+                let firstBaseActionStr = `${firstShortInfo.action} ${firstShortInfo.street}`.trim();
                 
-               const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
+                let firstActionStr = (distMeters <= 600 && firstLaneText) ? `${firstBaseActionStr}, ${firstLaneText}` : firstBaseActionStr;
 
                 // === BOSS-FIX: SONDERREGEL FÜR AUFFAHRTEN BEIM START ===
                 const isAuffahren = firstMan.maneuver && firstMan.maneuver.includes('ENTER_MOTORWAY');
 
                 let firstInstructionText = "";
                 if (isAuffahren) {
-                    // Kein Gelaber, keine Distanz. Einfach: "Auffahren auf A8."
-                    firstInstructionText = actionStr + ".";
+                    firstInstructionText = firstActionStr + ".";
                 } else if (distMeters > 5000) {
                     firstInstructionText = `Folgen Sie der Route für ${Math.round(distMeters/1000)} Kilometer.`;
                 } else if (distMeters < 70) {
-                    firstInstructionText = actionStr; 
+                    firstInstructionText = firstActionStr; 
                 } else {
-                    firstInstructionText = `In ${formatDist(distMeters)} ${actionStr}.`;
+                    firstInstructionText = `In ${formatDist(distMeters)} ${firstActionStr}.`;
                 }
 
                 welcomeSpeech += " " + firstInstructionText;
@@ -3033,237 +3033,338 @@ const getLaneText = (maneuverObj) => {
                             if (currIdx < instructions.length) {
                                 currentManeuver = instructions[currIdx];
                                 
-                          // ====================================================
-                                // === BOSS-FIX: DIE PERFEKTE ASPHALT-DISTANZ ===
-                                // ====================================================
-                                let isPassed = closestIdx >= currentManeuver.pointIndex; 
-                                
-                                // Wir nutzen ausschließlich die echte TomTom-Kurvenlänge!
-                                // Keine Luftlinie, kein Vektor-Zuschlag. Nur Zielpunkt minus aktueller Punkt.
+                       if (currIdx < instructions.length) {
+                                currentManeuver = instructions[currIdx];
                                 distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
+                                if (distMeters < 0) distMeters = 0;
                                 
-                                if (distMeters < 0 || isPassed) distMeters = 0;
-                                // ====================================================
-     
+                                window.voiceBlockUntil = Date.now() + 5000;
+                                RouteLogic.forceFirstInstruction = false;
+                                if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
+                                window.startVoiceTimeout = setTimeout(() => {
+                                    RouteLogic.forceFirstInstruction = true;
+                                }, 3500);
+                            }
+                        }
 
-                                if (isPassed || distMeters <= 35) {
-                                    RouteLogic.currentInstructionIndex++;
-                                    currIdx = RouteLogic.currentInstructionIndex;
-                                    
-                                    while (currIdx < instructions.length && instructions[currIdx].maneuver === 'DEPART') {
-                                        RouteLogic.currentInstructionIndex++;
-                                        currIdx = RouteLogic.currentInstructionIndex;
-                                    }
+                        // ====================================================
+                        // === BOSS-FIX: HUD INTERRUPT ENGINE (SPUREN VS MANÖVER) ===
+                        // ====================================================
+                        let activeInterruptSection = null;
+                        let isLaneInterruptActive = false;
 
-                                    if (currIdx < instructions.length) {
-                                        currentManeuver = instructions[currIdx];
-                                        distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
-                                        if (distMeters < 0) distMeters = 0;
-                                        
-                                        window.voiceBlockUntil = Date.now() + 5000;
-                                        RouteLogic.forceFirstInstruction = false;
-                                        if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
-                                        window.startVoiceTimeout = setTimeout(() => {
-                                            RouteLogic.forceFirstInstruction = true;
-                                        }, 3500);
-                                    }
-                                }
-
-           // ================// ==========================================
-                                // === BOSS-FIX: LOOK-AHEAD VOICE ENGINE (SHADOW MODE) ===
-                                // ==========================================
-
-                                // --- NEU: PROXIMITY SIGNPOST FILTER (Schilderklau) ---
-                                let peekSchild = currIdx + 1;
-                                while (peekSchild < instructions.length && instructions[peekSchild].maneuver === 'DEPART') peekSchild++;
-                                
-                                if (peekSchild < instructions.length) {
-                                    const nextMan = instructions[peekSchild];
-                                    const distToNext = cumulativeDists[nextMan.pointIndex] - cumulativeDists[currentManeuver.pointIndex];
-                                    
-                                    if (distToNext <= 250 && nextMan.signpostText) {
-                                        currentManeuver.signpostText = nextMan.signpostText;
-                                    }
-                                }
-                                // ----------------------------------------------------
-
-                                // ==========================================
-                                // === BOSS-FIX: THE LANE MATCHER ===
-                                // ==========================================
-                                // Wir prüfen, ob es für unseren aktuellen Punkt Spuren gibt!
-                                if (RouteLogic.currentLaneGuidance && RouteLogic.currentLaneGuidance.length > 0) {
-                                    // 1. Sicherheitshalber das lanes-Array des aktuellen Manövers löschen, 
-                                    // um Geisterspuren aus vorherigen Manövern zu vermeiden.
-                                    currentManeuver.lanes = null; 
-
-                                    // 2. Suchen wir den passenden Spur-Abschnitt für unseren aktuellen Standort (closestIdx)
-                                    for (let i = 0; i < RouteLogic.currentLaneGuidance.length; i++) {
-                                        const guidanceObj = RouteLogic.currentLaneGuidance[i];
-                                        
-                                        if (guidanceObj.lanes && guidanceObj.lanes.length > 0) {
-                                            // TomTom verpackt die Start/Endpunkte in laneSections (meist nur ein Array-Element)
-                                            // Optional: Wir nutzen einen kleinen "Vorlauf" (z.B. + 2 Punkte), damit die Spuren 
-                                            // minimal früher im HUD aufpoppen.
-                                            const section = guidanceObj.laneSections?.[0];
-                                            const lookAheadIdx = closestIdx + 2; 
-
-                                            if (section && lookAheadIdx >= section.startPointIndex && closestIdx <= section.endPointIndex) {
-                                                // MATCH! Wir injizieren die Spuren aus dem Kofferraum (laneGuidance) 
-                                                // in das Handschuhfach (currentManeuver), wo unser HUD-Code sie erwartet!
-                                                currentManeuver.lanes = guidanceObj.lanes;
-                                                break; // Sobald wir einen Match haben, beenden wir die Suche
-                                            }
-                                        }
-                                    }
-                                }
-                                // ==========================================
-
-                                // ==========================================
-                                // === BOSS-FIX: DER ECHTE LANE MATCHER ===
-                                // ==========================================
-                         // ==========================================
-                                // === BOSS-FIX: DER ECHTE LANE MATCHER ===
-                                // ==========================================
-                                currentManeuver.lanes = null;
-                                if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
-                                    // Wir scannen alle Spur-Abschnitte der Route ab
-                                    for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
-                                        const section = RouteLogic.currentLaneSections[i];
-                                        // Wenn das Auto (closestIdx) sich im Bereich der Spuren befindet 
-                                        // (mit 3 GPS-Punkten Vorlauf, damit sie frühzeitig aufpoppen!)
-                                        if (closestIdx >= section.startPointIndex - 3 && closestIdx <= section.endPointIndex) {
-                                            currentManeuver.lanes = section.lanes;
-                                            break;
-                                        }
-                                    }
-                                }
-                                // ==========================================
-
-                                const shortInfo = getShortInstruction(currentManeuver);
-                                const laneText = getLaneText(currentManeuver);
-                                const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
-                                
-                                // 1. Deine alte, funktionierende UI-Sicherheit
-                                let actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
-
-                                // 2. Die NEUE Situation Engine (Rechnet im Hintergrund)
-                                const upcoming = getUpcomingManeuvers(instructions, currIdx, 3);
-                                const situation = detectSituation(currentManeuver, upcoming, cumulativeDists);
-                                
-                                let smartActionStr = buildInstruction(currentManeuver, upcoming, situation, shortInfo);
-                                if (distMeters <= 600 && laneText) {
-                                    smartActionStr += `, ${laneText}`; // Spuren anhängen
-                                }
-
-                                // 3. Cognitive Load Check (Zu viele Infos auf der Autobahn killen!)
-                                if (distMeters < 100 || speedKmh > 100) {
-                                    smartActionStr = shortInfo.action; // Simpler Modus
-                                }
-
-                                // 4. Fallback für dein aktuelles HUD (Damit nichts kaputt geht!)
-                                if (situation === 'PRE_EXIT_SEQUENCE' && upcoming[0]) {
-                                    const nextShortInfo = getShortInstruction(upcoming[0]);
-                                    actionStr = `${actionStr}, um im Anschluss die ${nextShortInfo.action} ${nextShortInfo.street} zu nehmen`;
-                                }
-
-                                // 🔥 DAS IST DER FLIGHT-RECORDER 🔥
-                                // Er vergleicht lautlos, was die alte Engine macht und was die neue KI denken würde
-                                console.log(`🧠 [SHADOW ENGINE] Distanz: ${Math.round(distMeters)}m | Speed: ${speedKmh}kmh`);
-                                console.log(`   - TomTom Original: ${currentManeuver.maneuver}`);
-                                console.log(`   - Situation erkannt: ${situation}`);
-                                console.log(`   - Altes HUD würde sagen: "${actionStr}"`);
-                                console.log(`   - Neue KI würde sagen:   "${smartActionStr}"`);
-                                // ==========================================
-
-                                if (RouteLogic.voiceState.idx !== currIdx && elapsedSinceStart > 4000) {
-                                    let trueSegDist = distMeters; 
-                                    if (currIdx > 0) {
-                                        let prevIdx = currIdx - 1;
-                                        while (prevIdx > 0 && instructions[prevIdx].maneuver === 'DEPART') prevIdx--;
-                                        if (cumulativeDists[instructions[prevIdx].pointIndex] !== undefined) {
-                                            trueSegDist = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[instructions[prevIdx].pointIndex];
-                                        }
-                                    } else {
-                                        trueSegDist = cumulativeDists[currentManeuver.pointIndex];
-                                    }
-                                    if (trueSegDist < distMeters || isNaN(trueSegDist)) trueSegDist = distMeters;
-
-                                    RouteLogic.voiceState = {
-                                        idx: currIdx,
-                                        segmentTotalDist: trueSegDist,
-                                        spokenInit: false, 
-                                        spoken5km: false,
-                                        spoken2km: false,  
-                                        spoken500m: false,
-                                        spoken100m: false,
-                                        spoken50m: false,
-                                        spokenNow: false
-                                    };
-                                }
-                                
-                                let vs = RouteLogic.voiceState;
-                                let textToSpeak = null;
-                                
-                               if (Date.now() > window.voiceBlockUntil || RouteLogic.forceFirstInstruction) {
-                                    
-                                    // Erkennen, ob das aktuelle Manöver eine Auffahrt ist
-                                    const isAuffahren = currentManeuver && currentManeuver.maneuver && currentManeuver.maneuver.includes('ENTER_MOTORWAY');
-
-                                    if (!vs.spokenInit) {
-                                        RouteLogic.forceFirstInstruction = false;
-                                        
-                                        if (isAuffahren) {
-                                            // BOSS-FIX: Bei Auffahrten labern wir den Fahrer nicht voll. 
-                                            // Einmaliger Hinweis ohne Distanz.
-                                            textToSpeak = actionStr;
-                                            // Trick 17: Wir setzen alle Countdown-Variablen auf 'true', 
-                                            // damit die Engine in diesem Streckenabschnitt für immer die Klappe hält!
-                                            vs.spoken5km = true; vs.spoken2km = true; vs.spoken500m = true; vs.spoken100m = true; vs.spoken50m = true; vs.spokenNow = true;
-                                        } 
-                                        else if (distMeters < 70) {
-                                            textToSpeak = actionStr; 
-                                        } else if (vs.segmentTotalDist > 5000) {
-                                            textToSpeak = `Folgen Sie der Route für ${Math.round(vs.segmentTotalDist/1000)} Kilometer.`;
-                                        } else {
-                                            textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
-                                        }
-                                        
-                                        vs.spokenInit = true;
-                                    }
-                                    else {
-                                        // Normaler Countdown für alle anderen Manöver (z.B. Ausfahrten)
-                                        if (vs.segmentTotalDist > 10000) {
-                                            if (distMeters <= 5000 && distMeters > 2000 && !vs.spoken5km) { textToSpeak = `In 5 Kilometern ${actionStr}.`; vs.spoken5km = true; }
-// ... (Dein restlicher Code mit den Countdowns bleibt exakt gleich) ...
-                                            else if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
-                                            else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
-                                            else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
-                                        }
-                                        else if (vs.segmentTotalDist > 5000 && vs.segmentTotalDist <= 10000) {
-                                            if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
-                                            else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
-                                            else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
-                                        }
-                                        else if (vs.segmentTotalDist > 800 && vs.segmentTotalDist <= 5000) {
-                                            if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
-                                            else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
-                                        }
-                                        else if (vs.segmentTotalDist >= 200 && vs.segmentTotalDist <= 800) {
-                                            if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
-                                        }
-                                        else if (vs.segmentTotalDist < 200) {
-                                            if (distMeters <= 50 && distMeters > 15 && !vs.spoken50m) { textToSpeak = `In 50 Metern ${actionStr}.`; vs.spoken50m = true; }
-                                        }
-
-                                        if (distMeters <= 15 && !vs.spokenNow) {
-                                            textToSpeak = actionStr; 
-                                            vs.spokenNow = true;
-                                        }
-                                    }
-                                    if (textToSpeak) triggerGoogleVoice(textToSpeak);
+                        // 1. Fahren wir gerade durch eine Spur-Zone?
+                        if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
+                            for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
+                                const section = RouteLogic.currentLaneSections[i];
+                                if (closestIdx >= section.startPointIndex - 4 && closestIdx <= section.endPointIndex) {
+                                    activeInterruptSection = section;
+                                    break;
                                 }
                             }
                         }
+
+                        if (activeInterruptSection) {
+                            // 2. Gehören diese Spuren zum aktuellen Manöver?
+                            const distFromZoneEndToManeuver = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[activeInterruptSection.endPointIndex];
+                            
+                            // Wenn Manöver > 150m nach Spur-Zone = Unabhängiges Event!
+                            if (distFromZoneEndToManeuver > 150 || distMeters > 800) {
+                                isLaneInterruptActive = true;
+                            }
+                        }
+
+                        // 3. Das renderManeuver anpassen (Die Weiche für das HUD)
+                        let renderManeuver = { ...currentManeuver }; // Saubere Kopie
+                        let renderDist = distMeters;
+                        let navPhase = "CRUISE"; 
+
+                        if (window.testScenarioIdx > 0) {
+                            renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
+                            renderDist = renderManeuver.mockDist;
+                            isLaneInterruptActive = false;
+                        } else if (isLaneInterruptActive && activeInterruptSection) {
+                            // === DER INTERRUPT LÖST AUS ===
+                            renderManeuver = {
+                                maneuver: "FOLLOW", 
+                                street: "Spur halten",
+                                action: "Fahrstreifen wählen",
+                                lanes: activeInterruptSection.lanes,
+                                signpostText: "" // Kein Schild im Interrupt
+                            };
+                            renderDist = 0; 
+                            navPhase = "PRE_EXIT"; 
+                        } else if (activeInterruptSection) {
+                            // === SPUREN GEHÖREN ZUM MANÖVER ===
+                            renderManeuver.lanes = activeInterruptSection.lanes;
+                        }
+
+                        // === TOMTOM LANE ADAPTER ===
+                        if (renderManeuver.lanes) {
+                            renderManeuver.lanes = renderManeuver.lanes.map(lane => {
+                                return { 
+                                    ...lane, 
+                                    valid: lane.follow ? true : false, 
+                                    indications: lane.directions || [] 
+                                };
+                            });
+                        }
+
+                        // Wir nutzen "renderManeuver" für alle UI Berechnungen!
+                        const shortInfo = getShortInstruction(renderManeuver);
+                        const laneText = getLaneText(renderManeuver);
+                        const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
+                        let actionStr = (renderDist <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
+
+                        const manType = renderManeuver.maneuver || '';
+                        
+                        // --- PHASE ENGINE LOGIK ---
+                        const isKeep = manType.includes('KEEP') || manType.includes('BIFURCATION');
+                        const isExit = manType.includes('EXIT') || manType.includes('OFF_RAMP');
+                        const isTurn = manType.includes('TURN');
+
+                        let isAbfahrt = false;
+                        if (isExit && renderManeuver.lanes) {
+                            const hasComboLane = renderManeuver.lanes.some(l => {
+                                if (!l.valid || !l.indications) return false;
+                                const inds = l.indications.map(i => i.toLowerCase());
+                                return inds.includes('straight') && inds.some(i => i.includes('right') || i.includes('left'));
+                            });
+                            if (hasComboLane) isAbfahrt = true;
+                        }
+
+                        if (isLaneInterruptActive) navPhase = "PRE_EXIT";
+                        else if (isKeep) navPhase = "PRE_EXIT"; 
+                        else if (isExit) navPhase = "EXIT";            
+                        else if (isTurn) navPhase = "TURN";            
+
+                        // A) Hauptaktion Text
+                        let actionTextUI = shortInfo.action;
+                        if (isAbfahrt && !isLaneInterruptActive) {
+                            actionTextUI = manType.includes('LEFT') ? "Links halten" : "Rechts halten";
+                        }
+
+                        const actionEl = document.getElementById('nav-top-action');
+                        if (actionEl) actionEl.textContent = actionTextUI;
+
+                        // B) Meter-Anzeige
+                        const distEl = document.getElementById('nav-top-distance');
+                        if (distEl) {
+                            if (manType.includes('ENTER_MOTORWAY') || navPhase === "PRE_EXIT") {
+                                distEl.style.display = 'none'; 
+                            } else {
+                                distEl.style.display = 'block';
+                                let displayDist = Math.max(0, Math.round(renderDist / 10) * 10);
+                                if (displayDist >= 1000) {
+                                    distEl.textContent = `in ${(displayDist / 1000).toFixed(1).replace('.', ',')} km`;
+                                } else {
+                                    distEl.textContent = `in ${displayDist} m`;
+                                }
+                            }
+                        }
+
+                        // C) Icon
+                        const iconEl = document.getElementById('nav-top-icon');
+                        if (iconEl) {
+                            let iconClass = 'fa-arrow-up'; 
+                            let rotation = 'rotate(0deg)';
+                            
+                            if (navPhase === "EXIT" || manType.includes('EXIT') || manType.includes('SWITCH_MOTORWAY') || manType.includes('TAKE_EXIT')) {
+                                iconClass = 'fa-arrow-up'; 
+                                rotation = manType.includes('LEFT') ? 'rotate(-45deg)' : 'rotate(45deg)'; 
+                            }
+                            else if (navPhase === "PRE_EXIT" || manType.includes('KEEP') || manType.includes('ENTER_MOTORWAY') || manType.includes('FOLLOW')) { 
+                                iconClass = 'fa-arrow-up'; 
+                                rotation = 'rotate(0deg)'; 
+                            }
+                            else if (manType.includes('TURN_LEFT') || manType.includes('SHARP_LEFT')) { iconClass = 'fa-arrow-left'; }
+                            else if (manType.includes('TURN_RIGHT') || manType.includes('SHARP_RIGHT')) { iconClass = 'fa-arrow-right'; }
+                            else if (manType.includes('BEAR_LEFT') || manType.includes('SLIGHT_LEFT')) { iconClass = 'fa-arrow-up'; rotation = 'rotate(-30deg)'; }
+                            else if (manType.includes('BEAR_RIGHT') || manType.includes('SLIGHT_RIGHT')) { iconClass = 'fa-arrow-up'; rotation = 'rotate(30deg)'; }
+                            else if (manType.includes('U_TURN')) { iconClass = 'fa-arrow-rotate-left'; }
+                            else if (manType.includes('ROUNDABOUT')) { iconClass = 'fa-arrows-spin'; } 
+                            
+                            iconEl.className = `fa-solid ${iconClass}`;
+                            iconEl.style.transform = rotation; 
+                            iconEl.style.display = 'inline-block'; 
+                        }
+
+                        // D) Schilder & Straßen
+                        const streetEl = document.getElementById('nav-top-street');
+                        if (streetEl) {
+                            streetEl.innerHTML = ''; 
+                            let rn = "";
+                            
+                            if (renderManeuver.roadNumbers && renderManeuver.roadNumbers.length > 0) {
+                                rn = renderManeuver.roadNumbers[0];
+                                let badgeClass = '';
+                                if (rn.startsWith('A')) badgeClass = 'autobahn';
+                                else if (rn.startsWith('B')) badgeClass = 'bundesstrasse';
+                                else if (rn.startsWith('St') || rn.startsWith('L') || rn.startsWith('K')) badgeClass = 'landesstrasse';
+                                
+                                if (badgeClass) streetEl.innerHTML += `<span class="road-badge ${badgeClass}">${rn}</span>`;
+                            }
+
+                            let directionText = renderManeuver.signpostText || renderManeuver.destination || "";
+                            let baseStreet = renderManeuver.street || "";
+                            let finalString = "";
+                            
+                            if (directionText) {
+                                finalString = `Richtung ${directionText}`;
+                            } else if (baseStreet) {
+                                if (rn && baseStreet.includes(rn)) {
+                                    baseStreet = baseStreet.replace(rn, '').trim();
+                                    if (baseStreet.startsWith('-') || baseStreet.startsWith(',')) {
+                                        baseStreet = baseStreet.substring(1).trim();
+                                    }
+                                }
+                                finalString = baseStreet;
+                            }
+
+                            let textSpan = document.createElement('span');
+                            textSpan.textContent = finalString.trim();
+                            streetEl.appendChild(textSpan);
+                            streetEl.style.display = 'block';
+                        }
+
+                        // E) Der Spur-Assistent
+                        let laneContainer = document.getElementById('nav-top-lanes');
+                        if (!laneContainer) {
+                            laneContainer = document.createElement('div');
+                            laneContainer.id = 'nav-top-lanes';
+                            laneContainer.className = 'lane-assist-container';
+                            if (streetEl && streetEl.parentNode) streetEl.parentNode.appendChild(laneContainer);
+                        }
+
+                        const mType = manType || ""; 
+                        const showLanes = renderManeuver?.lanes?.length > 0 && navPhase !== "TURN" && !mType.includes("ROUNDABOUT");
+
+                        if (!showLanes) {
+                            laneContainer.style.display = 'none';
+                            if (laneContainer.innerHTML !== '') laneContainer.innerHTML = '';
+                        } else {
+                            const currentLaneSig = renderManeuver.lanes.map(l => (l.follow ? '1' : '0') + (l.directions ? l.directions.join() : '')).join('-');
+                            if (laneContainer.dataset.laneSig !== currentLaneSig) {
+                                laneContainer.dataset.laneSig = currentLaneSig;
+                                laneContainer.innerHTML = ''; 
+                                laneContainer.style.display = 'flex';
+                                const fragment = document.createDocumentFragment();
+
+                                renderManeuver.lanes.forEach(lane => {
+                                    const isValidLane = !!lane.follow; 
+                                    const arrowDiv = document.createElement('div');
+                                    arrowDiv.className = `lane-arrow ${isValidLane ? 'valid' : ''}`;
+                                    
+                                    let faIcon = 'fa-arrow-up'; 
+                                    let laneRot = 0; 
+                                    
+                                    if (lane.directions && Array.isArray(lane.directions)) {
+                                        const dirs = lane.directions.map(d => d.toLowerCase());
+                                        if (navPhase === "PRE_EXIT" || mType.includes("KEEP")) {
+                                            laneRot = 0;
+                                        } 
+                                        else if (navPhase === "EXIT" || mType.includes('EXIT') || mType.includes('SWITCH_MOTORWAY')) {
+                                            if (dirs.includes('sharp_right')) laneRot = 55;
+                                            else if (dirs.includes('right')) laneRot = 35;
+                                            else if (dirs.includes('slight_right')) laneRot = 20;
+                                            else if (dirs.includes('sharp_left')) laneRot = -55;
+                                            else if (dirs.includes('left')) laneRot = -35;
+                                            else if (dirs.includes('slight_left')) laneRot = -20;
+                                        }
+                                    }
+                                    
+                                    arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}" style="transform: rotate(${laneRot}deg); display: inline-block;"></i>`;
+                                    fragment.appendChild(arrowDiv);
+                                });
+                                laneContainer.appendChild(fragment);
+                            } else {
+                                laneContainer.style.display = 'flex';
+                            }
+                        }
+
+                        // --- SPRACH ENGINE ---
+                        if (RouteLogic.voiceState.idx !== currIdx && elapsedSinceStart > 4000 && !isLaneInterruptActive) {
+                            let trueSegDist = distMeters; 
+                            if (currIdx > 0) {
+                                let prevIdx = currIdx - 1;
+                                while (prevIdx > 0 && instructions[prevIdx].maneuver === 'DEPART') prevIdx--;
+                                if (cumulativeDists[instructions[prevIdx].pointIndex] !== undefined) {
+                                    trueSegDist = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[instructions[prevIdx].pointIndex];
+                                }
+                            } else {
+                                trueSegDist = cumulativeDists[currentManeuver.pointIndex];
+                            }
+                            if (trueSegDist < distMeters || isNaN(trueSegDist)) trueSegDist = distMeters;
+
+                            RouteLogic.voiceState = {
+                                idx: currIdx,
+                                segmentTotalDist: trueSegDist,
+                                spokenInit: false, 
+                                spoken5km: false,
+                                spoken2km: false,  
+                                spoken500m: false,
+                                spoken100m: false,
+                                spoken50m: false,
+                                spokenNow: false
+                            };
+                        }
+                        
+                        let vs = RouteLogic.voiceState;
+                        let textToSpeak = null;
+                        
+                        if ((Date.now() > window.voiceBlockUntil || RouteLogic.forceFirstInstruction) && !isLaneInterruptActive) {
+                            
+                            const isAuffahren = currentManeuver && currentManeuver.maneuver && currentManeuver.maneuver.includes('ENTER_MOTORWAY');
+
+                            if (!vs.spokenInit) {
+                                RouteLogic.forceFirstInstruction = false;
+                                
+                                if (isAuffahren) {
+                                    textToSpeak = actionStr;
+                                    vs.spoken5km = true; vs.spoken2km = true; vs.spoken500m = true; vs.spoken100m = true; vs.spoken50m = true; vs.spokenNow = true;
+                                } 
+                                else if (distMeters < 70) {
+                                    textToSpeak = actionStr; 
+                                } else if (vs.segmentTotalDist > 5000) {
+                                    textToSpeak = `Folgen Sie der Route für ${Math.round(vs.segmentTotalDist/1000)} Kilometer.`;
+                                } else {
+                                    textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
+                                }
+                                
+                                vs.spokenInit = true;
+                            }
+                            else {
+                                if (vs.segmentTotalDist > 10000) {
+                                    if (distMeters <= 5000 && distMeters > 2000 && !vs.spoken5km) { textToSpeak = `In 5 Kilometern ${actionStr}.`; vs.spoken5km = true; }
+                                    else if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
+                                    else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
+                                    else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                }
+                                else if (vs.segmentTotalDist > 5000 && vs.segmentTotalDist <= 10000) {
+                                    if (distMeters <= 2000 && distMeters > 500 && !vs.spoken2km) { textToSpeak = `In 2 Kilometern ${actionStr}.`; vs.spoken2km = true; }
+                                    else if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
+                                    else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                }
+                                else if (vs.segmentTotalDist > 800 && vs.segmentTotalDist <= 5000) {
+                                    if (distMeters <= 500 && distMeters > 100 && !vs.spoken500m) { textToSpeak = `In 500 Metern ${actionStr}.`; vs.spoken500m = true; }
+                                    else if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                }
+                                else if (vs.segmentTotalDist >= 200 && vs.segmentTotalDist <= 800) {
+                                    if (distMeters <= 100 && distMeters > 15 && !vs.spoken100m) { textToSpeak = `In 100 Metern ${actionStr}.`; vs.spoken100m = true; }
+                                }
+                                else if (vs.segmentTotalDist < 200) {
+                                    if (distMeters <= 50 && distMeters > 15 && !vs.spoken50m) { textToSpeak = `In 50 Metern ${actionStr}.`; vs.spoken50m = true; }
+                                }
+
+                                if (distMeters <= 15 && !vs.spokenNow) {
+                                    textToSpeak = actionStr; 
+                                    vs.spokenNow = true;
+                                }
+                            }
+                            if (textToSpeak) triggerGoogleVoice(textToSpeak);
+                        }
+                    }
+                }
 
                         // Kamera aktualisieren (Live Daten)
                         const safeDist = (typeof distMeters !== 'undefined' && distMeters !== null) ? distMeters : 9999;
