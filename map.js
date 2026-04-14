@@ -3287,16 +3287,44 @@ const getLaneText = (maneuverObj) => {
                     // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (PHASE ENGINE V1.1) ===
                     // ====================================================
                     
-                    // 1. DIE WEICHE: Woher kommen die Daten?
-                    let renderManeuver = currentManeuver; 
+                   // 1. DIE WEICHE & SPUREN-LOGIK: Woher kommen die Daten?
+                    let renderManeuver = { ...currentManeuver }; // Saubere Kopie für das HUD
                     let renderDist = distMeters;
+                    let isIndependentLane = false;
+
+                    // A) Fahren wir gerade durch eine Spur-Zone?
+                    if (RouteLogic.currentLaneSections && RouteLogic.currentLaneSections.length > 0) {
+                        for (let i = 0; i < RouteLogic.currentLaneSections.length; i++) {
+                            const section = RouteLogic.currentLaneSections[i];
+                            // Mit 4 Punkten Vorlauf scannen, damit es rechtzeitig einblendet
+                            if (closestIdx >= section.startPointIndex - 4 && closestIdx <= section.endPointIndex) {
+                                renderManeuver.lanes = section.lanes;
+                                
+                                // B) Gehören diese Spuren zum aktuellen Manöver?
+                                const distToManeuver = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[section.endPointIndex];
+                                
+                                // Wenn das Manöver noch weit weg ist (> 200m nach den Spuren), ist es unabhängig!
+                                if (distToManeuver > 200 || renderDist > 800) {
+                                    isIndependentLane = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
 
                     if (window.testScenarioIdx > 0) {
                         renderManeuver = window.NavTestScenarios[window.testScenarioIdx];
                         renderDist = renderManeuver.mockDist;
+                        isIndependentLane = false;
+                    } else if (isIndependentLane) {
+                        // C) HUD TEMPORÄR ÜBERSCHREIBEN!
+                        renderManeuver.maneuver = "FOLLOW";
+                        renderManeuver.signpostText = "";
+                        renderManeuver.destination = "";
+                        renderDist = 0; // Distanz nullen
                     }
 
-                    if (!renderManeuver) return; 
+                    if (!renderManeuver) return;
 
                     // === BOSS-FIX: TOMTOM LANE ADAPTER (Übersetzt TomTom auf unser HUD) ===
                     if (renderManeuver.lanes) {
@@ -3337,10 +3365,16 @@ const getLaneText = (maneuverObj) => {
                     else if (isTurn) navPhase = "TURN";           
 
                     // A) Hauptaktion Text
+                   // A) Hauptaktion Text
                     let actionText = shortInfo.action;
                     // WUNSCH: Wenn es Phase 1 einer Ausfahrt ist, benennen wir es in "Halten" um!
                     if (isAbfahrt) {
                         actionText = manType.includes('LEFT') ? "Links halten" : "Rechts halten";
+                    }
+                    // BOSS-FIX: Unabhängige Spuren -> Dynamischer Text!
+                    if (isIndependentLane) {
+                        let streetName = renderManeuver.street || (renderManeuver.roadNumbers ? renderManeuver.roadNumbers[0] : "der Route");
+                        actionText = `Auf ${streetName} bleiben`;
                     }
 
                     const actionEl = document.getElementById('nav-top-action');
@@ -3349,9 +3383,8 @@ const getLaneText = (maneuverObj) => {
                 // B) Meter-Anzeige (Distanz bei "Halten" zeigen, bei "Auffahren" verstecken)
                     const distEl = document.getElementById('nav-top-distance');
                     if (distEl) {
-                        // NEU: Wir verstecken die Distanz NUR noch beim Auffahren.
-                        // "Links/Rechts halten" (PRE_EXIT) kriegt seine Distanz zurück!
-                        if (manType.includes('ENTER_MOTORWAY')) {
+                        // NEU: Wir verstecken die Distanz NUR noch beim Auffahren ODER bei reinen Spur-Anweisungen.
+                        if (manType.includes('ENTER_MOTORWAY') || isIndependentLane) {
                             distEl.style.display = 'none'; 
                         } else {
                             distEl.style.display = 'block';
