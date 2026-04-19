@@ -1,4 +1,4 @@
-    document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     
     // === BOSS-FIX 1: SERVICE WORKER REGISTRIEREN ===
     if ('serviceWorker' in navigator) {
