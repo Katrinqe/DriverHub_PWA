@@ -1869,7 +1869,7 @@ fetchLiveRadars: async function() {
             }
         },
 
-        drawMarkers: function(pois) {
+     drawMarkers: function(pois) {
             this.markers.forEach(m => m.remove());
             this.markers = [];
 
@@ -1880,32 +1880,53 @@ fetchLiveRadars: async function() {
                 const lng = parseFloat(poi.lng);
                 const vmax = poi.vmax && poi.vmax !== "0" ? poi.vmax : null;
                 const streetName = (poi.address && poi.address.street) ? poi.address.street : "Unbekannte Straße";
-                
-                // ⚠️ HIER HOLEN WIR DEN ECHTEN TYP AUS DER API
-                const poiType = poi.type || "Unbekannt"; 
+                const typeStr = poi.type ? String(poi.type) : "";
 
-                // Wir loggen jeden gefundenen Blitzer in die Konsole, um die Zahlen zu lernen!
-                console.log(`Gefunden: Typ [${poiType}] auf ${streetName}`);
+                // === DIAGNOSE-DATEN EXTRAHIEREN ===
+                const isConfirmed = poi.info && poi.info.confirmed !== undefined ? poi.info.confirmed : "?";
+                const isGesperrt = poi.info && poi.info.gesperrt !== undefined ? poi.info.gesperrt : "?";
+                const quality = poi.info && poi.info.quality !== undefined ? poi.info.quality : "?";
+                const createDate = poi.create_date || "?";
+
+                let categoryName = "Radar";
+                let iconHtml = '<i class="fa-solid fa-camera"></i>';
+                let cssClass = "icon-cam"; 
+
+                const typeNum = parseInt(typeStr);
+
+                if (typeNum >= 101 && typeNum <= 117) categoryName = "Fester Blitzer";
+                else if (typeNum >= 0 && typeNum <= 6) categoryName = "Mobiler Blitzer";
+                else if (typeStr === "ts") categoryName = "Blitzer-Anhänger";
+                else if (typeNum >= 20 && typeNum <= 29) {
+                    categoryName = "Gefahrenstelle";
+                    iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                }
+                else if (typeStr === "114") categoryName = "Tunnel-Blitzer";
+
+                if (vmax && categoryName.includes("Blitzer")) {
+                    iconHtml = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
+                }
 
                 const el = document.createElement('div');
-                el.className = 'custom-map-icon icon-cam'; 
-
-                if (vmax) {
-                    el.innerHTML = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
-                } else {
-                    el.innerHTML = '<i class="fa-solid fa-camera"></i>';
-                }
+                el.className = `custom-map-icon ${cssClass}`; 
+                el.innerHTML = iconHtml;
 
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (!window.poiPopup) {
                         window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
                     }
-                    // Im Popup zeigen wir jetzt die echte Typ-Nummer an!
+                    
+                    // ⚠️ HIER IST DAS NEUE DIAGNOSE-POPUP
                     window.poiPopup.setLngLat([lng, lat])
                         .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 2px 5px;">
-                                    <strong style="font-size: 13px;">Radar (Typ: ${poiType})</strong><br>
-                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span>
+                                    <strong style="font-size: 13px;">${categoryName} (Typ: ${typeStr})</strong><br>
+                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span><br>
+                                    <hr style="margin: 5px 0; border: 0; border-top: 1px solid #ccc;">
+                                    <span style="font-size: 10px; color: #888;">
+                                        Confirmed: <b>${isConfirmed}</b> | Gesperrt: <b>${isGesperrt}</b><br>
+                                        Quality: <b>${quality}</b> | Erstellt: ${createDate}
+                                    </span>
                                   </div>`)
                         .addTo(libreMap);
                 });
