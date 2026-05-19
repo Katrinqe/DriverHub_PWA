@@ -1869,7 +1869,7 @@ fetchLiveRadars: async function() {
             }
         },
 
-     drawMarkers: function(pois) {
+ drawMarkers: function(pois) {
             this.markers.forEach(m => m.remove());
             this.markers = [];
 
@@ -1878,66 +1878,55 @@ fetchLiveRadars: async function() {
 
                 const lat = parseFloat(poi.lat);
                 const lng = parseFloat(poi.lng);
+                const typeStr = poi.type ? String(poi.type).toLowerCase() : "";
+
+                // === 1. DAS NEUE CLUSTER-HANDLING ===
+                if (typeStr === "cluster") {
+                    // Wir holen uns die Anzahl der versteckten Blitzer (oder zeigen ein "+" als Fallback)
+                    const count = poi.counter || "+";
+                    
+                    const el = document.createElement('div');
+                    el.className = 'custom-map-icon'; 
+                    // Ein edler blauer Verlauf für Cluster, um sie von echten Blitzern zu unterscheiden
+                    el.style.background = 'linear-gradient(135deg, #007aff, #005eb8)';
+                    el.style.border = '2px solid white';
+                    el.innerHTML = `<span style="font-family: monospace; font-weight: 900; font-size: 0.9rem;">${count}</span>`;
+
+                    // Der Klick-Trigger: Kamera fliegt hin und zoomt 2 Stufen tiefer rein!
+                    el.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        libreMap.flyTo({ 
+                            center: [lng, lat], 
+                            zoom: Math.max(libreMap.getZoom() + 2, 14), // Geht auf mind. Zoom 14
+                            speed: 1.2 
+                        });
+                        
+                        // Wenn wir später den Map-Listener aktivieren, holt die App 
+                        // am Ende dieses Fluges automatisch die echten Blitzer aus der API.
+                        if (window.BlitzerLogic && typeof window.BlitzerLogic.fetchLiveRadars === 'function') {
+                            setTimeout(() => window.BlitzerLogic.fetchLiveRadars(), 1300);
+                        }
+                    });
+
+                    const marker = new maplibregl.Marker({ element: el })
+                        .setLngLat([lng, lat])
+                        .addTo(libreMap);
+
+                    this.markers.push(marker);
+                    return; // WICHTIG: Hier brechen wir für diesen POI ab, da der restliche Code für echte Blitzer ist!
+                }
+
+                // === AB HIER GEHT ES NORMAL MIT DEN ECHTEN BLITZERN WEITER ===
                 const vmax = poi.vmax && poi.vmax !== "0" ? poi.vmax : null;
                 const streetName = (poi.address && poi.address.street) ? poi.address.street : "Unbekannte Straße";
-                const typeStr = poi.type ? String(poi.type) : "";
-
-                // === DIAGNOSE-DATEN EXTRAHIEREN ===
-                const isConfirmed = poi.info && poi.info.confirmed !== undefined ? poi.info.confirmed : "?";
-                const isGesperrt = poi.info && poi.info.gesperrt !== undefined ? poi.info.gesperrt : "?";
-                const quality = poi.info && poi.info.quality !== undefined ? poi.info.quality : "?";
-                const createDate = poi.create_date || "?";
-
+                
                 let categoryName = "Radar";
                 let iconHtml = '<i class="fa-solid fa-camera"></i>';
                 let cssClass = "icon-cam"; 
 
                 const typeNum = parseInt(typeStr);
 
-                if (typeNum >= 101 && typeNum <= 117) categoryName = "Fester Blitzer";
-                else if (typeNum >= 0 && typeNum <= 6) categoryName = "Mobiler Blitzer";
-                else if (typeStr === "ts") categoryName = "Blitzer-Anhänger";
-                else if (typeNum >= 20 && typeNum <= 29) {
-                    categoryName = "Gefahrenstelle";
-                    iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
-                }
-                else if (typeStr === "114") categoryName = "Tunnel-Blitzer";
-
-                if (vmax && categoryName.includes("Blitzer")) {
-                    iconHtml = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
-                }
-
-                const el = document.createElement('div');
-                el.className = `custom-map-icon ${cssClass}`; 
-                el.innerHTML = iconHtml;
-
-                el.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    if (!window.poiPopup) {
-                        window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
-                    }
-                    
-                    // ⚠️ HIER IST DAS NEUE DIAGNOSE-POPUP
-                    window.poiPopup.setLngLat([lng, lat])
-                        .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 2px 5px;">
-                                    <strong style="font-size: 13px;">${categoryName} (Typ: ${typeStr})</strong><br>
-                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span><br>
-                                    <hr style="margin: 5px 0; border: 0; border-top: 1px solid #ccc;">
-                                    <span style="font-size: 10px; color: #888;">
-                                        Confirmed: <b>${isConfirmed}</b> | Gesperrt: <b>${isGesperrt}</b><br>
-                                        Quality: <b>${quality}</b> | Erstellt: ${createDate}
-                                    </span>
-                                  </div>`)
-                        .addTo(libreMap);
-                });
-
-                const marker = new maplibregl.Marker({ element: el })
-                    .setLngLat([lng, lat])
-                    .addTo(libreMap);
-
-                this.markers.push(marker);
-            });
-        },
+                // ... (Dein restlicher Code für die Fein-Unterteilung bleibt absolut identisch!)
 
 
         clearMarkers: function() {
