@@ -62,9 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btnNewExplore.style.color = '#30d158';
             btnNewExplore.style.textShadow = '0 0 15px rgba(48, 209, 88, 0.6)';
 
-            // 5. MAPLIBRE INITIALISIERUNG STARTEN
+// 5. MAPLIBRE INITIALISIERUNG STARTEN
             initMapLibreSnippet();
             if (window.ExploreLogic) window.ExploreLogic.init();
+            if (window.BlitzerLogic) window.BlitzerLogic.init();
         });
     }
 
@@ -1824,12 +1825,43 @@ updateDashboard: function() {
 // ==========================================
     // === BLITZER.DE NATIVE ENGINE (ATUDO API) ===
     // ==========================================
+// ==========================================
+    // === BLITZER.DE NATIVE ENGINE (ATUDO API) ===
+    // ==========================================
     window.BlitzerLogic = {
         markers: [],
         isActive: false,
+        mapListenerBound: false, // Verhindert, dass wir das Event doppelt anheften
 
-fetchLiveRadars: async function() {
-            if (!libreMap) return;
+        init: function() {
+            const btnBlitzer = document.getElementById('btn-sheet-blitzer');
+            if (btnBlitzer) {
+                btnBlitzer.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.isActive = !this.isActive;
+                    
+                    if (this.isActive) {
+                        btnBlitzer.classList.add('active-red');
+                        this.fetchLiveRadars(); // Sofort laden
+                    } else {
+                        btnBlitzer.classList.remove('active-red');
+                        this.clearMarkers(); // Karte direkt putzen
+                    }
+                });
+            }
+        },
+
+        fetchLiveRadars: async function() {
+            // Nur ausführen, wenn der Modus auch wirklich an ist!
+            if (!libreMap || !this.isActive) return;
+
+            // Die Karte lauscht jetzt auf Bewegungen & Zooms und lädt dynamisch nach
+            if (!this.mapListenerBound) {
+                libreMap.on('moveend', () => { 
+                    if (this.isActive) this.fetchLiveRadars(); 
+                });
+                this.mapListenerBound = true;
+            }
 
             // 1. Sichtbaren Kartenausschnitt berechnen
             const bounds = libreMap.getBounds();
