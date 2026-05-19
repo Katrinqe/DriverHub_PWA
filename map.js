@@ -1450,13 +1450,15 @@ window.ExploreLogic = {
         }, // <--- Hier endet die init-Funktion
 
 
- clearMarkers: function() {
-            if (this.mlMarkers) {
-                // Objekt-Werte (Marker) durchlaufen und hart löschen
-                Object.values(this.mlMarkers).forEach(m => m.remove());
-                this.mlMarkers = {};
+clearMarkers: function() {
+            // 1. Zerstöre alle MapLibre Marker physisch auf der Karte
+            if (this.markers && this.markers.length > 0) {
+                this.markers.forEach(m => m.remove());
             }
-        },
+            // 2. Leere das Array
+            this.markers = [];
+            console.log("🧹 Blitzer-Radar deaktiviert: Alle Icons wurden von der Karte gelöscht.");
+        }
 fetchData: async function() {
             if (!libreMap) return; // currentCoords Check entfernt, da wir jetzt die Map nutzen
             const loader = document.getElementById('map-loading');
@@ -1843,7 +1845,7 @@ updateDashboard: function() {
                 btnBlitzer.replaceWith(btnBlitzer.cloneNode(true));
                 const newBtnBlitzer = document.getElementById('btn-sheet-blitzer');
                 
-                newBtnBlitzer.addEventListener('click', (e) => {
+      newBtnBlitzer.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.isActive = !this.isActive;
                     
@@ -1852,7 +1854,8 @@ updateDashboard: function() {
                         this.fetchLiveRadars(); 
                     } else {
                         newBtnBlitzer.classList.remove('active-red');
-                        this.clearMarkers(); // Radikal weglöschen
+                        // WICHTIG: Wenn der Button aus ist, wird sofort alles gelöscht!
+                        this.clearMarkers(); 
                     }
                 });
             }
