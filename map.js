@@ -1831,6 +1831,7 @@ updateDashboard: function() {
 fetchLiveRadars: async function() {
             if (!libreMap) return;
 
+            // 1. Sichtbaren Kartenausschnitt berechnen
             const bounds = libreMap.getBounds();
             const latMin = bounds.getSouth();
             const lngMin = bounds.getWest();
@@ -1838,23 +1839,33 @@ fetchLiveRadars: async function() {
             const lngMax = bounds.getEast();
             const zoom = Math.floor(libreMap.getZoom());
 
-            // ⚠️ DEBUG MODE: Wir lassen den "type=" Parameter komplett weg! 
-            // Mal sehen, ob Atudo uns dann einfach ALLE Blitzer (Ampel, Fest, Mobil) schickt.
-            const targetUrl = `https://cdn2.atudo.net/api/4.0/pois.php?z=${zoom}&box=${latMin},${lngMin},${latMax},${lngMax}`;
-
+            // 2. BOSS-FIX: Wir übergeben jetzt JEDEN Typen, den wir aus dem Rust-Code gelernt haben!
+            // Mobile (0-6), Baustellen/Gefahren (20-29), Feste (101-117) und Anhänger (ts)
+            const types = "0,1,2,3,4,5,6,20,21,22,23,24,25,26,29,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,117,ts"; 
+            
+            const targetUrl = `https://cdn2.atudo.net/api/4.0/pois.php?z=${zoom}&type=${types}&box=${latMin},${lngMin},${latMax},${lngMax}`;
             const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
+
+            console.log("📸 Lade Blitzer... URL:", targetUrl);
 
             try {
                 const response = await fetch(proxyUrl);
-                if (!response.ok) return;
+                if (!response.ok) {
+                    console.error("❌ Blitzer API blockiert! Status:", response.status);
+                    return;
+                }
 
                 const data = await response.json();
+                console.log("🚨 BLITZER PAYLOAD:", data);
                 
-                if (data && data.pois) {
+                if (data && data.pois && data.pois.length > 0) {
                     this.drawMarkers(data.pois);
+                } else {
+                    console.log("ℹ️ Keine Blitzer in diesem Kartenausschnitt.");
+                    this.clearMarkers(); // Alte Marker von der Karte putzen
                 }
             } catch (error) {
-                console.warn("Blitzer API offline:", error);
+                console.warn("⚠️ Blitzer Fetch Error:", error);
             }
         },
 
