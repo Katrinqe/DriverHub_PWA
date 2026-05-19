@@ -1828,10 +1828,9 @@ updateDashboard: function() {
         markers: [],
         isActive: false,
 
-        fetchLiveRadars: async function() {
+fetchLiveRadars: async function() {
             if (!libreMap) return;
 
-            // 1. Sichtbaren Kartenausschnitt berechnen
             const bounds = libreMap.getBounds();
             const latMin = bounds.getSouth();
             const lngMin = bounds.getWest();
@@ -1839,11 +1838,10 @@ updateDashboard: function() {
             const lngMax = bounds.getEast();
             const zoom = Math.floor(libreMap.getZoom());
 
-            // 2. Parameter für die Atudo API
-            const types = "0,1,2,103,ts"; 
-            const targetUrl = `https://cdn2.atudo.net/api/4.0/pois.php?z=${zoom}&type=${types}&box=${latMin},${lngMin},${latMax},${lngMax}`;
+            // ⚠️ DEBUG MODE: Wir lassen den "type=" Parameter komplett weg! 
+            // Mal sehen, ob Atudo uns dann einfach ALLE Blitzer (Ampel, Fest, Mobil) schickt.
+            const targetUrl = `https://cdn2.atudo.net/api/4.0/pois.php?z=${zoom}&box=${latMin},${lngMin},${latMax},${lngMax}`;
 
-            // 3. CORS Proxy (Um die Browser-Sperre zu umgehen)
             const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
 
             try {
@@ -1856,12 +1854,11 @@ updateDashboard: function() {
                     this.drawMarkers(data.pois);
                 }
             } catch (error) {
-                console.warn("Blitzer API offline oder blockiert:", error);
+                console.warn("Blitzer API offline:", error);
             }
         },
 
         drawMarkers: function(pois) {
-            // Alte Marker restlos entfernen
             this.markers.forEach(m => m.remove());
             this.markers = [];
 
@@ -1871,19 +1868,100 @@ updateDashboard: function() {
                 const lat = parseFloat(poi.lat);
                 const lng = parseFloat(poi.lng);
                 const vmax = poi.vmax && poi.vmax !== "0" ? poi.vmax : null;
-                const streetName = (poi.address && poi.address.street) ? poi.address.street : "Blitzer";
+                const streetName = (poi.address && poi.address.street) ? poi.address.street : "Unbekannte Straße";
+                
+                // ⚠️ HIER HOLEN WIR DEN ECHTEN TYP AUS DER API
+                const poiType = poi.type || "Unbekannt"; 
+
+                // Wir loggen jeden gefundenen Blitzer in die Konsole, um die Zahlen zu lernen!
+                console.log(`Gefunden: Typ [${poiType}] auf ${streetName}`);
 
                 const el = document.createElement('div');
                 el.className = 'custom-map-icon icon-cam'; 
 
-                // Wenn wir ein Tempolimit haben, schreiben wir die Zahl rein. Ansonsten das Kamera-Icon.
                 if (vmax) {
                     el.innerHTML = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
                 } else {
                     el.innerHTML = '<i class="fa-solid fa-camera"></i>';
                 }
 
-                // Klick-Event für ein kleines Info-Popup
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!window.poiPopup) {
+                        window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
+                    }
+                    // Im Popup zeigen wir jetzt die echte Typ-Nummer an!
+                    window.poiPopup.setLngLat([lng, lat])
+                        .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 2px 5px;">
+                                    <strong style="font-size: 13px;">Radar (Typ: ${poiType})</strong><br>
+                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span>
+                                  </div>`)
+                        .addTo(libreMap);
+                });
+
+                const marker = new maplibregl.Marker({ element: el })
+                    .setLngLat([lng, lat])
+                    .addTo(libreMap);
+
+                this.markers.push(marker);
+            });
+        },
+
+  drawMarkers: function(pois) {
+            this.markers.forEach(m => m.remove());
+            this.markers = [];
+
+            pois.forEach(poi => {
+                if (!poi.lat || !poi.lng) return;
+
+                const lat = parseFloat(poi.lat);
+                const lng = parseFloat(poi.lng);
+                const vmax = poi.vmax && poi.vmax !== "0" ? poi.vmax : null;
+                const streetName = (poi.address && poi.address.street) ? poi.address.street : "Unbekannte Straße";
+                const typeStr = poi.type ? String(poi.type) : "";
+
+                // === DER ENUM ÜBERSETZER ===
+                let categoryName = "Radar";
+                let iconHtml = '<i class="fa-solid fa-camera"></i>';
+                // Nutzt deinen bestehenden rot-pulsierenden CSS-Style
+                let cssClass = "icon-cam"; 
+
+                const typeNum = parseInt(typeStr);
+
+                // Feste Blitzer (101 - 117)
+                if (typeNum >= 101 && typeNum <= 117) {
+                    categoryName = "Fester Blitzer";
+                } 
+                // Mobile Blitzer (0 - 6)
+                else if (typeNum >= 0 && typeNum <= 6) {
+                    categoryName = "Mobiler Blitzer";
+                }
+                // Teilstationär (Anhänger)
+                else if (typeStr === "ts") {
+                    categoryName = "Blitzer-Anhänger";
+                }
+                // Gefahren & Baustellen (20 - 29)
+                else if (typeNum >= 20 && typeNum <= 29) {
+                    categoryName = "Gefahrenstelle";
+                    iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                    // Falls du in der style.css mal '.icon-warn' (z.B. gelb) anlegst, hier eintragen:
+                    // cssClass = "icon-warn"; 
+                }
+                // Tunnel
+                else if (typeStr === "114") {
+                    categoryName = "Tunnel-Blitzer";
+                }
+
+                // Wenn es ein Blitzer ist UND wir ein Tempolimit haben -> Zahl rein!
+                if (vmax && categoryName.includes("Blitzer")) {
+                    iconHtml = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
+                }
+
+                const el = document.createElement('div');
+                el.className = `custom-map-icon ${cssClass}`; 
+                el.innerHTML = iconHtml;
+
+                // Das dynamische Popup
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (!window.poiPopup) {
@@ -1891,8 +1969,8 @@ updateDashboard: function() {
                     }
                     window.poiPopup.setLngLat([lng, lat])
                         .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 2px 5px;">
-                                    <strong style="font-size: 13px;">Radar (${vmax ? vmax + ' km/h' : 'Mobil'})</strong><br>
-                                    <span style="font-size: 11px; color: #666;">${streetName}</span>
+                                    <strong style="font-size: 13px;">${categoryName}</strong><br>
+                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span>
                                   </div>`)
                         .addTo(libreMap);
                 });
