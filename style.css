@@ -3488,35 +3488,35 @@ body.ghost-active #ghost-chat-overlay {
 /* ========================================== */
 
 .quick-actions-row {
-    display: flex;
-    justify-content: center;
-    gap: 20px; /* Abstand zwischen den Kreisen */
-    padding: 0 0 15px 0;
-    width: 100%;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important; /* Zentriert beide Pillen perfekt nebeneinander */
+    align-items: center !important;
+    gap: 24px !important; /* Der perfekte Abstand für die Daumen-Bedienung */
+    padding: 0 0 15px 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 .quick-action-circle {
-    width: 55px;
-    height: 55px;
-    border-radius: 50%;
-    
-    /* Inaktiver Zustand: Graues, gefrästes Glas */
-    background: rgba(30, 30, 35, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05);
-    
-    color: #666; /* Dezentes Grau */
-    font-size: 1.3rem;
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
-    -webkit-tap-highlight-color: transparent;
+    width: 55px !important;
+    height: 55px !important;
+    border-radius: 50% !important;
+    background: rgba(30, 30, 35, 0.4) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.05) !important;
+    color: #666 !important;
+    font-size: 1.3rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: transform 0.15s cubic-bezier(0.2, 1, 0.3, 1) !important;
+    margin: 0 !important; /* Tötet ungewollte asymmetrische Verschiebungen */
+    flex-shrink: 0 !important;
 }
 
 /* Der mechanische Klick */
