@@ -1828,42 +1828,50 @@ updateDashboard: function() {
 // ==========================================
     // === BLITZER.DE NATIVE ENGINE (ATUDO API) ===
     // ==========================================
+// ==========================================
+    // === BLITZER.DE NATIVE ENGINE (ATUDO API) ===
+    // ==========================================
     window.BlitzerLogic = {
         markers: [],
         isActive: false,
-        mapListenerBound: false, // Verhindert, dass wir das Event doppelt anheften
+        mapListenerBound: false,
 
         init: function() {
             const btnBlitzer = document.getElementById('btn-sheet-blitzer');
             if (btnBlitzer) {
-                btnBlitzer.addEventListener('click', (e) => {
+                // BOSS-FIX: Verhindert doppelte Registrierung der Klick-Events
+                btnBlitzer.replaceWith(btnBlitzer.cloneNode(true));
+                const newBtnBlitzer = document.getElementById('btn-sheet-blitzer');
+                
+                newBtnBlitzer.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.isActive = !this.isActive;
                     
                     if (this.isActive) {
-                        btnBlitzer.classList.add('active-red');
-                        this.fetchLiveRadars(); // Sofort laden
+                        newBtnBlitzer.classList.add('active-red');
+                        this.fetchLiveRadars(); 
                     } else {
-                        btnBlitzer.classList.remove('active-red');
-                        this.clearMarkers(); // Karte direkt putzen
+                        newBtnBlitzer.classList.remove('active-red');
+                        this.clearMarkers(); // Radikal weglöschen
                     }
                 });
             }
         },
 
         fetchLiveRadars: async function() {
-            // Nur ausführen, wenn der Modus auch wirklich an ist!
+            // HARTER TÜRSTEHER: Wenn der Button aus ist, wird hier sofort abgebrochen!
             if (!libreMap || !this.isActive) return;
 
-            // Die Karte lauscht jetzt auf Bewegungen & Zooms und lädt dynamisch nach
             if (!this.mapListenerBound) {
                 libreMap.on('moveend', () => { 
-                    if (this.isActive) this.fetchLiveRadars(); 
+                    // Der Wächter prüft auch hier bei jeder Bewegung den Zustand
+                    if (this.isActive) {
+                        this.fetchLiveRadars(); 
+                    }
                 });
                 this.mapListenerBound = true;
             }
 
-            // 1. Sichtbaren Kartenausschnitt berechnen
             const bounds = libreMap.getBounds();
             const latMin = bounds.getSouth();
             const lngMin = bounds.getWest();
@@ -1871,33 +1879,22 @@ updateDashboard: function() {
             const lngMax = bounds.getEast();
             const zoom = Math.floor(libreMap.getZoom());
 
-            // 2. BOSS-FIX: Wir übergeben jetzt JEDEN Typen, den wir aus dem Rust-Code gelernt haben!
-            // Mobile (0-6), Baustellen/Gefahren (20-29), Feste (101-117) und Anhänger (ts)
             const types = "0,1,2,3,4,5,6,20,21,22,23,24,25,26,29,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,117,ts"; 
-
             const targetUrl = `https://cdn2.atudo.net/api/4.0/pois.php?z=${zoom}&type=${types}&box=${latMin},${lngMin},${latMax},${lngMax}`;
             const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
 
-            console.log("📸 Lade Blitzer... URL:", targetUrl);
-
             try {
                 const response = await fetch(proxyUrl);
-                if (!response.ok) {
-                    console.error("❌ Blitzer API blockiert! Status:", response.status);
-                    return;
-                }
+                // Sicherheitsnetz: Wenn der User während des Ladens abschaltet, nicht zeichnen
+                if (!response.ok || !this.isActive) return;
 
                 const data = await response.json();
-                console.log("🚨 BLITZER PAYLOAD:", data);
-
-                if (data && data.pois && data.pois.length > 0) {
+                
+                if (data && data.pois && this.isActive) {
                     this.drawMarkers(data.pois);
-                } else {
-                    console.log("ℹ️ Keine Blitzer in diesem Kartenausschnitt.");
-                    this.clearMarkers(); // Alte Marker von der Karte putzen
                 }
             } catch (error) {
-                console.warn("⚠️ Blitzer Fetch Error:", error);
+                console.warn("Blitzer API offline:", error);
             }
         },
 
