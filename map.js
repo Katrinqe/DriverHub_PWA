@@ -2019,6 +2019,16 @@ drawMarkers: function(pois) {
                 this.markers.push(marker);
             });
         },
+
+        clearMarkers: function() {
+            // 1. Zerstöre alle MapLibre Marker physisch auf der Karte
+            if (this.markers && this.markers.length > 0) {
+                this.markers.forEach(m => m.remove());
+            }
+            // 2. Leere das Array
+            this.markers = [];
+            console.log("🧹 Blitzer-Radar deaktiviert: Alle Icons wurden von der Karte gelöscht.");
+        }
     };
 
 // ==========================================
