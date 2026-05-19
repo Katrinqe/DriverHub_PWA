@@ -1821,18 +1821,17 @@ updateDashboard: function() {
 
     }; // <--- DAS ist jetzt das einzige und echte Ende von window.ExploreLogic!
 
-        // ==========================================
+// ==========================================
     // === BLITZER.DE NATIVE ENGINE (ATUDO API) ===
     // ==========================================
     window.BlitzerLogic = {
         markers: [],
         isActive: false,
 
-        // Test-Funktion, um die API anzuzapfen
         fetchLiveRadars: async function() {
             if (!libreMap) return;
 
-            // 1. Sichtbaren Kartenausschnitt berechnen (Bounding Box)
+            // 1. Sichtbaren Kartenausschnitt berechnen
             const bounds = libreMap.getBounds();
             const latMin = bounds.getSouth();
             const lngMin = bounds.getWest();
@@ -1840,61 +1839,75 @@ updateDashboard: function() {
             const lngMax = bounds.getEast();
             const zoom = Math.floor(libreMap.getZoom());
 
-            // 2. Parameter aus dem GitHub-Leak
-            // Typen laut Leak: 0,1,2,103,ts (wahrscheinlich feste, mobile, section control etc.)
+            // 2. Parameter für die Atudo API
             const types = "0,1,2,103,ts"; 
-            
-            // Die Original-URL
             const targetUrl = `https://cdn2.atudo.net/api/4.0/pois.php?z=${zoom}&type=${types}&box=${latMin},${lngMin},${latMax},${lngMax}`;
 
-            // 3. CORS-Schutz des Browsers umgehen (Für Produktion bauen wir das später in Firebase)
+            // 3. CORS Proxy (Um die Browser-Sperre zu umgehen)
             const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
-
-            console.log("📸 Feuere Blitzer-Radar ab...", targetUrl);
 
             try {
                 const response = await fetch(proxyUrl);
-                
-                if (!response.ok) {
-                    console.error("Blitzer API blockiert oder down. Status:", response.status);
-                    return;
-                }
+                if (!response.ok) return;
 
                 const data = await response.json();
-                console.log("🚨 BLITZER PAYLOAD ERHALTEN:", data);
-
-                // Wenn Daten da sind, testen wir das Zeichnen auf der Map
-                if (data && data.pois && data.pois.length > 0) {
-                    this.drawTestMarkers(data.pois);
-                } else {
-                    console.log("Keine Blitzer im aktuellen Sichtfeld.");
+                
+                if (data && data.pois) {
+                    this.drawMarkers(data.pois);
                 }
-
             } catch (error) {
-                console.error("Fataler Blitzer API Fehler:", error);
+                console.warn("Blitzer API offline oder blockiert:", error);
             }
         },
 
-        drawTestMarkers: function(pois) {
-            // Alte Test-Marker löschen
+        drawMarkers: function(pois) {
+            // Alte Marker restlos entfernen
             this.markers.forEach(m => m.remove());
             this.markers = [];
 
             pois.forEach(poi => {
-                // POI Objekt Struktur müssen wir uns im Console Log genau ansehen!
-                // Wahrscheinlich poi.lat und poi.lng
                 if (!poi.lat || !poi.lng) return;
 
+                const lat = parseFloat(poi.lat);
+                const lng = parseFloat(poi.lng);
+                const vmax = poi.vmax && poi.vmax !== "0" ? poi.vmax : null;
+                const streetName = (poi.address && poi.address.street) ? poi.address.street : "Blitzer";
+
                 const el = document.createElement('div');
-                el.className = 'custom-map-icon icon-cam'; // Nutzen wir dein bestehendes CSS
-                el.innerHTML = '<i class="fa-solid fa-camera"></i>';
+                el.className = 'custom-map-icon icon-cam'; 
+
+                // Wenn wir ein Tempolimit haben, schreiben wir die Zahl rein. Ansonsten das Kamera-Icon.
+                if (vmax) {
+                    el.innerHTML = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
+                } else {
+                    el.innerHTML = '<i class="fa-solid fa-camera"></i>';
+                }
+
+                // Klick-Event für ein kleines Info-Popup
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!window.poiPopup) {
+                        window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
+                    }
+                    window.poiPopup.setLngLat([lng, lat])
+                        .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 2px 5px;">
+                                    <strong style="font-size: 13px;">Radar (${vmax ? vmax + ' km/h' : 'Mobil'})</strong><br>
+                                    <span style="font-size: 11px; color: #666;">${streetName}</span>
+                                  </div>`)
+                        .addTo(libreMap);
+                });
 
                 const marker = new maplibregl.Marker({ element: el })
-                    .setLngLat([poi.lng, poi.lat])
+                    .setLngLat([lng, lat])
                     .addTo(libreMap);
 
                 this.markers.push(marker);
             });
+        },
+
+        clearMarkers: function() {
+            this.markers.forEach(m => m.remove());
+            this.markers = [];
         }
     };
     
