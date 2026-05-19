@@ -1,16 +1,16 @@
-    document.addEventListener('DOMContentLoaded', () => {
-    
+document.addEventListener('DOMContentLoaded', () => {
+
     // === BOSS-FIX 1: SERVICE WORKER REGISTRIEREN ===
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js')
         .then(reg => console.log('Service Worker registriert!'))
         .catch(err => console.error('Service Worker Fehler:', err));
     }
-    
+
     // === BOSS-FIX 2: ALARM-LOGIK STARTEN ===
     setTimeout(initPriceAlarm, 500); // Wartet kurz, bis das HTML sicher da ist
 
-   
+
     // ... hier geht dein normaler Code weiter ...
     const btnNewExplore = document.getElementById('nav-new-explore');
     const newExploreScreen = document.getElementById('new-explore-screen');
@@ -29,10 +29,10 @@
     window.trafficLightMarkers = []; 
     window.knownTrafficLightNodes = new Set();
 
-        
+
     if (btnNewExplore && newExploreScreen) {
         // ... restlicher Code
-        
+
         // FIX: Globaler Listener für die Nav-Bar (Farben weg)
         allNavItems.forEach(nav => {
             nav.addEventListener('click', () => {
@@ -101,7 +101,7 @@
 
 // 1. Standorterkennung (BOSS-FIX: Hardcore 3uTools Waiter - KEIN FALLBACK)
         console.log("Warte auf 3uTools GPS-Signal... KEIN NÜRNBERG FALLBACK MEHR!");
-        
+
         const options = {
             enableHighAccuracy: true,
             maximumAge: 0,
@@ -111,7 +111,7 @@
         const huntWatchId = navigator.geolocation.watchPosition(
             (position) => {
                 const userCoords = [position.coords.longitude, position.coords.latitude];
-                
+
                 // Sobald wir ECHTE Koordinaten haben und die Karte noch nicht geladen ist
                 if (!libreMap && userCoords[0] !== 0 && userCoords[1] !== 0) {
                     console.log("BOOM! 3uTools Standort gefangen:", userCoords);
@@ -149,7 +149,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         }
     });
 
- 
+
    // --- BLAUER PUNKT (Zwingend zeichnen, Original-Klassen nutzen!) ---
     const customMarkerElement = document.createElement('div');
     customMarkerElement.className = 'user-marker-wrap';
@@ -171,7 +171,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
             const currentZoom = libreMap.getZoom();
             const mapEl = document.getElementById(mapContainerId);
             if (!mapEl) return;
-            
+
             // Ab Zoom-Level 14.2 abwärts klappen wir die Preise ein!
             // (Du kannst diesen Wert perfektionieren: 14.5 ist näher dran, 13.5 weiter weg)
             if (currentZoom < 12) {
@@ -218,7 +218,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
        libreMap.scrollZoom.disable();
        libreMap.touchZoomRotate.disable();
        libreMap.doubleClickZoom.disable();
-       
+
        if (libreMap.dragRotate) libreMap.dragRotate.disable();
    });
 
@@ -242,7 +242,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         if (!window.poiPopup) {
             window.poiPopup = new maplibregl.Popup({ closeButton: true, closeOnClick: true, offset: 15, maxWidth: '280px' });
         }
-        
+
         window.poiPopup.setLngLat(coords)
             .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 5px;">
                         <strong style="font-size: 15px;">${poiName}</strong><br>
@@ -261,7 +261,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
 
             if (data.results && data.results.length > 0) {
                 const bestResult = data.results[0];
-                
+
                 // Adresse
                 if (bestResult.address && bestResult.address.freeformAddress) {
                     infoHtml += `<div style="font-size: 12px; color: #555; margin-top: 4px; margin-bottom: 6px;">${bestResult.address.freeformAddress}</div>`;
@@ -276,7 +276,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
                 if (bestResult.poi && bestResult.poi.phone) {
                     infoHtml += `<div style="font-size: 13px; color: #1c1c1e; margin-top: 6px;">📞 ${bestResult.poi.phone}</div>`;
                 }
-                
+
                 // URL (falls vorhanden)
                 if (bestResult.poi && bestResult.poi.url) {
                     infoHtml += `<div style="font-size: 13px; margin-top: 4px;"><a href="http://${bestResult.poi.url}" target="_blank" style="color: #007aff; text-decoration: none;">🌐 Webseite besuchen</a></div>`;
@@ -286,7 +286,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
             }
 
             infoHtml += `</div>`;
-            
+
             // Popup mit echten Daten füllen
             window.poiPopup.setHTML(infoHtml);
 
@@ -306,7 +306,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
     // --- NEU: GESPEICHERTES THEME & POI-MODUS LADEN ---
     setTimeout(() => { 
         if (libreMap) libreMap.resize(); 
-        
+
         const themeOptions = document.querySelectorAll('.theme-option');
         if (themeOptions.length > 0) {
             themeOptions.forEach(opt => opt.classList.remove('active'));
@@ -337,7 +337,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
     const mapCard = document.querySelector('.map-snippet-card');
 
     if (expandTrigger && shrinkBtn && mapCard) {
-        
+
         // 1. Karte groß machen (Fullscreen)
         expandTrigger.addEventListener('click', () => {
             if (mapSettingsBtn) mapSettingsBtn.classList.remove('hidden');
@@ -366,7 +366,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         // 2. Karte wieder klein machen
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
-            
+
             if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
             if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
 
@@ -425,19 +425,19 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
 // ==========================================
     // === TOMTOM SEARCH & ROUTING LOGIC ===
     const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM'; // <-- HIER DEINEN ECHTEN KEY REIN
-    
+
     const searchInput = document.getElementById('tomtom-search-input');
     const suggestionsBox = document.getElementById('tomtom-suggestions');
 
     if (searchInput && suggestionsBox) {
-        
+
         let debounceTimer;
 
         // 1. Autocomplete mit Anti-Spam (Debounce) und Fehler-Feedback
         searchInput.addEventListener('input', (e) => {
             clearTimeout(debounceTimer); // Stoppt den vorherigen Timer beim Weitertippen
             const query = e.target.value.trim();
-            
+
             if (query.length < 3) {
                 suggestionsBox.classList.add('hidden');
                 suggestionsBox.innerHTML = '';
@@ -453,7 +453,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
                     // --- NEU: INTELLIGENTE LOKALE SUCHE ---
                     // Basis-URL
                     let searchUrl = `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json?key=${TOMTOM_API_KEY}&language=de-DE&limit=5`;
-                    
+
                     // Location Biasing: Wenn wir den Standort haben, zwingen wir TomTom, lokal zu priorisieren!
                     if (currentCoords) {
                         // currentCoords[1] ist Latitude, currentCoords[0] ist Longitude
@@ -462,7 +462,7 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
 
                     const response = await fetch(searchUrl);
                     // --------------------------------------
-                    
+
                     // NEU: Wenn TomTom den API-Key ablehnt, zeigen wir es dir sofort an!
                     if (!response.ok) {
                         suggestionsBox.innerHTML = `<div class="suggestion-item" style="color: #ff453a;">API Fehler: Key ungültig oder nicht aktiv (${response.status})</div>`;
@@ -471,12 +471,12 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
 
                     const data = await response.json();
                     suggestionsBox.innerHTML = '';
-                    
+
               if (data.results && data.results.length > 0) {
                         data.results.forEach(result => {
                             const div = document.createElement('div');
                             div.className = 'suggestion-item';
-                            
+
                             // --- NEUE POI-LOGIK: Erkennt Orte wie "REWE" oder "Pizzeria" ---
                             let primaryName = "";
                             let secondaryName = "";
@@ -497,15 +497,15 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
                             } else {
                                 div.innerHTML = `<div style="font-weight: 600; color: #fff; font-size: 15px;">${primaryName}</div>`;
                             }
-                            
+
                             // Klick auf einen Vorschlag
                             div.addEventListener('click', () => {
                                 console.log("ORT GEKLICKT:", primaryName); 
-                                
+
                                 // Wir schreiben bewusst nur den sauberen Namen (z.B. "REWE") in die Suchleiste
                                 searchInput.value = primaryName; 
                                 suggestionsBox.classList.add('hidden');
-                                
+
                                 drawTomTomRoute(result.position.lat, result.position.lon);
                             });
 
@@ -543,10 +543,10 @@ async function drawTomTomRoute(destLat, destLng) {
     const bottomSheet = document.getElementById('map-bottom-sheet');
     const pillV = document.querySelector('.map-controls-pill-v');
     const shrinkBtn = document.getElementById('btn-shrink-map');
-    
+
     // BOSS-FIX: Referenz zur Suchleiste
     const topSearch = document.getElementById('top-search-container');
-    
+
     if (shrinkBtn) {
         shrinkBtn.style.opacity = '0'; 
         shrinkBtn.style.pointerEvents = 'none';
@@ -554,15 +554,15 @@ async function drawTomTomRoute(destLat, destLng) {
 
     if (document.querySelector('.map-snippet-card')) document.querySelector('.map-snippet-card').classList.add('map-expanded');
     document.getElementById('map-expand-trigger').style.display = 'none';
-    
+
     const navBar = document.querySelector('.bottom-nav');
     if (navBar) navBar.style.display = 'none';
     if (mapSettingsBtn) mapSettingsBtn.classList.add('hidden');
     if (mapSettingsOverlay) mapSettingsOverlay.classList.add('hidden');
-    
+
     // BOSS-FIX: Suchleiste oben wegschießen, wenn Route angezeigt wird!
     if (topSearch) topSearch.style.display = 'none';
-    
+
     if (bottomSheet) {
         bottomSheet.classList.remove('expanded');
         bottomSheet.style.display = 'none';
@@ -588,16 +588,16 @@ try {
         // 2. instructionAnnouncementPoints=all (Für perfekte Sprach-Timings)
         // 3. instructionRoadShieldReferences=all (Für deutsche Autobahnschilder)
         const url = `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLng}:${destLat},${destLng}/json?key=${TOMTOM_API_KEY}&traffic=true&sectionType=traffic&sectionType=lanes&maxAlternatives=1&instructionsType=text&instructionAnnouncementPoints=all&instructionRoadShieldReferences=all&language=de-DE${headingParam}`;
-        
+
         console.log("🚀 Lade Route mit offiziellen Support-Parametern...");
         const response = await fetch(url);
-        
+
         if (!response.ok) {
             const err = await response.json();
             alert("TomTom 400 Fehler: " + (err.detailedError?.message || JSON.stringify(err)));
             return;
         }
-        
+
         const data = await response.json();
         if (!data.routes || data.routes.length === 0) return;
 
@@ -616,9 +616,9 @@ try {
             const sections = route.sections || [];
             const routeFeatures = [];
 
-           
+
 allPoints.forEach(coord => bounds.extend(coord));
-            
+
    // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
          // NEU: Wir speichern die reinen Koordinaten ab für unser Höhenprofil
             RouteLogic.routePointsData[index] = allPoints;
@@ -647,10 +647,10 @@ allPoints.forEach(coord => bounds.extend(coord));
                 if (segmentCoords.length < 2) return;
 
                 let color = null; 
-                
+
                 if (section.sectionType && section.sectionType.toUpperCase() === 'TRAFFIC') {
                     const delay = section.magnitudeOfDelay || 0;
-                    
+
                     if (delay === 4) {
                         color = '#8b0000'; // Stillstand
                     } else if (delay === 3 || section.simpleCategory === 'JAM') {
@@ -670,7 +670,7 @@ allPoints.forEach(coord => bounds.extend(coord));
                         properties: { color: color, isTraffic: true },
                         geometry: { type: 'LineString', coordinates: segmentCoords }
                     });
-                    
+
                     // NEU: Wir "malen" die Stau-Farbe exakt auf die betroffenen Punkte im Array!
                     for (let k = start; k <= end; k++) {
                         pointColors[k] = color;
@@ -689,21 +689,21 @@ allPoints.forEach(coord => bounds.extend(coord));
                 cumulativeDists.push(currentDist);
             }
             RouteLogic.routeCumulativeDistances[index] = cumulativeDists;
-            
-          
+
+
 
 // --- BOSS-FIX: BEIDE GEHIRNE SPEICHERN (MULTI-ROUTE AWARENESS) ---
             // Wir speichern nicht mehr nur Index 0 ab, sondern laden ALLE verfügbaren
             // Routen in Arrays, damit wir beim Klick später umschalten können!
             if (!RouteLogic.allInstructions) RouteLogic.allInstructions = [];
             if (!RouteLogic.allLaneSections) RouteLogic.allLaneSections = [];
-            
+
             if (route.guidance && route.guidance.instructions) {
                 RouteLogic.allInstructions[index] = route.guidance.instructions;
             } else {
                 RouteLogic.allInstructions[index] = [];
             }
-            
+
             if (route.sections) {
                 RouteLogic.allLaneSections[index] = route.sections.filter(s => s.sectionType === 'LANES');
             } else {
@@ -765,12 +765,12 @@ allPoints.forEach(coord => bounds.extend(coord));
 // --- UI DATEN BEFÜLLEN ---
             const summary = route.summary;
             const arrivalDate = new Date(Date.now() + summary.travelTimeInSeconds * 1000);
-            
+
             // Zeiten extrahieren (TomTom travelTime beinhaltet bereits den Stau)
             const totalSeconds = summary.travelTimeInSeconds;
             const delaySeconds = summary.trafficDelayInSeconds || 0;
             const normalSeconds = totalSeconds - delaySeconds; // Wie lange es ohne Stau dauern würde
-            
+
             const totalMins = Math.round(totalSeconds / 60);
             const delayMins = Math.round(delaySeconds / 60);
 
@@ -783,10 +783,10 @@ allPoints.forEach(coord => bounds.extend(coord));
             } else {
                 timeString = `${totalMins} Min`;
             }
-            
+
             const timeElement = document.getElementById(`opt-time-${index}`);
             const delayElement = document.getElementById(`opt-delay-${index}`);
-            
+
             timeElement.textContent = timeString;
 
        // 2. Intelligente Prozent-Logik für die Farben
@@ -797,7 +797,7 @@ allPoints.forEach(coord => bounds.extend(coord));
             if (delayMins > 0 && normalSeconds > 0) {
                 // Verhältnis ausrechnen: Wie viel % macht der Stau auf dieser Strecke aus?
                 const percentDelay = (delaySeconds / normalSeconds) * 100;
-                
+
                 if (percentDelay >= 35) {
                     timeColor = '#b30000'; // Dunkelrot (Massiver Zeitverlust)
                     delayColor = '#b30000';
@@ -808,7 +808,7 @@ allPoints.forEach(coord => bounds.extend(coord));
                     timeColor = '#ffcc00'; // Gelb (Leichter Verkehr)
                     delayColor = '#ffcc00';
                 }
-                
+
                 // Mit Klammern sieht es neben dem "über A3" Text eleganter aus
                 delayText = `(+${delayMins} Min)`; 
             }
@@ -847,7 +847,7 @@ allPoints.forEach(coord => bounds.extend(coord));
 
             document.getElementById(`opt-dist-${index}`).textContent = `${(summary.lengthInMeters / 1000).toFixed(1)} km`;
             document.getElementById(`opt-eta-${index}`).textContent = arrivalDate.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-            
+
             // Autobahn-Erkennung ("über A3")
             const viaText = RouteLogic.extractHighway(route.guidance ? route.guidance.instructions : null);
             document.getElementById(`opt-via-${index}`).textContent = index === 0 && viaText === "Lokale Route" ? "Schnellste Route" : viaText;
@@ -919,8 +919,8 @@ allPoints.forEach(coord => bounds.extend(coord));
             ); 
         }
 
-        
-            
+
+
         });
 
     } catch (error) {
@@ -982,20 +982,20 @@ function clearRoutes() {
     const btnNorth = document.getElementById('btn-align-north');
 
   if (btnRecenter && btnNorth) {
-        
+
         // 1. Klick auf Standort-Button (Zentrieren)
         btnRecenter.addEventListener('click', (e) => {
             e.stopPropagation();
-            
+
             // Falls gerade eine Route aktiv ist -> Route abbrechen (wie beim X-Button)
             if (libreMap && libreMap.getLayer('simple-route-layer')) {
                 clearRoutes();
                 const routeUI = document.getElementById('route-overview-ui');
                 if (routeUI) routeUI.classList.add('hidden');
-                
+
                 const bottomSheet = document.getElementById('map-bottom-sheet');
                 if (bottomSheet) bottomSheet.style.display = 'flex';
-                
+
                 const searchInput = document.getElementById('tomtom-search-input');
                 if (searchInput) searchInput.value = '';
             }
@@ -1067,7 +1067,7 @@ function clearRoutes() {
             applyPoiVisibility();
             return;
         }
-        
+
         window.loadedStyleUrl = styleUrl;
         libreMap.setStyle(styleUrl);
 
@@ -1081,7 +1081,7 @@ function clearRoutes() {
 
     function applyPoiVisibility() {
         if (window.currentPoiMode === 'explore') return; 
-        
+
         const layers = libreMap.getStyle().layers;
         if (!layers) return;
 
@@ -1090,7 +1090,7 @@ function clearRoutes() {
                 const id = layer.id.toLowerCase();
                 const sourceLayer = layer['source-layer'] ? layer['source-layer'].toLowerCase() : '';
                 const isPoi = id.includes('poi') || id.includes('amenity') || id.includes('shop') || id.includes('tourism') || sourceLayer.includes('poi');
-                
+
                 if (isPoi && libreMap.getLayer(layer.id)) {
                     libreMap.setLayoutProperty(layer.id, 'visibility', 'none');
                 }
@@ -1105,7 +1105,7 @@ function restore3DBuildings(activeTheme) {
         // Dein altes, funktionierendes Design (mit sanftem Interpolate)
         const buildingColor = activeTheme === 'grey' ? '#a0a0a0' : '#2a2a2a';
         const buildingOpacity = activeTheme === 'grey' ? 1.0 : 0.8;
-        
+
         // Wir jagen den Layer direkt in die Karte, so wie in deiner alten Version
         libreMap.addLayer({
             'id': '3d-buildings',
@@ -1190,7 +1190,7 @@ function restoreRoutes() {
                 e.stopPropagation();
                 themeOptions.forEach(opt => opt.classList.remove('active'));
                 option.classList.add('active');
-                
+
                 window.currentMapTheme = option.getAttribute('data-theme');
                 localStorage.setItem('mapTheme', window.currentMapTheme);
                 window.updateMapAppearance(); // <-- Engine triggern!
@@ -1205,7 +1205,7 @@ function restoreRoutes() {
                     e.stopPropagation();
                     poiOptions.forEach(opt => opt.classList.remove('active'));
                     option.classList.add('active');
-                    
+
                     window.currentPoiMode = option.getAttribute('data-poi');
                     localStorage.setItem('mapPoiMode', window.currentPoiMode);
                     window.updateMapAppearance(); // <-- Engine triggern!
@@ -1215,8 +1215,8 @@ function restoreRoutes() {
 
     }
 
-        
-        
+
+
 
     // ==========================================
     // === SHRINK BUTTON LOGIC (PFEIL OBEN LINKS) ===
@@ -1224,7 +1224,7 @@ function restoreRoutes() {
     if (shrinkBtn && mapCard && expandTrigger) {
         shrinkBtn.addEventListener('click', (e) => {
             e.stopPropagation(); 
-            
+
             // Karte wieder klein machen
             mapCard.classList.remove('map-expanded');
             expandTrigger.style.display = 'block';
@@ -1302,24 +1302,24 @@ function restoreRoutes() {
 
             // 1. Karte komplett abräumen (Nuke)
             clearRoutes();
-            
+
             // 2. Card unten ausblenden
             const routeOverviewUI = document.getElementById('route-overview-ui');
             if (routeOverviewUI) routeOverviewUI.classList.add('hidden');
-            
-     
+
+
 
             // 3. UI wiederherstellen (Suchfeld & Map-Controls)
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.style.display = 'flex';
-            
+
             const pillV = document.querySelector('.map-controls-pill-v');
             if (pillV) pillV.style.display = 'flex';
 
             // BOSS-FIX: Suchleiste wieder anzeigen!
             const topSearch = document.getElementById('top-search-container');
             if (topSearch) topSearch.style.display = 'flex';
-            
+
             // 4. Suchfeld leeren und Tastatur schließen
             const searchInput = document.getElementById('tomtom-search-input');
             if (searchInput) {
@@ -1333,7 +1333,7 @@ function restoreRoutes() {
                 shrinkBtnMap.style.opacity = '1';
                 shrinkBtnMap.style.pointerEvents = 'auto';
             }
-            
+
             // 6. Kamera sanft zurück zum eigenen Standort fliegen
             if (currentCoords && libreMap) {
                 libreMap.flyTo({ center: currentCoords, zoom: 14, pitch: 0, bearing: 0, speed: 1.5, essential: true });
@@ -1363,7 +1363,7 @@ function restoreRoutes() {
             else if (diff < -30) {
                 // Wisch nach unten -> Pille einklappen
                 bottomSheetElement.classList.remove('expanded');
-                
+
                 // Falls man unten wischt, auch die Tastatur oben schließen
                 const topSearch = document.getElementById('tomtom-search-input');
                 if (topSearch) topSearch.blur(); 
@@ -1373,7 +1373,7 @@ function restoreRoutes() {
 // ==========================================
     // === PREMIUM GAS STATION ENGINE (TANKERKÖNIG) ===
     // ==========================================
-    
+
     // Wir initialisieren den Sprit-Typ sicher (falls im LocalStorage Müll steht)
     let savedFuel = localStorage.getItem('preferredFuelType');
     if (savedFuel !== 'e10' && savedFuel !== 'e5' && savedFuel !== 'diesel') {
@@ -1401,7 +1401,7 @@ window.ExploreLogic = {
             const rowE10 = document.getElementById('row-e10');
             const rowE5 = document.getElementById('row-e5');
             const closeBtn = document.querySelector('.totem-close');
-            
+
             if (rowDiesel) rowDiesel.onclick = (e) => { e.stopPropagation(); this.selectFuel('diesel'); };
             if (rowE10) rowE10.onclick = (e) => { e.stopPropagation(); this.selectFuel('e10'); };
             if (rowE5) rowE5.onclick = (e) => { e.stopPropagation(); this.selectFuel('e5'); };
@@ -1412,7 +1412,7 @@ window.ExploreLogic = {
             if (btnGas) {
                 btnGas.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    
+
                     const bottomSheet = document.getElementById('map-bottom-sheet');
                     const searchInput = document.getElementById('tomtom-search-input');
                     if (bottomSheet) bottomSheet.classList.remove('expanded');
@@ -1421,7 +1421,7 @@ window.ExploreLogic = {
              this.isActive = !this.isActive;
                  if (this.isActive) {
                         btnGas.classList.add('active-orange');
-                        
+
                         // === BOSS-FIX: ZEICHNEN STATT LADEN ===
                         // Wenn wir schon Daten haben, zeichnen wir sofort.
                         // Wenn nicht (z.B. weil das GPS lahmte), feuern wir doch noch einen Fetch ab.
@@ -1431,7 +1431,7 @@ window.ExploreLogic = {
                             this.fetchData();
                         }
                         // ======================================
-                        
+
                     } else {
                         btnGas.classList.remove('active-orange');
                         this.clearMarkers();
@@ -1444,10 +1444,10 @@ window.ExploreLogic = {
             // 1. Zwingt das Dashboard sofort in den Lade-Modus (zeigt den Spinner)
             this.updateDashboard(); 
 
-       
-            
+
+
         }, // <--- Hier endet die init-Funktion
-       
+
 
  clearMarkers: function() {
             if (this.mlMarkers) {
@@ -1476,12 +1476,12 @@ fetchData: async function() {
                 const center = libreMap.getCenter();
                 const lat = center.lat;
                 const lng = center.lng;
-                
+
                 // Wir suchen 15km um den sichtbaren Kartenausschnitt
                 let tkRadius = 15; 
 
                 const tkUrl = `https://creativecommons.tankerkoenig.de/json/list.php?lat=${lat}&lng=${lng}&rad=${tkRadius}&sort=dist&type=all&apikey=${this.apiKey}`;
-                
+
                 const response = await fetch(tkUrl);
                 // ... ab hier geht dein Code mit "const data = await response.json();" exakt so weiter wie bisher!
                 const data = await response.json();
@@ -1489,7 +1489,7 @@ fetchData: async function() {
 
                 if (data.ok && data.stations) {
                     this.cachedStations = data.stations.map(st => {
-                        
+
                         // BOSS-FIX: Radikaler Schnitt! Nur die reine Marke, sonst nichts.
                         let pureBrand = "TANK";
                         if (st.brand && st.brand.trim() !== "") {
@@ -1536,7 +1536,7 @@ fetchData: async function() {
             if(n.includes('jet')) return 'jet';
             if(n.includes('hem')) return 'hem';
             if(n.includes('avanti')) return 'avanti';
-            
+
             // BOSS-FIX: Wenn wir die Marke nicht kennen, kriegt sie das Label 'unknown'
             return 'unknown'; 
         },
@@ -1552,7 +1552,7 @@ redrawMarkers: function() {
                 if (!el.lat || !el.lon) return;
 
                 const stationKey = el.lat + "_" + el.lon;
-                
+
                 // 2. Ist die Tankstelle auf dem Bildschirm UND ist der Map-Button (isActive) an?
                 const isVisibleAndActive = bounds.contains([el.lon, el.lat]) && this.isActive;
 
@@ -1574,7 +1574,7 @@ redrawMarkers: function() {
 
                         const elDiv = document.createElement('div');
                         elDiv.className = 'custom-div-icon map-v2-icon'; 
-                        
+
                         elDiv.innerHTML = `
                             <div class="price-marker-wrap map-v2-marker ${closedClass}" style="cursor: pointer; transition: transform 0.1s;">
                                 <div class="pm-brand-bar ${brandClass}">${displayName}</div>
@@ -1587,7 +1587,7 @@ redrawMarkers: function() {
 
                         elDiv.addEventListener('mouseenter', () => elDiv.firstChild.style.transform = 'scale(1.05)');
                         elDiv.addEventListener('mouseleave', () => elDiv.firstChild.style.transform = 'scale(1)');
-                        
+
                         elDiv.addEventListener('click', (e) => {
                             e.stopPropagation();
                             libreMap.flyTo({ 
@@ -1609,7 +1609,7 @@ redrawMarkers: function() {
                         const markerDiv = this.mlMarkers[stationKey].getElement();
                         const priceNode = markerDiv.querySelector('.pm-price');
                         const labelNode = markerDiv.querySelector('.pm-fuel-label');
-                        
+
                         if (priceNode) priceNode.innerText = el.simPrices[this.currentFuelType] || "-.--";
                         if (labelNode) labelNode.innerText = this.currentFuelType.toUpperCase();
                     }
@@ -1626,11 +1626,11 @@ redrawMarkers: function() {
 openTotem: function(name, lat, lng, elementRef) {
             const overlay = document.getElementById('gas-totem-overlay');
             const brandHeader = document.getElementById('totem-brand-header');
-            
+
             // === BOSS-FIX: NUTZE BRAND STATT NAME FÜR MAXIMALE SAUBERKEIT ===
             // Wir priorisieren 'brand', weil dort keine Adresse drinsteht.
             let fullName = "Tankstelle";
-            
+
             if (elementRef && elementRef.realData) {
                 // Wenn die Marke existiert, nehmen wir sie. Wenn nicht, den Namen.
                 fullName = elementRef.realData.brand || elementRef.realData.name || "Tankstelle";
@@ -1648,10 +1648,10 @@ openTotem: function(name, lat, lng, elementRef) {
             }
 
             const brandTitle = document.querySelector('.v2-totem-overlay .totem-header h2');
-            
+
             if (brandTitle) {
                 brandTitle.innerText = fullName; 
-                
+
                 // Dynamische Skalierung bleibt zur Sicherheit
                 const len = fullName.length;
                 if (len > 20) brandTitle.style.fontSize = '1.0rem';
@@ -1659,11 +1659,11 @@ openTotem: function(name, lat, lng, elementRef) {
                 else if (len > 10) brandTitle.style.fontSize = '1.4rem';
                 else brandTitle.style.fontSize = '1.8rem';
             }
-            
+
             const statusEl = document.getElementById('totem-status');
             // ... weiter wie im Original
             if (statusEl) statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> LOADING';
-            
+
             if (overlay) overlay.classList.remove('hidden');
 
             if (overlay) {
@@ -1717,7 +1717,7 @@ openTotem: function(name, lat, lng, elementRef) {
                     statusEl.style.color = '#ff3b30';
                 }
             }
-            
+
             const pDiesel = document.getElementById('price-diesel');
             const pE10 = document.getElementById('price-e10');
             const pE5 = document.getElementById('price-e5');
@@ -1725,14 +1725,14 @@ openTotem: function(name, lat, lng, elementRef) {
             if (pDiesel) pDiesel.innerText = diesel ? (Math.floor(Number(diesel) * 100) / 100).toFixed(2) : "-.--";
             if (pE10) pE10.innerText = e10 ? (Math.floor(Number(e10) * 100) / 100).toFixed(2) : "-.--";
             if (pE5) pE5.innerText = e5 ? (Math.floor(Number(e5) * 100) / 100).toFixed(2) : "-.--";
-            
+
             this.updateTotemSelectionUI();
         },
 
    selectFuel: function(type) {
             this.currentFuelType = type;
             localStorage.setItem('preferredFuelType', type); 
-            
+
             this.updateTotemSelectionUI();
             this.redrawMarkers(); 
             this.updateDashboard(); // BOSS-FIX: Dashboard sofort neu sortieren bei Klick auf Diesel/E10!
@@ -1753,7 +1753,7 @@ updateDashboard: function() {
             const dashboard = document.getElementById('gas-dashboard');
             const listContainer = document.getElementById('dash-top-4-list');
             const labelEl = document.getElementById('dash-graph-fuel-label');
-            
+
             if (!dashboard || !listContainer) return;
 
             // Dashboard IMMER einblenden
@@ -1782,7 +1782,7 @@ updateDashboard: function() {
 
             // 4. HTML rendern
             listContainer.innerHTML = '';
-            
+
             if (top4.length === 0) {
                 listContainer.innerHTML = '<div style="color:#888; font-size:0.8rem; text-align:center; margin-top:20px;">Keine Preise gefunden.</div>';
                 return;
@@ -1791,10 +1791,10 @@ updateDashboard: function() {
             top4.forEach((st, index) => {
            const priceStr = parseFloat(st.simPrices[fuel]).toFixed(2);
                 const distStr = st.realData.dist ? st.realData.dist.toFixed(1) + ' km' : '';
-                
+
                 // BOSS-FIX: Wir holen uns die Marken-Klasse (z.B. 'aral', 'shell')
                 const brandClass = this.getBrandClass(st.name); 
-                
+
                 // Neues 2-Zeilen-Layout ohne die Rang-Nummer
                 const html = `
                     <div class="dash-list-item ${brandClass}" onclick="ExploreLogic.flyToAndOpen('${st.name}', ${st.lat}, ${st.lon})">
@@ -1813,7 +1813,7 @@ updateDashboard: function() {
         flyToAndOpen: function(name, lat, lon) {
             if (!libreMap) return;
             libreMap.flyTo({ center: [lon, lat], zoom: 15.5, speed: 1.2, essential: true });
-            
+
             // Finde das korrekte Element aus dem Cache, um das Totem mit allen Live-Daten zu füttern
             const el = this.cachedStations.find(s => s.lat === lat && s.lon === lon);
             if (el) this.openTotem(name, lat, lon, el);
@@ -1842,7 +1842,7 @@ fetchLiveRadars: async function() {
             // 2. BOSS-FIX: Wir übergeben jetzt JEDEN Typen, den wir aus dem Rust-Code gelernt haben!
             // Mobile (0-6), Baustellen/Gefahren (20-29), Feste (101-117) und Anhänger (ts)
             const types = "0,1,2,3,4,5,6,20,21,22,23,24,25,26,29,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,117,ts"; 
-            
+
             const targetUrl = `https://cdn2.atudo.net/api/4.0/pois.php?z=${zoom}&type=${types}&box=${latMin},${lngMin},${latMax},${lngMax}`;
             const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
 
@@ -1857,7 +1857,7 @@ fetchLiveRadars: async function() {
 
                 const data = await response.json();
                 console.log("🚨 BLITZER PAYLOAD:", data);
-                
+
                 if (data && data.pois && data.pois.length > 0) {
                     this.drawMarkers(data.pois);
                 } else {
@@ -1869,7 +1869,56 @@ fetchLiveRadars: async function() {
             }
         },
 
-drawMarkers: function(pois) {
+        drawMarkers: function(pois) {
+            this.markers.forEach(m => m.remove());
+            this.markers = [];
+
+            pois.forEach(poi => {
+                if (!poi.lat || !poi.lng) return;
+
+                const lat = parseFloat(poi.lat);
+                const lng = parseFloat(poi.lng);
+                const vmax = poi.vmax && poi.vmax !== "0" ? poi.vmax : null;
+                const streetName = (poi.address && poi.address.street) ? poi.address.street : "Unbekannte Straße";
+                
+                // ⚠️ HIER HOLEN WIR DEN ECHTEN TYP AUS DER API
+                const poiType = poi.type || "Unbekannt"; 
+
+                // Wir loggen jeden gefundenen Blitzer in die Konsole, um die Zahlen zu lernen!
+                console.log(`Gefunden: Typ [${poiType}] auf ${streetName}`);
+
+                const el = document.createElement('div');
+                el.className = 'custom-map-icon icon-cam'; 
+
+                if (vmax) {
+                    el.innerHTML = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
+                } else {
+                    el.innerHTML = '<i class="fa-solid fa-camera"></i>';
+                }
+
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!window.poiPopup) {
+                        window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
+                    }
+                    // Im Popup zeigen wir jetzt die echte Typ-Nummer an!
+                    window.poiPopup.setLngLat([lng, lat])
+                        .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 2px 5px;">
+                                    <strong style="font-size: 13px;">Radar (Typ: ${poiType})</strong><br>
+                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span>
+                                  </div>`)
+                        .addTo(libreMap);
+                });
+
+                const marker = new maplibregl.Marker({ element: el })
+                    .setLngLat([lng, lat])
+                    .addTo(libreMap);
+
+                this.markers.push(marker);
+            });
+        },
+
+  drawMarkers: function(pois) {
             this.markers.forEach(m => m.remove());
             this.markers = [];
 
@@ -1882,27 +1931,45 @@ drawMarkers: function(pois) {
                 const streetName = (poi.address && poi.address.street) ? poi.address.street : "Unbekannte Straße";
                 const typeStr = poi.type ? String(poi.type) : "";
 
-                // === DIAGNOSE-DATEN EXTRAHIEREN ===
-                const isConfirmed = poi.info && poi.info.confirmed !== undefined ? poi.info.confirmed : "?";
-                const isGesperrt = poi.info && poi.info.gesperrt !== undefined ? poi.info.gesperrt : "?";
-                const quality = poi.info && poi.info.quality !== undefined ? poi.info.quality : "?";
-                const createDate = poi.create_date || "?";
+                // === DER ENUM ÜBERSETZER ===
+
+
+
+
 
                 let categoryName = "Radar";
                 let iconHtml = '<i class="fa-solid fa-camera"></i>';
+                // Nutzt deinen bestehenden rot-pulsierenden CSS-Style
                 let cssClass = "icon-cam"; 
 
                 const typeNum = parseInt(typeStr);
 
-                if (typeNum >= 101 && typeNum <= 117) categoryName = "Fester Blitzer";
-                else if (typeNum >= 0 && typeNum <= 6) categoryName = "Mobiler Blitzer";
-                else if (typeStr === "ts") categoryName = "Blitzer-Anhänger";
+                // Feste Blitzer (101 - 117)
+                if (typeNum >= 101 && typeNum <= 117) {
+                    categoryName = "Fester Blitzer";
+                } 
+                // Mobile Blitzer (0 - 6)
+                else if (typeNum >= 0 && typeNum <= 6) {
+                    categoryName = "Mobiler Blitzer";
+                }
+                // Teilstationär (Anhänger)
+                else if (typeStr === "ts") {
+                    categoryName = "Blitzer-Anhänger";
+                }
+                // Gefahren & Baustellen (20 - 29)
                 else if (typeNum >= 20 && typeNum <= 29) {
                     categoryName = "Gefahrenstelle";
                     iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                    // Falls du in der style.css mal '.icon-warn' (z.B. gelb) anlegst, hier eintragen:
+                    // cssClass = "icon-warn"; 
                 }
-                else if (typeStr === "114") categoryName = "Tunnel-Blitzer";
+                // Tunnel
+                else if (typeStr === "114") {
+                    categoryName = "Tunnel-Blitzer";
+                }
 
+
+                // Wenn es ein Blitzer ist UND wir ein Tempolimit haben -> Zahl rein!
                 if (vmax && categoryName.includes("Blitzer")) {
                     iconHtml = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
                 }
@@ -1911,22 +1978,23 @@ drawMarkers: function(pois) {
                 el.className = `custom-map-icon ${cssClass}`; 
                 el.innerHTML = iconHtml;
 
+                // Das dynamische Popup
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (!window.poiPopup) {
                         window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
                     }
-                    
-                    // ⚠️ HIER IST DAS NEUE DIAGNOSE-POPUP
+
+
                     window.poiPopup.setLngLat([lng, lat])
                         .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 2px 5px;">
-                                    <strong style="font-size: 13px;">${categoryName} (Typ: ${typeStr})</strong><br>
-                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span><br>
-                                    <hr style="margin: 5px 0; border: 0; border-top: 1px solid #ccc;">
-                                    <span style="font-size: 10px; color: #888;">
-                                        Confirmed: <b>${isConfirmed}</b> | Gesperrt: <b>${isGesperrt}</b><br>
-                                        Quality: <b>${quality}</b> | Erstellt: ${createDate}
-                                    </span>
+                                    <strong style="font-size: 13px;">${categoryName}</strong><br>
+                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span>
+
+
+
+
+
                                   </div>`)
                         .addTo(libreMap);
                 });
@@ -1938,7 +2006,13 @@ drawMarkers: function(pois) {
                 this.markers.push(marker);
             });
         },
-    
+
+        clearMarkers: function() {
+            this.markers.forEach(m => m.remove());
+            this.markers = [];
+        }
+    };
+
 // ==========================================
     // === MATH: ECHTE LUFTLINIEN-DISTANZ IN METER ===
     // ==========================================
@@ -2006,7 +2080,7 @@ drawMarkers: function(pois) {
         try {
             const response = await fetch(url);
             const data = await response.json();
-            
+
             if (!data.elements) return;
 
             let validLights = [];
@@ -2054,7 +2128,7 @@ drawMarkers: function(pois) {
 
             // 6. TOP 3 ZEICHNEN
             const next3Lights = validLights.slice(0, 3);
-            
+
             next3Lights.forEach(item => {
                 window.knownTrafficLightNodes.add(item.node.id);
 
@@ -2102,11 +2176,11 @@ selectRouteOpt: function(index) {
             document.getElementById('route-opt-1').classList.toggle('active', index === 1);
 
             this.updateMapLayers();
-            
+
             if (this.routePointsData[index]) {
                 window.loadElevationData(this.routePointsData[index], this.routeColorsData[index], this.routeDistances[index], this.routeTimesData[index]);
             }
-            
+
             // === BOSS-FIX: GEHIRN-SWAP ===
             // Wenn der User die Route wechselt, MÜSSEN wir auch die Navigations-Daten 
             // (Manöver und Spuren) auf diese Route umschalten, bevor er auf GO drückt!
@@ -2126,7 +2200,7 @@ selectRouteOpt: function(index) {
                 const layerId = `route-layer-${i}`;
                 const sourceId = `route-source-${i}`;
                 let displayFeatures = JSON.parse(JSON.stringify(this.routeGeoJSONs[i]));
-                
+
                 if (!isAct) {
                     displayFeatures.forEach(f => { f.properties.color = '#555555'; });
                 }
@@ -2158,7 +2232,7 @@ selectRouteOpt: function(index) {
     // === ROUTE CARD SWIPE LOGIC (CLEAN) ===
     // ==========================================
     const routeCard = document.getElementById('route-overview-card');
-    
+
     if (routeCard) {
         let startY = 0;
 
@@ -2217,7 +2291,7 @@ selectRouteOpt: function(index) {
             sampledPoints.push(allPoints[i]);
             sampledColors.push(allColors ? allColors[i] : '#30d158'); 
         }
-        
+
         if (sampledPoints[sampledPoints.length - 1] !== allPoints[allPoints.length - 1]) {
             sampledPoints.push(allPoints[allPoints.length - 1]);
             sampledColors.push(allColors ? allColors[allColors.length - 1] : '#30d158'); 
@@ -2312,7 +2386,7 @@ selectRouteOpt: function(index) {
             // Zeichnen
             visualWeather.forEach((vw, i) => {
                 if (!vw.hasData) return;
-                
+
                 let icon = 'fa-cloud'; 
                 // NEU: Tag & Nacht Prüfung mit MOND-ICONS!
                 if (vw.code === 0) icon = vw.isDay ? 'fa-sun' : 'fa-moon';
@@ -2363,7 +2437,7 @@ selectRouteOpt: function(index) {
         const paddingTop = 15; // Luft nach oben zum Card-Rand
         const textZoneHeight = 25; // Die unteren 25px gehören NUR den "40 km" Texten
         const iconSafeZone = 45; // DEIN GRÜNER BALKEN! Exakt so hoch wie der CSS-Container.
-        
+
         const baseY = exactHeight - textZoneHeight; // y=115: Boden der grünen Masse
         const graphBaseY = baseY - iconSafeZone; // y=70: Tiefster Punkt, den das Tal erreichen darf!
         const chartHeight = graphBaseY - paddingTop; // y=55: Der nutzbare Raum für die Bergspitzen
@@ -2373,7 +2447,7 @@ selectRouteOpt: function(index) {
         // 1. FLÄCHEN-LOGIK (Füllt alles bis tief unten zum Text-Rand)
         ctx.beginPath();
         ctx.moveTo(0, baseY); 
-        
+
         for (let i = 0; i < elevations.length; i++) {
             const x = i * xStep;
             const normalizedY = (elevations[i] - minElev) / diff;
@@ -2398,13 +2472,13 @@ selectRouteOpt: function(index) {
             ctx.beginPath();
             const y1_norm = (elevations[i] - minElev) / diff;
             const y1 = paddingTop + chartHeight - (y1_norm * chartHeight);
-            
+
             const y2_norm = (elevations[i+1] - minElev) / diff;
             const y2 = paddingTop + chartHeight - (y2_norm * chartHeight);
 
             ctx.moveTo(i * xStep, y1);
             ctx.lineTo((i + 1) * xStep, y2);
-            
+
             ctx.strokeStyle = pointColors[i] || '#30d158'; 
             ctx.stroke();
         }
@@ -2417,7 +2491,7 @@ selectRouteOpt: function(index) {
         if (totalDistMeters && totalDistMeters >= 80000) {
             const numVisualSegments = Math.min(5, Math.floor(totalDistMeters / 40000));
             const visualSegLength = totalDistMeters / numVisualSegments;
-            
+
             for (let i = 0; i <= numVisualSegments; i++) {
                 const dist = i * visualSegLength;
                 const percentage = dist / totalDistMeters;
@@ -2432,12 +2506,12 @@ selectRouteOpt: function(index) {
                     ctx.beginPath();
                     ctx.setLineDash([3, 4]); 
                     ctx.moveTo(x, baseY);
-                    
+
                     // Wand geht exakt hoch bis zur Berg-Oberfläche
                     const ptIndex = Math.min(Math.floor(percentage * (elevations.length - 1)), elevations.length - 1);
                     const y_norm = (elevations[ptIndex] - minElev) / diff;
                     const y = paddingTop + chartHeight - (y_norm * chartHeight);
-                    
+
                     ctx.lineTo(x, y);
                     ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
                     ctx.lineWidth = 1;
@@ -2525,14 +2599,14 @@ selectRouteOpt: function(index) {
         if (window.testScenarioIdx >= window.NavTestScenarios.length) {
             window.testScenarioIdx = 0; // Zurück zu Live
         }
-        
+
         const btn = document.getElementById('btn-test-hud');
         if (btn) {
             btn.textContent = window.testScenarioIdx === 0 ? 'T' : window.testScenarioIdx;
             btn.classList.toggle('active', window.testScenarioIdx > 0);
         }
     }
-        
+
     // ==========================================
     // === SMART CAMERA ENGINE (V9 BITURBO) ===
     // ==========================================
@@ -2589,7 +2663,7 @@ selectRouteOpt: function(index) {
                     this.stateChangeInitiatedAt = Date.now();
                 } else {
                     let waitTime = 0;
-                    
+
                     // Manöver greifen SOFORT
                     if (!newState.includes('TURN') && !newState.includes('EXIT') && !newState.includes('ROUNDABOUT')) {
                         // Dynamische Logik: Beschleunigen vs. Abbremsen
@@ -2615,7 +2689,7 @@ selectRouteOpt: function(index) {
             let targetPitch = 45;
             // Wir bleiben bei Padding! (Peters Offset-Idee zerschießt die MapLibre 3D-Rotation)
             const targetPadding = { top: window.innerHeight * 0.45, bottom: 0, left: 0, right: 0 };
-            
+
             // Peters Fix: Dynamische Duration basierend auf Speed (geclampt zwischen 800ms und 3000ms)
             let baseDuration = Math.max(800, Math.min(3000, 500 + speedKmh * 10));
 
@@ -2660,7 +2734,7 @@ switch(this.currentState) {
     // === PHASE 1: GO BUTTON & 3D LAUNCH ===
     // ==========================================
     const btnStartRoute = document.getElementById('btn-start-nav'); 
-    
+
     if (btnStartRoute) {
       btnStartRoute.addEventListener('click', async () => {
             window.lastRouteIdx = 0; 
@@ -2668,7 +2742,7 @@ switch(this.currentState) {
 
           ttsAudioPlayer.src = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//OEwAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
             ttsAudioPlayer.play().catch(() => {});
-            
+
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) routeUI.classList.add('fade-out');
 
@@ -2680,7 +2754,7 @@ switch(this.currentState) {
             document.getElementById('hud-remaining-dist').textContent = distanceText;
             const etaText = document.getElementById(`opt-eta-${activeRouteIndex}`).textContent;
             document.getElementById('hud-arrival-time').textContent = etaText;
-            
+
  if (libreMap && currentCoords) {
                 // 1. Aus Punkt wird Pfeil!
                 if (window.userLocationMarker) {
@@ -2712,7 +2786,7 @@ switch(this.currentState) {
 
           const testBtn = document.getElementById('btn-test-hud');
             if(testBtn) testBtn.classList.remove('hidden');
-            
+
             const topCard = document.getElementById('nav-top-card');
             if(topCard) topCard.classList.remove('hidden');
 
@@ -2723,7 +2797,7 @@ const getShortInstruction = (maneuverObj) => {
             // 1. ZIEL / START
             if (man.includes('ARRIVE') || man.includes('FINISH')) actionText = "Ziel erreicht";
             else if (man.includes('DEPART')) actionText = "Route folgen";
-            
+
             // 2. KREISVERKEHR
             else if (man.includes('ROUNDABOUT')) {
                 if (maneuverObj.roundaboutExitNumber) {
@@ -2732,30 +2806,30 @@ const getShortInstruction = (maneuverObj) => {
                     actionText = "In den Kreisverkehr fahren";
                 }
             }
-            
+
             // 3. AUTOBAHN AUSFAHRTEN & AUFFAHRTEN
             else if (man.includes('ENTER_MOTORWAY')) actionText = "Auffahren";
             else if (man.includes('EXIT_MOTORWAY_LEFT') || man.includes('EXIT_LEFT') || man.includes('OFF_RAMP_LEFT')) actionText = "Ausfahrt links nehmen";
             else if (man.includes('EXIT_MOTORWAY_RIGHT') || man.includes('EXIT_RIGHT') || man.includes('OFF_RAMP') || man.includes('EXIT') || man.includes('TAKE_EXIT')) actionText = "Ausfahrt nehmen";
-            
+
             // 4. EINFÄDELN / WECHSELN
             else if (man.includes('MERGE_LEFT') || man.includes('SWITCH_MOTORWAY_LEFT')) actionText = "Links einfädeln";
             else if (man.includes('MERGE_RIGHT') || man.includes('SWITCH_MOTORWAY_RIGHT')) actionText = "Rechts einfädeln";
             else if (man.includes('MERGE')) actionText = "Einfädeln";
-            
+
             // 5. SPUR HALTEN (inklusive BEAR)
             else if (man.includes('KEEP_LEFT') || man.includes('BIFURCATION_LEFT') || man.includes('BEAR_LEFT')) actionText = "Links halten";
             else if (man.includes('KEEP_RIGHT') || man.includes('BIFURCATION_RIGHT') || man.includes('BEAR_RIGHT')) actionText = "Rechts halten";
-            
+
             // 6. SCHARF ABBIEGEN / WENDEN
             else if (man.includes('U_TURN')) actionText = "Wenden";
             else if (man.includes('SHARP_LEFT')) actionText = "Scharf links abbiegen";
             else if (man.includes('SHARP_RIGHT')) actionText = "Scharf rechts abbiegen";
-            
+
             // 7. NORMALES ABBIEGEN
             else if (man.includes('TURN_LEFT')) actionText = "Links abbiegen";
             else if (man.includes('TURN_RIGHT')) actionText = "Rechts abbiegen";
-            
+
             // 8. SANFTES ABBIEGEN & FOLGEN
             else if (man.includes('SLIGHT_LEFT')) actionText = "Leicht links abbiegen";
             else if (man.includes('SLIGHT_RIGHT')) actionText = "Leicht rechts abbiegen";
@@ -2773,7 +2847,7 @@ const getShortInstruction = (maneuverObj) => {
             let directionText = maneuverObj.signpostText || maneuverObj.destination || "";
 
             let voiceStreet = "";
-            
+
             // Trick für Google TTS: "A73" zu "A 73" machen, damit die Stimme flüssig spricht!
             let spokenRn = rn ? rn.replace(/([A-Za-z]+)(\d+)/, "$1 $2") : "";
 
@@ -2794,7 +2868,7 @@ const getShortInstruction = (maneuverObj) => {
                         streetText = streetText.substring(1).trim();
                     }
                 }
-                
+
                 if (spokenRn && streetText) {
                     voiceStreet = `auf ${spokenRn} ${streetText}`;
                 } else if (spokenRn) {
@@ -2803,7 +2877,7 @@ const getShortInstruction = (maneuverObj) => {
                     voiceStreet = `auf ${streetText}`;
                 }
             }
-            
+
             return { action: actionText, street: voiceStreet };
         };
 
@@ -2815,7 +2889,7 @@ const getShortInstruction = (maneuverObj) => {
 const getLaneText = (maneuverObj) => {
                 // Gibt es überhaupt Spuren-Daten in der offiziellen TomTom-Struktur?
                 if (!maneuverObj.lanes || !Array.isArray(maneuverObj.lanes)) return "";
-                
+
                 // 1. Filtere NUR die Spuren heraus, auf denen der Fahrer fahren darf
                 // BOSS-FIX: TomTom nutzt 'follow' (Wenn follow existiert, ist die Spur richtig)
                 const validLanes = maneuverObj.lanes.filter(l => l.follow);
@@ -2851,9 +2925,9 @@ const getLaneText = (maneuverObj) => {
             // 6. DIE PERFEKTE START-ANSAGE (Bulletproof Version)
             const searchInput = document.getElementById('tomtom-search-input');
             const destName = (searchInput && searchInput.value.trim() !== '') ? searchInput.value : "deinem Ziel";
-            
+
             let welcomeSpeech = `Route nach ${destName} wird gestartet.`;
-            
+
             const instructions = RouteLogic.currentInstructions || [];
             let startIdx = 0;
             while (startIdx < instructions.length && instructions[startIdx].maneuver === 'DEPART') {
@@ -2870,7 +2944,7 @@ const getLaneText = (maneuverObj) => {
                 const shortInfo = getShortInstruction(firstMan);
                 const laneText = getLaneText(firstMan);
                 const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
-                
+
                const actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
 
                 // === BOSS-FIX: SONDERREGEL FÜR AUFFAHRTEN BEIM START ===
@@ -2912,9 +2986,9 @@ const getLaneText = (maneuverObj) => {
             } else {
                RouteLogic.voiceState = { idx: -1 };
             }
-            
+
             triggerGoogleVoice(welcomeSpeech);
-            
+
             // BOSS-FEATURE: Ampel-Scan für die ersten 3km anwerfen
             scanTrafficLightsForNext3KM();
 
@@ -2927,7 +3001,7 @@ const getLaneText = (maneuverObj) => {
 
             const lockCamera = (e) => {
                 if (!window.isNavigating) return;
-                
+
                 // DER MASTER-CHECK: Reagiert NUR auf echte menschliche Finger (originalEvent), 
                 // NICHT auf unsere eigenen Code-Kamerafahrten!
                 if (!e.originalEvent) return; 
@@ -2939,13 +3013,13 @@ const getLaneText = (maneuverObj) => {
             const unlockCameraTimer = (e) => {
                 if (!window.isNavigating) return;
                 if (!e.originalEvent) return; 
-                
+
                 if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
-                
+
                 // Startet den 5-Sekunden Countdown erst, wenn ALLE Finger weg sind
                 window.resumeNavTimer = setTimeout(() => {
                     window.userIsLookingAround = false;
-                    
+
                     // Sanfter Rückflug zum Auto
                     if (libreMap && currentCoords) {
                         libreMap.flyTo({
@@ -2998,7 +3072,7 @@ const getLaneText = (maneuverObj) => {
             const detectSituation = (current, upcoming, cumulativeDists) => {
                 const currType = classifyManeuver(current.maneuver);
                 const nextType = upcoming[0] ? classifyManeuver(upcoming[0].maneuver) : null;
-                
+
                 const distToNext = upcoming[0] 
                     ? cumulativeDists[upcoming[0].pointIndex] - cumulativeDists[current.pointIndex] 
                     : Infinity;
@@ -3044,7 +3118,7 @@ const getLaneText = (maneuverObj) => {
                 if (window.MarkerAnimator && window.MarkerAnimator.animating) {
                     window.MarkerAnimator.stop();
                 }
-                
+
                 window.MarkerAnimator = {
                     currentLng: currentCoords ? currentCoords[0] : null,
                     currentLat: currentCoords ? currentCoords[1] : null,
@@ -3053,14 +3127,14 @@ const getLaneText = (maneuverObj) => {
                     targetLat: currentCoords ? currentCoords[1] : null,
                     targetHeading: window.lastHeading || 0,
                     animating: true,
-                    
+
                     setTarget: function(lng, lat, heading) {
                         if (this.currentLng === null) {
                             this.currentLng = lng; this.currentLat = lat;
                         }
                         this.targetLng = lng;
                         this.targetLat = lat;
-                        
+
                         if (heading !== null) {
                             // Verhindert den 360-Grad-Kreisel-Bug (z.B. von 359° auf 1° springen)
                             let diff = heading - this.currentHeading;
@@ -3068,22 +3142,22 @@ const getLaneText = (maneuverObj) => {
                             this.targetHeading = this.currentHeading + diff;
                         }
                     },
-                    
+
                     loop: function() {
                         if (!this.animating) return;
                         requestAnimationFrame(this.loop.bind(this));
-                        
+
                         if (this.currentLng === null) return;
-                        
+
                         // Sanftes Gleiten: Zieht den Pfeil pro Frame um 10% ans echte GPS-Ziel
                         const ease = 0.1;
                         this.currentLng += (this.targetLng - this.currentLng) * ease;
                         this.currentLat += (this.targetLat - this.currentLat) * ease;
                         this.currentHeading += (this.targetHeading - this.currentHeading) * ease;
-                        
+
                         // Globale Koordinaten für die Kamera-Engine updaten
                         currentCoords = [this.currentLng, this.currentLat]; 
-                        
+
                         if (window.userLocationMarker) {
                             window.userLocationMarker.setLngLat(currentCoords);
                             window.userLocationMarker.setRotation(this.currentHeading);
@@ -3120,17 +3194,17 @@ const getLaneText = (maneuverObj) => {
                     let distMeters = 0;
 
                     if (libreMap && elapsedSinceStart > 2500 && !window.userIsLookingAround) {
-                        
+
                         const activeRoutePts = RouteLogic.routePointsData[RouteLogic.activeIndex];
                         const cumulativeDists = RouteLogic.routeCumulativeDistances[RouteLogic.activeIndex];
 
                         if (activeRoutePts && cumulativeDists && RouteLogic.currentInstructions && RouteLogic.currentInstructions.length > 0) {
                             if (typeof window.lastRouteIdx === 'undefined') window.lastRouteIdx = 0;
-                            
+
                             let closestIdx = window.lastRouteIdx;
                             let minDist = Infinity;
                             const limit = Math.min(activeRoutePts.length, closestIdx + 120); 
-                            
+
                             for (let i = closestIdx; i < limit; i++) {
                                 const d = calculateDistance(lat, lng, activeRoutePts[i][1], activeRoutePts[i][0]);
                                 if (d < minDist) {
@@ -3150,24 +3224,24 @@ const getLaneText = (maneuverObj) => {
 
                             if (currIdx < instructions.length) {
                                 currentManeuver = instructions[currIdx];
-                                
+
                           // ====================================================
                                 // === BOSS-FIX: DIE PERFEKTE ASPHALT-DISTANZ ===
                                 // ====================================================
                                 let isPassed = closestIdx >= currentManeuver.pointIndex; 
-                                
+
                                 // Wir nutzen ausschließlich die echte TomTom-Kurvenlänge!
                                 // Keine Luftlinie, kein Vektor-Zuschlag. Nur Zielpunkt minus aktueller Punkt.
                                 distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
-                                
+
                                 if (distMeters < 0 || isPassed) distMeters = 0;
                                 // ====================================================
-     
+
 
                                 if (isPassed || distMeters <= 35) {
                                     RouteLogic.currentInstructionIndex++;
                                     currIdx = RouteLogic.currentInstructionIndex;
-                                    
+
                                     while (currIdx < instructions.length && instructions[currIdx].maneuver === 'DEPART') {
                                         RouteLogic.currentInstructionIndex++;
                                         currIdx = RouteLogic.currentInstructionIndex;
@@ -3177,7 +3251,7 @@ const getLaneText = (maneuverObj) => {
                                         currentManeuver = instructions[currIdx];
                                         distMeters = cumulativeDists[currentManeuver.pointIndex] - cumulativeDists[closestIdx];
                                         if (distMeters < 0) distMeters = 0;
-                                        
+
                                         window.voiceBlockUntil = Date.now() + 5000;
                                         RouteLogic.forceFirstInstruction = false;
                                         if (window.startVoiceTimeout) clearTimeout(window.startVoiceTimeout);
@@ -3194,11 +3268,11 @@ const getLaneText = (maneuverObj) => {
                                 // --- NEU: PROXIMITY SIGNPOST FILTER (Schilderklau) ---
                                 let peekSchild = currIdx + 1;
                                 while (peekSchild < instructions.length && instructions[peekSchild].maneuver === 'DEPART') peekSchild++;
-                                
+
                                 if (peekSchild < instructions.length) {
                                     const nextMan = instructions[peekSchild];
                                     const distToNext = cumulativeDists[nextMan.pointIndex] - cumulativeDists[currentManeuver.pointIndex];
-                                    
+
                                     if (distToNext <= 250 && nextMan.signpostText) {
                                         currentManeuver.signpostText = nextMan.signpostText;
                                     }
@@ -3217,7 +3291,7 @@ const getLaneText = (maneuverObj) => {
                                     // 2. Suchen wir den passenden Spur-Abschnitt für unseren aktuellen Standort (closestIdx)
                                     for (let i = 0; i < RouteLogic.currentLaneGuidance.length; i++) {
                                         const guidanceObj = RouteLogic.currentLaneGuidance[i];
-                                        
+
                                         if (guidanceObj.lanes && guidanceObj.lanes.length > 0) {
                                             // TomTom verpackt die Start/Endpunkte in laneSections (meist nur ein Array-Element)
                                             // Optional: Wir nutzen einen kleinen "Vorlauf" (z.B. + 2 Punkte), damit die Spuren 
@@ -3260,14 +3334,14 @@ const getLaneText = (maneuverObj) => {
                                 const shortInfo = getShortInstruction(currentManeuver);
                                 const laneText = getLaneText(currentManeuver);
                                 const baseActionStr = `${shortInfo.action} ${shortInfo.street}`.trim();
-                                
+
                                 // 1. Deine alte, funktionierende UI-Sicherheit
                                 let actionStr = (distMeters <= 600 && laneText) ? `${baseActionStr}, ${laneText}` : baseActionStr;
 
                                 // 2. Die NEUE Situation Engine (Rechnet im Hintergrund)
                                 const upcoming = getUpcomingManeuvers(instructions, currIdx, 3);
                                 const situation = detectSituation(currentManeuver, upcoming, cumulativeDists);
-                                
+
                                 let smartActionStr = buildInstruction(currentManeuver, upcoming, situation, shortInfo);
                                 if (distMeters <= 600 && laneText) {
                                     smartActionStr += `, ${laneText}`; // Spuren anhängen
@@ -3318,18 +3392,18 @@ const getLaneText = (maneuverObj) => {
                                         spokenNow: false
                                     };
                                 }
-                                
+
                                 let vs = RouteLogic.voiceState;
                                 let textToSpeak = null;
-                                
+
                                if (Date.now() > window.voiceBlockUntil || RouteLogic.forceFirstInstruction) {
-                                    
+
                                     // Erkennen, ob das aktuelle Manöver eine Auffahrt ist
                                     const isAuffahren = currentManeuver && currentManeuver.maneuver && currentManeuver.maneuver.includes('ENTER_MOTORWAY');
 
                                     if (!vs.spokenInit) {
                                         RouteLogic.forceFirstInstruction = false;
-                                        
+
                                         if (isAuffahren) {
                                             // BOSS-FIX: Bei Auffahrten labern wir den Fahrer nicht voll. 
                                             // Einmaliger Hinweis ohne Distanz.
@@ -3345,7 +3419,7 @@ const getLaneText = (maneuverObj) => {
                                         } else {
                                             textToSpeak = `In ${formatDist(distMeters)} ${actionStr}.`;
                                         }
-                                        
+
                                         vs.spokenInit = true;
                                     }
                                     else {
@@ -3386,7 +3460,7 @@ const getLaneText = (maneuverObj) => {
                         // Kamera aktualisieren (Live Daten)
                         const safeDist = (typeof distMeters !== 'undefined' && distMeters !== null) ? distMeters : 9999;
                         const safeManeuver = (typeof currentManeuver !== 'undefined') ? currentManeuver : null;
-                        
+
                         window.SmartCameraEngine.update(
                             libreMap, 
                             currentCoords, 
@@ -3404,7 +3478,7 @@ const getLaneText = (maneuverObj) => {
                    // ====================================================
                     // === BOSS-FIX: DIE EINZIGE HUD-ENGINE (PHASE ENGINE V1.1) ===
                     // ====================================================
-                    
+
                     // 1. DIE WEICHE: Woher kommen die Daten?
                     let renderManeuver = currentManeuver; 
                     let renderDist = distMeters;
@@ -3423,7 +3497,7 @@ const getLaneText = (maneuverObj) => {
                             let isValid = lane.follow ? true : false;
                             // Wir mappen die neuen "directions" auf unsere alten "indications"
                             let newIndications = lane.directions ? lane.directions : [];
-                            
+
                             return { ...lane, valid: isValid, indications: newIndications };
                         });
                     }
@@ -3487,7 +3561,7 @@ const getLaneText = (maneuverObj) => {
                     if (iconEl) {
                         let iconClass = 'fa-arrow-up'; 
                         let rotation = 'rotate(0deg)';
-                        
+
                         if (navPhase === "EXIT" || manType.includes('EXIT') || manType.includes('SWITCH_MOTORWAY') || manType.includes('TAKE_EXIT')) {
                             iconClass = 'fa-arrow-up'; 
                             rotation = manType.includes('LEFT') ? 'rotate(-45deg)' : 'rotate(45deg)'; 
@@ -3502,7 +3576,7 @@ const getLaneText = (maneuverObj) => {
                         else if (manType.includes('BEAR_RIGHT') || manType.includes('SLIGHT_RIGHT')) { iconClass = 'fa-arrow-up'; rotation = 'rotate(30deg)'; }
                         else if (manType.includes('U_TURN')) { iconClass = 'fa-arrow-rotate-left'; }
                         else if (manType.includes('ROUNDABOUT')) { iconClass = 'fa-arrows-spin'; } 
-                        
+
                         iconEl.className = `fa-solid ${iconClass}`;
                         iconEl.style.transform = rotation; 
                         iconEl.style.display = 'inline-block'; 
@@ -3513,7 +3587,7 @@ const getLaneText = (maneuverObj) => {
                     if (streetEl) {
                         streetEl.innerHTML = ''; 
                         let rn = "";
-                        
+
                         if (renderManeuver.roadNumbers && renderManeuver.roadNumbers.length > 0) {
                             rn = renderManeuver.roadNumbers[0];
                             let badgeClass = '';
@@ -3521,16 +3595,16 @@ const getLaneText = (maneuverObj) => {
                             else if (rn.startsWith('B')) badgeClass = 'bundesstrasse';
                             // BOSS-FIX: Bayerische Staatsstraßen (St), Landesstraßen (L) und Kreisstraßen (K)
                             else if (rn.startsWith('St') || rn.startsWith('L') || rn.startsWith('K')) badgeClass = 'landesstrasse';
-                            
+
                             if (badgeClass) streetEl.innerHTML += `<span class="road-badge ${badgeClass}">${rn}</span>`;
                         }
 
                         let directionText = renderManeuver.signpostText || renderManeuver.destination || "";
                         let baseStreet = renderManeuver.street || "";
-                        
+
                         // --- BOSS-FIX: DER INTELLIGENTE TEXT-FILTER ---
                         let finalString = "";
-                        
+
                         if (directionText) {
                             // Wenn wir ein echtes Schild haben (z.B. "München-Ost"), 
                             // ignorieren wir die aktuelle Straße (z.B. "A9") komplett!
@@ -3551,7 +3625,7 @@ const getLaneText = (maneuverObj) => {
                         textSpan.textContent = finalString.trim();
                         streetEl.appendChild(textSpan);
                         streetEl.style.display = 'block';
-                        
+
               // E) Der Spur-Assistent (TOMTOM PRO-LEVEL ARCHITECTURE)
                         let laneContainer = document.getElementById('nav-top-lanes');
                         if (!laneContainer) {
@@ -3563,7 +3637,7 @@ const getLaneText = (maneuverObj) => {
 
                         // 1. Sichere Variablen
                         const mType = manType || ""; 
-                        
+
                         // 2. Elegante Sichtbarkeits-Regel (Keine Spuren im Kreisverkehr oder beim Abbiegen)
                         const showLanes = renderManeuver?.lanes?.length > 0 && 
                                           navPhase !== "TURN" && 
@@ -3593,16 +3667,16 @@ const getLaneText = (maneuverObj) => {
 
                         renderManeuver.lanes.forEach(lane => {
                             const isValidLane = !!lane.follow; // Sauberer Boolean-Check
-                            
+
                             const arrowDiv = document.createElement('div');
                             arrowDiv.className = `lane-arrow ${isValidLane ? 'valid' : ''}`;
-                            
+
                             let faIcon = 'fa-arrow-up'; 
                             let laneRot = 0; // Wir rechnen jetzt in echten Zahlen
-                            
+
                             if (lane.directions && Array.isArray(lane.directions)) {
                                 const dirs = lane.directions.map(d => d.toLowerCase());
-                                
+
                                 if (navPhase === "PRE_EXIT" || mType.includes("KEEP")) {
                                     // Ruhiges UI vor der Gabelung
                                     laneRot = 0;
@@ -3617,7 +3691,7 @@ const getLaneText = (maneuverObj) => {
                                     else if (dirs.includes('slight_left')) laneRot = -20;
                                 }
                             }
-                            
+
                             arrowDiv.innerHTML = `<i class="fa-solid ${faIcon}" style="transform: rotate(${laneRot}deg); display: inline-block;"></i>`;
                             fragment.appendChild(arrowDiv);
                         });
@@ -3644,7 +3718,7 @@ const getLaneText = (maneuverObj) => {
             window.isNavigating = false;
             window.userIsLookingAround = false;
             if (window.resumeNavTimer) clearTimeout(window.resumeNavTimer);
-            
+
             // NEU: Die 60FPS Pfeil-Animation hart stoppen!
             if (window.MarkerAnimator) window.MarkerAnimator.stop();
 
@@ -3656,7 +3730,7 @@ const getLaneText = (maneuverObj) => {
                 navigator.geolocation.clearWatch(navWatchId);
                 navWatchId = null;
             }
-            
+
             const speedDisplay = document.getElementById('hud-current-speed');
             if (speedDisplay) speedDisplay.textContent = '0';
 
@@ -3666,11 +3740,11 @@ const getLaneText = (maneuverObj) => {
             const testBtn = document.getElementById('btn-test-hud');
             if(testBtn) testBtn.classList.add('hidden');
             window.testScenarioIdx = 0; // Simulator hart zurücksetzen
-            
+
             // Top-Card beim Abbruch sprengen
             const topCard = document.getElementById('nav-top-card');
             if (topCard) topCard.classList.add('hidden');
-            
+
             const routeUI = document.getElementById('route-overview-ui');
             if (routeUI) {
                 routeUI.classList.remove('fade-out'); 
@@ -3685,14 +3759,14 @@ const getLaneText = (maneuverObj) => {
 
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.style.display = 'flex';
-            
+
             const pillV = document.querySelector('.map-controls-pill-v');
             if (pillV) pillV.style.display = 'flex';
 
             // Suchleiste wieder anzeigen!
             const topSearch = document.getElementById('top-search-container');
             if (topSearch) topSearch.style.display = 'flex';
-            
+
             const shrinkBtnMap = document.getElementById('btn-shrink-map');
             if (shrinkBtnMap) {
                 shrinkBtnMap.style.opacity = ''; 
@@ -3737,7 +3811,7 @@ const getLaneText = (maneuverObj) => {
                 if (!docSnap.exists) { console.error("Kein API Key in Firestore gefunden!"); return; }
                 window.cachedGoogleTtsKey = docSnap.data().google_tts;
             }
-            
+
             const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${window.cachedGoogleTtsKey}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3750,7 +3824,7 @@ const getLaneText = (maneuverObj) => {
 
             if (!response.ok) throw new Error("TTS API Fehler: " + response.status);
             const data = await response.json();
-            
+
      ttsAudioPlayer.src = "data:audio/mp3;base64," + data.audioContent;
             ttsAudioPlayer.play().catch(e => console.warn("Audio durch Browser blockiert:", e));
 
@@ -3765,7 +3839,7 @@ const getLaneText = (maneuverObj) => {
 /* ========================================== */
 function initPriceAlarm() {
     const input = document.getElementById('alarm-price-input');
-    
+
     if (!input) {
         console.warn("Preis-Alarm Input nicht gefunden.");
         return;
@@ -3773,7 +3847,7 @@ function initPriceAlarm() {
 
     input.addEventListener('change', async function(e) {
         const val = input.value;
-        
+
         if(!val) return; 
 
         // === 1. PUSH-RECHTE VON APPLE ERZWINGEN ===
@@ -3818,7 +3892,7 @@ function initPriceAlarm() {
             btnDebug.classList.remove('hidden');
         });
     }
-    
+
     // Den Button beim Abbruch der Navigation wieder verstecken
     const originalBtnCancelRoute = document.getElementById('btn-cancel-active-nav');
     if (originalBtnCancelRoute && btnDebug) {
@@ -3848,7 +3922,7 @@ function renderManifest() {
 
             const instructions = window.RouteLogic.currentInstructions;
             const currentIndex = window.RouteLogic.currentInstructionIndex || 0;
-            
+
             // Wir laden die ECHTEN Spuren aus unserem neuen Filter!
             const laneSections = window.RouteLogic.currentLaneSections || [];
 
@@ -3870,7 +3944,7 @@ function renderManifest() {
             instructions.forEach((inst, idx) => {
                 const isCurrent = idx === currentIndex;
                 const rowClass = isCurrent ? 'manifest-row current-row' : 'manifest-row';
-                
+
                 const maneuver = inst.maneuver || 'UNKNOWN_MANEUVER';
                 const street = inst.street || (inst.roadNumbers ? inst.roadNumbers.join(', ') : 'Keine Straßeninfo');
                 const sign = inst.signpostText || inst.destination || 'Kein Beschilderungstext';
