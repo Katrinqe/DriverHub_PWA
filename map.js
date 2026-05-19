@@ -1869,7 +1869,7 @@ fetchLiveRadars: async function() {
             }
         },
 
- drawMarkers: function(pois) {
+drawMarkers: function(pois) {
             this.markers.forEach(m => m.remove());
             this.markers = [];
 
@@ -1926,13 +1926,70 @@ fetchLiveRadars: async function() {
 
                 const typeNum = parseInt(typeStr);
 
-                // ... (Dein restlicher Code für die Fein-Unterteilung bleibt absolut identisch!)
+                // === 2. DIE FEIN-UNTERTEILUNG ===
+                
+                // Feste Blitzer (101 - 117)
+                if (typeNum >= 101 && typeNum <= 117) {
+                    categoryName = "Fester Blitzer";
+                } 
+                // Mobile Blitzer (0 - 6)
+                else if (typeNum >= 0 && typeNum <= 6) {
+                    categoryName = "Mobiler Blitzer";
+                }
+                // Teilstationär (Anhänger)
+                else if (typeStr === "ts") {
+                    categoryName = "Blitzer-Anhänger";
+                }
+                // Gefahren, Stau & Baustellen (20 - 29)
+                else if (typeNum >= 20 && typeNum <= 29) {
+                    // Feinschliff laut Atudo/Blitzer.de API
+                    if (typeNum === 20) {
+                        categoryName = "Stauende";
+                        iconHtml = '<i class="fa-solid fa-car-burst"></i>';
+                    } else if (typeNum === 22 || typeNum === 26) {
+                        categoryName = "Baustelle";
+                        // Extra Baustellen-Icon
+                        iconHtml = '<i class="fa-solid fa-person-digging"></i>'; 
+                    } else {
+                        categoryName = "Gefahrenstelle (Hindernis/Unfall)";
+                        iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
+                    }
+                }
+                // Tunnel
+                else if (typeStr === "114") {
+                    categoryName = "Tunnel-Blitzer";
+                }
 
+                // Wenn es ein Blitzer ist UND wir ein Tempolimit haben -> Zahl ins Icon!
+                if (vmax && categoryName.includes("Blitzer")) {
+                    iconHtml = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
+                }
 
-        clearMarkers: function() {
-            this.markers.forEach(m => m.remove());
-            this.markers = [];
-        }
+                const el = document.createElement('div');
+                el.className = `custom-map-icon ${cssClass}`; 
+                el.innerHTML = iconHtml;
+
+                // Das aufgeräumte, finale Popup
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (!window.poiPopup) {
+                        window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
+                    }
+                    window.poiPopup.setLngLat([lng, lat])
+                        .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 2px 5px;">
+                                    <strong style="font-size: 13px;">${categoryName}</strong><br>
+                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span>
+                                  </div>`)
+                        .addTo(libreMap);
+                });
+
+                const marker = new maplibregl.Marker({ element: el })
+                    .setLngLat([lng, lat])
+                    .addTo(libreMap);
+
+                this.markers.push(marker);
+            });
+        },
     };
 
 // ==========================================
