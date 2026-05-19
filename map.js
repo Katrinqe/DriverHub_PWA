@@ -1820,6 +1820,83 @@ updateDashboard: function() {
         }
 
     }; // <--- DAS ist jetzt das einzige und echte Ende von window.ExploreLogic!
+
+        // ==========================================
+    // === BLITZER.DE NATIVE ENGINE (ATUDO API) ===
+    // ==========================================
+    window.BlitzerLogic = {
+        markers: [],
+        isActive: false,
+
+        // Test-Funktion, um die API anzuzapfen
+        fetchLiveRadars: async function() {
+            if (!libreMap) return;
+
+            // 1. Sichtbaren Kartenausschnitt berechnen (Bounding Box)
+            const bounds = libreMap.getBounds();
+            const latMin = bounds.getSouth();
+            const lngMin = bounds.getWest();
+            const latMax = bounds.getNorth();
+            const lngMax = bounds.getEast();
+            const zoom = Math.floor(libreMap.getZoom());
+
+            // 2. Parameter aus dem GitHub-Leak
+            // Typen laut Leak: 0,1,2,103,ts (wahrscheinlich feste, mobile, section control etc.)
+            const types = "0,1,2,103,ts"; 
+            
+            // Die Original-URL
+            const targetUrl = `https://cdn2.atudo.net/api/4.0/pois.php?z=${zoom}&type=${types}&box=${latMin},${lngMin},${latMax},${lngMax}`;
+
+            // 3. CORS-Schutz des Browsers umgehen (Für Produktion bauen wir das später in Firebase)
+            const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
+
+            console.log("📸 Feuere Blitzer-Radar ab...", targetUrl);
+
+            try {
+                const response = await fetch(proxyUrl);
+                
+                if (!response.ok) {
+                    console.error("Blitzer API blockiert oder down. Status:", response.status);
+                    return;
+                }
+
+                const data = await response.json();
+                console.log("🚨 BLITZER PAYLOAD ERHALTEN:", data);
+
+                // Wenn Daten da sind, testen wir das Zeichnen auf der Map
+                if (data && data.pois && data.pois.length > 0) {
+                    this.drawTestMarkers(data.pois);
+                } else {
+                    console.log("Keine Blitzer im aktuellen Sichtfeld.");
+                }
+
+            } catch (error) {
+                console.error("Fataler Blitzer API Fehler:", error);
+            }
+        },
+
+        drawTestMarkers: function(pois) {
+            // Alte Test-Marker löschen
+            this.markers.forEach(m => m.remove());
+            this.markers = [];
+
+            pois.forEach(poi => {
+                // POI Objekt Struktur müssen wir uns im Console Log genau ansehen!
+                // Wahrscheinlich poi.lat und poi.lng
+                if (!poi.lat || !poi.lng) return;
+
+                const el = document.createElement('div');
+                el.className = 'custom-map-icon icon-cam'; // Nutzen wir dein bestehendes CSS
+                el.innerHTML = '<i class="fa-solid fa-camera"></i>';
+
+                const marker = new maplibregl.Marker({ element: el })
+                    .setLngLat([poi.lng, poi.lat])
+                    .addTo(libreMap);
+
+                this.markers.push(marker);
+            });
+        }
+    };
     
 // ==========================================
     // === MATH: ECHTE LUFTLINIEN-DISTANZ IN METER ===
