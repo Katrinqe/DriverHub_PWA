@@ -2065,7 +2065,7 @@ drawMarkers: function(pois) {
 
                 this.markers.push(marker);
             });
-        },
+        
 
         clearMarkers: function() {
             // 1. Zerstöre alle MapLibre Marker physisch auf der Karte
