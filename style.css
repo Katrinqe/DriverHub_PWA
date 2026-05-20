@@ -3496,7 +3496,7 @@ body.ghost-active #ghost-chat-overlay {
     
     /* FIX: Keine absolute Positionierung mehr! */
     width: 100% !important;
-    margin: 15px 0 15px 0 !important; /* Abstand nach oben und unten */
+    margin: 12px 0 15px 0 !important; /* Abstand nach oben und unten */
     padding: 0 !important;
     z-index: 10;
 }
