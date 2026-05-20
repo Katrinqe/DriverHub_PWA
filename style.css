@@ -3487,17 +3487,18 @@ body.ghost-active #ghost-chat-overlay {
 /* === QUICK ACTIONS (DIE GLAS KREISE) === */
 /* ========================================== */
 
-/* === CONTAINER: Zentriert über dem Dashboard === */
 .quick-actions-row {
-    position: absolute;
-    top: -28px; /* Zieht die Buttons exakt zur Hälfte über den Rand der Karte */
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    gap: 20px; /* Abstand zwischen Tanken und Blitzer */
-    z-index: 200;
-    pointer-events: none; /* Klicks auf die Karte dazwischen durchlassen */
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 24px !important;
+    
+    /* FIX: Keine absolute Positionierung mehr! */
+    width: 100% !important;
+    margin: 15px 0 15px 0 !important; /* Abstand nach oben und unten */
+    padding: 0 !important;
+    z-index: 10;
 }
 
 /* === BASIS BUTTON === */
