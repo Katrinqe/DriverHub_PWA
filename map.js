@@ -1822,20 +1822,24 @@ updateDashboard: function() {
 
     }; // <--- DAS ist jetzt das einzige und echte Ende von window.ExploreLogic!
 
-// ==========================================
-    // === BLITZER.DE NATIVE ENGINE (ATUDO API) ===
-    // ==========================================
-// ==========================================
-    // === BLITZER.DE NATIVE ENGINE (ATUDO API) ===
-    // ==========================================
+
 // ==========================================
     // === BLITZER.DE NATIVE ENGINE (ATUDO API) ===
     // ==========================================
     window.BlitzerLogic = {
         markers: [],
         isActive: false,
-        // Diese Tabelle übersetzt API-Codes in dein UI
-  poiMapping: {
+        mapListenerBound: false,
+        
+        // 1. UNSERE NEUEN FILTER (Standard-Zustand)
+        filters: {
+            blitzer: true,
+            baustellen: false,
+            verkehr: false
+        },
+
+        // Dein bestehendes Mapping (Unverändert)
+        poiMapping: {
             "0": { cat: "Mobiler Blitzer", icon: "fa-camera" },
             "1": { cat: "Mobiler Blitzer", icon: "fa-camera" },
             "2": { cat: "Mobiler Blitzer", icon: "fa-camera" },
@@ -1843,50 +1847,106 @@ updateDashboard: function() {
             "22": { cat: "Baustelle", icon: "fa-person-digging" },
             "26": { cat: "Baustelle", icon: "fa-person-digging" },
             "107": { cat: "Fester Blitzer", icon: "fa-camera-retro" },
-            "110": { cat: "Rotlicht + Speed", icon: "fa-camera-retro fa-traffic-light" }, // Kombi
+            "110": { cat: "Rotlicht + Speed", icon: "fa-camera-retro fa-traffic-light" }, 
             "111": { cat: "Rotlicht-Blitzer", icon: "fa-traffic-light" },
             "114": { cat: "Tunnel-Blitzer", icon: "fa-tunnel" },
             "ts":  { cat: "Blitzer-Anhänger", icon: "fa-trailer" },
             "vwd": { cat: "Polizeimeldung", icon: "fa-handcuffs" },
             "default": { cat: "Radar", icon: "fa-camera" }
         },
-        mapListenerBound: false,
 
         init: function() {
+            // Memory-Check: Lade gespeicherte Filter beim App-Start
+            const savedFilters = localStorage.getItem('blitzerFilters');
+            if (savedFilters) {
+                try { this.filters = JSON.parse(savedFilters); } catch(e) {}
+            }
+
+            // Klick-Logik für den Haupt-Button (Unten)
             const btnBlitzer = document.getElementById('btn-sheet-blitzer');
             if (btnBlitzer) {
-                // BOSS-FIX: Verhindert doppelte Registrierung der Klick-Events
                 btnBlitzer.replaceWith(btnBlitzer.cloneNode(true));
                 const newBtnBlitzer = document.getElementById('btn-sheet-blitzer');
                 
                 newBtnBlitzer.addEventListener('click', (e) => {
                     e.stopPropagation();
                     this.isActive = !this.isActive;
+                    const filterBar = document.getElementById('blitzer-filter-bar');
                     
                     if (this.isActive) {
                         newBtnBlitzer.classList.add('active-red');
+                        if (filterBar) filterBar.classList.remove('hidden-filter'); // Filter einblenden
+                        this.updateFilterUI(); // UI updaten
                         this.fetchLiveRadars(); 
                     } else {
                         newBtnBlitzer.classList.remove('active-red');
-                        this.clearMarkers(); // Radikal weglöschen
+                        if (filterBar) filterBar.classList.add('hidden-filter'); // Filter ausblenden
+                        this.clearMarkers(); 
                     }
                 });
             }
+
+            // Klick-Logik für die Filter-Buttons (Oben)
+            document.querySelectorAll('.blitzer-filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const filterType = e.target.getAttribute('data-filter');
+                    // Zustand umkehren
+                    this.filters[filterType] = !this.filters[filterType];
+                    
+                    // Im Browser speichern für den nächsten Besuch!
+                    localStorage.setItem('blitzerFilters', JSON.stringify(this.filters));
+                    
+                    this.updateFilterUI();
+                    this.fetchLiveRadars(); // Karte sofort mit neuem Filter laden
+                });
+            });
+        },
+
+        updateFilterUI: function() {
+            // Färbt die Buttons oben rot, wenn sie aktiv sind
+            document.querySelectorAll('.blitzer-filter-btn').forEach(btn => {
+                const type = btn.getAttribute('data-filter');
+                if (this.filters[type]) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
         },
 
         fetchLiveRadars: async function() {
-            // HARTER TÜRSTEHER: Wenn der Button aus ist, wird hier sofort abgebrochen!
             if (!libreMap || !this.isActive) return;
 
             if (!this.mapListenerBound) {
                 libreMap.on('moveend', () => { 
-                    // Der Wächter prüft auch hier bei jeder Bewegung den Zustand
-                    if (this.isActive) {
-                        this.fetchLiveRadars(); 
-                    }
+                    if (this.isActive) this.fetchLiveRadars(); 
                 });
                 this.mapListenerBound = true;
             }
+
+            // === 2. DYNAMISCHE URL GENERIERUNG ===
+            let activeTypes = [];
+            
+            // Wenn Blitzer an ist, füge alle Blitzer-IDs hinzu
+            if (this.filters.blitzer) {
+                activeTypes.push("0,1,2,3,4,5,6,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,117,ts");
+            }
+            // Wenn Baustellen an ist
+            if (this.filters.baustellen) {
+                activeTypes.push("22,26");
+            }
+            // Wenn Verkehr (Stau, Polizei, Gefahren) an ist
+            if (this.filters.verkehr) {
+                activeTypes.push("20,21,23,24,25,29,vwd");
+            }
+
+            // Wenn der User ALLE Filter abgewählt hat, müssen wir gar nicht erst abfragen
+            if (activeTypes.length === 0) {
+                this.clearMarkers();
+                return;
+            }
+
+            const types = activeTypes.join(","); // Macht aus den Arrays einen sauberen String für die API
 
             const bounds = libreMap.getBounds();
             const latMin = bounds.getSouth();
@@ -1895,24 +1955,27 @@ updateDashboard: function() {
             const lngMax = bounds.getEast();
             const zoom = Math.floor(libreMap.getZoom());
 
-            const types = "0,1,2,3,4,5,6,20,21,22,23,24,25,26,29,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,117,ts"; 
             const targetUrl = `https://cdn2.atudo.net/api/4.0/pois.php?z=${zoom}&type=${types}&box=${latMin},${lngMin},${latMax},${lngMax}`;
             const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
 
             try {
                 const response = await fetch(proxyUrl);
-                // Sicherheitsnetz: Wenn der User während des Ladens abschaltet, nicht zeichnen
                 if (!response.ok || !this.isActive) return;
 
                 const data = await response.json();
                 
                 if (data && data.pois && this.isActive) {
                     this.drawMarkers(data.pois);
+                } else if (this.isActive) {
+                    // Falls die API leer antwortet (z.B. weil im aktuellen Filter nix da ist), Karte putzen
+                    this.clearMarkers();
                 }
             } catch (error) {
                 console.warn("Blitzer API offline:", error);
             }
         },
+
+        // === HIER FOLGT DEIN BESTEHENDES drawMarkers ... ===
 
 drawMarkers: function(pois) {
             // 1. Alles alte löschen
