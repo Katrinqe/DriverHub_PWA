@@ -3494,11 +3494,12 @@ body.ghost-active #ghost-chat-overlay {
     align-items: center !important;
     gap: 24px !important;
     
-    /* FIX: Keine absolute Positionierung mehr! */
-    width: 100% !important;
-    margin: 8px 0 15px 0 !important; /* Abstand nach oben und unten */
+    /* FIX: Wir nutzen einfaches Margin, um Abstand zum Rand zu schaffen */
+    margin: 0px 0 20px 0 !important; 
     padding: 0 !important;
-    z-index: 10;
+    width: 100% !important;
+    position: relative !important; /* NICHT absolute! */
+    top: auto !important;
 }
 
 /* === BASIS BUTTON === */
