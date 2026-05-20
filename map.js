@@ -1915,6 +1915,7 @@ updateDashboard: function() {
         },
 
 drawMarkers: function(pois) {
+            // 1. Alles alte löschen
             this.markers.forEach(m => m.remove());
             this.markers = [];
 
@@ -1925,103 +1926,34 @@ drawMarkers: function(pois) {
                 const lng = parseFloat(poi.lng);
                 const typeStr = poi.type ? String(poi.type).toLowerCase() : "";
 
-                // === 1. DAS NEUE CLUSTER-HANDLING ===
+                // === CLUSTER-HANDLING ===
                 if (typeStr === "cluster") {
-                    // Wir holen uns die Anzahl der versteckten Blitzer (oder zeigen ein "+" als Fallback)
                     const count = poi.counter || "+";
-                    
                     const el = document.createElement('div');
-                    el.className = 'custom-map-icon'; 
-                    // Ein edler blauer Verlauf für Cluster, um sie von echten Blitzern zu unterscheiden
+                    el.className = 'custom-map-icon';
                     el.style.background = 'linear-gradient(135deg, #007aff, #005eb8)';
                     el.style.border = '2px solid white';
                     el.innerHTML = `<span style="font-family: monospace; font-weight: 900; font-size: 0.9rem;">${count}</span>`;
-
-                    // Der Klick-Trigger: Kamera fliegt hin und zoomt 2 Stufen tiefer rein!
+                    
                     el.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        libreMap.flyTo({ 
-                            center: [lng, lat], 
-                            zoom: Math.max(libreMap.getZoom() + 2, 14), // Geht auf mind. Zoom 14
-                            speed: 1.2 
-                        });
-                        
-                        // Wenn wir später den Map-Listener aktivieren, holt die App 
-                        // am Ende dieses Fluges automatisch die echten Blitzer aus der API.
-                        if (window.BlitzerLogic && typeof window.BlitzerLogic.fetchLiveRadars === 'function') {
-                            setTimeout(() => window.BlitzerLogic.fetchLiveRadars(), 1300);
-                        }
+                        libreMap.flyTo({ center: [lng, lat], zoom: Math.max(libreMap.getZoom() + 2, 14), speed: 1.2 });
+                        setTimeout(() => this.fetchLiveRadars(), 1300);
                     });
 
-                    const marker = new maplibregl.Marker({ element: el })
-                        .setLngLat([lng, lat])
-                        .addTo(libreMap);
-
+                    const marker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(libreMap);
                     this.markers.push(marker);
-                    return; // WICHTIG: Hier brechen wir für diesen POI ab, da der restliche Code für echte Blitzer ist!
+                    return;
                 }
 
-                // === AB HIER GEHT ES NORMAL MIT DEN ECHTEN BLITZERN WEITER ===
+                // === EINZELNE RADAR-STELLEN ===
                 const vmax = poi.vmax && poi.vmax !== "0" ? poi.vmax : null;
                 const streetName = (poi.address && poi.address.street) ? poi.address.street : "Unbekannte Straße";
-                
-                let categoryName = "Radar";
-                let iconHtml = '<i class="fa-solid fa-camera"></i>';
-                let cssClass = "icon-cam"; 
-
-                const typeNum = parseInt(typeStr);
-
-                // === 2. DIE FEIN-UNTERTEILUNG ===
-                
-                // Feste Blitzer (101 - 117)
-                if (typeNum >= 101 && typeNum <= 117) {
-                    categoryName = "Fester Blitzer";
-                } 
-                // Mobile Blitzer (0 - 6)
-                else if (typeNum >= 0 && typeNum <= 6) {
-                    categoryName = "Mobiler Blitzer";
-                }
-                // Teilstationär (Anhänger)
-                else if (typeStr === "ts") {
-                    categoryName = "Blitzer-Anhänger";
-                }
-                // Gefahren, Stau & Baustellen (20 - 29)
-                else if (typeNum >= 20 && typeNum <= 29) {
-                    // Feinschliff laut Atudo/Blitzer.de API
-                    if (typeNum === 20) {
-                        categoryName = "Stauende";
-                        iconHtml = '<i class="fa-solid fa-car-burst"></i>';
-                    } else if (typeNum === 22 || typeNum === 26) {
-                        categoryName = "Baustelle";
-                        // Extra Baustellen-Icon
-                        iconHtml = '<i class="fa-solid fa-person-digging"></i>'; 
-                    } else {
-                        categoryName = "Gefahrenstelle (Hindernis/Unfall)";
-                        iconHtml = '<i class="fa-solid fa-triangle-exclamation"></i>';
-                    }
-                }
-                // Tunnel
-                else if (typeStr === "114") {
-                    categoryName = "Tunnel-Blitzer";
-                }
-
-                // Wenn es ein Blitzer ist UND wir ein Tempolimit haben -> Zahl ins Icon!
-                if (vmax && categoryName.includes("Blitzer")) {
-                    iconHtml = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem; letter-spacing: -1px;">${vmax}</span>`;
-                }
-
-                const el = document.createElement('div');
-                el.className = `custom-map-icon ${cssClass}`; 
-                el.innerHTML = iconHtml;
-
-      el.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    
-          // ... (im drawMarkers Loop)
                 const info = this.poiMapping[typeStr] || this.poiMapping["default"];
-                let iconHtml = '';
+                const cssClass = "icon-cam"; 
 
-                // Logik für Kombi-Icons (Typ 110 hat zwei Icons)
+                // Icon-Logik (Kombi vs Einzel)
+                let iconHtml = "";
                 if (typeStr === "110") {
                     iconHtml = '<i class="fa-solid fa-camera-retro"></i> <i class="fa-solid fa-traffic-light"></i>';
                 } else if (typeStr === "111") {
@@ -2030,8 +1962,8 @@ drawMarkers: function(pois) {
                     iconHtml = `<i class="fa-solid ${info.icon}"></i>`;
                 }
 
-                // Falls ein Tempolimit existiert, überschreiben wir das Icon mit der Zahl (wie gewohnt)
-                if (vmax && (typeStr === "107" || typeStr === "110" || typeNum < 10)) {
+                // Tempolimit-Überschreibung
+                if (vmax && (typeStr === "107" || typeStr === "110" || parseInt(typeStr) < 10)) {
                     iconHtml = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem;">${vmax}</span>`;
                 }
 
@@ -2039,12 +1971,10 @@ drawMarkers: function(pois) {
                 el.className = `custom-map-icon ${cssClass}`; 
                 el.innerHTML = iconHtml;
 
-                // Popup mit Kategorie-Anzeige
+                // Popup
                 el.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (!window.poiPopup) {
-                        window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
-                    }
+                    if (!window.poiPopup) window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
                     window.poiPopup.setLngLat([lng, lat])
                         .setHTML(`
                             <div style="font-family: sans-serif; color: #1c1c1e; padding: 5px;">
@@ -2057,17 +1987,11 @@ drawMarkers: function(pois) {
                         `)
                         .addTo(libreMap);
                 });
-                // ... (Rest bleibt gleich)
 
-                const marker = new maplibregl.Marker({ element: el })
-                    .setLngLat([lng, lat])
-                    .addTo(libreMap);
-
+                const marker = new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(libreMap);
                 this.markers.push(marker);
             });
-            },
-                         }
-
+        },
         clearMarkers: function() {
             // 1. Zerstöre alle MapLibre Marker physisch auf der Karte
             if (this.markers && this.markers.length > 0) {
