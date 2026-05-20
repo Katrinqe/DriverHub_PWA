@@ -4354,3 +4354,49 @@ body.ghost-active #ghost-chat-overlay {
     color: #000000;
     border: 1px solid #000000;
 }
+
+/* === BLITZER FILTER BAR === */
+#blitzer-filter-bar {
+    position: absolute;
+    top: 75px; /* HIER ANPASSEN: Je nachdem wie hoch deine Suchleiste ist! */
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    display: flex;
+    gap: 8px;
+    z-index: 150;
+    background: rgba(30, 30, 35, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 6px 8px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+/* Versteckter Zustand (fliegt leicht nach oben weg) */
+#blitzer-filter-bar.hidden-filter {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(-15px);
+}
+
+/* Die einzelnen Buttons */
+.blitzer-filter-btn {
+    background: transparent;
+    color: #888;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* Aktiver Filter-Status */
+.blitzer-filter-btn.active {
+    background: rgba(255, 59, 48, 0.15);
+    color: #ff3b30;
+    border: 1px solid rgba(255, 59, 48, 0.3);
+}
