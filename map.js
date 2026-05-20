@@ -1834,6 +1834,21 @@ updateDashboard: function() {
     window.BlitzerLogic = {
         markers: [],
         isActive: false,
+        // Diese Tabelle übersetzt API-Codes in dein UI
+        poiMapping: {
+            "0": { cat: "Mobiler Blitzer", icon: "fa-camera" },
+            "1": { cat: "Mobiler Blitzer", icon: "fa-camera" },
+            "2": { cat: "Mobiler Blitzer", icon: "fa-camera" },
+            "20": { cat: "Stauende", icon: "fa-car-burst" },
+            "22": { cat: "Baustelle", icon: "fa-person-digging" },
+            "26": { cat: "Baustelle", icon: "fa-person-digging" },
+            "101": { cat: "Fester Blitzer", icon: "fa-camera-retro" },
+            "114": { cat: "Tunnel-Blitzer", icon: "fa-tunnel" },
+            "ts":  { cat: "Blitzer-Anhänger", icon: "fa-trailer" },
+            "vwd": { cat: "Polizeimeldung", icon: "fa-handcuffs" },
+            // Fallback für alles andere
+            "default": { cat: "Radar", icon: "fa-camera" }
+        },
         mapListenerBound: false,
 
         init: function() {
@@ -1998,17 +2013,35 @@ drawMarkers: function(pois) {
                 el.className = `custom-map-icon ${cssClass}`; 
                 el.innerHTML = iconHtml;
 
-                // Das aufgeräumte, finale Popup
-                el.addEventListener('click', (e) => {
+      el.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    
+                    // Mapping holen
+                    const info = this.poiMapping[typeStr] || this.poiMapping["default"];
+                    
+                    // Adressdaten schön formatieren
+                    const addr = poi.address;
+                    const fullAddr = addr ? `${addr.street}, ${addr.zip_code} ${addr.city}` : streetName;
+
                     if (!window.poiPopup) {
                         window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
                     }
+
+                    // Dynamische Info-Box
                     window.poiPopup.setLngLat([lng, lat])
-                        .setHTML(`<div style="font-family: sans-serif; color: #1c1c1e; padding: 2px 5px;">
-                                    <strong style="font-size: 13px;">${categoryName}</strong><br>
-                                    <span style="font-size: 11px; color: #666;">${vmax ? vmax + ' km/h | ' : ''}${streetName}</span>
-                                  </div>`)
+                        .setHTML(`
+                            <div style="font-family: sans-serif; color: #1c1c1e; padding: 5px;">
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                    <i class="fa-solid ${info.icon}" style="color:#ff3b30;"></i>
+                                    <strong style="font-size: 14px;">${info.cat}</strong>
+                                </div>
+                                <div style="font-size: 12px; line-height: 1.4;">
+                                    ${vmax ? `<b>Limit:</b> ${vmax} km/h<br>` : ''}
+                                    <b>Ort:</b> ${fullAddr}<br>
+                                    <span style="color:#666; font-size:10px;">ID: ${poi.id} | Typ: ${typeStr}</span>
+                                </div>
+                            </div>
+                        `)
                         .addTo(libreMap);
                 });
 
