@@ -1835,18 +1835,19 @@ updateDashboard: function() {
         markers: [],
         isActive: false,
         // Diese Tabelle übersetzt API-Codes in dein UI
-        poiMapping: {
+  poiMapping: {
             "0": { cat: "Mobiler Blitzer", icon: "fa-camera" },
             "1": { cat: "Mobiler Blitzer", icon: "fa-camera" },
             "2": { cat: "Mobiler Blitzer", icon: "fa-camera" },
             "20": { cat: "Stauende", icon: "fa-car-burst" },
             "22": { cat: "Baustelle", icon: "fa-person-digging" },
             "26": { cat: "Baustelle", icon: "fa-person-digging" },
-            "101": { cat: "Fester Blitzer", icon: "fa-camera-retro" },
+            "107": { cat: "Fester Blitzer", icon: "fa-camera-retro" },
+            "110": { cat: "Rotlicht + Speed", icon: "fa-camera-retro fa-traffic-light" }, // Kombi
+            "111": { cat: "Rotlicht-Blitzer", icon: "fa-traffic-light" },
             "114": { cat: "Tunnel-Blitzer", icon: "fa-tunnel" },
             "ts":  { cat: "Blitzer-Anhänger", icon: "fa-trailer" },
             "vwd": { cat: "Polizeimeldung", icon: "fa-handcuffs" },
-            // Fallback für alles andere
             "default": { cat: "Radar", icon: "fa-camera" }
         },
         mapListenerBound: false,
@@ -2016,34 +2017,47 @@ drawMarkers: function(pois) {
       el.addEventListener('click', (e) => {
                     e.stopPropagation();
                     
-                    // Mapping holen
-                    const info = this.poiMapping[typeStr] || this.poiMapping["default"];
-                    
-                    // Adressdaten schön formatieren
-                    const addr = poi.address;
-                    const fullAddr = addr ? `${addr.street}, ${addr.zip_code} ${addr.city}` : streetName;
+          // ... (im drawMarkers Loop)
+                const info = this.poiMapping[typeStr] || this.poiMapping["default"];
+                let iconHtml = '';
 
+                // Logik für Kombi-Icons (Typ 110 hat zwei Icons)
+                if (typeStr === "110") {
+                    iconHtml = '<i class="fa-solid fa-camera-retro"></i> <i class="fa-solid fa-traffic-light"></i>';
+                } else if (typeStr === "111") {
+                    iconHtml = '<i class="fa-solid fa-traffic-light"></i>';
+                } else {
+                    iconHtml = `<i class="fa-solid ${info.icon}"></i>`;
+                }
+
+                // Falls ein Tempolimit existiert, überschreiben wir das Icon mit der Zahl (wie gewohnt)
+                if (vmax && (typeStr === "107" || typeStr === "110" || typeNum < 10)) {
+                    iconHtml = `<span style="font-family: monospace; font-weight: 900; font-size: 0.85rem;">${vmax}</span>`;
+                }
+
+                const el = document.createElement('div');
+                el.className = `custom-map-icon ${cssClass}`; 
+                el.innerHTML = iconHtml;
+
+                // Popup mit Kategorie-Anzeige
+                el.addEventListener('click', (e) => {
+                    e.stopPropagation();
                     if (!window.poiPopup) {
                         window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
                     }
-
-                    // Dynamische Info-Box
                     window.poiPopup.setLngLat([lng, lat])
                         .setHTML(`
                             <div style="font-family: sans-serif; color: #1c1c1e; padding: 5px;">
-                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                                    <i class="fa-solid ${info.icon}" style="color:#ff3b30;"></i>
-                                    <strong style="font-size: 14px;">${info.cat}</strong>
-                                </div>
-                                <div style="font-size: 12px; line-height: 1.4;">
-                                    ${vmax ? `<b>Limit:</b> ${vmax} km/h<br>` : ''}
-                                    <b>Ort:</b> ${fullAddr}<br>
-                                    <span style="color:#666; font-size:10px;">ID: ${poi.id} | Typ: ${typeStr}</span>
+                                <div style="font-weight: 900; font-size: 13px;">${info.cat}</div>
+                                <div style="font-size: 11px; color: #666; margin-top: 2px;">
+                                    ${vmax ? '<b>Limit:</b> ' + vmax + ' km/h<br>' : ''}
+                                    <b>Straße:</b> ${streetName}
                                 </div>
                             </div>
                         `)
                         .addTo(libreMap);
                 });
+                // ... (Rest bleibt gleich)
 
                 const marker = new maplibregl.Marker({ element: el })
                     .setLngLat([lng, lat])
