@@ -153,10 +153,12 @@ if (shopBtn) {
         const loader = document.getElementById('map-loading');
         if(loader) loader.classList.add('visible');
 
-        try {
+     try {
             const response = await fetch(url);
             const data = await response.json();
             if(loader) loader.classList.remove('visible');
+
+            if (!isShopActive) return;
 
             if (data.elements) {
                 data.elements.forEach(el => {
