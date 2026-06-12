@@ -2765,65 +2765,62 @@ body.ghost-active #ghost-chat-overlay {
 }
 
 /* ========================================== */
-/* === MAP CONTROLS (FLOATING GLASS CIRCLES) === */
+/* === MAP CONTROLS (SPLIT PILL LEFT SIDE) === */
 /* ========================================== */
 
-/* Der Container wird unsichtbar und steuert nur noch das Layout */
 .map-controls-pill-v {
-    position: absolute;
-    right: 15px;
-    bottom: 120px; 
-    width: 48px;
-    background: transparent !important; /* Weg mit der Pille */
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
+    position: absolute !important;
+    left: 15px !important;
+    right: auto !important;
+    bottom: 120px !important;
+    width: 48px !important;
+    background: rgba(20, 20, 24, 0.65) !important;
+    backdrop-filter: blur(25px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(25px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0 !important;
+    padding: 0 !important;
+    z-index: 50 !important;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1) !important;
+    pointer-events: none;
+}
+
+.map-expanded .map-controls-pill-v {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    pointer-events: auto !important;
+}
+
+.pill-v-separator {
+    display: block !important;
+    width: 60% !important;
+    height: 1px !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    margin: 0 auto !important;
+}
+
+.map-ctrl-btn {
+    background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px; /* Der perfekte Abstand zwischen den beiden Kreisen */
-    padding: 0;
-    z-index: 50; 
-    opacity: 0; 
-    transform: translateY(20px);
-    transition: all 0.4s cubic-bezier(0.22, 1, 0.36, 1);
-    pointer-events: none; 
-}
-
-/* Wenn die Karte groß wird, faden die Kreise ein */
-.map-expanded .map-controls-pill-v {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-
-/* Den alten Trennstrich schießen wir ins Nirvana */
-.pill-v-separator {
-    display: none !important;
-}
-
-/* Die Buttons werden zu echten, schwebenden Premium-Glas-Kreisen */
-.map-ctrl-btn {
-    background: rgba(20, 20, 24, 0.65) !important; /* Dunkles Glas */
-    backdrop-filter: blur(25px) saturate(200%);
-    -webkit-backdrop-filter: blur(25px) saturate(200%);
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-    
-    color: rgba(255, 255, 255, 0.85);
-    width: 48px !important; /* Etwas größer, da sie jetzt einzeln stehen */
+    color: rgba(255, 255, 255, 0.85) !important;
+    width: 48px !important;
     height: 48px !important;
-    border-radius: 50% !important;
-    
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.2, 1, 0.3, 1);
-    -webkit-tap-highlight-color: transparent; 
+    border-radius: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s cubic-bezier(0.2, 1, 0.3, 1) !important;
+    -webkit-tap-highlight-color: transparent !important;
 }
 
 .map-ctrl-btn svg {
@@ -2832,23 +2829,27 @@ body.ghost-active #ghost-chat-overlay {
     transition: transform 0.2s ease;
 }
 
-/* Hover & Active States (Tippen) */
+#btn-recenter-map {
+    border-top-left-radius: 24px !important;
+    border-top-right-radius: 24px !important;
+}
+
+#btn-align-north {
+    border-bottom-left-radius: 24px !important;
+    border-bottom-right-radius: 24px !important;
+}
+
 .map-ctrl-btn:active {
-    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: scale(1) !important;
 }
 
 .map-ctrl-btn#btn-recenter-map:active {
-    background: rgba(48, 209, 88, 0.2) !important;
-    border-color: #30d158 !important;
-    color: #30d158;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.9), inset 0 0 15px rgba(48, 209, 88, 0.3);
+    color: #30d158 !important;
 }
 
 .compass-btn#btn-align-north:active {
-    background: rgba(255, 59, 48, 0.2) !important;
-    border-color: #ff3b30 !important;
-    color: #ff3b30;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.9), inset 0 0 15px rgba(255, 59, 48, 0.3);
+    color: #ff3b30 !important;
 }
 
 
