@@ -4405,7 +4405,7 @@ body.ghost-active #ghost-chat-overlay {
 .glass-circle-btn {
     position: absolute !important;
     left: 15px !important;
-    bottom: 250px !important;
+    bottom: 280px !important;
     background: rgba(20, 20, 24, 0.65) !important;
     backdrop-filter: blur(25px) saturate(200%) !important;
     -webkit-backdrop-filter: blur(25px) saturate(200%) !important;
