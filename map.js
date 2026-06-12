@@ -126,6 +126,73 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             options
         );
+
+       let isShopActive = false;
+let shopMarkers = [];
+const shopBtn = document.getElementById('btn-explore-shops');
+
+if (shopBtn) {
+    shopBtn.addEventListener('click', async function(e) {
+        e.stopPropagation();
+        isShopActive = !isShopActive;
+        this.classList.toggle('active', isShopActive);
+
+        if (!isShopActive) {
+            shopMarkers.forEach(m => m.remove());
+            shopMarkers = [];
+            return;
+        }
+
+        if (!libreMap) return;
+        const center = libreMap.getCenter();
+        const radius = 3000;
+
+        const query = `[out:json][timeout:25];nwr["shop"](around:${radius},${center.lat},${center.lng});out center;`;
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+        const loader = document.getElementById('map-loading');
+        if(loader) loader.classList.add('visible');
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            if(loader) loader.classList.remove('visible');
+
+            if (data.elements) {
+                data.elements.forEach(el => {
+                    let lat = el.lat || (el.center && el.center.lat);
+                    let lon = el.lon || (el.center && el.center.lon);
+                    if (!lat || !lon) return;
+
+                    const name = (el.tags && el.tags.name) ? el.tags.name : "Shop";
+
+                    const elDiv = document.createElement('div');
+                    elDiv.className = 'custom-map-icon';
+                    elDiv.style.background = 'linear-gradient(135deg, #0a84ff, #005eb8)';
+                    elDiv.style.border = '2px solid white';
+                    elDiv.style.borderRadius = '50%';
+                    elDiv.style.width = '30px';
+                    elDiv.style.height = '30px';
+                    elDiv.style.display = 'flex';
+                    elDiv.style.alignItems = 'center';
+                    elDiv.style.justifyContent = 'center';
+                    elDiv.style.color = 'white';
+                    elDiv.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
+                    elDiv.innerHTML = '<i class="fa-solid fa-cart-shopping"></i>';
+
+                    const marker = new maplibregl.Marker({ element: elDiv })
+                        .setLngLat([lon, lat])
+                        .addTo(libreMap);
+
+                    shopMarkers.push(marker);
+                });
+            }
+        } catch (err) {
+            if(loader) loader.classList.remove('visible');
+            console.error("Shop Fetch Error", err);
+        }
+    });
+}
     }
 function loadMap(coords, hasLocation) {
     // 1. Standort sichern
