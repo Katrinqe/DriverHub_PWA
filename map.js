@@ -949,8 +949,10 @@ allPoints.forEach(coord => bounds.extend(coord));
         const searchInput = document.getElementById('tomtom-search-input');
         if (destNameDisplay && searchInput) destNameDisplay.textContent = searchInput.value || "Zielort";
 
-        if (routeUI) routeUI.classList.remove('hidden');
-        if (pillV) pillV.style.display = 'none';
+if (routeUI) routeUI.classList.remove('hidden');
+if (pillV) pillV.style.setProperty('display', 'none', 'important');
+const shopBtn = document.getElementById('btn-explore-shops');
+if (shopBtn) shopBtn.style.setProperty('display', 'none', 'important');
 
    // --- NEU: HÖHE MESSEN FÜR SMOOTHEN SWIPE NACH UNTEN ---
         setTimeout(() => {
@@ -1382,9 +1384,11 @@ function restoreRoutes() {
             // 3. UI wiederherstellen (Suchfeld & Map-Controls)
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.style.display = 'flex';
-
-            const pillV = document.querySelector('.map-controls-pill-v');
-            if (pillV) pillV.style.display = 'flex';
+            
+const pillV = document.querySelector('.map-controls-pill-v');
+if (pillV) pillV.style.setProperty('display', 'flex', 'important');
+const shopBtn = document.getElementById('btn-explore-shops');
+if (shopBtn) shopBtn.style.setProperty('display', 'flex', 'important');
 
             // BOSS-FIX: Suchleiste wieder anzeigen!
             const topSearch = document.getElementById('top-search-container');
@@ -3882,8 +3886,10 @@ const getLaneText = (maneuverObj) => {
             const bottomSheet = document.getElementById('map-bottom-sheet');
             if (bottomSheet) bottomSheet.style.display = 'flex';
 
-            const pillV = document.querySelector('.map-controls-pill-v');
-            if (pillV) pillV.style.display = 'flex';
+          const pillV = document.querySelector('.map-controls-pill-v');
+if (pillV) pillV.style.setProperty('display', 'flex', 'important');
+const shopBtn = document.getElementById('btn-explore-shops');
+if (shopBtn) shopBtn.style.setProperty('display', 'flex', 'important');
 
             // Suchleiste wieder anzeigen!
             const topSearch = document.getElementById('top-search-container');
