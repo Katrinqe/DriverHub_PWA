@@ -2772,7 +2772,7 @@ body.ghost-active #ghost-chat-overlay {
     position: absolute !important;
     left: 15px !important;
     right: auto !important;
-    bottom: 120px !important;
+    bottom: 150px !important;
     width: 48px !important;
     background: rgba(20, 20, 24, 0.65) !important;
     backdrop-filter: blur(25px) saturate(200%) !important;
