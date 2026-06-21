@@ -1866,7 +1866,7 @@ openPremiumCard: async function(name, lat, lng, elementRef, brandKey) {
         // 2. Basis UI setzen
         document.getElementById('pbc-brand-name').innerText = name;
         document.getElementById('pbc-address').innerText = "Suche Adresse...";
-        document.getElementById('pbc-hero-img').src = "esso.png"; // Statisch für die Demo!
+        document.getElementById('pbc-hero-img').src = "esso.jpg"; // Statisch für die Demo!
         
         // 3. Tankerkönig Preise injizieren (Haben wir schon gecached)
         if (elementRef && elementRef.simPrices) {
