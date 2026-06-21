@@ -345,8 +345,8 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         window.updateMapAppearance();
     }, 350);
 
-    if () {
-        .fetchData();
+   if (window.ExploreLogic) {
+        window.ExploreLogic.fetchData();
     }
 
 } // <--- DAS SAUBERE ENDE VON loadMap!
