@@ -1649,6 +1649,11 @@ redrawMarkers: function() {
         },
 
 openTotem: function(name, lat, lng, elementRef) {
+    const brandClassCheck = this.getBrandClass(name);
+        if (brandClassCheck === 'esso') {
+            this.openPremiumCard(name, lat, lng, elementRef, 'esso');
+            return; // Wir verlassen die alte Funktion sofort!
+        }
             const overlay = document.getElementById('gas-totem-overlay');
             const brandHeader = document.getElementById('totem-brand-header');
 
@@ -1843,7 +1848,144 @@ updateDashboard: function() {
             const el = this.cachedStations.find(s => s.lat === lat && s.lon === lon);
             if (el) this.openTotem(name, lat, lon, el);
         }
+openPremiumCard: async function(name, lat, lng, elementRef, brandKey) {
+        const card = document.getElementById('premium-brand-card');
+        if (!card) return;
 
+        // 1. UI Aufräumen (alles andere weg)
+        const bottomNav = document.querySelector('.bottom-nav');
+        const mapSheet = document.getElementById('map-bottom-sheet');
+        const pillV = document.querySelector('.map-controls-pill-v');
+        const shopBtn = document.getElementById('btn-explore-shops');
+
+        if (bottomNav) bottomNav.style.setProperty('display', 'none', 'important');
+        if (mapSheet) mapSheet.style.setProperty('display', 'none', 'important');
+        if (pillV) pillV.style.setProperty('display', 'none', 'important');
+        if (shopBtn) shopBtn.style.setProperty('display', 'none', 'important');
+
+        // 2. Basis UI setzen
+        document.getElementById('pbc-brand-name').innerText = name;
+        document.getElementById('pbc-address').innerText = "Suche Adresse...";
+        document.getElementById('pbc-hero-img').src = "esso.png"; // Statisch für die Demo!
+        
+        // 3. Tankerkönig Preise injizieren (Haben wir schon gecached)
+        if (elementRef && elementRef.simPrices) {
+            document.getElementById('pbc-price-diesel').innerText = elementRef.simPrices.diesel || "-.--";
+            document.getElementById('pbc-price-e10').innerText = elementRef.simPrices.e10 || "-.--";
+            document.getElementById('pbc-price-e5').innerText = elementRef.simPrices.e5 || "-.--";
+            
+            const badge = document.getElementById('pbc-status-badge');
+            if (elementRef.simPrices.isOpen) {
+                badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> GEÖFFNET';
+                badge.style.color = '#30d158';
+                badge.style.borderColor = 'rgba(48, 209, 88, 0.4)';
+            } else {
+                badge.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> GESCHLOSSEN';
+                badge.style.color = '#ff3b30';
+                badge.style.borderColor = 'rgba(255, 59, 48, 0.4)';
+            }
+        }
+
+        // 4. Karte anzeigen (Slide-Up)
+        card.classList.remove('hidden');
+        setTimeout(() => card.classList.add('active'), 10);
+
+        // 5. THE MAGIC: OSM Overpass Fetch für dieses spezifische Gebäude!
+        try {
+            // Sucht Tankstellen im Radius von 30 Metern um die Tankerkönig-Koordinate
+            const query = `[out:json][timeout:10];nwr["amenity"="fuel"](around:30,${lat},${lng});out tags;`;
+            const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+            
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const chipsContainer = document.getElementById('pbc-chips');
+            const hoursBox = document.getElementById('pbc-hours-text');
+            const btnCall = document.getElementById('pbc-btn-call');
+            const btnWeb = document.getElementById('pbc-btn-web');
+
+            chipsContainer.innerHTML = '';
+            hoursBox.innerHTML = 'Keine detaillierten Öffnungszeiten auf OSM hinterlegt.';
+            btnCall.style.display = 'none';
+            btnWeb.style.display = 'none';
+
+            if (data.elements && data.elements.length > 0) {
+                // Wir nehmen den ersten Treffer
+                const tags = data.elements[0].tags;
+
+                // Adresse bauen
+                let addr = [];
+                if (tags["addr:street"]) addr.push(tags["addr:street"] + (tags["addr:housenumber"] ? " " + tags["addr:housenumber"] : ""));
+                if (tags["addr:postcode"]) addr.push(tags["addr:postcode"]);
+                if (tags["addr:city"]) addr.push(tags["addr:city"]);
+                if (addr.length > 0) {
+                    document.getElementById('pbc-address').innerText = addr.join(", ");
+                }
+
+                // Features (Chips) parsen
+                const addChip = (icon, text) => {
+                    chipsContainer.innerHTML += `<div class="pbc-chip"><i class="fa-solid ${icon}"></i> ${text}</div>`;
+                };
+
+                if (tags["wheelchair"] === "yes") addChip("fa-wheelchair", "Barrierefrei");
+                if (tags["toilets"] === "yes") addChip("fa-restroom", "WC vorhanden");
+                if (tags["car_wash"] === "yes") addChip("fa-shower", "Waschanlage");
+                if (tags["shop"] === "convenience") addChip("fa-store", "Shop");
+                if (tags["payment:visa"] === "yes" || tags["payment:mastercard"] === "yes") addChip("fa-credit-card", "Kartenzahlung");
+                if (tags["payment:cash"] === "yes") addChip("fa-coins", "Bargeld");
+
+                if (chipsContainer.innerHTML === '') chipsContainer.innerHTML = '<span style="color:#666; font-size: 0.8rem;">Keine weiteren Ausstattungsmerkmale bekannt.</span>';
+
+                // Öffnungszeiten Raw reinladen
+                if (tags["opening_hours"]) {
+                    // Simples Replace für Zeilenumbrüche, da OSM oft Semikolons nutzt
+                    let formattedHours = tags["opening_hours"].replace(/;/g, '<br>');
+                    hoursBox.innerHTML = formattedHours;
+                }
+
+                // Kontakt Buttons
+                if (tags["phone"]) {
+                    btnCall.style.display = 'flex';
+                    btnCall.onclick = () => window.open(`tel:${tags["phone"]}`);
+                }
+                if (tags["website"]) {
+                    btnWeb.style.display = 'flex';
+                    btnWeb.onclick = () => window.open(tags["website"]);
+                }
+            } else {
+                chipsContainer.innerHTML = '<span style="color:#666; font-size: 0.8rem;">Station auf OSM nicht detailliert gemappt.</span>';
+            }
+
+            // Route Button verlinken
+            document.getElementById('pbc-btn-route').onclick = () => {
+                this.closePremiumCard();
+                if (typeof drawTomTomRoute === 'function') drawTomTomRoute(lat, lng);
+            };
+
+        } catch (e) {
+            console.error("OSM Sync Error:", e);
+            document.getElementById('pbc-chips').innerHTML = '<span style="color:#ff3b30; font-size: 0.8rem;">OSM-Datenabruf fehlgeschlagen.</span>';
+        }
+    },
+
+    closePremiumCard: function() {
+        const card = document.getElementById('premium-brand-card');
+        if (card) {
+            card.classList.remove('active');
+            setTimeout(() => card.classList.add('hidden'), 400); // Warten bis Animation fertig ist
+        }
+
+        // UI wiederherstellen
+        const bottomNav = document.querySelector('.bottom-nav');
+        const mapSheet = document.getElementById('map-bottom-sheet');
+        const pillV = document.querySelector('.map-controls-pill-v');
+        const shopBtn = document.getElementById('btn-explore-shops');
+
+        if (bottomNav) bottomNav.style.setProperty('display', 'flex', 'important');
+        if (mapSheet) mapSheet.style.setProperty('display', 'flex', 'important');
+        if (pillV) pillV.style.setProperty('display', 'flex', 'important');
+        if (shopBtn) shopBtn.style.setProperty('display', 'flex', 'important');
+    }
     }; // <--- DAS ist jetzt das einzige und echte Ende von window.ExploreLogic!
 
 
