@@ -132,68 +132,16 @@ let shopMarkers = [];
 const shopBtn = document.getElementById('btn-explore-shops');
 
 if (shopBtn) {
-    shopBtn.addEventListener('click', async function(e) {
+  const shopBtn = document.getElementById('btn-explore-shops');
+if (shopBtn) {
+    shopBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        isShopActive = !isShopActive;
-        this.classList.toggle('active', isShopActive);
-
-        if (!isShopActive) {
-            shopMarkers.forEach(m => m.remove());
-            shopMarkers = [];
-            return;
-        }
-
-        if (!libreMap) return;
-        const center = libreMap.getCenter();
-        const radius = 3000;
-
-        const query = `[out:json][timeout:25];nwr["shop"](around:${radius},${center.lat},${center.lng});out center;`;
-        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
-
-        const loader = document.getElementById('map-loading');
-        if(loader) loader.classList.add('visible');
-
-     try {
-            const response = await fetch(url);
-            const data = await response.json();
-            if(loader) loader.classList.remove('visible');
-
-            if (!isShopActive) return;
-
-            if (data.elements) {
-                data.elements.forEach(el => {
-                    let lat = el.lat || (el.center && el.center.lat);
-                    let lon = el.lon || (el.center && el.center.lon);
-                    if (!lat || !lon) return;
-
-                    const name = (el.tags && el.tags.name) ? el.tags.name : "Shop";
-
-                    const elDiv = document.createElement('div');
-                    elDiv.className = 'custom-map-icon';
-                    elDiv.style.background = 'linear-gradient(135deg, #0a84ff, #005eb8)';
-                    elDiv.style.border = '2px solid white';
-                    elDiv.style.borderRadius = '50%';
-                    elDiv.style.width = '30px';
-                    elDiv.style.height = '30px';
-                    elDiv.style.display = 'flex';
-                    elDiv.style.alignItems = 'center';
-                    elDiv.style.justifyContent = 'center';
-                    elDiv.style.color = 'white';
-                    elDiv.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
-                    elDiv.innerHTML = '<i class="fa-solid fa-cart-shopping"></i>';
-
-                    const marker = new maplibregl.Marker({ element: elDiv })
-                        .setLngLat([lon, lat])
-                        .addTo(libreMap);
-
-                    shopMarkers.push(marker);
-                });
-            }
-        } catch (err) {
-            if(loader) loader.classList.remove('visible');
-            console.error("Shop Fetch Error", err);
-        }
+        this.classList.toggle('active');
+        
+        // Triggert den Master-Switch in der Entity Engine
+        window.EntityEngine.toggle();
     });
+}
 }
     }
 function loadMap(coords, hasLocation) {
@@ -258,6 +206,9 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
                 mapEl.classList.add('map-compact-mode');
             }
         });
+    // === BOSS-FEATURE: ENTITY ENGINE COUPLING ===
+        libreMap.on('moveend', () => { if (window.EntityEngine.isActive) window.EntityEngine.fetchEnvironment(); });
+        libreMap.on('zoom', () => { if (window.EntityEngine.isActive) window.EntityEngine.updateRenderedMarkers(); });
         // ============================================================
 // 4. Restliche Einstellungen laden
    libreMap.on('load', () => {
@@ -4106,4 +4057,189 @@ function renderManifest() {
             }, 200);
         }
     }
+    // ====================================================
+// === BOSS-FEATURE: ENTITY KNOWLEDGE ENGINE (OSM) ====
+// ====================================================
+
+window.EntityEngine = {
+    entities: new Map(), // Unser globales Lexikon: Speichert ALLES anhand der OSM-ID
+    activeMarkers: new Map(), // Die aktuell gezeichneten HTML-Marker
+    isActive: false,
+
+    // Das Mapping-Gehirn: Wer kriegt welchen Score und welches Icon?
+    knowledgeBase: {
+        'supermarket': { cat: 'Shopping', score: 80, icon: 'fa-cart-shopping', color: '#0a84ff' },
+        'mall': { cat: 'Shopping', score: 85, icon: 'fa-bag-shopping', color: '#0a84ff' },
+        'restaurant': { cat: 'Food', score: 70, icon: 'fa-utensils', color: '#ff9500' },
+        'fast_food': { cat: 'Food', score: 65, icon: 'fa-burger', color: '#ff9500' },
+        'cafe': { cat: 'Food', score: 65, icon: 'fa-mug-hot', color: '#ff9500' },
+        'fuel': { cat: 'Mobility', score: 85, icon: 'fa-gas-pump', color: '#ff3b30' },
+        'parking': { cat: 'Mobility', score: 70, icon: 'fa-square-parking', color: '#0a84ff' },
+        'hospital': { cat: 'Health', score: 95, icon: 'fa-truck-medical', color: '#ff3b30' },
+        'pharmacy': { cat: 'Health', score: 75, icon: 'fa-capsules', color: '#ff3b30' },
+        'viewpoint': { cat: 'Tourism', score: 80, icon: 'fa-camera', color: '#bf5af2' },
+        'attraction': { cat: 'Tourism', score: 85, icon: 'fa-star', color: '#bf5af2' },
+        'default': { cat: 'Other', score: 10, icon: 'fa-location-dot', color: '#888888' }
+    },
+
+    toggle: function() {
+        this.isActive = !this.isActive;
+        if (this.isActive) {
+            this.fetchEnvironment();
+        } else {
+            this.clearMap();
+        }
+    },
+
+    fetchEnvironment: async function() {
+        if (!libreMap || !this.isActive) return;
+
+        const bounds = libreMap.getBounds();
+        const bbox = `${bounds.getSouth()},${bounds.getWest()},${bounds.getNorth()},${bounds.getEast()}`;
+        
+        // Wir ziehen den großen Trichter auf: Alles was relevant sein könnte!
+        const query = `
+            [out:json][timeout:25];
+            (
+                nwr["amenity"](${bbox});
+                nwr["shop"](${bbox});
+                nwr["tourism"](${bbox});
+            );
+            out center;
+        `;
+        const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+        const loader = document.getElementById('map-loading');
+        if (loader) loader.classList.add('visible');
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            if (loader) loader.classList.remove('visible');
+
+            if (!this.isActive) return; // Falls in der Zwischenzeit abgeschaltet
+
+            if (data.elements) {
+                this.processEntities(data.elements);
+                this.updateRenderedMarkers();
+            }
+        } catch (err) {
+            if (loader) loader.classList.remove('visible');
+            console.error("Entity Engine Fetch Error", err);
+        }
+    },
+
+    processEntities: function(elements) {
+        elements.forEach(el => {
+            if (this.entities.has(el.id)) return; // Kennen wir schon, ignorieren!
+
+            let lat = el.lat || (el.center && el.center.lat);
+            let lon = el.lon || (el.center && el.center.lon);
+            if (!lat || !lon || !el.tags) return;
+
+            // 1. Classifier: Wer bist du?
+            let typeKey = el.tags.shop || el.tags.amenity || el.tags.tourism || 'default';
+            let profile = this.knowledgeBase[typeKey] || this.knowledgeBase['default'];
+
+            // 2. Erschaffe die Entity
+            const entity = {
+                id: el.id,
+                name: el.tags.name || typeKey.charAt(0).toUpperCase() + typeKey.slice(1),
+                lat: lat,
+                lon: lon,
+                category: profile.cat,
+                subCategory: typeKey,
+                importance: profile.score,
+                icon: profile.icon,
+                color: profile.color,
+                rawTags: el.tags // Der heilige Gral für spätere Filter!
+            };
+
+            this.entities.set(el.id, entity);
+        });
+    },
+
+    updateRenderedMarkers: function() {
+        if (!libreMap || !this.isActive) return;
+
+        const currentZoom = libreMap.getZoom();
+        const bounds = libreMap.getBounds();
+
+        // 1. Zoom-Level Priority Logic (Der Skalierungs-Trick)
+        let requiredScore = 100;
+        if (currentZoom > 11) requiredScore = 80;
+        if (currentZoom > 13) requiredScore = 65;
+        if (currentZoom > 15) requiredScore = 40;
+        if (currentZoom > 16.5) requiredScore = 0; // Zeig mir alles!
+
+        // 2. Durchsuche den Speicher und zeichne, was die Bedingungen erfüllt
+        this.entities.forEach((entity, id) => {
+            // Ist die Entity wichtig genug für diesen Zoom UND im sichtbaren Bereich?
+            const isVisible = entity.importance >= requiredScore && bounds.contains([entity.lon, entity.lat]);
+
+            if (isVisible) {
+                // Auf die Karte packen, falls noch nicht da
+                if (!this.activeMarkers.has(id)) {
+                    this.drawMarker(entity);
+                }
+            } else {
+                // Von der Karte löschen, falls sie gerade out of bounds / out of zoom ist
+                if (this.activeMarkers.has(id)) {
+                    this.activeMarkers.get(id).remove();
+                    this.activeMarkers.delete(id);
+                }
+            }
+        });
+    },
+
+    drawMarker: function(entity) {
+        const elDiv = document.createElement('div');
+        elDiv.className = 'custom-map-icon';
+        elDiv.style.background = `linear-gradient(135deg, ${entity.color}, #111)`;
+        elDiv.style.border = `2px solid ${entity.color}`;
+        elDiv.style.borderRadius = '50%';
+        elDiv.style.width = '28px';
+        elDiv.style.height = '28px';
+        elDiv.style.display = 'flex';
+        elDiv.style.alignItems = 'center';
+        elDiv.style.justifyContent = 'center';
+        elDiv.style.color = 'white';
+        elDiv.style.fontSize = '12px';
+        elDiv.style.boxShadow = '0 4px 10px rgba(0,0,0,0.5)';
+        elDiv.innerHTML = `<i class="fa-solid ${entity.icon}"></i>`;
+
+        // Popup mit Live-Daten aus der Entity
+        elDiv.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!window.poiPopup) window.poiPopup = new maplibregl.Popup({ closeButton: false, offset: 15 });
+            
+            let extraInfo = '';
+            if (entity.rawTags.opening_hours) extraInfo += `<br><span style="font-size: 10px; color: #0a84ff;">⌚ ${entity.rawTags.opening_hours}</span>`;
+            if (entity.rawTags.wheelchair === 'yes') extraInfo += ` <i class="fa-solid fa-wheelchair" style="color: #30d158; font-size: 10px;"></i>`;
+
+            window.poiPopup.setLngLat([entity.lon, entity.lat])
+                .setHTML(`
+                    <div style="font-family: sans-serif; color: #1c1c1e; padding: 5px;">
+                        <div style="font-weight: 900; font-size: 13px;">${entity.name}</div>
+                        <div style="font-size: 11px; color: #666; margin-top: 2px;">
+                            ${entity.category} (${entity.subCategory})${extraInfo}
+                        </div>
+                    </div>
+                `)
+                .addTo(libreMap);
+        });
+
+        const marker = new maplibregl.Marker({ element: elDiv })
+            .setLngLat([entity.lon, entity.lat])
+            .addTo(libreMap);
+
+        this.activeMarkers.set(entity.id, marker);
+    },
+
+    clearMap: function() {
+        this.activeMarkers.forEach(marker => marker.remove());
+        this.activeMarkers.clear();
+        // Wir leeren den RAM nicht! Das Wissen bleibt für die Session erhalten.
+    }
+};
 }); // <--- DAS IST DIE EINZIGE KLAMMER DIE GANZ AM ENDE STEHEN DARF! SIE SCHLIEßT DEINE ALLERERSTE ZEILE GANZ OBEN.
