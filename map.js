@@ -345,8 +345,8 @@ const TOMTOM_API_KEY = 'qUXu7VMUc8RMDm7pkiItGa6WUsqWfFUM';
         window.updateMapAppearance();
     }, 350);
 
-    if (window.ExploreLogic) {
-        window.ExploreLogic.fetchData();
+    if () {
+        .fetchData();
     }
 
 } // <--- DAS SAUBERE ENDE VON loadMap!
@@ -1847,7 +1847,7 @@ updateDashboard: function() {
             // Finde das korrekte Element aus dem Cache, um das Totem mit allen Live-Daten zu füttern
             const el = this.cachedStations.find(s => s.lat === lat && s.lon === lon);
             if (el) this.openTotem(name, lat, lon, el);
-        }
+        },
 openPremiumCard: async function(name, lat, lng, elementRef, brandKey) {
         const card = document.getElementById('premium-brand-card');
         if (!card) return;
@@ -1986,7 +1986,8 @@ openPremiumCard: async function(name, lat, lng, elementRef, brandKey) {
         if (pillV) pillV.style.setProperty('display', 'flex', 'important');
         if (shopBtn) shopBtn.style.setProperty('display', 'flex', 'important');
     }
-    }; // <--- DAS ist jetzt das einzige und echte Ende von window.ExploreLogic!
+
+}; // <--- DAS ist jetzt das einzige und echte Ende von window.ExploreLogic!
 
 
 // ==========================================
