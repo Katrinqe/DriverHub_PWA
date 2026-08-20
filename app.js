@@ -3,9 +3,8 @@ let isDriveMode = false;
 let watchId = null;
 let isZooming = false; 
 let isAutoPanning = false; // WICHTIG: Schützt vor ungewolltem Stop
-let currentRotation = 0; 
 let pressTimer = null;
-const LONG_PRESS_DURATION = 1500; 
+const LONG_PRESS_DURATION = 1500;
 
 window.addEventListener('load', () => {
     setTimeout(() => {
@@ -35,10 +34,11 @@ window.addEventListener('load', () => {
     bindNavBtn('nav-explore', showExplore);
     bindNavBtn('nav-perf', showPerf);
 
-    const navBar = document.getElementById('global-nav');
+const navBar = document.getElementById('global-nav');
     if(navBar) {
-        L.DomEvent.disableClickPropagation(navBar);
-        L.DomEvent.disableScrollPropagation(navBar);
+        navBar.addEventListener('click', (e) => e.stopPropagation());
+        navBar.addEventListener('wheel', (e) => e.stopPropagation());
+        navBar.addEventListener('touchmove', (e) => e.stopPropagation(), {passive: false});
         navBar.addEventListener('dblclick', (e) => { e.stopPropagation(); e.preventDefault(); });
     }
 
@@ -63,55 +63,40 @@ window.addEventListener('load', () => {
 });
 
 function initMap() {
-    map = L.map('background-map', {
-        zoomControl: false, attributionControl: false,
-        dragging: false, touchZoom: false, doubleClickZoom: false, 
-        zoomSnap: 0, zoomDelta: 0.5,
-        tap: false 
-    }).setView([51.1657, 10.4515], 15);
+    // MapLibre Initialisierung
+    map = new maplibregl.Map({
+        container: 'background-map',
+        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        center: [10.4515, 51.1657], // Wichtig: MapLibre nutzt Lng, Lat!
+        zoom: 15,
+        interactive: false, // Sperrt Drag, Zoom, etc. im Home-Screen
+        attributionControl: false
+    });
 
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
-    maxZoom: 20,
-    keepBuffer: 2, // VON 20 AUF 2 REDUZIEREN!
-    updateWhenIdle: true // Auf true setzen, um CPU während der Fahrt zu entlasten
-}).addTo(map);
-
-    // FIX: Zwingt Leaflet dazu, die Container-Größe nach dem CSS-Transform neu zu berechnen
-    setTimeout(() => {
-        if (map) {
-            map.invalidateSize();
+    map.on('load', () => {
+        if (navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(handlePositionUpdate, 
+                (err) => console.warn(err), 
+                { enableHighAccuracy: true }
+            );
         }
-    }, 500);
-
-    if (navigator.geolocation) {
-        watchId = navigator.geolocation.watchPosition(handlePositionUpdate, 
-            (err) => console.warn(err), 
-            { enableHighAccuracy: true }
-        );
-    }
+    });
 
     // Wenn der User zieht -> Buttons zeigen
     map.on('dragstart', () => {
         if(!isAutoPanning) showRecenterButtons();
     });
 
-    // FIX: Wenn der User zoomt -> Buttons zeigen. ABER NICHT wenn der Code zoomt (isAutoPanning)
+    // Wenn der User zoomt -> Buttons zeigen
     map.on('zoomstart', () => {
-        if(!isAutoPanning) {
-            showRecenterButtons();
-            if(userMarker && userMarker.getElement()) {
-                userMarker.getElement().classList.remove('smooth');
-            }
-        }
+        if(!isAutoPanning) showRecenterButtons();
     });
 
-    map.on('zoomend moveend', () => {
-        // Flag nach jeder Bewegung sicherheitshalber resetten (verzögert)
+    map.on('zoomend', () => {
         setTimeout(() => { isAutoPanning = false; }, 500); 
-        
-        if(userMarker && userMarker.getElement()) {
-            userMarker.getElement().classList.add('smooth');
-        }
+    });
+    map.on('moveend', () => {
+        setTimeout(() => { isAutoPanning = false; }, 500); 
     });
 }
 
@@ -121,37 +106,37 @@ function showRecenterButtons() {
 }
 
 function handlePositionUpdate(pos) {
-    const newLatLng = L.latLng(pos.coords.latitude, pos.coords.longitude);
+    const lng = pos.coords.longitude;
+    const lat = pos.coords.latitude;
     const heading = pos.coords.heading; 
     const speedKm = pos.coords.speed ? Math.round(pos.coords.speed * 3.6) : 0;
 
     if (!userMarker) {
-        const icon = L.divIcon({ className: 'user-marker-wrap', html: '<div class="user-pulse"></div><div class="user-dot"></div>', iconSize: [40,40], iconAnchor: [20,20] });
-        userMarker = L.marker(newLatLng, {icon: icon}).addTo(map);
-        setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
-        map.setView(newLatLng, 15, {animate: false});
+        const el = document.createElement('div');
+        el.className = 'user-marker-wrap smooth';
+        el.innerHTML = '<div class="user-pulse"></div><div class="user-dot"></div>';
+
+        // Natives MapLibre Alignment, damit der Marker flach auf dem Asphalt liegt
+        userMarker = new maplibregl.Marker({
+            element: el,
+            pitchAlignment: 'map',
+            rotationAlignment: 'map'
+        })
+        .setLngLat([lng, lat])
+        .addTo(map);
+        
+        map.jumpTo({ center: [lng, lat], zoom: 15 });
     } else {
-        userMarker.setLatLng(newLatLng);
-        if(userMarker.getElement() && !isZooming) userMarker.getElement().classList.add('smooth');
+        userMarker.setLngLat([lng, lat]);
     }
 
-    const mapEl = document.getElementById('background-map');
     const isNavi = (typeof NaviLogic !== 'undefined' && NaviLogic.isNavigating);
 
-    if (isDriveMode || isNavi) {
-        if (heading !== null && !isNaN(heading) && speedKm > 3) {
-            let targetRot = -heading; 
-            let diff = targetRot - currentRotation;
-            while (diff < -180) diff += 360;
-            while (diff > 180) diff -= 360;
-            currentRotation += diff; 
-            if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(${currentRotation}deg)`;
-        }
+    // Native WebGL-Rotation des Markers (kein CSS-Hack mehr)
+    if ((isDriveMode || isNavi) && heading !== null && !isNaN(heading) && speedKm > 3) {
+        userMarker.setRotation(heading);
     } else {
-        if (currentRotation !== 0) {
-            currentRotation = 0;
-            if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
-        }
+        userMarker.setRotation(0);
     }
 
     if (isZooming && !isAutoPanning) return;
@@ -160,13 +145,19 @@ function handlePositionUpdate(pos) {
         DriverLogic.update(pos);
         if (document.getElementById('btn-recenter').classList.contains('hidden')) {
             isAutoPanning = true; 
-            map.panTo(newLatLng, { animate: true, duration: 1.0 });
+            // Sanftes Kameragleiten inklusive Drehung
+            map.easeTo({ 
+                center: [lng, lat], 
+                bearing: (speedKm > 3 && heading !== null) ? heading : map.getBearing(),
+                duration: 1000, 
+                easing: t => t 
+            });
         }
     } else if (isNavi) {
         NaviLogic.updatePosition(pos); 
         if (document.getElementById('btn-nav-recenter').classList.contains('hidden')) {
             isAutoPanning = true;
-            map.panTo(newLatLng, { animate: true, duration: 1.0 });
+            map.easeTo({ center: [lng, lat], duration: 1000, easing: t => t });
         }
     } else {
         const isHome = document.getElementById('home-screen').classList.contains('active');
@@ -174,13 +165,15 @@ function handlePositionUpdate(pos) {
         
         if (isHome) {
             isAutoPanning = true;
-            map.setView(newLatLng, 15, { animate: false });
+            map.jumpTo({ center: [lng, lat], zoom: 15 });
         } 
         else if (!isExplore) {
-            const dist = map.getCenter().distanceTo(newLatLng);
+            // Distanz-Check: MapLibre nutzt Turf.js oder simple Geometrie, hier einfacher Vektor
+            const currentCenter = map.getCenter();
+            const dist = Math.sqrt(Math.pow(currentCenter.lng - lng, 2) + Math.pow(currentCenter.lat - lat, 2)) * 111000;
             if(dist > 50) {
                 isAutoPanning = true;
-                map.panTo(newLatLng, { animate: true, duration: 2.0 });
+                map.panTo([lng, lat], { duration: 2000 });
             }
         }
     }
@@ -193,32 +186,30 @@ function startDriveMode() {
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
     
-    // FIX: Button verstecken
     document.getElementById('btn-recenter').classList.add('hidden');
-
     document.getElementById('global-top-fade').classList.remove('visible');
-    document.getElementById('background-map').classList.remove('map-locked');
-    document.getElementById('background-map').classList.add('map-smooth-rotate');
 
-    map.dragging.enable();
-    map.touchZoom.enable();
+    // Interaktionen für MapLibre aktivieren
+    map.dragPan.enable();
+    map.scrollZoom.enable();
     map.doubleClickZoom.enable();
-    map.scrollWheelZoom.enable();
+    map.touchZoomRotate.enable();
 
     if(userMarker) {
-        isAutoPanning = true; // FIX: Wichtig für den Start-Zoom
-        map.setView(userMarker.getLatLng(), 18, { animate: false });
+        isAutoPanning = true; 
+        map.jumpTo({ center: userMarker.getLngLat(), zoom: 18 });
     }
     DriverLogic.start();
 }
 
 function centerMapOnUser() {
     if(userMarker) {
-        isAutoPanning = true; // FIX
-        map.setView(userMarker.getLatLng(), 18, { animate: true, duration: 1.0 });
+        isAutoPanning = true; 
+        map.easeTo({ center: userMarker.getLngLat(), zoom: 18, duration: 1000 });
         
         document.getElementById('btn-recenter').classList.add('hidden');
-        document.getElementById('btn-nav-recenter').classList.add('hidden');
+        const navRecenter = document.getElementById('btn-nav-recenter');
+        if(navRecenter) navRecenter.classList.add('hidden');
     }
 }
 
@@ -230,27 +221,19 @@ function showHome() {
     
     document.getElementById('global-top-fade').classList.add('visible');
 
-    const mapEl = document.getElementById('background-map');
-    mapEl.classList.remove('map-smooth-rotate');
-    mapEl.classList.add('map-locked'); 
-
-    currentRotation = 0;
-    mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
-    
-    map.stop();
-    map.dragging.disable();
-    map.touchZoom.disable();
+    map.stop(); // Stoppt alle Animationen
+    map.dragPan.disable();
+    map.scrollZoom.disable();
+    map.touchZoomRotate.disable();
     map.doubleClickZoom.disable();
-    map.scrollWheelZoom.disable();
-    map.boxZoom.disable();
     map.keyboard.disable();
-    if (map.tap) map.tap.disable();
 
+    // Kamera nativ gerade richten
+    map.jumpTo({ bearing: 0, pitch: 0 });
+    
     if(userMarker) {
-        if(userMarker.getElement()) userMarker.getElement().classList.remove('smooth');
         isAutoPanning = true;
-        map.setView(userMarker.getLatLng(), 15, { animate: false });
-        setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
+        map.jumpTo({ center: userMarker.getLngLat(), zoom: 15 });
     }
 
     switchScreen('home-screen');
@@ -264,15 +247,15 @@ function showGarage() {
     
     document.getElementById('global-top-fade').classList.remove('visible');
 
-    document.getElementById('background-map').classList.remove('map-locked');
-    document.getElementById('background-map').classList.remove('map-smooth-rotate');
+    // Karte bleibt im Hintergrund, CSS-Hacks sind ohnehin weg
+    map.jumpTo({ bearing: 0, pitch: 0 });
     
     switchScreen('garage-screen'); 
     updateNav('garage');
-   // FIX: Die neuen Render-Funktionen aufrufen
+
     if(window.GarageLogic) {
-        GarageLogic.renderCars(); // Baut den Slider
-        GarageLogic.renderList(); // Baut die History-Liste
+        GarageLogic.renderCars(); 
+        GarageLogic.renderList(); 
     }
 }
 
@@ -281,12 +264,8 @@ function showExplore() {
     updateNav('explore');
     
     document.getElementById('global-top-fade').classList.add('visible');
-
-    document.getElementById('background-map').classList.remove('map-locked');
-    document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
-    const mapEl = document.getElementById('background-map');
-    if(mapEl) mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+    map.jumpTo({ bearing: 0, pitch: 0 });
     
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
 }
@@ -353,22 +332,15 @@ function initWeather() {
 }
 
 function showPerf() {
-    // 1. Andere Modi beenden
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
     if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     
-    // 2. Map Effekte zurücksetzen (falls man von Home kommt)
     document.getElementById('global-top-fade').classList.remove('visible');
-    document.getElementById('background-map').classList.remove('map-locked');
-    document.getElementById('background-map').classList.remove('map-smooth-rotate');
     
-    // 3. Screen wechseln
     switchScreen('performance-screen');
-    updateNav('perf'); // Macht den Button rot
+    updateNav('perf');
 
-    // 4. Dem Spezialisten Bescheid sagen
     if(window.PerfLogic) {
-        // Kurze Verzögerung, damit der Screen sicher sichtbar ist
         setTimeout(() => PerfLogic.onScreenShow(), 50);
     }
 }
