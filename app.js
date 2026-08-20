@@ -220,49 +220,50 @@ function centerMapOnUser() {
 }
 
 function showHome() {
+
     if(document.getElementById('home-screen').classList.contains('active')) return;
-
-    if(typeof ExploreLogic !== 'undefined' && typeof ExploreLogic.leave === 'function') ExploreLogic.leave();
-    if(typeof NaviLogic !== 'undefined' && typeof NaviLogic.cancelRoute === 'function') NaviLogic.cancelRoute();
-    
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
+    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
     document.getElementById('global-top-fade').classList.add('visible');
+    const mapEl = document.getElementById('background-map');
+    mapEl.classList.remove('map-smooth-rotate');
+    mapEl.classList.add('map-locked'); 
+    currentRotation = 0;
+    mapEl.style.transform = `translate(-50%, -50%) rotate(0deg)`;
+    map.stop();
+    map.dragging.disable();
+    map.touchZoom.disable();
+    map.doubleClickZoom.disable();
+    map.scrollWheelZoom.disable();
+    map.boxZoom.disable();
+    map.keyboard.disable();
+    if (map.tap) map.tap.disable();
 
-    if (map) {
-        if(typeof map.stop === 'function') map.stop(); // Stoppt Kameraflüge
-        map.dragPan.disable();
-        map.scrollZoom.disable();
-        map.touchZoomRotate.disable();
-        map.doubleClickZoom.disable();
-        map.keyboard.disable();
-
-        // Kamera nativ gerade richten
-        map.jumpTo({ bearing: 0, pitch: 0 });
-        
-        if(userMarker) {
-            isAutoPanning = true;
-            map.jumpTo({ center: userMarker.getLngLat(), zoom: 15 });
-        }
+    if(userMarker) {
+        if(userMarker.getElement()) userMarker.getElement().classList.remove('smooth');
+        isAutoPanning = true;
+        map.setView(userMarker.getLatLng(), 15, { animate: false });
+        setTimeout(() => { if(userMarker.getElement()) userMarker.getElement().classList.add('smooth'); }, 100);
     }
-
     switchScreen('home-screen');
     updateNav('home');
     isDriveMode = false;
 }
 
 function showGarage() { 
-    if(typeof ExploreLogic !== 'undefined' && typeof ExploreLogic.leave === 'function') ExploreLogic.leave();
-    if(typeof NaviLogic !== 'undefined' && typeof NaviLogic.cancelRoute === 'function') NaviLogic.cancelRoute();
-    
-    document.getElementById('global-top-fade').classList.remove('visible');
 
-    if (map) map.jumpTo({ bearing: 0, pitch: 0 });
-    
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
+    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
+
+    document.getElementById('global-top-fade').classList.remove('visible');
+    document.getElementById('background-map').classList.remove('map-locked');
+    document.getElementById('background-map').classList.remove('map-smooth-rotate');
     switchScreen('garage-screen'); 
     updateNav('garage');
-
+   // FIX: Die neuen Render-Funktionen aufrufen
     if(window.GarageLogic) {
-        if(typeof GarageLogic.renderCars === 'function') GarageLogic.renderCars(); 
-        if(typeof GarageLogic.renderList === 'function') GarageLogic.renderList(); 
+        GarageLogic.renderCars(); // Baut den Slider
+        GarageLogic.renderList(); // Baut die History-Liste
     }
 }
 
@@ -339,15 +340,23 @@ function initWeather() {
 }
 
 function showPerf() {
-    if(typeof ExploreLogic !== 'undefined' && typeof ExploreLogic.leave === 'function') ExploreLogic.leave();
-    if(typeof NaviLogic !== 'undefined' && typeof NaviLogic.cancelRoute === 'function') NaviLogic.cancelRoute();
-    
-    document.getElementById('global-top-fade').classList.remove('visible');
-    
-    switchScreen('performance-screen');
-    updateNav('perf');
+    // 1. Andere Modi beenden
+    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
+    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
 
-    if(window.PerfLogic && typeof PerfLogic.onScreenShow === 'function') {
+    // 2. Map Effekte zurücksetzen (falls man von Home kommt)
+    document.getElementById('global-top-fade').classList.remove('visible');
+    document.getElementById('background-map').classList.remove('map-locked');
+    document.getElementById('background-map').classList.remove('map-smooth-rotate');
+
+    // 3. Screen wechseln
+    switchScreen('performance-screen');
+    updateNav('perf'); // Macht den Button rot
+    // 4. Dem Spezialisten Bescheid sagen
+    if(window.PerfLogic) {
+        // urze Verzögerung, damit der Screen sicher sichtbar ist
         setTimeout(() => PerfLogic.onScreenShow(), 50);
     }
-}
+} 
+
+
