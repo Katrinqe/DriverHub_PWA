@@ -183,8 +183,10 @@ function handlePositionUpdate(pos) {
 }
 
 function startDriveMode() {
-    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
-    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute(); 
+    // Sicherer Aufruf (verhindert Absturz, falls Funktion nicht existiert)
+    if(typeof ExploreLogic !== 'undefined' && typeof ExploreLogic.leave === 'function') ExploreLogic.leave();
+    if(typeof NaviLogic !== 'undefined' && typeof NaviLogic.cancelRoute === 'function') NaviLogic.cancelRoute(); 
+    
     isDriveMode = true;
     switchScreen('drive-screen');
     document.getElementById('global-nav').classList.add('hidden');
@@ -192,17 +194,18 @@ function startDriveMode() {
     document.getElementById('btn-recenter').classList.add('hidden');
     document.getElementById('global-top-fade').classList.remove('visible');
 
-    // Interaktionen für MapLibre aktivieren
-    map.dragPan.enable();
-    map.scrollZoom.enable();
-    map.doubleClickZoom.enable();
-    map.touchZoomRotate.enable();
+    if (map) {
+        map.dragPan.enable();
+        map.scrollZoom.enable();
+        map.doubleClickZoom.enable();
+        map.touchZoomRotate.enable();
 
-    if(userMarker) {
-        isAutoPanning = true; 
-        map.jumpTo({ center: userMarker.getLngLat(), zoom: 18 });
+        if(userMarker) {
+            isAutoPanning = true; 
+            map.jumpTo({ center: userMarker.getLngLat(), zoom: 18 });
+        }
     }
-    DriverLogic.start();
+    if (typeof DriverLogic !== 'undefined' && typeof DriverLogic.start === 'function') DriverLogic.start();
 }
 
 function centerMapOnUser() {
@@ -219,24 +222,26 @@ function centerMapOnUser() {
 function showHome() {
     if(document.getElementById('home-screen').classList.contains('active')) return;
 
-    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
-    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
+    if(typeof ExploreLogic !== 'undefined' && typeof ExploreLogic.leave === 'function') ExploreLogic.leave();
+    if(typeof NaviLogic !== 'undefined' && typeof NaviLogic.cancelRoute === 'function') NaviLogic.cancelRoute();
     
     document.getElementById('global-top-fade').classList.add('visible');
 
-    map.stop(); // Stoppt alle Animationen
-    map.dragPan.disable();
-    map.scrollZoom.disable();
-    map.touchZoomRotate.disable();
-    map.doubleClickZoom.disable();
-    map.keyboard.disable();
+    if (map) {
+        if(typeof map.stop === 'function') map.stop(); // Stoppt Kameraflüge
+        map.dragPan.disable();
+        map.scrollZoom.disable();
+        map.touchZoomRotate.disable();
+        map.doubleClickZoom.disable();
+        map.keyboard.disable();
 
-    // Kamera nativ gerade richten
-    map.jumpTo({ bearing: 0, pitch: 0 });
-    
-    if(userMarker) {
-        isAutoPanning = true;
-        map.jumpTo({ center: userMarker.getLngLat(), zoom: 15 });
+        // Kamera nativ gerade richten
+        map.jumpTo({ bearing: 0, pitch: 0 });
+        
+        if(userMarker) {
+            isAutoPanning = true;
+            map.jumpTo({ center: userMarker.getLngLat(), zoom: 15 });
+        }
     }
 
     switchScreen('home-screen');
@@ -245,20 +250,19 @@ function showHome() {
 }
 
 function showGarage() { 
-    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
-    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
+    if(typeof ExploreLogic !== 'undefined' && typeof ExploreLogic.leave === 'function') ExploreLogic.leave();
+    if(typeof NaviLogic !== 'undefined' && typeof NaviLogic.cancelRoute === 'function') NaviLogic.cancelRoute();
     
     document.getElementById('global-top-fade').classList.remove('visible');
 
-    // Karte bleibt im Hintergrund, CSS-Hacks sind ohnehin weg
-    map.jumpTo({ bearing: 0, pitch: 0 });
+    if (map) map.jumpTo({ bearing: 0, pitch: 0 });
     
     switchScreen('garage-screen'); 
     updateNav('garage');
 
     if(window.GarageLogic) {
-        GarageLogic.renderCars(); 
-        GarageLogic.renderList(); 
+        if(typeof GarageLogic.renderCars === 'function') GarageLogic.renderCars(); 
+        if(typeof GarageLogic.renderList === 'function') GarageLogic.renderList(); 
     }
 }
 
@@ -268,9 +272,9 @@ function showExplore() {
     
     document.getElementById('global-top-fade').classList.add('visible');
     
-    map.jumpTo({ bearing: 0, pitch: 0 });
+    if (map) map.jumpTo({ bearing: 0, pitch: 0 });
     
-    if(typeof ExploreLogic !== 'undefined') ExploreLogic.enter();
+    if(typeof ExploreLogic !== 'undefined' && typeof ExploreLogic.enter === 'function') ExploreLogic.enter();
 }
 
 function updateNav(activeId) {
@@ -335,15 +339,15 @@ function initWeather() {
 }
 
 function showPerf() {
-    if(typeof ExploreLogic !== 'undefined') ExploreLogic.leave();
-    if(typeof NaviLogic !== 'undefined') NaviLogic.cancelRoute();
+    if(typeof ExploreLogic !== 'undefined' && typeof ExploreLogic.leave === 'function') ExploreLogic.leave();
+    if(typeof NaviLogic !== 'undefined' && typeof NaviLogic.cancelRoute === 'function') NaviLogic.cancelRoute();
     
     document.getElementById('global-top-fade').classList.remove('visible');
     
     switchScreen('performance-screen');
     updateNav('perf');
 
-    if(window.PerfLogic) {
+    if(window.PerfLogic && typeof PerfLogic.onScreenShow === 'function') {
         setTimeout(() => PerfLogic.onScreenShow(), 50);
     }
 }
