@@ -21,12 +21,16 @@ window.addEventListener('load', () => {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
+// === SAUBERE NAV-BAR BINDINGS FÜR MAPLIBRE ===
     function bindNavBtn(id, actionFn) {
         const btn = document.getElementById(id);
         if(!btn) return;
-        btn.addEventListener('click', (e) => { e.stopPropagation(); actionFn(); });
-        btn.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); });
-        btn.addEventListener('touchstart', (e) => { e.stopPropagation(); }, {passive: false});
+        
+        // Ein reines Click-Event ist für MapLibre absolut ausreichend und stört keine mobilen Taps
+        btn.addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            actionFn(); 
+        });
     }
 
     bindNavBtn('nav-home', showHome);
@@ -34,12 +38,11 @@ window.addEventListener('load', () => {
     bindNavBtn('nav-explore', showExplore);
     bindNavBtn('nav-perf', showPerf);
 
-const navBar = document.getElementById('global-nav');
+    const navBar = document.getElementById('global-nav');
     if(navBar) {
-        navBar.addEventListener('click', (e) => e.stopPropagation());
-        navBar.addEventListener('wheel', (e) => e.stopPropagation());
+        // Verhindert nur noch, dass man durch die Navbar hindurch die Karte scrollen oder zoomen kann
+        navBar.addEventListener('wheel', (e) => e.stopPropagation(), {passive: false});
         navBar.addEventListener('touchmove', (e) => e.stopPropagation(), {passive: false});
-        navBar.addEventListener('dblclick', (e) => { e.stopPropagation(); e.preventDefault(); });
     }
 
     document.getElementById('btn-start').onclick = startDriveMode;
