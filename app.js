@@ -1,5 +1,3 @@
-app.js
-
 let map, userMarker;
 let isDriveMode = false;
 let watchId = null;
