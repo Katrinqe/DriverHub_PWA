@@ -21,16 +21,13 @@ window.addEventListener('load', () => {
     if(typeof ExploreLogic !== 'undefined') ExploreLogic.init();
     if(typeof NaviLogic !== 'undefined') NaviLogic.init(); 
 
-// === SAUBERE NAV-BAR BINDINGS FÜR MAPLIBRE ===
+// === RESTORE ORIGINAL NAV LOGIC (VANILLA JS) ===
     function bindNavBtn(id, actionFn) {
         const btn = document.getElementById(id);
         if(!btn) return;
-        
-        // Ein reines Click-Event ist für MapLibre absolut ausreichend und stört keine mobilen Taps
-        btn.addEventListener('click', (e) => { 
-            e.stopPropagation(); 
-            actionFn(); 
-        });
+        btn.addEventListener('click', (e) => { e.stopPropagation(); actionFn(); });
+        btn.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); });
+        btn.addEventListener('touchstart', (e) => { e.stopPropagation(); }, {passive: false});
     }
 
     bindNavBtn('nav-home', showHome);
@@ -40,9 +37,12 @@ window.addEventListener('load', () => {
 
     const navBar = document.getElementById('global-nav');
     if(navBar) {
-        // Verhindert nur noch, dass man durch die Navbar hindurch die Karte scrollen oder zoomen kann
-        navBar.addEventListener('wheel', (e) => e.stopPropagation(), {passive: false});
-        navBar.addEventListener('touchmove', (e) => e.stopPropagation(), {passive: false});
+        // 1:1 Nachbau der alten Leaflet-Blockade (L.DomEvent.disableClickPropagation)
+        const stopEvents = ['click', 'dblclick', 'mousedown', 'mouseup', 'touchstart', 'touchend', 'wheel', 'mousewheel', 'DOMMouseScroll'];
+        stopEvents.forEach(ev => {
+            navBar.addEventListener(ev, (e) => { e.stopPropagation(); }, { passive: false });
+        });
+        navBar.addEventListener('dblclick', (e) => { e.preventDefault(); });
     }
 
     document.getElementById('btn-start').onclick = startDriveMode;
